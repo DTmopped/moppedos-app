@@ -1,7 +1,7 @@
 import React from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import AppLayout from '@/AppLayout'; 
-import { views } from '@/config/views';
+import AppLayout from './AppLayout'; 
+import { views } from './config/views';
 
 const AppRouterComponent = () => {
   const defaultViewPath = views.find(v => v.isDefault)?.path || views[0]?.path || "/";
