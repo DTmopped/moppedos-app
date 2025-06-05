@@ -1,9 +1,8 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { Zap } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-
+import { cn } from '../src/lib/utils';
+import { Button } from './ui/button';
 const AppHeader = ({ views }) => {
   const navigationViews = views ? views.filter(view => view.showInNav) : [];
 
