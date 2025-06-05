@@ -5,7 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { motion } from 'framer-motion';
-import { cn } from "@/lib/utils";
+import { cn } from '../../src/lib/utils';
 
 const DayPrepCard = ({ dayData, onPrepTaskChange }) => {
   if (!dayData) return null;
