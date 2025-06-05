@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { CalendarClock } from 'lucide-react';
 import { SHIFT_BG_CLASSES } from '@/config/laborScheduleConfig';
-import { cn } from '@/lib/utils';
+import { cn } from '../../src/lib/utils';
 
 const EditableDailyScheduleTable = ({ day, dailyScheduleData, onUpdate }) => {
   const handleInputChange = (roleName, shift, slotIndex, field, value) => {
