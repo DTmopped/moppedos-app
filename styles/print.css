@@ -1,0 +1,259 @@
+@media print {
+  /* ==========================================================================
+     1. Base Print Styles & Resets
+     ========================================================================== */
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    font-family: 'Helvetica Neue', Arial, sans-serif !important;
+    font-size: 9.5pt !important;
+    line-height: 1.4 !important;
+    margin: 0 !important; 
+    padding: 0 !important;
+    min-height: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Hide elements not meant for printing */
+  .no-print, .no-print * {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  
+  /* Force display of elements specifically for print */
+  .print-visible {
+    display: block !important;
+    visibility: visible !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  /* Page setup */
+  @page {
+    size: A4;
+    margin: 12mm; /* Slightly reduced margin */
+  }
+
+  /* Avoid breaking elements across pages where possible */
+  h1, h2, h3, h4, h5, h6, p, blockquote, figure, table, ul, ol, dl {
+    page-break-inside: avoid;
+  }
+  img {
+    max-width: 100% !important;
+    page-break-inside: avoid;
+  }
+  a {
+    text-decoration: none; /* Remove underlines from links */
+    color: inherit; /* Links inherit color */
+  }
+  a[href^="http"]:after, a[href^="https"]:after {
+    content: "" /* Don't show URL for external links */;
+  }
+
+
+  /* ==========================================================================
+     2. General Printable Element Styles
+     ========================================================================== */
+  
+  /* Header for the entire print job */
+  .print-header {
+    display: block !important; 
+    text-align: center !important;
+    margin-bottom: 12mm !important; /* Adjusted space */
+    width: 100% !important;
+    page-break-after: avoid;
+  }
+  .print-header .app-title, .print-header h1 {
+    font-size: 16pt !important; /* Standardized title */
+    font-weight: bold;
+    margin-bottom: 4mm !important;
+    color: #000000 !important;
+  }
+  .print-header .print-date, .print-header p { 
+    font-size: 8pt !important; /* Standardized date/subtitle */
+    margin-bottom: 8mm !important;
+    color: #222222 !important; /* Slightly darker subtitle */
+  }
+
+  /* Generic container for all printable components */
+  .printable-container {
+    width: 100%; margin: 0; padding: 0;
+    font-family: inherit !important;
+    font-size: inherit !important;
+    color: #000000 !important;
+  }
+
+  /* Title for a specific component within the printout */
+  .printable-container .print-component-header-title {
+    text-align: center; font-size: 13pt !important; font-weight: bold; margin-bottom: 3mm; color: #000000 !important;
+  }
+  /* Date for a specific component within the printout */
+  .printable-container .print-component-header-date {
+    text-align: center; font-size: 7.5pt !important; margin-bottom: 6mm; color: #222222 !important;
+  }
+  
+  /* Wrapper for main content of a printable component */
+  .printable-component-content {
+    margin: 0 !important; padding: 0 !important; width: 100% !important;
+    page-break-inside: auto !important;
+  }
+  
+  /* For layouts using space-y utilities, adjust margin for print */
+  .printable-component-content .section-spacing > div {
+    margin-bottom: 8mm !important; /* Standardized spacing */
+  }
+  .printable-component-content .section-spacing > div:not(:last-child) {
+     page-break-after: auto; 
+  }
+
+  /* Base styles for card-like elements in print */
+  .card-print-styles {
+    background: #ffffff !important; border: 0.75px solid #c0c0c0 !important; /* Thinner, lighter border */
+    box-shadow: none !important; backdrop-filter: none !important;
+    border-radius: 0 !important; padding: 6mm !important; /* Standardized padding */
+    page-break-inside: avoid !important; 
+  }
+  .card-print-styles .card-header, 
+  .card-print-styles .card-content {
+    padding: 0 !important;
+  }
+  .card-print-styles .card-title {
+    color: #000000 !important; background-image: none !important; 
+    font-size: 10.5pt !important; /* Standardized card title */
+    font-weight: bold;
+  }
+  .card-print-styles .card-header .text-primary { display: none !important; }
+
+  /* Base styles for tables in print */
+  table.table-print-styles {
+    width: 100% !important; border-collapse: collapse !important;
+    margin-top: 2.5mm !important; page-break-inside: auto !important;
+    font-size: 8pt !important; /* Standardized table font */
+  }
+  table.table-print-styles tr { display: table-row !important; page-break-inside: avoid !important;}
+  table.table-print-styles th, 
+  table.table-print-styles td { 
+    display: table-cell !important;
+    border: 0.75px solid #b0b0b0 !important; /* Consistent with card border */
+    padding: 2.5mm 2mm !important; /* Standardized cell padding */
+    color: #000000 !important;
+    background-color: transparent !important; 
+    vertical-align: top;
+  }
+  table.table-print-styles thead {
+    background-color: #e8e8e8 !important; /* Consistent light gray for header */
+    display: table-header-group !important;
+  }
+  table.table-print-styles th {
+    font-weight: bold !important; color: #000000 !important;
+    text-align: left;
+  }
+
+  /* ==========================================================================
+     3. Component-Specific Print Styles (Standardized & Organized)
+     ========================================================================== */
+
+  /* --- Common Table Structures --- */
+  .print-table-default th { background-color: #e8e8e8 !important; }
+  .print-table-default td { padding: 2.5mm 2mm !important; }
+  .print-table-compact th, .print-table-compact td { padding: 1.8mm 1.8mm !important; font-size: 6.8pt !important;} /* Adjusted compact */
+  .print-table-compact th { background-color: #f0f0f0 !important; } /* Lighter compact header */
+  
+  /* --- Order Guide --- */
+  .printable-order-guide-container .category-title {
+    font-size: 12pt !important; font-weight: bold; margin-top: 7mm; margin-bottom: 3.5mm; 
+    border-bottom: 1px solid #000000 !important; padding-bottom: 1.8mm; page-break-after: avoid; color: #000000 !important;
+  }
+  .printable-order-guide-container table.table-print-styles { margin-bottom: 5.5mm !important; }
+  .printable-order-guide-container .status-good { background-color: #d1e7dd !important; } /* Standard soft green */
+  .printable-order-guide-container .status-low { background-color: #fff0c1 !important; } /* Standard soft yellow */
+  .printable-order-guide-container .status-danger { background-color: #f5c6cb !important; } /* Standard soft red */
+  .printable-order-guide-container .item-name { font-weight: bold; }
+
+  /* --- Labor Schedule --- */
+  .printable-labor-schedule-container .daily-schedule-title {
+    font-size: 10.5pt !important; font-weight: bold; margin-top: 5.5mm; margin-bottom: 2.8mm; 
+    border-bottom: 0.75px solid #666666 !important; padding-bottom: 1.2mm; page-break-before: auto; page-break-after: avoid; color: #000000 !important;
+  }
+  .printable-labor-schedule-container .daily-schedule-title:first-of-type { page-break-before: avoid; }
+  .printable-labor-schedule-container table.table-print-styles { margin-bottom: 3.5mm !important; font-size: 7.2pt !important; }
+  .printable-labor-schedule-container table.table-print-styles td input {
+    border: 0.75px solid #b0b0b0 !important; background-color: #ffffff !important; color: #000000 !important; 
+    padding: 0.9mm !important; font-size: 7.2pt !important;
+  }
+  .printable-labor-schedule-container .employee-name { font-weight: normal; }
+  .printable-labor-schedule-container .role-cell { font-weight: bold; }
+  /* Labor Schedule Colors - Standardized softer tones */
+  .print-bg-red-100 { background-color: #f5c6cb !important; }
+  .print-bg-orange-100 { background-color: #ffe0b2 !important; }
+  .print-bg-yellow-100 { background-color: #fff0c1 !important; }
+  .print-bg-lime-100 { background-color: #dcedc8 !important; }
+  .print-bg-green-100 { background-color: #d1e7dd !important; }
+  .print-bg-teal-100 { background-color: #b2dfdb !important; }
+  .print-bg-blue-100 { background-color: #bbdefb !important; }
+  .print-bg-indigo-100 { background-color: #d1c4e9 !important; }
+  .print-bg-amber-100 { background-color: #ffecb3 !important; } /* Duplicate of yellow, consider distinct */
+  .print-bg-purple-100 { background-color: #e1bee7 !important; }
+
+  /* --- Smart Prep Guide (Full Weekly Prep) --- */
+  .printable-smart-prep-guide-container .prep-section-title {
+    font-size: 12pt !important; font-weight: bold; margin-top: 7mm; margin-bottom: 3.5mm; 
+    border-bottom: 1px solid #000000 !important; padding-bottom: 1.8mm; page-break-after: avoid; color: #000000 !important;
+  }
+  .printable-smart-prep-guide-container .prep-item-text {
+    white-space: pre-wrap !important; font-family: 'Courier New', Courier, monospace !important; /* Standard monospace */
+    font-size: 8pt !important; padding: 2.2mm !important; border: 0.75px solid #c8c8c8 !important;
+    background-color: #f9f9f9 !important; border-radius: 1.5mm !important;
+    margin-bottom: 3.5mm !important; page-break-inside: auto !important; color: #000000 !important;
+  }
+
+  /* --- Daily Shift Prep Guide --- */
+  .printable-daily-shift-prep-guide-container .day-section {
+    margin-bottom: 5.5mm !important; page-break-before: auto !important;
+  }
+  .printable-daily-shift-prep-guide-container .day-section:first-of-type { page-break-before: avoid !important; }
+  .printable-daily-shift-prep-guide-container .day-header {
+    font-size: 10.5pt !important; font-weight: bold !important; margin-bottom: 2.8mm !important; 
+    border-bottom: 0.75px solid #000000 !important; padding-bottom: 1.2mm !important; 
+    page-break-after: avoid !important; color: #000000 !important;
+  }
+  .printable-daily-shift-prep-guide-container .day-subheader {
+    font-size: 7.5pt !important; font-weight: normal !important; margin-left: 2.5mm !important; color: #222222 !important;
+  }
+  .printable-daily-shift-prep-guide-container .shift-section-title {
+    font-size: 9pt !important; font-weight: bold !important; margin-top: 3.5mm !important; margin-bottom: 1.8mm !important;
+    background-color: #f0f0f0 !important; padding: 1.8mm !important;
+    border-top: 0.75px solid #c0c0c0 !important; border-bottom: 0.75px solid #c0c0c0 !important;
+  }
+  .printable-daily-shift-prep-guide-container table.prep-table { /* Uses print-table-compact */
+    margin-bottom: 3.5mm !important;
+  }
+  .printable-daily-shift-prep-guide-container table.prep-table .col-item { width: 35% !important; }
+  .printable-daily-shift-prep-guide-container table.prep-table .col-qty { width: 10% !important; text-align: right !important; }
+  .printable-daily-shift-prep-guide-container table.prep-table .col-unit { width: 10% !important; }
+  .printable-daily-shift-prep-guide-container table.prep-table .col-assign { width: 25% !important; }
+  .printable-daily-shift-prep-guide-container table.prep-table .col-done { width: 10% !important; text-align: center !important; }
+  .printable-daily-shift-prep-guide-container .checkbox-box { 
+    display: inline-block !important; width: 2.8mm !important; height: 2.8mm !important; 
+    border: 0.5pt solid #000000 !important; margin-right: 1.2mm !important;
+    vertical-align: middle !important; line-height: 2.2mm; text-align: center;
+  }
+
+  /* --- FVA Dashboard --- */
+  .printable-fva-dashboard-container table.table-print-styles { /* Uses print-table-default with small modification */
+    font-size: 7.2pt !important; 
+  }
+  .printable-fva-dashboard-container table.table-print-styles td { padding: 1.8mm 2.2mm !important; }
+  .printable-fva-dashboard-container .print-bg-red { background-color: #f5c6cb !important; }
+  .printable-fva-dashboard-container .print-bg-green { background-color: #d1e7dd !important; }
+  .printable-fva-dashboard-container .alert-icon {
+    display: inline-block; width: 2.2mm; height: 2.2mm;
+    border-radius: 50%; margin-right: 0.9mm; vertical-align: middle;
+  }
+  .printable-fva-dashboard-container .alert-error { background-color: #dc3545 !important; }
+  .printable-fva-dashboard-container .alert-success { background-color: #28a745 !important; }
+  .printable-fva-dashboard-container .alert-no-data { color: #6c757d !important; font-style: italic; } 
+}
