@@ -1,7 +1,6 @@
 import React from "react";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
-import { cn } from "@/lib/utils";
-
+import { cn } from '../../src/lib/utils';
 const Tabs = TabsPrimitive.Root;
 
 const TabsList = React.forwardRef(({ className, ...props }, ref) => (
