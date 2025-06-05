@@ -3,7 +3,7 @@ import React from 'react';
 import { Droppable, Draggable } from 'react-beautiful-dnd';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserPlus } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '../../src/lib/utils';
 import { ROLES } from '@/config/laborScheduleConfig';
 
 const UnassignedEmployeesPanel = ({ unassignedEmployees, employees }) => {
