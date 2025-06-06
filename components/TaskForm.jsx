@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "components/ui/button.jsx";
+import { Input } from "components/ui/input.jsx";
+import { Label } from "components/ui/label.jsx";
 import { 
   Dialog, 
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
   DialogFooter 
-} from "@/components/ui/dialog";
+} from "components/ui/dialog.jsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "components/ui/dropdown-menu.jsx";
 import { ChevronDown } from "lucide-react";
 
 const TaskForm = ({ open, onOpenChange, onSave, editingTask = null }) => {
