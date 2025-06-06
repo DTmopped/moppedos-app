@@ -33,7 +33,7 @@ const ViewRenderer = ({ viewsConfig }) => {
     return <div className="text-red-500 p-4">Error: Invalid component configuration. Check console.</div>;
   }
   
-  const importPath = `/src/components/${cleanedComponentName}.jsx`;
+  const importPath = `../components/${cleanedComponentName}.jsx`;
 
   const Component = lazy(() => 
     import(importPath).catch(err => {
