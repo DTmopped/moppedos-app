@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"; // Assuming this will be created or exists
+import { Button } from "components/ui/button.jsx";
+import { Textarea } from "components/ui/textarea.jsx";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "components/ui/card.jsx";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "components/ui/table.jsx"; // Assuming this will be created or exists
 import { Calculator, TrendingUp } from "lucide-react";
 
 const ForecastParser = () => {
