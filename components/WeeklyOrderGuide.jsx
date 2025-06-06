@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import ReactDOMServer from 'react-dom/server';
 import { useData } from '../contexts/DataContext';
-import { Button } from '../components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Button } from '../components/ui/button.jsx';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card.jsx';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { Printer, ShoppingBasket, Package, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import PrintableOrderGuide from './orderguide/PrintableOrderGuide';
-import OrderGuideCategoryComponent from './orderguide/OrderGuideCategory'; // Renamed to avoid conflict
+import PrintableOrderGuide from './orderguide/PrintableOrderGuide.jsx';
+import OrderGuideCategoryComponent from './orderguide/OrderGuideCategory.jxs'; // Renamed to avoid conflict
 
 const WeeklyOrderGuide = () => {
   const { forecastData, posData } = useData();
