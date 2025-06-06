@@ -9,13 +9,14 @@ const LoadingFallback = () => (
 );
 
 const componentImportMap = {
-  FvaDashboard: lazy(() => import('@/components/dashboard/FvaDashboard.jsx')),
-  WeeklyForecastParser: lazy(() => import('@/components/forecast/WeeklyForecastParser.jsx')),
-  DailyShiftPrepGuide: lazy(() => import('@/components/prep/DailyShiftPrepGuide.jsx')),
-  WeeklyLaborSchedule: lazy(() => import('@/components/labor/WeeklyLaborSchedule.jsx')),
-  WeeklyOrderGuide: lazy(() => import('@/components/orderguide/WeeklyOrderGuide.jsx')),
-  DailyBriefingBuilder: lazy(() => import('@/components/briefing/DailyBriefingBuilder.jsx')),
+  FvaDashboard: lazy(() => import('./FvaDashboard.jsx')),
+  WeeklyForecastParser: lazy(() => import('./forecast/WeeklyForecastParser.jsx')),
+  DailyShiftPrepGuide: lazy(() => import('./prep/DailyShiftPrepGuide.jsx')),
+  WeeklyLaborSchedule: lazy(() => import('./labor/WeeklyLaborSchedule.jsx')),
+  WeeklyOrderGuide: lazy(() => import('./orderguide/WeeklyOrderGuide.jsx')),
+  DailyBriefingBuilder: lazy(() => import('./briefing/DailyBriefingBuilder.jsx')),
 };
+
 
 const ViewRenderer = ({ viewsConfig }) => {
   const location = useLocation();
