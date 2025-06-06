@@ -207,7 +207,7 @@ export default defineConfig({
   extensions: ['.jsx', '.js', '.tsx', '.ts', '.json'],
   alias: {
     '@': path.resolve(__dirname, './src'),
-    components: path.resolve(__dirname, './src/components'), // <- Add this line
+    components: path.resolve(__dirname, './components'), // <- Add this line
   },
 },
 	build: {
