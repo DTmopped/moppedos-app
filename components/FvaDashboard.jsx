@@ -1,12 +1,12 @@
 import React from "react";
 import ReactDOMServer from 'react-dom/server';
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "./ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { BarChartHorizontalBig, Printer, AlertTriangle, CheckCircle2 } from "lucide-react";
-import { useData } from "@/contexts/DataContext";
-import PrintableFvaDashboard from "@/components/dashboard/PrintableFvaDashboard";
+import { useData } from "../contexts/DataContext";
+import PrintableFvaDashboard from "./dashboard/PrintableFvaDashboard";
 
 const foodTarget = 0.30;
 const bevTarget = 0.20;
