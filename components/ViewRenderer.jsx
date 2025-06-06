@@ -9,12 +9,12 @@ const LoadingFallback = () => (
 );
 
 const componentImportMap = {
-  FvaDashboard: lazy(() => import('components/FvaDashboard.jsx')),
-  WeeklyForecastParser: lazy(() => import('components/forecast/WeeklyForecastParser.jsx')),
-  DailyShiftPrepGuide: lazy(() => import('components/prep/DailyShiftPrepGuide.jsx')),
-  WeeklyLaborSchedule: lazy(() => import('components/labor/WeeklyLaborSchedule.jsx')),
-  WeeklyOrderGuide: lazy(() => import('components/orderguide/WeeklyOrderGuide.jsx')),
-  DailyBriefingBuilder: lazy(() => import('components/briefing/DailyBriefingBuilder.jsx')),
+  FvaDashboard: lazy(() => import('./FvaDashboard.jsx')),
+  WeeklyForecastParser: lazy(() => import('./WeeklyForecastParser.jsx')),
+  DailyShiftPrepGuide: lazy(() => import('./DailyShiftPrepGuide.jsx')),
+  WeeklyLaborSchedule: lazy(() => import('./WeeklyLaborSchedule.jsx')),
+  WeeklyOrderGuide: lazy(() => import('./WeeklyOrderGuide.jsx')),
+  DailyBriefingBuilder: lazy(() => import('./DailyBriefingBuilder.jsx')),
 };
 
 
