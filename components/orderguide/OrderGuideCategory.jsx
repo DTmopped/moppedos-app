@@ -1,9 +1,8 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-// For conditional class names
-import { cn } from '../../lib/utils';
 
+import { cn } from '../../lib/utils'; // For conditional class names
 const OrderGuideCategoryComponent = ({ categoryTitle, items, getStatusClass, getStatusIcon, icon: Icon }) => {
   if (!items || items.length === 0) {
     return null;
