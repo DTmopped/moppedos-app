@@ -5,9 +5,9 @@ import { useToast } from "@/components/ui/use-toast";
 import { FileText, Users, DollarSign, Clock, Sparkles, MessageSquare, ListChecks, StickyNote, CalendarDays, TrendingUp, TrendingDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useData } from "@/contexts/DataContext";
-import BriefingMetricsSection from "@/components/briefing/BriefingMetricsSection";
-import BriefingFormField from "@/components/briefing/BriefingFormField";
-import BriefingOutputSection from "@/components/briefing/BriefingOutputSection";
+import BriefingMetricsSection from "./briefing/BriefingMetricsSection";
+import BriefingFormField from "./briefing/BriefingFormField";
+import BriefingOutputSection from "./briefing/BriefingOutputSection";
 import { PRE_SHIFT_ENERGIZERS, SPEND_PER_GUEST, generateBriefingText } from "@/lib/briefingUtils";
 
 const DailyBriefingBuilder = () => {
