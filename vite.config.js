@@ -204,11 +204,12 @@ export default defineConfig({
 		allowedHosts: true,
 	},
 	resolve: {
-		extensions: ['.jsx', '.js', '.tsx', '.ts', '.json', ],
-		alias: {
-			'@': path.resolve(__dirname, './src'),
-		},
-	},
+  extensions: ['.jsx', '.js', '.tsx', '.ts', '.json'],
+  alias: {
+    '@': path.resolve(__dirname, './src'),
+    components: path.resolve(__dirname, './components'), // <- Add this line
+  },
+},
 	build: {
 		rollupOptions: {
 			external: [
