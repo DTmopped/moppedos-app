@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Card, CardContent } from "@/components/ui/card";
-import { Slider } from "@/components/ui/slider";
+import { Card, CardContent } from "components/ui/card.jsx";
+import { Slider } from "components/ui/slider.jsx";
 import { CheckCircle2, Clock, AlertCircle } from "lucide-react";
 
 const TaskStats = ({ tasks }) => {
