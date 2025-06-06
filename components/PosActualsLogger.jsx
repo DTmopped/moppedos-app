@@ -1,11 +1,11 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "components/ui/button.jsx";
+import { Textarea } from "components/ui/textarea.jsx";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "components/ui/card.jsx";
 import { FileText, BarChart2, Info, AlertTriangle } from "lucide-react";
-import { usePosActualsParser, defaultInput as defaultPosInputText } from "@/hooks/usePosActualsParser";
-import PosActualsResultsTable from "@/components/performance/PosActualsResultsTable";
+import { usePosActualsParser, defaultInput as defaultPosInputText } from "hooks/usePosActualsParser";
+import PosActualsResultsTable from "components/performance/PosActualsResultsTable.jsx";
 
 
 const PosActualsInputSection = ({ inputText, setInputText, parseAndLogActuals }) => (
