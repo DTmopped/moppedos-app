@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Button } from "components/ui/button.jsx";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "components/ui/use-toast.jsx";
 import { FileText, Users, DollarSign, Clock, Sparkles, MessageSquare, ListChecks, StickyNote, CalendarDays, TrendingUp, TrendingDown } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { useData } from "@/contexts/DataContext";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "components/ui/card.jsx";
+import { useData } from "contexts/DataContext.jsx";
 import BriefingMetricsSection from "./briefing/BriefingMetricsSection";
 import BriefingFormField from "./briefing/BriefingFormField";
 import BriefingOutputSection from "./briefing/BriefingOutputSection";
