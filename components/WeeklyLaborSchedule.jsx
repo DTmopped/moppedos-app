@@ -3,13 +3,13 @@ import ReactDOMServer from 'react-dom/server';
 import { motion } from 'framer-motion';
 import { useData } from '../contexts/DataContext';
 import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card.jsx';
 import { Printer, Info, Users, Save } from 'lucide-react';
-import { useToast } from './ui/use-toast';
-import EditableDailyScheduleTable from './labor/EditableDailyScheduleTable';
-import PrintableLaborSchedule from './labor/PrintableLaborSchedule';
-import { LOCAL_STORAGE_KEY } from '../config/laborScheduleConfig';
-import { loadSchedule, updateSlotInSchedule } from '../lib/laborScheduleUtils';
+import { useToast } from './ui/use-toast.jsx';
+import EditableDailyScheduleTable from './labor/EditableDailyScheduleTable.jsx';
+import PrintableLaborSchedule from './labor/PrintableLaborSchedule.jsx';
+import { LOCAL_STORAGE_KEY } from '../config/laborScheduleConfig.jsx';
+import { loadSchedule, updateSlotInSchedule } from '../lib/laborScheduleUtils.jsx';
 
 
 const WeeklyLaborScheduleHeader = ({ onSave, onPrint }) => (
