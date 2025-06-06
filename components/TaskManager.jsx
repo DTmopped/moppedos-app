@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
-import TaskCard from "@/components/TaskCard";
-import TaskForm from "@/components/TaskForm";
-import TaskFilter from "@/components/TaskFilter";
-import TaskStats from "@/components/TaskStats";
-import EmptyState from "@/components/EmptyState";
+import { Button } from "components/ui/button.jsx";
+import { useToast } from "components/ui/use-toast.jsx";
+import TaskCard from "components/TaskCard.jsx";
+import TaskForm from "components/TaskForm.jsx";
+import TaskFilter from "components/TaskFilter.jsx";
+import TaskStats from "components/TaskStats.jsx";
+import EmptyState from "components/EmptyState.jsx";
 
 const TaskManager = () => {
   const [tasks, setTasks] = useState([]);
