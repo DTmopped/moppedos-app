@@ -1,12 +1,12 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from 'components/ui/button.jsx';
+import { Card, CardContent, CardHeader, CardTitle } from 'components/ui/card.jsx';
+import { Alert, AlertTitle, AlertDescription } from 'components/ui/alert.jsx';
+import { ScrollArea } from 'components/ui/scroll-area.jsx';
 import { Loader2, CheckCircle2, XCircle, Database } from 'lucide-react';
-import { supabase } from '@/supabaseClient';
-import { cn } from '@/lib/utils';
+import { supabase } from 'supabaseClient.js';
+import { cn } from 'lib/utils.js';
 
 const ConnectionTest = () => {
   const [status, setStatus] = useState('idle'); // idle, loading, success, error
