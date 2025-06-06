@@ -8,7 +8,7 @@ import { useData } from "contexts/DataContext.jsx";
 import BriefingMetricsSection from "./briefing/BriefingMetricsSection";
 import BriefingFormField from "./briefing/BriefingFormField";
 import BriefingOutputSection from "./briefing/BriefingOutputSection";
-import { PRE_SHIFT_ENERGIZERS, SPEND_PER_GUEST, generateBriefingText } from "@/lib/briefingUtils";
+import { PRE_SHIFT_ENERGIZERS, SPEND_PER_GUEST, generateBriefingText } from "@/lib/briefingUtils.js";
 
 const DailyBriefingBuilder = () => {
   const { forecastData, actualData } = useData();
