@@ -1,11 +1,11 @@
 import React, { useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "components/ui/button.jsx";
+import { Textarea } from "components/ui/textarea.jsx";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "components/ui/card.jsx";
 import { ListChecks, AlertTriangle } from "lucide-react";
-import { parseSinglePerformanceLogEntry } from "@/lib/performanceUtils";
-import PerformanceLogTable from "@/components/performance/PerformanceLogTable";
+import { parseSinglePerformanceLogEntry } from "lib/performanceUtils.js";
+import PerformanceLogTable from "components/performance/PerformanceLogTable.jsx";
 
 const defaultLogInput = `Date: 2025-05-13
 Forecasted Sales: 5000
