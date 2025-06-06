@@ -1,8 +1,8 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
-import AppHeader from '@/components/AppHeader';
-import AppFooter from '@/components/AppFooter';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import AppHeader from 'components/AppHeader.jsx';
+import AppFooter from 'components/AppFooter.jsx';
+import { ScrollArea } from 'components/ui/scroll-area';
 
 const MainLayout = () => {
   return (
