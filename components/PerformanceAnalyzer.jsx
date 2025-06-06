@@ -1,12 +1,12 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "components/ui/card.jsx";
 import { AlertTriangle, Info } from "lucide-react";
-import PosActualsResultsTable from "@/components/performance/PosActualsResultsTable";
-import PerformanceLogResultsTable from "@/components/performance/PerformanceLogTable";
-import PerformanceAnalyzerHeader from "@/components/performance/PerformanceAnalyzerHeader";
-import PerformanceInputArea from "@/components/performance/PerformanceInputArea";
-import { usePerformanceAnalyzerLogic } from "@/hooks/usePerformanceAnalyzerLogic";
+import PosActualsResultsTable from "components/performance/PosActualsResultsTable.jsx";
+import PerformanceLogResultsTable from "components/performance/PerformanceLogTable.jsx";
+import PerformanceAnalyzerHeader from "components/performance/PerformanceAnalyzerHeader.jsx";
+import PerformanceInputArea from "components/performance/PerformanceInputArea.jsx";
+import { usePerformanceAnalyzerLogic } from "hooks/usePerformanceAnalyzerLogic";
 
 const PerformanceAnalyzer = () => {
   const {
