@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import FullWeeklyPrepGuideHeader from 'components/prep/FullWeeklyPrepGuideHeader.jsx';
 import PrepGuideContent from 'components/prep/PrepGuideContent.jsx';
 import PrintableSmartPrepGuide from 'components/prep/PrintableSmartPrepGuide.jsx';
-import { PREP_GUIDE_ICON_COLORS } from 'config/prepGuideConfig.js';
+import { PREP_GUIDE_ICON_COLORS } from 'config/prepGuideConfig.jsx';
 import { useSmartPrepGuideLogic } from 'hooks/useSmartPrepGuideLogic.jsx';
 
 const SmartPrepGuide = () => {
