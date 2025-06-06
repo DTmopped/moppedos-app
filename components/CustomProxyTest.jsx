@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Button } from 'components/ui/button.jsx';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from 'components/ui/card.jsx';
+import { ScrollArea } from 'components/ui/scroll-area.jsx';
+import { Input } from 'components/ui/input.jsx';
+import { Label } from 'components/ui/label.jsx';
 import { Loader2, Wifi, Server, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 
 const CustomProxyTest = () => {
