@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
+import { Button } from "components/ui/button.jsx";
 import { useToast } from "@/components/ui/use-toast";
 import { FileText, Users, DollarSign, Clock, Sparkles, MessageSquare, ListChecks, StickyNote, CalendarDays, TrendingUp, TrendingDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
