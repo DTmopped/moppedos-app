@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from 'components/ui/button.jsx;
+import { Card, CardContent, CardHeader, CardTitle } from 'components/ui/card.jsx;
+import { ScrollArea } from 'components/ui/scroll-area.jsx;
 import { Loader2, Wifi, WifiOff, CheckCircle2, XCircle } from 'lucide-react'; // Added CheckCircle2 and XCircle
-import { supabase } from '@/supabaseClient'; // We'll use this to get credentials
+import { supabase } from 'supabaseClient.js'; // We'll use this to get credentials
 
 const CorsProxyTest = () => {
   const [result, setResult] = useState('');
