@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
+import { Button } from "components/ui/button.jsx";
 import { ClipboardList } from "lucide-react";
 
 const EmptyState = ({ onAddTask }) => {
