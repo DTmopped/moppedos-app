@@ -1,8 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import DailyShiftPrepGuideHeader from './prep/DailyShiftPrepGuideHeader';
-import PrepGuideContent from './prep/PrepGuideContent';
-import PrintableDailyShiftPrepGuide from './prep/PrintableDailyShiftPrepGuide';
+import DailyShiftPrepGuideHeader from './prep/DailyShiftPrepGuideHeader.jsx';
+import PrepGuideContent from './prep/PrepGuideContent.jsx';
+import PrintableDailyShiftPrepGuide from './prep/PrintableDailyShiftPrepGuide.jsx';
 import { PREP_GUIDE_ICON_COLORS } from '../config/prepGuideConfig';
 import { useDailyShiftPrepGuideLogic } from '../hooks/useDailyShiftPrepGuideLogic';
 import { triggerPrint } from './prep/PrintUtils';
