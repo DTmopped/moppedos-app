@@ -44,7 +44,7 @@ const ViewRenderer = ({ viewsConfig }) => {
 };
 
 const folder = viewFolderMap[cleanedComponentName];
-const importPath = `@/components/${folder}/${cleanedComponentName}`;
+const importPath = `./${folder}/${cleanedComponentName}.jsx`;
   const Component = lazy(() => 
     import(importPath).catch(err => {
       console.error(`Failed to import component: ${cleanedComponentName} from path: ${importPath}`, err);
