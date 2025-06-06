@@ -1,15 +1,15 @@
 import React, { useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "components/ui/button.jsx";
+import { Input } from "components/ui/input.jsx";
+import { Textarea } from "components/ui/textarea.jsx";
+import { Label } from "components/ui/label.jsx";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "components/ui/card.jsx";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "components/ui/table.jsx";
 import { PlaneTakeoff, TrendingUp, Info, CheckCircle } from "lucide-react";
-import { useData } from "@/contexts/DataContext";
-import { useToast } from "@/components/ui/use-toast";
-import { getDayFromDate, DAY_ORDER, COST_PERCENTAGES } from "@/lib/dateUtils";
+import { useData } from "contexts/DataContext.jsx";
+import { useToast } from "components/ui/use-toast.jsx";
+import { getDayFromDate, DAY_ORDER, COST_PERCENTAGES } from "lib/dateUtils.js";
 
 
 const parseTerminalTrafficInput = (trafficInputString) => {
