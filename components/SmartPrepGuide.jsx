@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import ReactDOMServer from 'react-dom/server';
 import { motion } from 'framer-motion';
-import FullWeeklyPrepGuideHeader from '@/components/prep/FullWeeklyPrepGuideHeader';
-import PrepGuideContent from '@/components/prep/PrepGuideContent';
-import PrintableSmartPrepGuide from '@/components/prep/PrintableSmartPrepGuide';
-import { PREP_GUIDE_ICON_COLORS } from '@/config/prepGuideConfig';
-import { useSmartPrepGuideLogic } from '@/hooks/useSmartPrepGuideLogic';
+import FullWeeklyPrepGuideHeader from 'components/prep/FullWeeklyPrepGuideHeader.jsx';
+import PrepGuideContent from 'components/prep/PrepGuideContent.jsx';
+import PrintableSmartPrepGuide from 'components/prep/PrintableSmartPrepGuide.jsx';
+import { PREP_GUIDE_ICON_COLORS } from 'config/prepGuideConfig.js';
+import { useSmartPrepGuideLogic } from 'hooks/useSmartPrepGuideLogic.jsx';
 
 const SmartPrepGuide = () => {
   const {
