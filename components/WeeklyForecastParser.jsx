@@ -1,10 +1,10 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Card, CardContent } from "./ui/card";
+import { Card, CardContent } from "./ui/card.jsx";
 import { AlertTriangle } from "lucide-react";
-import ForecastHeader from "./forecast/ForecastHeader";
-import ForecastInputArea from "./forecast/ForecastInputArea";
-import ForecastResultsTable from "./forecast/ForecastResultsTable";
+import ForecastHeader from "./forecast/ForecastHeader.jsx";
+import ForecastInputArea from "./forecast/ForecastInputArea.jsx";
+import ForecastResultsTable from "./forecast/ForecastResultsTable.jsx";
 import { useWeeklyForecastLogic } from "../hooks/useWeeklyForecastLogic";
 
 const WeeklyForecastParser = () => {
