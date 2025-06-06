@@ -1,12 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import DailyShiftPrepGuideHeader from '@/components/prep/DailyShiftPrepGuideHeader';
-import PrepGuideContent from '@/components/prep/PrepGuideContent';
-import PrintableDailyShiftPrepGuide from '@/components/prep/PrintableDailyShiftPrepGuide';
-import { PREP_GUIDE_ICON_COLORS } from '@/config/prepGuideConfig';
-import { useDailyShiftPrepGuideLogic } from '@/hooks/useDailyShiftPrepGuideLogic';
-import { triggerPrint } from '@/components/prep/PrintUtils';
-import { useToast } from "@/components/ui/use-toast";
+import DailyShiftPrepGuideHeader from './prep/DailyShiftPrepGuideHeader';
+import PrepGuideContent from './prep/PrepGuideContent';
+import PrintableDailyShiftPrepGuide from './prep/PrintableDailyShiftPrepGuide';
+import { PREP_GUIDE_ICON_COLORS } from '../config/prepGuideConfig';
+import { useDailyShiftPrepGuideLogic } from '../hooks/useDailyShiftPrepGuideLogic';
+import { triggerPrint } from './prep/PrintUtils';
+import { useToast } from './ui/use-toast';
 
 
 const DailyShiftPrepGuide = () => {
