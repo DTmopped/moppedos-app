@@ -33,7 +33,18 @@ const ViewRenderer = ({ viewsConfig }) => {
     return <div className="text-red-500 p-4">Error: Invalid component configuration. Check console.</div>;
   }
   
-  const importPath = `./${cleanedComponentName}.jsx`;
+  const viewFolderMap = {
+  FvaDashboard: 'dashboard',
+  WeeklyForecastParser: 'forecast',
+  DailyShiftPrepGuide: 'prep',
+  WeeklyLaborSchedule: 'labor',
+  WeeklyOrderGuide: 'orderguide',
+  DailyBriefingBuilder: 'briefing',
+  // Add others here as needed
+};
+
+const folder = viewFolderMap[cleanedComponentName];
+const importPath = `./${folder}/${cleanedComponentName}.jsx`;
 
   const Component = lazy(() => 
     import(importPath).catch(err => {
