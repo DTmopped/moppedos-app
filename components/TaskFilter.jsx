@@ -1,13 +1,13 @@
 import React from "react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "components/ui/tabs.jsx";
 import { 
   DropdownMenu, 
   DropdownMenuTrigger, 
   DropdownMenuContent, 
   DropdownMenuItem,
   DropdownMenuSeparator
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
+} from "components/ui/dropdown-menu.jsx";
+import { Button } from "components/ui/button.jsx";
 import { SlidersHorizontal, Check } from "lucide-react";
 
 const TaskFilter = ({ filter, setFilter, sortOrder, setSortOrder }) => {
