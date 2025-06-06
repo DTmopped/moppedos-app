@@ -1,8 +1,8 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { Checkbox } from "components/ui/checkbox.jsx";
+import { Card, CardContent } from "components/ui/card.jsx";
+import { cn } from "lib/utils.js";
 import { Trash2, Edit } from "lucide-react";
 
 const TaskCard = ({ task, onToggleComplete, onDelete, onEdit }) => {
