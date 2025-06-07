@@ -1,6 +1,6 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "components/ui/card.jsx";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "components/ui/table.jsx";
 import { motion } from "framer-motion";
 
 const ForecastResultsTable = ({ forecastDataUI }) => {
@@ -41,13 +41,13 @@ const ForecastResultsTable = ({ forecastDataUI }) => {
                     className={`hover:bg-slate-700/60 transition-colors border-b border-slate-700 last:border-b-0 ${row.isTotal ? "bg-slate-700/80 font-semibold" : ""}`}
                   >
                     <TableCell className={`font-medium ${row.isTotal ? "text-pink-400" : "text-slate-200"}`}>{row.day}</TableCell>
-                    <TableCell className="text-slate-300">{row.date || ''}</TableCell>
-                    <TableCell className="text-right text-slate-300">{row.pax.toLocaleString()}</TableCell>
-                    <TableCell className="text-right text-slate-300">{Math.round(row.guests)}</TableCell>
-                    <TableCell className="text-right text-green-400">{row.sales.toFixed(2)}</TableCell>
-                    <TableCell className="text-right text-orange-400">{row.food.toFixed(2)}</TableCell>
-                    <TableCell className="text-right text-sky-400">{row.bev.toFixed(2)}</TableCell>
-                    <TableCell className="text-right text-purple-400">{row.labor.toFixed(2)}</TableCell>
+                    <TableCell className="text-slate-300 tabular-nums">{row.date || ''}</TableCell>
+                    <TableCell className="text-right text-slate-300 tabular-nums">{row.pax.toLocaleString()}</TableCell>
+                    <TableCell className="text-right text-slate-300 tabular-nums">{Math.round(row.guests)}</TableCell>
+                    <TableCell className="text-right text-green-400 tabular-nums"s>{row.sales.toFixed(2)}</TableCell>
+                    <TableCell className="text-right text-orange-400 tabular-nums">{row.food.toFixed(2)}</TableCell>
+                    <TableCell className="text-right text-sky-400 tabular-nums">{row.bev.toFixed(2)}</TableCell>
+                    <TableCell className="text-right text-purple-400 tabular-nums">{row.labor.toFixed(2)}</TableCell>
                   </motion.tr>
                 ))}
               </TableBody>
