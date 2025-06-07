@@ -1,5 +1,5 @@
 import { Toast, ToastClose, ToastDescription, ToastProvider, ToastTitle, ToastViewport } from './toast';
-import { useToast } from './use-toast.jsx';
+import { useToast } from './use-toast.js';
 import React from 'react';
 
 export function Toaster() {
