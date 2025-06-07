@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useData } from '@/contexts/DataContext';
+import { useData } from '../contexts/DataContext.jsx';
 import { useMenuManager } from '@/hooks/useMenuManager';
-import { calculateAdjustmentFactorUtil, generateFullWeeklyPrepTextForSection } from '@/lib/prepGuideUtils';
+import { calculateAdjustmentFactorUtil, generateFullWeeklyPrepTextForSection } from 'lib/prepGuideUtils.js';
 
 export const useSmartPrepGuideLogic = (menuKey) => {
   const { forecastData, actualData } = useData();
