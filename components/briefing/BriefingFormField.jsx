@@ -1,8 +1,8 @@
 import React from 'react';
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "components/ui/label.jsx";
+import { Input } from "components/ui/input.jsx";
+import { Textarea } from "components/ui/textarea.jsx";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "components/ui/select.jsx";
 
 const BriefingFormField = ({ id, label, type = "text", placeholder, value, onChange, options, minHeight }) => {
   return (
