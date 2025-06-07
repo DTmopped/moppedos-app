@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Printer, ShoppingBasket, Package, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import PrintableOrderGuide from './orderguide/PrintableOrderGuide.jsx';
-import OrderGuideCategoryComponent from './orderguide/OrderGuideCategory.jxs'; // Renamed to avoid conflict
+import OrderGuideCategoryComponent from './orderguide/OrderGuideCategory.jsx'; // Renamed to avoid conflict
 
 const WeeklyOrderGuide = () => {
   const { forecastData, posData } = useData();
