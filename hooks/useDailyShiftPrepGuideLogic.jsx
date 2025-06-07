@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useData } from '@/contexts/DataContext';
+import { useData } from '../contexts/DataContext.jsx';
 import { useMenuManager } from '@/hooks/useMenuManager';
-import { calculateAdjustmentFactorUtil, generateDailyShiftPrepDataForDay } from '@/lib/prepGuideUtils';
-import { useToast } from "@/components/ui/use-toast";
+import { calculateAdjustmentFactorUtil, generateDailyShiftPrepDataForDay } from 'lib/prepGuideUtils.js';
+import { useToast } from "components/ui/use-toast.js";
 
 const STORAGE_KEY_PREP_TASKS = 'dailyShiftPrepTasks';
 
