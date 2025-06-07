@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "components/ui/card.jsx";
 import { DollarSign, Users, TrendingUp, TrendingDown } from "lucide-react";
 
 const MetricDisplay = ({ label, value, icon, iconColor = "text-primary" }) => {
