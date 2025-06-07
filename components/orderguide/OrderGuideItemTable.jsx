@@ -1,6 +1,6 @@
 import React from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { cn } from '../../lib/utils';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "components/ui/table.jsx";
+import { cn } from '../../lib/utils.js';
 const OrderGuideItemTable = ({ items, getStatusClass }) => {
   return (
     <Table>
@@ -16,9 +16,9 @@ const OrderGuideItemTable = ({ items, getStatusClass }) => {
         {items.map(([name, forecast, unit, actual, variance], index) => (
           <TableRow key={index} className={cn(getStatusClass(forecast, actual))}>
             <TableCell className="font-medium">{name}</TableCell>
-            <TableCell className="text-right">{`${forecast} ${unit}`}</TableCell>
-            <TableCell className="text-right">{actual !== undefined && actual !== null ? `${actual} ${unit}` : '-'}</TableCell>
-            <TableCell className="text-right">{variance !== undefined && variance !== null ? variance : '-'}</TableCell>
+            <TableCell className="text-right tabular-nums">{`${forecast} ${unit}`}</TableCell>
+            <TableCell className="text-right tabular-nums">{actual !== undefined && actual !== null ? `${actual} ${unit}` : '-'}</TableCell>
+            <TableCell className="text-right tabular-nums">{variance !== undefined && variance !== null ? variance : '-'}</TableCell>
           </TableRow>
         ))}
       </TableBody>
