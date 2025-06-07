@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "components/ui/card.jsx";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "components/ui/table.jsx";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 
 const PerformanceLogTable = ({ logData }) => {
