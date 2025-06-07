@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "compo
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "components/ui/table.jsx";
 import { PlaneTakeoff, TrendingUp, Info, CheckCircle } from "lucide-react";
 import { useData } from "../contexts/DataContext.jsx";
-import { useToast } from "components/ui/use-toast.jsx";
+import { useToast } from "./ui/use-toast.js";
 import { getDayFromDate, DAY_ORDER, COST_PERCENTAGES } from "lib/dateUtils.js";
 
 
