@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { useData } from "../contexts/DataContext.jsx";
+import { useData } from "../contexts/DataContext.js";
 import { useToast } from "components/ui/use-toast.jsx";
 import { parseSinglePerformanceLogEntry, parsePosActualsEntry, PERFORMANCE_LOG_REQUIRED_KEYS } from "lib/performanceUtils.js";
 import { AlertTriangle, CheckCircle, ListChecks } from "lucide-react";
