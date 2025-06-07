@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from 'supabaseClient.js';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from 'components/ui/card.jsx';
 import { Button } from 'components/ui/button.jsx';
 import { format, parseISO, addDays, startOfWeek } from 'date-fns';
 import { fetchForecastData, calculateOptimalStaffing } from 'lib/laborScheduleUtils.js';
