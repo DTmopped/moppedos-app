@@ -1,13 +1,13 @@
 
 import React from 'react';
 import { Droppable } from 'react-beautiful-dnd';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from 'components/ui/card.jsx';
+import { Button } from 'components/ui/button.jsx';
 import { Loader2, AlertTriangle, CheckCircle, Brain } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { cn } from '../../src/lib/utils';
-import { SHIFT_BG_CLASSES } from '@/config/laborScheduleConfig';
-import ShiftSlot from '@/components/labor/ShiftSlot';
+import { cn } from '../../src/lib/utils.js';
+import { SHIFT_BG_CLASSES } from 'config/laborScheduleConfig.jsx';
+import ShiftSlot from 'components/labor/ShiftSlot';
 
 const DailyScheduleCard = ({
   date,
