@@ -1,5 +1,5 @@
 import { supabase } from '@/supabaseClient';
-import { SHIFT_TIMES } from '@/config/laborScheduleConfig';
+import { SHIFT_TIMES } from '../config/laborScheduleConfig.js';
 
 export const useShiftDragHandler = (scheduleId, employees, localCurrentWeekDates, toast, fetchShiftsAndFormatForUI, setScheduleDataState) => {
   const handleDragEnd = async (result) => {
