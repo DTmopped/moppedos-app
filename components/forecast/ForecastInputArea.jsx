@@ -1,7 +1,7 @@
 import React from 'react';
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { Textarea } from "components/ui/textarea.jsx";
+import { Label } from "components/ui/label.jsx";
+import { Button } from "components/ui/button.jsx";
 import { TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 
