@@ -1,8 +1,8 @@
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from 'components/ui/card.jsx';
 import { Info, ShoppingBasket, Utensils } from 'lucide-react';
-import PrepSectionCard from '@/components/prep/PrepSectionCard';
-import DayPrepCard from '@/components/prep/DayPrepCard';
+import PrepSectionCard from 'components/prep/PrepSectionCard.jsx';
+import DayPrepCard from 'components/prep/DayPrepCard.jsx';
 
 const PrepGuideContent = ({
   forecastData,
