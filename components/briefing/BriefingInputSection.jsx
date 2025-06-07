@@ -1,7 +1,7 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "components/ui/card.jsx";
+import { Input } from "components/ui/input.jsx";
+import { Textarea } from "components/ui/textarea.jsx";
 import { User, Calendar, ClipboardList as ClipboardIcon, AlertTriangle, PartyPopper, Award, Info } from "lucide-react";
 
 const iconMap = {
