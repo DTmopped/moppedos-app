@@ -2,23 +2,23 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext } from 'react-beautiful-dnd';
 import { format, addDays, startOfWeek } from 'date-fns';
-import { supabase } from '@/supabaseClient';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { supabase } from 'supabaseClient.js';
+import { Card, CardContent, CardHeader, CardTitle } from 'components/ui/card.jsx';
+import { Button } from 'components/ui/button.jsx';
 import { Loader2, Save, Printer, Brain } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
-import { SPEND_PER_GUEST } from '@/config/laborScheduleConfig';
-import { useSchedulerDataManagement } from '@/components/labor/hooks/useSchedulerDataManagement';
-import { useShiftDragHandler } from '@/components/labor/hooks/useShiftDragHandler';
+import { useToast } from 'components/ui/use-toast.jsx';
+import { SPEND_PER_GUEST } from 'config/laborScheduleConfig.jsx';
+import { useSchedulerDataManagement } from 'components/labor/hooks/useSchedulerDataManagement';
+import { useShiftDragHandler } from 'components/labor/hooks/useShiftDragHandler';
 import { 
   fetchForecastData, 
   calculateOptimalStaffing, 
   autoAssignEmployees,
   calculateLaborCost 
-} from '@/lib/laborScheduleUtils';
-import PrintableLaborSchedule from '@/components/labor/PrintableLaborSchedule';
-import UnassignedEmployeesPanel from '@/components/labor/UnassignedEmployeesPanel';
-import DailyScheduleCard from '@/components/labor/DailyScheduleCard';
+} from 'lib/laborScheduleUtils.jsx';
+import PrintableLaborSchedule from 'components/labor/PrintableLaborSchedule.jsx';
+import UnassignedEmployeesPanel from 'components/labor/UnassignedEmployeesPanel.jsx';
+import DailyScheduleCard from 'components/labor/DailyScheduleCard.jsx';
 
 const DragDropScheduler = ({ initialWeekStartDate = new Date() }) => {
   const [weekStartDate, setWeekStartDate] = useState(startOfWeek(initialWeekStartDate, { weekStartsOn: 1 }));
