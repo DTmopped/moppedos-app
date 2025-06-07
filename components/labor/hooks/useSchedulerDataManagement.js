@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/supabaseClient';
 import { format, parseISO, addDays, startOfWeek } from 'date-fns';
-import { ROLES, SHIFT_TIMES } from 'config/laborScheduleConfig.jsx';
+import { ROLES, SHIFT_TIMES } from '../config/laborScheduleConfig.js';
 
 const initializeEmptyScheduleDataForUI = (weekDates) => {
   const newSchedule = {};
