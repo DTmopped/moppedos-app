@@ -37,17 +37,17 @@ const PrintableLaborSchedule = ({ scheduleData, weekStartDate, employees }) => {
                       if (actualEmployeesInSlot.length === 0) {
                         return (
                           <tr key={`${roleName}-empty`}>
-                            <td className="border border-gray-300 p-1 text-xs">{roleName}</td>
-                            <td className="border border-gray-300 p-1 text-xs italic text-gray-500">Unassigned</td>
-                            <td className="border border-gray-300 p-1 text-xs"></td>
+                            <td className="border border-gray-300 p-1 text-xs tabular-nums">{roleName}</td>
+                            <td className="border border-gray-300 p-1 text-xs italic text-gray-500 tabular-nums">Unassigned</td>
+                            <td className="border border-gray-300 p-1 text-xs tabular-nums"></td>
                           </tr>
                         );
                       }
                       return actualEmployeesInSlot.map((employee, index) => (
                         <tr key={`${roleName}-${employee.id}-${index}`}>
-                          <td className="border border-gray-300 p-1 text-xs">{index === 0 ? roleName : ''}</td>
-                          <td className="border border-gray-300 p-1 text-xs">{employee.name}</td>
-                          <td className="border border-gray-300 p-1 text-xs">
+                          <td className="border border-gray-300 p-1 text-xs tabular-nums">{index === 0 ? roleName : ''}</td>
+                          <td className="border border-gray-300 p-1 text-xs tabular-nums">{employee.name}</td>
+                          <td className="border border-gray-300 p-1 text-xs tabular-nums">
                             {employee.startTime || 'N/A'} - {employee.endTime || 'N/A'}
                           </td>
                         </tr>
