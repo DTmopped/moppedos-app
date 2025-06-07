@@ -1,6 +1,6 @@
 import React from 'react';
 import { DataProvider } from "../contexts/DataContext";
-import { Toaster } from "../components/ui/toaster";
+import { Toaster } from "../components/ui/toaster.jsx";
 import { LazyMotion, domAnimation } from "framer-motion";
 
 const AppProviders = ({ children }) => {
