@@ -1,5 +1,5 @@
 import React from 'react';
-import { CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { CardHeader, CardTitle, CardDescription } from "components/ui/card.jsx";
 import { BarChartBig, FileText, ListChecks } from "lucide-react";
 
 const PerformanceAnalyzerHeader = () => {
