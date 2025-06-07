@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOMServer from 'react-dom/server';
-import { motion } from "framer-motion.jsx";
+import { motion } from "framer-motion";
 import { Button } from "./ui/button.jsx";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card.jsx";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table.jsx";
