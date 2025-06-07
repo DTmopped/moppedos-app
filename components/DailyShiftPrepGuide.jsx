@@ -3,10 +3,10 @@ import { motion } from 'framer-motion';
 import DailyShiftPrepGuideHeader from './prep/DailyShiftPrepGuideHeader.jsx';
 import PrepGuideContent from './prep/PrepGuideContent.jsx';
 import PrintableDailyShiftPrepGuide from './prep/PrintableDailyShiftPrepGuide.jsx';
-import { PREP_GUIDE_ICON_COLORS } from '../config/prepGuideConfig';
-import { useDailyShiftPrepGuideLogic } from '../hooks/useDailyShiftPrepGuideLogic';
-import { triggerPrint } from './prep/PrintUtils';
-import { useToast } from './ui/use-toast';
+import { PREP_GUIDE_ICON_COLORS } from '../config/prepGuideConfig.js';
+import { useDailyShiftPrepGuideLogic } from '../hooks/useDailyShiftPrepGuideLogic.js';
+import { triggerPrint } from './prep/PrintUtils.js';
+import { useToast } from './ui/use-toast.js';
 
 
 const DailyShiftPrepGuide = () => {
