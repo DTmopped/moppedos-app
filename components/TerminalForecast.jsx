@@ -7,7 +7,7 @@ import { Label } from "components/ui/label.jsx";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "components/ui/card.jsx";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "components/ui/table.jsx";
 import { PlaneTakeoff, TrendingUp, Info, CheckCircle } from "lucide-react";
-import { useData } from "contexts/DataContext.jsx";
+import { useData } from "../contexts/DataContext.jsx";
 import { useToast } from "components/ui/use-toast.jsx";
 import { getDayFromDate, DAY_ORDER, COST_PERCENTAGES } from "lib/dateUtils.js";
 
