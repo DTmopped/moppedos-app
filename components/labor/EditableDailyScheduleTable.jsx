@@ -1,10 +1,10 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from 'components/ui/card.jsx';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "components/ui/table.jsx";
+import { Input } from "components/ui/input.jsx";
 import { CalendarClock } from 'lucide-react';
-import { SHIFT_BG_CLASSES } from '@/config/laborScheduleConfig';
-import { cn } from '../../lib/utils';
+import { SHIFT_BG_CLASSES } from 'config/laborScheduleConfig.jsx';
+import { cn } from '../../lib/utils.js';
 
 const EditableDailyScheduleTable = ({ day, dailyScheduleData, onUpdate }) => {
   const handleInputChange = (roleName, shift, slotIndex, field, value) => {
