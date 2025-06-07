@@ -4,10 +4,10 @@ import { Button } from "components/ui/button.jsx";
 import { Input } from "components/ui/input.jsx";
 import { Textarea } from "components/ui/textarea.jsx";
 import { Label } from "components/ui/label.jsx";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "components/ui/card.jsx";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "components/ui/table.jsx";
 import { MailCheck, TrendingUp, Info, AlertTriangle, CheckCircle } from "lucide-react";
-import { useData } from "contexts/DataContext.jsx"; 
+import { useData } from "../contexts/DataContext.jsx"; 
 import { useToast } from "components/ui/use-toast.jsx";
 import { getDayFromDate, DAY_ORDER, COST_PERCENTAGES } from "lib/dateUtils.js";
 
