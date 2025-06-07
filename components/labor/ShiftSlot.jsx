@@ -1,8 +1,8 @@
 
 import React from 'react';
 import { Draggable } from 'react-beautiful-dnd';
-import { Input } from '@/components/ui/input';
-import { cn } from '../../lib/utils';
+import { Input } from 'components/ui/input.jsx';
+import { cn } from '../../lib/utils.js';
 
 const ShiftSlot = ({ employee, index, handleTimeChange }) => {
   const draggableItemId = employee.id.startsWith('empty-') ? employee.id : `${employee.id}_${employee.shift_id}`;
@@ -10,7 +10,7 @@ const ShiftSlot = ({ employee, index, handleTimeChange }) => {
   if (employee.id.startsWith('empty-')) {
     return (
       <div key={employee.id} className="p-1 mb-1 rounded text-[11px] bg-slate-500/30 border border-dashed border-slate-500/50 shadow-sm min-h-[44px] flex items-center justify-center">
-        <p className="text-[10px] text-slate-500 italic">Empty Slot</p>
+        <p className="text-[10px] text-slate-500 italic tabular-nums">Empty Slot</p>
       </div>
     );
   }
