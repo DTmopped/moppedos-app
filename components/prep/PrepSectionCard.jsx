@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from 'components/ui/card.jsx';
 import { Package } from 'lucide-react';
 
 const PrepSectionCard = ({ sectionTitle, prepText, titleColor, iconColor }) => (
