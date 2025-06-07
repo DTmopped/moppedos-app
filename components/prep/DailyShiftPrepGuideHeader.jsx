@@ -1,9 +1,9 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Button } from 'components/ui/button.jsx';
+import { Card, CardHeader, CardTitle, CardDescription } from 'components/ui/card.jsx';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "components/ui/dialog.jsx";
 import { Printer, Edit3, Utensils, Save } from 'lucide-react';
-import { PREP_GUIDE_ICON_COLORS } from '@/config/prepGuideConfig';
+import { PREP_GUIDE_ICON_COLORS } from 'config/prepGuideConfig.jsx';
 
 const DailyShiftPrepGuideHeader = ({
   adjustmentFactor,
