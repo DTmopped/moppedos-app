@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/supabaseClient';
+import { supabase } from 'supabaseClient.js';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Button } from 'components/ui/button.jsx';
 import { format, parseISO, addDays, startOfWeek } from 'date-fns';
-import { fetchForecastData, calculateOptimalStaffing } from '@/lib/laborScheduleUtils';
-import { SPEND_PER_GUEST } from '@/config/laborScheduleConfig';
+import { fetchForecastData, calculateOptimalStaffing } from 'lib/laborScheduleUtils.js';
+import { SPEND_PER_GUEST } from 'config/laborScheduleConfig.jsx';
 import { Loader2, AlertTriangle, CheckCircle, CalendarDays, TrendingUp, Users, DollarSign, Percent } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { cn } from '../../lib/utils.js';
 
 const CustomMetricCard = ({ title, value, icon, unit, trend, isLoading, cardClassName, valueClassName, titleClassName }) => (
   <Card className={cn("bg-slate-800/70 border-slate-700 shadow-lg", cardClassName)}>
@@ -19,7 +19,7 @@ const CustomMetricCard = ({ title, value, icon, unit, trend, isLoading, cardClas
         <Loader2 className="h-6 w-6 animate-spin text-purple-400" />
       ) : (
         <>
-          <div className={cn("text-2xl font-bold text-slate-100", valueClassName)}>
+          <div className={cn("text-2xl font-bold text-slate-100 tabular-nums", valueClassName)}>
             {value}
             {unit && <span className="text-xs text-slate-400 ml-1">{unit}</span>}
           </div>
