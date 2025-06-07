@@ -1,11 +1,11 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from 'components/ui/card.jsx';
+import { Input } from 'components/ui/input.jsx';
+import { Checkbox } from 'components/ui/checkbox.jsx';
+import { Label } from 'components/ui/label.jsx';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "components/ui/table.jsx";
 import { motion } from 'framer-motion';
-import { cn } from '../../lib/utils';
+import { cn } from '../../lib/utils.js';
 const DayPrepCard = ({ dayData, onPrepTaskChange }) => {
   if (!dayData) return null;
 
