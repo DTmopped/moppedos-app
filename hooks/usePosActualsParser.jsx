@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
-import { useData } from '@/contexts/DataContext';
-import { useToast } from '@/components/ui/use-toast';
+import { useData } from '../contexts/DataContext.jsx';
+import { useToast } from 'components/ui/use-toast.jsx';
 import { CheckCircle, AlertTriangle } from 'lucide-react';
-import { extractValueUtil } from '@/lib/performanceUtils'; // Assuming extractValueUtil is in performanceUtils
+import { extractValueUtil } from 'lib/performanceUtils.js'; // Assuming extractValueUtil is in performanceUtils
 
 export const TARGET_FOOD_PCT_POS = 30;
 export const TARGET_BEV_PCT_POS = 20;
