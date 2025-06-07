@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
-import { useData } from "@/contexts/DataContext";
-import { useToast } from "@/components/ui/use-toast";
-import { parseSinglePerformanceLogEntry, parsePosActualsEntry, PERFORMANCE_LOG_REQUIRED_KEYS } from "@/lib/performanceUtils";
+import { useData } from "../contexts/DataContext.jsx";
+import { useToast } from "components/ui/use-toast.jsx";
+import { parseSinglePerformanceLogEntry, parsePosActualsEntry, PERFORMANCE_LOG_REQUIRED_KEYS } from "lib/performanceUtils.js";
 import { AlertTriangle, CheckCircle, ListChecks } from "lucide-react";
 
 export const TARGET_FOOD_PCT = 30;
