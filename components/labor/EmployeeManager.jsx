@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from 'components
 import { Button } from 'components/ui/button.jsx';
 import { Input } from 'components/ui/input.jsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from 'components/ui/select.jsx';
-import { useToast } from 'components/ui/use-toast.jsx';
+import { useToast } from 'components/ui/use-toast.js';
 import { ROLES } from 'config/laborScheduleConfig.jsx';
 import { UserPlus, Trash2, Edit, Loader2, Users, Briefcase, Mail, Save } from 'lucide-react';
 
