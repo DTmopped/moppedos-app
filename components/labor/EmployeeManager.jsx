@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/supabaseClient';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/components/ui/use-toast';
-import { ROLES } from '@/config/laborScheduleConfig';
+import { supabase } from 'supabaseClient.js';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from 'components/ui/card.jsx';
+import { Button } from 'components/ui/button.jsx';
+import { Input } from 'components/ui/input.jsx';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from 'components/ui/select.jsx';
+import { useToast } from 'components/ui/use-toast.jsx';
+import { ROLES } from 'config/laborScheduleConfig.jsx';
 import { UserPlus, Trash2, Edit, Loader2, Users, Briefcase, Mail, Save } from 'lucide-react';
 
 const EmployeeManager = () => {
