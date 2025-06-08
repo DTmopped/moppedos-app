@@ -2,7 +2,7 @@
 import React from 'react';
 import { Draggable } from 'react-beautiful-dnd';
 import { Input } from '@/components/ui/input.jsx';
-import { cn } from '../'@/lib//utils.js';
+import { cn } from ''@/lib//utils;
 
 const ShiftSlot = ({ employee, index, handleTimeChange }) => {
   const draggableItemId = employee.id.startsWith('empty-') ? employee.id : `${employee.id}_${employee.shift_id}`;

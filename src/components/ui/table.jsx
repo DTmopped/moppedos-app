@@ -1,5 +1,5 @@
 import React from "react";
-import { cn } from '../'@/lib//utils.js';
+import { cn } from ''@/lib//utils;
 
 const Table = React.forwardRef(({ className, ...props }, ref) => (
   <div className="relative w-full overflow-auto rounded-lg border dark:border-slate-700">

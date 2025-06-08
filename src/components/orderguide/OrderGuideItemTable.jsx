@@ -1,6 +1,6 @@
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "components/ui/table.jsx";
-import { cn } from '../'@/lib//utils.js';
+import { cn } from ''@/lib//utils;
 const OrderGuideItemTable = ({ items, getStatusClass }) => {
   return (
     <Table>
