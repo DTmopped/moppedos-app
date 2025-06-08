@@ -1,14 +1,14 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
-import AppHeader from './components/AppHeader';
-import AppFooter from './components/AppFooter';
-import { Toaster } from "../components/ui/toaster";
+import AppHeader from '@/components/AppHeader';
+import AppFooter from '@/components/AppFooter';
+import { Toaster } from "@/components/ui/toaster";
 import { AnimatePresence, motion } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
-import AppNavigation from '../components/AppNavigation';
-import { views as viewsConfig } from "../config/views";
-import ViewRenderer from '../components/ViewRenderer';
-import { ScrollArea } from '../components/ui/scroll-area';
+import AppNavigation from '@/components/AppNavigation';
+import { views as viewsConfig } from '@/config/views';
+import ViewRenderer from '@/components/ViewRenderer';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 const AppLayout = () => {
