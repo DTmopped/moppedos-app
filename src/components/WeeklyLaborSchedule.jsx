@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ReactDOMServer from 'react-dom/server';
 import { motion } from 'framer-motion';
 import { useData } from '@/contexts/DataContext';
-import { Button } from '@/components/ui/button';
+import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card.jsx';
 import { Printer, Info, Users, Save } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast.js';
