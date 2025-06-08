@@ -205,10 +205,13 @@ export default defineConfig({
 	},
 	resolve: {
   extensions: ['.jsx', '.js', '.tsx', '.ts', '.json'],
-  alias: {
-    '@': path.resolve(__dirname, './src'),
-    components: path.resolve(__dirname, './components'), // <- Add this line
-  },
+ alias: {
+  '@': path.resolve(__dirname, './src'),
+  components: path.resolve(__dirname, './src/components'),
+  config: path.resolve(__dirname, './src/config'),
+  hooks: path.resolve(__dirname, './src/hooks'),
+  contexts: path.resolve(__dirname, './src/contexts'),
+},
 },
 	build: {
 		rollupOptions: {
