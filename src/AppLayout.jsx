@@ -1,20 +1,23 @@
 import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
-import AppLayout from "@/AppLayout";
-import ViewRenderer from "@/components/ViewRenderer"; // <- adjust path if needed
-import { views } from "@/config/views"; // <- wherever you define the `views`
+import { Outlet } from "react-router-dom";
+import AppHeader from "@/components/AppHeader";
+import AppFooter from "@/components/AppFooter";
+import AppNavigation from "@/components/AppNavigation";
+import { views } from "@/config/views"; // Adjust path if needed
 
-const App = () => {
+const AppLayout = () => {
   return (
-    <Routes>
-      <Route path="/" element={<Navigate to="/dashboard" />} />
-      
-      <Route path="/*" element={<AppLayout />}>
-        <Route index element={<Navigate to="/dashboard" />} />
-        <Route path="*" element={<ViewRenderer viewsConfig={views} />} />
-      </Route>
-    </Routes>
+    <div className="min-h-screen bg-gray-50 text-gray-800 flex flex-col">
+      <AppHeader views={views} />
+      <div className="flex flex-1 overflow-hidden">
+        <AppNavigation views={views} />
+        <main className="flex-1 overflow-y-auto p-6">
+          <Outlet />
+        </main>
+      </div>
+      <AppFooter />
+    </div>
   );
 };
 
-export default App;
+export default AppLayout;
