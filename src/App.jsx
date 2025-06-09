@@ -1,13 +1,14 @@
-import React from 'react';
-import AppRouter from './AppRouter';
-import AppProviders from './AppProviders';
+import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import AppLayout from "@/AppLayout"; // Ensure path is correct
 
-function App() {
+const App = () => {
   return (
-    <AppProviders>
-      <AppRouter />
-    </AppProviders>
+    <Routes>
+      <Route path="/" element={<Navigate to="/dashboard" />} />
+      <Route path="/*" element={<AppLayout />} />
+    </Routes>
   );
-}
+};
 
 export default App;
