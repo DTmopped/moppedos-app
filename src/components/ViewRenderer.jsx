@@ -27,12 +27,13 @@ const ViewRenderer = ({ viewsConfig }) => {
 
   let viewToRender = viewsConfig.find(v => v.path === location.pathname);
 
+ if (!viewToRender) {
+  console.warn("No matching view for:", location.pathname);
+  viewToRender = viewsConfig.find(v => v.isDefault) || viewsConfig[0];
   if (!viewToRender) {
-    viewToRender = viewsConfig.find(v => v.isDefault) || viewsConfig[0];
-    if (!viewToRender) {
-      return <div className="text-red-500 p-4">Error: View not found and no default view configured.</div>;
-    }
+    return <div className="text-red-500 p-4">Error: View not found and no default view configured.</div>;
   }
+}
 
   const componentName = viewToRender.componentName;
   let cleanedComponentName = componentName;
