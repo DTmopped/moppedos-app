@@ -1,9 +1,9 @@
 // src/AppLayout.jsx
 import React from "react";
 import { Outlet } from "react-router-dom";
-import { AppHeader } from "@/components/AppHeader";
-import { AppFooter } from "@/components/AppFooter";
-import { AppNavigation } from "@/components/AppNavigation";
+import AppHeader from "@/components/AppHeader";
+import AppFooter from "@/components/AppFooter";
+import AppNavigation from "@/components/AppNavigation";
 
 export default function AppLayout() {
   return (
