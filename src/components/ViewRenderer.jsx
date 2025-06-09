@@ -8,6 +8,7 @@ const LoadingFallback = () => (
   </div>
 );
 
+// Map your component names to their lazy-loaded imports
 const componentImportMap = {
   FvaDashboard: lazy(() => import('./FvaDashboard.jsx')),
   WeeklyForecastParser: lazy(() => import('./WeeklyForecastParser.jsx')),
@@ -17,7 +18,6 @@ const componentImportMap = {
   DailyBriefingBuilder: lazy(() => import('./DailyBriefingBuilder.jsx')),
 };
 
-
 const ViewRenderer = ({ viewsConfig }) => {
   const location = useLocation();
 
@@ -25,31 +25,35 @@ const ViewRenderer = ({ viewsConfig }) => {
     return <div className="text-red-500 p-4">Error: Views configuration is missing or empty.</div>;
   }
 
+  // Try to match the current URL path
   let viewToRender = viewsConfig.find(v => v.path === location.pathname);
 
- if (!viewToRender) {
-  console.warn("No matching view for:", location.pathname);
-  viewToRender = viewsConfig.find(v => v.isDefault) || viewsConfig[0];
+  // If not found, show a graceful 404
   if (!viewToRender) {
-    return <div className="text-red-500 p-4">Error: View not found and no default view configured.</div>;
+    console.warn("No matching view for:", location.pathname);
+    return (
+      <div className="p-8 text-center text-slate-300">
+        <h2 className="text-xl font-bold mb-2">404 - Page Not Found</h2>
+        <p className="text-slate-400">No matching view for: <code>{location.pathname}</code></p>
+      </div>
+    );
   }
-}
 
   const componentName = viewToRender.componentName;
-  let cleanedComponentName = componentName;
 
-  if (typeof componentName === 'string' && componentName.endsWith('.jsx')) {
-    cleanedComponentName = componentName.slice(0, -4);
-  } else if (typeof componentName !== 'string') {
+  if (typeof componentName !== 'string') {
     console.error("Invalid componentName:", componentName, "for view:", viewToRender);
     return <div className="text-red-500 p-4">Error: Invalid component configuration. Check console.</div>;
   }
 
-  const Component = componentImportMap[cleanedComponentName];
+  const Component = componentImportMap[componentName];
+
   if (!Component) {
-    console.error(`Missing import for component: ${cleanedComponentName}`);
-    return <div className="text-red-500 p-4">Error: Component not found for {cleanedComponentName}. Check console.</div>;
+    console.error(`Missing import for component: ${componentName}`);
+    return <div className="text-red-500 p-4">Error: Component not found for {componentName}. Check console.</div>;
   }
+
+  console.log("Rendering view:", componentName, "for path:", location.pathname);
 
   return (
     <Suspense fallback={<LoadingFallback />}>
