@@ -9,7 +9,7 @@ import { useToast } from '@/components/ui/use-toast.js';
 import EditableDailyScheduleTable from './labor/EditableDailyScheduleTable.jsx';
 import PrintableLaborSchedule from './labor/PrintableLaborSchedule.jsx';
 import { LOCAL_STORAGE_KEY } from '@/config/laborScheduleConfig.jsx';
-import { loadSchedule, updateSlotInSchedule } from ''@/lib//laborScheduleUtils.js';
+import { loadSchedule, updateSlotInSchedule } from '@/lib/laborScheduleUtils.js';
 
 
 const WeeklyLaborScheduleHeader = ({ onSave, onPrint }) => (
