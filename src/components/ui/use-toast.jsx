@@ -97,8 +97,4 @@ export function useToast() {
     };
   }, [state.toasts]);
 
-  return {
-    toast,
-    toasts: state.toasts,
-  };
-}
+  return { toast };
