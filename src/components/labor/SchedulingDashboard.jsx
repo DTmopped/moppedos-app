@@ -6,7 +6,7 @@ import { format, parseISO, addDays, startOfWeek } from 'date-fns';
 import { fetchForecastData, calculateOptimalStaffing } from '@/lib/laborScheduleUtils.js';
 import { SPEND_PER_GUEST } from '@/config/laborScheduleConfig.jsx';
 import { Loader2, AlertTriangle, CheckCircle, CalendarDays, TrendingUp, Users, DollarSign, Percent } from 'lucide-react';
-import { cn } from '@/lib/utils;
+import { cn } from "@/lib/utils";
 
 const CustomMetricCard = ({ title, value, icon, unit, trend, isLoading, cardClassName, valueClassName, titleClassName }) => (
   <Card className={cn("bg-slate-800/70 border-slate-700 shadow-lg", cardClassName)}>
