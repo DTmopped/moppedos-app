@@ -1,11 +1,10 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect } from "react";
 
-const TOAST_LIMIT = 1
+const TOAST_LIMIT = 1;
+const TOAST_REMOVE_DELAY = 300; // in ms
 
-let count = 0
 function generateId() {
-  count = (count + 1) % Number.MAX_VALUE
-  return count.toString()
+  return `${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
 }
 
 const toastStore = {
@@ -13,91 +12,103 @@ const toastStore = {
     toasts: [],
   },
   listeners: [],
-  
-  getState: () => toastStore.state,
-  
-  setState: (nextState) => {
-    if (typeof nextState === 'function') {
-      toastStore.state = nextState(toastStore.state)
-    } else {
-      toastStore.state = { ...toastStore.state, ...nextState }
-    }
-    
-    toastStore.listeners.forEach(listener => listener(toastStore.state))
+
+  getState() {
+    return this.state;
   },
-  
-  subscribe: (listener) => {
-    toastStore.listeners.push(listener)
-    return () => {
-      toastStore.listeners = toastStore.listeners.filter(l => l !== listener)
+
+  setState(nextState) {
+    if (typeof nextState === "function") {
+      this.state = nextState(this.state);
+    } else {
+      this.state = { ...this.state, ...nextState };
     }
-  }
-}
+
+    this.listeners.forEach((listener) => listener(this.state));
+  },
+
+  subscribe(listener) {
+    this.listeners.push(listener);
+    return () => {
+      this.listeners = this.listeners.filter((l) => l !== listener);
+    };
+  },
+};
 
 export const toast = ({ ...props }) => {
-  const id = generateId()
+  const id = generateId();
 
-  const update = (props) =>
+  const dismiss = () => {
+    // Trigger fade-out animation by setting `visible: false`
     toastStore.setState((state) => ({
       ...state,
       toasts: state.toasts.map((t) =>
-        t.id === id ? { ...t, ...props } : t
+        t.id === id ? { ...t, visible: false } : t
       ),
-    }))
+    }));
 
-  const dismiss = () => toastStore.setState((state) => ({
-    ...state,
-    toasts: state.toasts.filter((t) => t.id !== id),
-  }))
+    // Fully remove after animation delay
+    setTimeout(() => {
+      toastStore.setState((state) => ({
+        ...state,
+        toasts: state.toasts.filter((t) => t.id !== id),
+      }));
+    }, TOAST_REMOVE_DELAY);
+  };
+
+  const update = (updateProps) =>
+    toastStore.setState((state) => ({
+      ...state,
+      toasts: state.toasts.map((t) =>
+        t.id === id ? { ...t, ...updateProps } : t
+      ),
+    }));
 
   toastStore.setState((state) => ({
     ...state,
     toasts: [
-      { ...props, id, dismiss },
+      {
+        ...props,
+        id,
+        dismiss,
+        update,
+        visible: true,
+      },
       ...state.toasts,
     ].slice(0, TOAST_LIMIT),
-  }))
+  }));
 
-  return {
-    id,
-    dismiss,
-    update,
-  }
-}
+  return { id, dismiss, update };
+};
 
 export function useToast() {
-  const [state, setState] = useState(toastStore.getState())
-  
-  useEffect(() => {
-    const unsubscribe = toastStore.subscribe((state) => {
-      setState(state)
-    })
-    
-    return unsubscribe
-  }, [])
-  
-  useEffect(() => {
-    const timeouts = []
+  const [state, setState] = useState(toastStore.getState());
 
-    state.toasts.forEach((toast) => {
-      if (toast.duration === Infinity) {
-        return
-      }
+  useEffect(() => {
+    const unsubscribe = toastStore.subscribe(setState);
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    const timers = [];
+
+    state.toasts.forEach((t) => {
+      if (t.duration === Infinity) return;
 
       const timeout = setTimeout(() => {
-        toast.dismiss()
-      }, toast.duration || 5000)
+        t.dismiss?.();
+      }, t.duration || 5000);
 
-      timeouts.push(timeout)
-    })
+      timers.push(timeout);
+    });
 
     return () => {
-      timeouts.forEach((timeout) => clearTimeout(timeout))
-    }
-  }, [state.toasts])
+      timers.forEach(clearTimeout);
+    };
+  }, [state.toasts]);
 
   return {
     toast,
-    toasts: state.toasts,
-  }
+    toasts: state.toasts.filter((t) => t.visible), // hide fading out
+  };
 }
