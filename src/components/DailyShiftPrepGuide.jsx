@@ -6,8 +6,7 @@ import PrintableDailyShiftPrepGuide from './prep/PrintableDailyShiftPrepGuide.js
 import { PREP_GUIDE_ICON_COLORS } from '@/config/prepGuideConfig.jsx';
 import { useDailyShiftPrepGuideLogic } from "@/hooks/useDailyShiftPrepGuideLogic.jsx";
 import { triggerPrint } from "./prep/PrintUtils.jsx";
-import { useToast } from '@/components/ui/use-toast.js';
-
+import { useToast } from './ui/use-toast.jsx';
 const DailyShiftPrepGuide = () => {
   const {
     forecastData,
