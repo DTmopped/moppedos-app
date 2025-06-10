@@ -6,7 +6,7 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert.jsx';
 import { ScrollArea } from '@/components/ui/scroll-area.jsx';
 import { Loader2, CheckCircle2, XCircle, Database } from 'lucide-react';
 import { supabase } from 'supabaseClient.js';
-import { cn } from '@/lib/utils.js';
+import { cn } from "@/lib/utils";
 
 const ConnectionTest = () => {
   const [status, setStatus] = useState('idle'); // idle, loading, success, error
