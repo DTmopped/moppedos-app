@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useData } from "../contexts/DataContext.jsx";
-import { useToast } from "components/ui/use-toast.jsx";
+import { useToast } from '../components/ui/use-toast.jsx';
 import { getDayFromDate, DAY_ORDER, COST_PERCENTAGES } from "@/lib/dateUtils.js";
 import { CheckCircle } from "lucide-react";
 
