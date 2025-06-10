@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
-const TOAST_LIMIT = 1;
-const TOAST_REMOVE_DELAY = 300; // in ms
+const TOAST_LIMIT = 3;
+const TOAST_REMOVE_DELAY = 300;
 
 function generateId() {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
 }
 
 const toastStore = {
@@ -18,13 +18,9 @@ const toastStore = {
   },
 
   setState(nextState) {
-    if (typeof nextState === "function") {
-      this.state = nextState(this.state);
-    } else {
-      this.state = { ...this.state, ...nextState };
-    }
-
-    this.listeners.forEach((listener) => listener(this.state));
+    const state = typeof nextState === "function" ? nextState(this.state) : { ...this.state, ...nextState };
+    this.state = state;
+    this.listeners.forEach((listener) => listener(state));
   },
 
   subscribe(listener) {
@@ -35,11 +31,10 @@ const toastStore = {
   },
 };
 
-export const toast = ({ ...props }) => {
+const createToast = (props) => {
   const id = generateId();
 
   const dismiss = () => {
-    // Trigger fade-out animation by setting `visible: false`
     toastStore.setState((state) => ({
       ...state,
       toasts: state.toasts.map((t) =>
@@ -47,7 +42,6 @@ export const toast = ({ ...props }) => {
       ),
     }));
 
-    // Fully remove after animation delay
     setTimeout(() => {
       toastStore.setState((state) => ({
         ...state,
@@ -56,11 +50,11 @@ export const toast = ({ ...props }) => {
     }, TOAST_REMOVE_DELAY);
   };
 
-  const update = (updateProps) =>
+  const update = (updates) =>
     toastStore.setState((state) => ({
       ...state,
       toasts: state.toasts.map((t) =>
-        t.id === id ? { ...t, ...updateProps } : t
+        t.id === id ? { ...t, ...updates } : t
       ),
     }));
 
@@ -70,9 +64,9 @@ export const toast = ({ ...props }) => {
       {
         ...props,
         id,
+        visible: true,
         dismiss,
         update,
-        visible: true,
       },
       ...state.toasts,
     ].slice(0, TOAST_LIMIT),
@@ -81,7 +75,7 @@ export const toast = ({ ...props }) => {
   return { id, dismiss, update };
 };
 
-export function useToast() {
+export const useToast = () => {
   const [state, setState] = useState(toastStore.getState());
 
   useEffect(() => {
@@ -90,25 +84,27 @@ export function useToast() {
   }, []);
 
   useEffect(() => {
-    const timers = [];
+    const timers = state.toasts.map((toast) => {
+      if (toast.duration === Infinity) return null;
 
-    state.toasts.forEach((t) => {
-      if (t.duration === Infinity) return;
-
-      const timeout = setTimeout(() => {
-        t.dismiss?.();
-      }, t.duration || 5000);
-
-      timers.push(timeout);
+      return setTimeout(() => {
+        toast.dismiss?.();
+      }, toast.duration || 5000);
     });
 
-    return () => {
-      timers.forEach(clearTimeout);
-    };
+    return () => timers.forEach((t) => t && clearTimeout(t));
   }, [state.toasts]);
+
+  const toast = {
+    success: ({ title = "Success", description = "", duration }) =>
+      createToast({ title, description, duration, variant: "default" }),
+    error: ({ title = "Error", description = "", duration }) =>
+      createToast({ title, description, duration, variant: "destructive" }),
+    custom: (config) => createToast(config),
+  };
 
   return {
     toast,
-    toasts: state.toasts.filter((t) => t.visible), // hide fading out
+    toasts: state.toasts.filter((t) => t.visible),
   };
-}
+};
