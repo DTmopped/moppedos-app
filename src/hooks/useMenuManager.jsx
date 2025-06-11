@@ -42,13 +42,15 @@ export const useMenuManager = (localStorageKey) => {
     const savedMenu = localStorage.getItem(localStorageKey);
     return savedMenu ? JSON.parse(savedMenu) : initialMenuData;
   });
- const [editorsVisibility, setEditorsVisibility] = useState(() => {
-  const initial = {};
-  Object.keys(initialMenuData).forEach(section => {
-    initial[section] = true;
+
+  const [editorsVisibility, setEditorsVisibility] = useState(() => {
+    const initial = {};
+    Object.keys(initialMenuData).forEach(section => {
+      initial[section] = true;
+    });
+    return initial;
   });
-  return initial;
-});
+
   const [newItemForms, setNewItemForms] = useState({});
 
   useEffect(() => {
@@ -91,7 +93,7 @@ export const useMenuManager = (localStorageKey) => {
     });
     setNewItemForms(prev => ({ ...prev, [section]: { name: '', value: '', unit: 'oz' } }));
   };
-  
+
   const removeMenuItem = (section, itemName) => {
     setMenu(prevMenu => ({
       ...prevMenu,
@@ -107,81 +109,85 @@ export const useMenuManager = (localStorageKey) => {
             <div className="flex justify-between items-center">
               <CardTitle className={`text-lg text-transparent bg-clip-text bg-gradient-to-r ${sectionTitleColor}`}>{section}</CardTitle>
               <Button variant="ghost" size="sm" onClick={() => toggleEditor(section)} className="text-slate-400 hover:text-purple-400">
-                {editorsVisibility[section] ? "Close Editor" : <><Edit3 size={14} className="mr-1"/> Edit Items</>}
+                {editorsVisibility[section] ? "Close Editor" : <><Edit3 size={14} className="mr-1" /> Edit Items</>}
               </Button>
             </div>
           </CardHeader>
           {editorsVisibility[section] && (
             <CardContent>
-              <motion.div 
-                initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
                 className="mb-4 p-3 border border-slate-700 rounded-md bg-slate-800 space-y-2"
               >
                 <h4 className="text-sm font-semibold text-slate-200">Add/Update Item in {section}</h4>
-                <Input placeholder="Item Name" value={newItemForms[section]?.name || ''} onChange={(e) => handleNewItemChange(section, 'name', e.target.value)} className="bg-slate-700 border-slate-600 text-slate-200 placeholder-slate-500"/>
+                <Input placeholder="Item Name" value={newItemForms[section]?.name || ''} onChange={(e) => handleNewItemChange(section, 'name', e.target.value)} className="bg-slate-700 border-slate-600 text-slate-200 placeholder-slate-500" />
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-  <div className="flex flex-col">
-    <Label className="text-xs text-slate-400 mb-1">Portion</Label>
-    <Input
-      type="number"
-      placeholder="e.g. 4"
-      value={newItemForms[section]?.value || ''}
-      onChange={(e) => handleNewItemChange(section, 'value', e.target.value)}
-      className="bg-slate-700 border-slate-600 text-slate-200 placeholder-slate-500"
-    />
-  </div>
- <div className="flex flex-col">
-  <Label className="text-xs text-slate-400 mb-1">Unit</Label>
-  <div className="flex items-center space-x-1">
-    <Select
-      value={newItemForms[section]?.unit || 'oz'}
-      onValueChange={(val) => handleNewItemChange(section, 'unit', val)}
-    >
-      <SelectTrigger className="bg-slate-700 border-slate-600 text-slate-200 w-[80px]">
-        <SelectValue placeholder="Unit" />
-      </SelectTrigger>
-      <SelectContent className="bg-slate-700 border-slate-600 text-slate-200">
-        <SelectItem value="oz">oz</SelectItem>
-        <SelectItem value="each">each</SelectItem>
-      </SelectContent>
-    </Select>
-    <span className="text-xs text-slate-400">per guest</span>
-  </div>
-</div>
+                  <div className="flex flex-col">
+                    <Label className="text-xs text-slate-400 mb-1">Portion</Label>
+                    <Input
+                      type="number"
+                      placeholder="e.g. 4"
+                      value={newItemForms[section]?.value || ''}
+                      onChange={(e) => handleNewItemChange(section, 'value', e.target.value)}
+                      className="bg-slate-700 border-slate-600 text-slate-200 placeholder-slate-500"
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <Label className="text-xs text-slate-400 mb-1">Unit</Label>
+                    <div className="flex items-center space-x-1">
+                      <Select
+                        value={newItemForms[section]?.unit || 'oz'}
+                        onValueChange={(val) => handleNewItemChange(section, 'unit', val)}
+                      >
+                        <SelectTrigger className="bg-slate-700 border-slate-600 text-slate-200 w-[80px]">
+                          <SelectValue placeholder="Unit" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-700 border-slate-600 text-slate-200">
+                          <SelectItem value="oz">oz</SelectItem>
+                          <SelectItem value="each">each</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <span className="text-xs text-slate-400">per guest</span>
+                    </div>
+                  </div>
+                </div>
 
-<Button
-  onClick={() => addMenuItem(section)}
-  size="sm"
-  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white mt-3"
->
-  <PlusCircle className="mr-2 h-4 w-4" />
-  Add/Update
-</Button>
+                <Button
+                  onClick={() => addMenuItem(section)}
+                  size="sm"
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white mt-3"
+                >
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add/Update
+                </Button>
 
-<div className="mt-4 space-y-1">
-  <h5 className="text-xs font-medium text-slate-300">Current Items:</h5>
-  {menu[section].length === 0 ? (
-    <p className="text-xs text-slate-500">No items.</p>
-  ) : (
-    <ul className="text-xs text-slate-400 max-h-40 overflow-y-auto pr-1">
-      {menu[section].map((item) => (
-        <li key={item.name} className="flex justify-between items-center py-0.5">
-          <span>
-            {item.name} ({item.perGuestOz ? `${item.perGuestOz}oz` : `${item.each} each`})
-          </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => removeMenuItem(section, item.name)}
-            className="h-5 w-5 text-red-500 hover:text-red-400"
-          >
-            <XCircle size={12} />
-          </Button>
-        </li>
-      ))}
-    </ul>
-  )}
-</div>
+                <div className="mt-4 space-y-1">
+                  <h5 className="text-xs font-medium text-slate-300">Current Items:</h5>
+                  {menu[section].length === 0 ? (
+                    <p className="text-xs text-slate-500">No items.</p>
+                  ) : (
+                    <ul className="text-xs text-slate-400 max-h-40 overflow-y-auto pr-1">
+                      {menu[section].map((item) => (
+                        <li key={item.name} className="flex justify-between items-center py-0.5">
+                          <span>
+                            {item.name} ({item.perGuestOz ? `${item.perGuestOz}oz` : `${item.each} each`})
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeMenuItem(section, item.name)}
+                            className="h-5 w-5 text-red-500 hover:text-red-400"
+                          >
+                            <XCircle size={12} />
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               </motion.div>
             </CardContent>
           )}
