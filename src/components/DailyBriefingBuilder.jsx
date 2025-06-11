@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import { Textarea } from '@/components/ui/textarea.jsx';
@@ -6,6 +6,15 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.j
 import { Printer } from 'lucide-react';
 import { triggerPrint } from '@/components/prep/PrintUtils.jsx';
 import PrintableBriefingSheet from './PrintableBriefingSheet.jsx';
+
+// Temporary static forecast to simulate data from the parser
+const dummyForecast = {
+  '2025-06-11': {
+    lunchGuests: 90,
+    dinnerGuests: 75,
+    forecastedSales: 2475
+  }
+};
 
 const DailyBriefingBuilder = () => {
   const [amGuests, setAmGuests] = useState('');
@@ -21,6 +30,18 @@ const DailyBriefingBuilder = () => {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   }));
 
+  // Format for key lookup: '2025-06-11'
+  const todayKey = new Date().toISOString().slice(0, 10);
+
+  useEffect(() => {
+    const forecast = dummyForecast[todayKey];
+    if (forecast) {
+      setAmGuests(forecast.lunchGuests.toString());
+      setPmGuests(forecast.dinnerGuests.toString());
+      setForecasted(forecast.forecastedSales.toString());
+    }
+  }, [todayKey]);
+
   const calculateVariance = (f, a) => {
     const forecast = parseFloat(f);
     const actualVal = parseFloat(a);
@@ -28,28 +49,30 @@ const DailyBriefingBuilder = () => {
     return `${(((actualVal - forecast) / forecast) * 100).toFixed(1)}%`;
   };
 
-  const handleGenerate = async () => {
-    const printData = {
-      lunch: amGuests,
-      dinner: pmGuests,
-      forecast: forecasted,
-      actual,
-      variance: calculateVariance(forecasted, actual),
-      varianceNotes,
-      manager: mod,
-      notes: teamNote,
-      shoutouts: shoutOut,
-      callouts: callOut,
-      date,
-    };
+  const handleGenerate = () => {
+    setTimeout(() => {
+      const printData = {
+        lunch: amGuests,
+        dinner: pmGuests,
+        forecast: forecasted,
+        actual,
+        variance: calculateVariance(forecasted, actual),
+        varianceNotes,
+        manager: mod,
+        notes: teamNote,
+        shoutouts: shoutOut,
+        callouts: callOut,
+        date
+      };
 
-    console.log('PRINT DATA:', printData);
+      console.log('PRINT DATA:', printData);
 
-    await triggerPrint(
-      (props) => <PrintableBriefingSheet {...props} />,
-      printData,
-      'Daily Briefing Sheet'
-    );
+      triggerPrint(
+        (props) => <PrintableBriefingSheet {...props} />,
+        printData,
+        'Daily Briefing Sheet'
+      );
+    }, 0);
   };
 
   return (
@@ -63,45 +86,65 @@ const DailyBriefingBuilder = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
-          <CardHeader><CardTitle>📊 Today's Forecasted Volume</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>📊 Today's Forecasted Volume</CardTitle>
+          </CardHeader>
           <CardContent className="space-y-3">
-            <label className="text-sm font-medium">🌞 Lunch (AM):</label>
-            <Input type="number" value={amGuests} onChange={(e) => setAmGuests(e.target.value)} placeholder="e.g. 150" />
-            <label className="text-sm font-medium">🌙 Dinner (PM):</label>
-            <Input type="number" value={pmGuests} onChange={(e) => setPmGuests(e.target.value)} placeholder="e.g. 120" />
+            <div>
+              <label className="text-sm font-medium">🌞 Lunch (AM):</label>
+              <Input type="number" value={amGuests} onChange={(e) => setAmGuests(e.target.value)} placeholder="e.g. 150" />
+            </div>
+            <div>
+              <label className="text-sm font-medium">🌙 Dinner (PM):</label>
+              <Input type="number" value={pmGuests} onChange={(e) => setPmGuests(e.target.value)} placeholder="e.g. 120" />
+            </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader><CardTitle>💰 Yesterday's Forecast vs Actual</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>💰 Yesterday's Forecast vs Actual</CardTitle>
+          </CardHeader>
           <CardContent className="space-y-3">
-            <label className="text-sm font-medium">Forecasted Sales:</label>
-            <Input type="number" value={forecasted} onChange={(e) => setForecasted(e.target.value)} placeholder="$" />
-            <label className="text-sm font-medium">Actual Sales:</label>
-            <Input type="number" value={actual} onChange={(e) => setActual(e.target.value)} placeholder="$" />
-            <label className="text-sm font-medium">Variance Notes:</label>
-            <Textarea value={varianceNotes} onChange={(e) => setVarianceNotes(e.target.value)} placeholder="e.g. team issues, slow start..." />
+            <div>
+              <label className="text-sm font-medium">Forecasted Sales:</label>
+              <Input type="number" value={forecasted} onChange={(e) => setForecasted(e.target.value)} placeholder="$" />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Actual Sales:</label>
+              <Input type="number" value={actual} onChange={(e) => setActual(e.target.value)} placeholder="$" />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Variance Notes:</label>
+              <Textarea value={varianceNotes} onChange={(e) => setVarianceNotes(e.target.value)} placeholder="e.g. team issues, slow start..." />
+            </div>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
-          <CardHeader><CardTitle>🎉 Manager Shout-Out</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>🎉 Manager Shout-Out</CardTitle>
+          </CardHeader>
           <CardContent>
             <Textarea value={shoutOut} onChange={(e) => setShoutOut(e.target.value)} placeholder="Recognize a team member or win..." />
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader><CardTitle>📣 Team Call-Out</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>📣 Team Call-Out</CardTitle>
+          </CardHeader>
           <CardContent>
             <Textarea value={callOut} onChange={(e) => setCallOut(e.target.value)} placeholder="Important reminders or changes..." />
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader><CardTitle>📝 Notes to Team</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>📝 Notes to Team</CardTitle>
+          </CardHeader>
           <CardContent>
             <Textarea value={teamNote} onChange={(e) => setTeamNote(e.target.value)} placeholder="Goals, mindset, feedback..." />
           </CardContent>
