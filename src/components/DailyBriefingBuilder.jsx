@@ -29,21 +29,31 @@ const DailyBriefingBuilder = () => {
   };
 
   const handleGenerate = async () => {
-  const printData = {
-    lunch: amGuests?.toString().trim() || '',
-    dinner: pmGuests?.toString().trim() || '',
-    forecast: forecasted?.toString().trim() || '',
-    actual: actual?.toString().trim() || '',
-    variance: calculateVariance(forecasted, actual),
-    varianceNotes: varianceNotes?.trim() || '',
-    manager: mod?.trim() || '',
-    notes: teamNote?.trim() || '',
-    shoutouts: shoutOut?.trim() || '',
-    callouts: callOut?.trim() || '',
-    date: date || new Date().toLocaleDateString('en-US', {
-      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-    }),
-  };
+  // Wait for the next tick to ensure state is fully updated before printing
+  setTimeout(async () => {
+    const printData = {
+      lunch: amGuests,
+      dinner: pmGuests,
+      forecast: forecasted,
+      actual,
+      variance: calculateVariance(forecasted, actual),
+      varianceNotes,
+      manager: mod,
+      notes: teamNote,
+      shoutouts: shoutOut,
+      callouts: callOut,
+      date,
+    };
+
+    console.log('PRINT DATA:', printData);
+
+    await triggerPrint(
+      () => <PrintableBriefingSheet {...printData} />,
+      printData,
+      'Daily Briefing Sheet'
+    );
+  }, 0);
+};
 
   console.log('PRINT DATA:', printData); 
 
