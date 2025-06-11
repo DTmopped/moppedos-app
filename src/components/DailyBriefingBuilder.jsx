@@ -29,21 +29,21 @@ const DailyBriefingBuilder = () => {
   };
 
   const handleGenerate = async () => {
-    const printData = {
-      lunch: amGuests,
-      dinner: pmGuests,
-      forecast: forecasted,
-      actual,
-      variance: calculateVariance(forecasted, actual),
-      varianceNotes,
-      manager: mod,
-      notes: teamNote,
-      shoutouts: shoutOut,
-      callouts: callOut,
-      date: new Date()
-    };
+  const printData = {
+    lunch: amGuests,
+    dinner: pmGuests,
+    forecast: forecasted,
+    actual,
+    variance: calculateVariance(forecasted, actual),
+    varianceNotes,
+    manager: mod,
+    notes: teamNote,
+    shoutouts: shoutOut,
+    callouts: callOut,
+    date, 
+  };
 
-    await triggerPrint(PrintableBriefingSheet, printData, 'Daily Briefing Sheet');
+  await triggerPrint(PrintableBriefingSheet, printData, 'Daily Briefing Sheet');
   };
 
   return (
