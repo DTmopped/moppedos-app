@@ -47,7 +47,7 @@ const DailyBriefingBuilder = () => {
 
   console.log('PRINT DATA:', printData); 
 
- await triggerPrint((props) => <PrintableBriefingSheet {...props} />, printData, 'Daily Briefing Sheet');
+await triggerPrint((props) => <PrintableBriefingSheet {...props} />, printData, 'Daily Briefing Sheet');
 };
 
   return (
