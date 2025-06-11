@@ -1,66 +1,61 @@
+
 import React from 'react';
 
-const PrintableBriefingSheet = ({
-  lunch,
-  dinner,
-  forecast,
-  actual,
-  variance,
-  varianceNotes,
-  manager,
-  notes,
-  shoutouts,
-  callouts,
-  date
-}) => {
+const cellStyle = {
+  border: '1px solid #ddd',
+  padding: '8px',
+  textAlign: 'left',
+};
+
+const sectionTitleStyle = {
+  backgroundColor: '#f2f2f2',
+  padding: '6px 10px',
+  fontWeight: 'bold',
+  borderBottom: '1px solid #ccc',
+};
+
+const PrintableBriefingSheet = ({ data }) => {
+  if (!data) return null;
+
+  const { lunch, dinner, forecast, actual, variance, varianceNotes, manager, notes, shoutouts, callouts, date } = data;
+
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', padding: '1.5rem', fontSize: '14px', lineHeight: '1.6' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        <h1 style={{ fontSize: '20px' }}>📋 Daily Briefing Sheet</h1>
-        <div style={{ textAlign: 'right' }}>
-          <p><strong>Date:</strong> {new Date(date).toLocaleDateString()}</p>
-          <p><strong>Manager:</strong> {manager}</p>
-        </div>
-      </div>
+    <div style={{ fontFamily: 'Arial, sans-serif', padding: '2rem', fontSize: '14px' }}>
+      <h1 style={{ textAlign: 'center', marginBottom: '2rem' }}>📋 Daily Briefing Sheet</h1>
 
-      <hr style={{ margin: '1rem 0' }} />
+      <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem' }}>
+        <tbody>
+          <tr><td style={cellStyle}><strong>Date:</strong></td><td style={cellStyle}>{new Date(date).toLocaleDateString()}</td></tr>
+          <tr><td style={cellStyle}><strong>Manager on Duty:</strong></td><td style={cellStyle}>{manager}</td></tr>
+        </tbody>
+      </table>
 
-      <section>
-        <h2 style={{ fontSize: '16px', marginBottom: '0.5rem' }}>📊 Forecasted Volume</h2>
-        <ul style={{ margin: 0, paddingLeft: '1rem' }}>
-          <li><strong>🌞 Lunch:</strong> {lunch} guests</li>
-          <li><strong>🌙 Dinner:</strong> {dinner} guests</li>
-        </ul>
-      </section>
+      <div style={sectionTitleStyle}>📊 Forecasted Volume</div>
+      <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem' }}>
+        <tbody>
+          <tr><td style={cellStyle}>🌞 Lunch (AM)</td><td style={cellStyle}>{lunch} guests</td></tr>
+          <tr><td style={cellStyle}>🌙 Dinner (PM)</td><td style={cellStyle}>{dinner} guests</td></tr>
+        </tbody>
+      </table>
 
-      <hr style={{ margin: '1rem 0' }} />
+      <div style={sectionTitleStyle}>💰 Yesterday's Forecast vs Actual</div>
+      <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem' }}>
+        <tbody>
+          <tr><td style={cellStyle}>Forecasted Sales</td><td style={cellStyle}>{forecast}</td></tr>
+          <tr><td style={cellStyle}>Actual Sales</td><td style={cellStyle}>{actual}</td></tr>
+          <tr><td style={cellStyle}>Variance</td><td style={cellStyle}>{variance}</td></tr>
+          <tr><td style={cellStyle}>Variance Notes</td><td style={cellStyle}>{varianceNotes}</td></tr>
+        </tbody>
+      </table>
 
-      <section>
-        <h2 style={{ fontSize: '16px', marginBottom: '0.5rem' }}>💰 Yesterday's Forecast vs Actual</h2>
-        <ul style={{ margin: 0, paddingLeft: '1rem' }}>
-          <li><strong>Forecasted:</strong> {forecast}</li>
-          <li><strong>Actual:</strong> {actual}</li>
-          <li><strong>Variance:</strong> {variance}</li>
-        </ul>
-        <p><strong>Variance Notes:</strong> {varianceNotes}</p>
-      </section>
+      <div style={sectionTitleStyle}>🎉 Team Shout-Out</div>
+      <p style={{ padding: '8px', border: '1px solid #ddd', marginBottom: '1.5rem' }}>{shoutouts}</p>
 
-      <hr style={{ margin: '1rem 0' }} />
+      <div style={sectionTitleStyle}>📣 Team Call-Out</div>
+      <p style={{ padding: '8px', border: '1px solid #ddd', marginBottom: '1.5rem' }}>{callouts}</p>
 
-      <section>
-        <h2 style={{ fontSize: '16px', marginBottom: '0.5rem' }}>🎉 Team Shout-Out</h2>
-        <p>{shoutouts || '—'}</p>
-      </section>
-
-      <section>
-        <h2 style={{ fontSize: '16px', marginBottom: '0.5rem' }}>📣 Team Call-Out</h2>
-        <p>{callouts || '—'}</p>
-      </section>
-
-      <section>
-        <h2 style={{ fontSize: '16px', marginBottom: '0.5rem' }}>📝 Notes to Team</h2>
-        <p>{notes || '—'}</p>
-      </section>
+      <div style={sectionTitleStyle}>📝 Notes to Team</div>
+      <p style={{ padding: '8px', border: '1px solid #ddd' }}>{notes}</p>
     </div>
   );
 };
