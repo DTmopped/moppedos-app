@@ -1,10 +1,18 @@
 import React from 'react';
 
-const PrintableBriefingSheet = ({ data }) => {
-  if (!data) return null;
-
-  const { lunch, dinner, forecast, actual, variance, varianceNotes, manager, notes, shoutouts, callouts, date } = data;
-
+const PrintableBriefingSheet = ({
+  lunch,
+  dinner,
+  forecast,
+  actual,
+  variance,
+  varianceNotes,
+  manager,
+  notes,
+  shoutouts,
+  callouts,
+  date
+}) => {
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', padding: '2rem' }}>
       <h1 style={{ textAlign: 'center', marginBottom: '2rem' }}>📋 Daily Briefing Sheet</h1>
