@@ -1,20 +1,18 @@
 import React from 'react';
 
-const PrintableBriefingSheet = (props) => {
-  // Accept props directly, not as { data }
-  const {
-    lunch,
-    dinner,
-    forecast,
-    actual,
-    variance,
-    varianceNotes,
-    manager,
-    notes,
-    shoutouts,
-    callouts,
-    date
-  } = props;
+const PrintableBriefingSheet = ({
+  lunch = '—',
+  dinner = '—',
+  forecast = '—',
+  actual = '—',
+  variance = 'N/A',
+  varianceNotes = '',
+  manager = '',
+  notes = '',
+  shoutouts = '',
+  callouts = '',
+  date = ''
+}) => {
 
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', padding: '2rem' }}>
