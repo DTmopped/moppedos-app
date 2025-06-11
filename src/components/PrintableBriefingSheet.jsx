@@ -35,23 +35,22 @@ const PrintableBriefingSheet = (props) => {
         </tbody>
       </table>
 
-      <hr style={{ margin: '1.5rem 0' }} />
+      {/* Two-Column Layout */}
+      <div style={{ display: 'flex', gap: '2rem', marginBottom: '1.5rem' }}>
+        <section style={{ flex: 1 }}>
+          <h2>📊 Forecasted Volume</h2>
+          <p><strong>🌞 Lunch (AM):</strong> {displayValue(lunch, ' guests')}</p>
+          <p><strong>🌙 Dinner (PM):</strong> {displayValue(dinner, ' guests')}</p>
+        </section>
 
-      <section>
-        <h2>📊 Forecasted Volume</h2>
-        <p><strong>🌞 Lunch (AM):</strong> {displayValue(lunch, ' guests')}</p>
-        <p><strong>🌙 Dinner (PM):</strong> {displayValue(dinner, ' guests')}</p>
-      </section>
-
-      <hr style={{ margin: '1.5rem 0' }} />
-
-      <section>
-        <h2>💰 Forecast vs Actual</h2>
-        <p><strong>Forecasted Sales:</strong> {displayValue(forecast, '$')}</p>
-        <p><strong>Actual Sales:</strong> {displayValue(actual, '$')}</p>
-        <p><strong>Variance:</strong> {variance || 'N/A'}</p>
-        <p><strong>Variance Notes:</strong> {varianceNotes || '—'}</p>
-      </section>
+        <section style={{ flex: 1 }}>
+          <h2>💰 Forecast vs Actual</h2>
+          <p><strong>Forecasted Sales:</strong> {displayValue(forecast, '$')}</p>
+          <p><strong>Actual Sales:</strong> {displayValue(actual, '$')}</p>
+          <p><strong>Variance:</strong> {variance || 'N/A'}</p>
+          <p><strong>Variance Notes:</strong> {varianceNotes || '—'}</p>
+        </section>
+      </div>
 
       <hr style={{ margin: '1.5rem 0' }} />
 
