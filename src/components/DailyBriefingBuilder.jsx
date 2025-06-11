@@ -17,23 +17,30 @@ const DailyBriefingBuilder = () => {
   const [callOut, setCallOut] = useState('');
   const [teamNote, setTeamNote] = useState('');
   const [mod, setMod] = useState('');
-  const [date] = useState(new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
+  const [date] = useState(new Date().toLocaleDateString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  }));
 
-  const variance = forecasted && actual ? `${(((actual - forecasted) / forecasted) * 100).toFixed(1)}%` : 'N/A%';
+  const calculateVariance = (f, a) => {
+    const forecast = parseFloat(f);
+    const actualVal = parseFloat(a);
+    if (isNaN(forecast) || isNaN(actualVal) || forecast === 0) return 'N/A';
+    return `${(((actualVal - forecast) / forecast) * 100).toFixed(1)}%`;
+  };
 
   const handleGenerate = async () => {
     const printData = {
-      date,
-      amGuests,
-      pmGuests,
-      forecasted,
+      lunch: amGuests,
+      dinner: pmGuests,
+      forecast: forecasted,
       actual,
-      variance,
+      variance: calculateVariance(forecasted, actual),
       varianceNotes,
-      shoutOut,
-      callOut,
-      teamNote,
-      mod,
+      manager: mod,
+      notes: teamNote,
+      shoutouts: shoutOut,
+      callouts: callOut,
+      date: new Date()
     };
 
     await triggerPrint(PrintableBriefingSheet, printData, 'Daily Briefing Sheet');
@@ -51,7 +58,7 @@ const DailyBriefingBuilder = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Today's Forecasted Volume</CardTitle>
+            <CardTitle>📊 Today's Forecasted Volume</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
