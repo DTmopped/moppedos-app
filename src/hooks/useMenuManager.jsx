@@ -42,7 +42,13 @@ export const useMenuManager = (localStorageKey) => {
     const savedMenu = localStorage.getItem(localStorageKey);
     return savedMenu ? JSON.parse(savedMenu) : initialMenuData;
   });
-  const [editorsVisibility, setEditorsVisibility] = useState({});
+ const [editorsVisibility, setEditorsVisibility] = useState(() => {
+  const initial = {};
+  Object.keys(initialMenuData).forEach(section => {
+    initial[section] = true;
+  });
+  return initial;
+});
   const [newItemForms, setNewItemForms] = useState({});
 
   useEffect(() => {
@@ -94,7 +100,7 @@ export const useMenuManager = (localStorageKey) => {
   };
 
   const MenuEditorComponent = ({ sectionTitleColor = "from-purple-400 to-indigo-500" }) => (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 px-2 sm:px-4">
       {Object.keys(menu).map(section => (
         <Card key={section} className="shadow-lg bg-slate-800/70 border-slate-700 backdrop-blur-sm">
           <CardHeader>
@@ -113,30 +119,67 @@ export const useMenuManager = (localStorageKey) => {
               >
                 <h4 className="text-sm font-semibold text-slate-200">Add/Update Item in {section}</h4>
                 <Input placeholder="Item Name" value={newItemForms[section]?.name || ''} onChange={(e) => handleNewItemChange(section, 'name', e.target.value)} className="bg-slate-700 border-slate-600 text-slate-200 placeholder-slate-500"/>
-                <div className="grid grid-cols-2 gap-2">
-                  <Input type="number" placeholder="Portion" value={newItemForms[section]?.value || ''} onChange={(e) => handleNewItemChange(section, 'value', e.target.value)} className="bg-slate-700 border-slate-600 text-slate-200 placeholder-slate-500"/>
-                  <Select value={newItemForms[section]?.unit || 'oz'} onValueChange={(val) => handleNewItemChange(section, 'unit', val)}>
-                    <SelectTrigger className="bg-slate-700 border-slate-600 text-slate-200"><SelectValue placeholder="Unit" /></SelectTrigger>
-                    <SelectContent className="bg-slate-700 border-slate-600 text-slate-200">
-                      <SelectItem value="oz">per guest (oz)</SelectItem>
-                      <SelectItem value="each">each per guest</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button onClick={() => addMenuItem(section)} size="sm" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"><PlusCircle className="mr-2 h-4 w-4" />Add/Update</Button>
-                <div className="mt-2 space-y-1">
-                  <h5 className="text-xs font-medium text-slate-300">Current Items:</h5>
-                  {menu[section].length === 0 ? <p className="text-xs text-slate-500">No items.</p> : (
-                    <ul className="text-xs text-slate-400 max-h-24 overflow-y-auto">
-                      {menu[section].map(item => (
-                        <li key={item.name} className="flex justify-between items-center py-0.5">
-                          <span>{item.name} ({item.perGuestOz ? `${item.perGuestOz}oz` : `${item.each} each`})</span>
-                          <Button variant="ghost" size="icon" onClick={() => removeMenuItem(section, item.name)} className="h-5 w-5 text-red-500 hover:text-red-400"><XCircle size={12} /></Button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+  <div className="flex flex-col">
+    <Label className="text-xs text-slate-400 mb-1">Portion</Label>
+    <Input
+      type="number"
+      placeholder="e.g. 4"
+      value={newItemForms[section]?.value || ''}
+      onChange={(e) => handleNewItemChange(section, 'value', e.target.value)}
+      className="bg-slate-700 border-slate-600 text-slate-200 placeholder-slate-500"
+    />
+  </div>
+  <div className="flex flex-col">
+    <Label className="text-xs text-slate-400 mb-1">Unit</Label>
+    <Select
+      value={newItemForms[section]?.unit || 'oz'}
+      onValueChange={(val) => handleNewItemChange(section, 'unit', val)}
+    >
+      <SelectTrigger className="bg-slate-700 border-slate-600 text-slate-200">
+        <SelectValue placeholder="Unit" />
+      </SelectTrigger>
+      <SelectContent className="bg-slate-700 border-slate-600 text-slate-200">
+        <SelectItem value="oz">per guest (oz)</SelectItem>
+        <SelectItem value="each">each per guest</SelectItem>
+      </SelectContent>
+    </Select>
+  </div>
+</div>
+
+<Button
+  onClick={() => addMenuItem(section)}
+  size="sm"
+  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white mt-3"
+>
+  <PlusCircle className="mr-2 h-4 w-4" />
+  Add/Update
+</Button>
+
+<div className="mt-4 space-y-1">
+  <h5 className="text-xs font-medium text-slate-300">Current Items:</h5>
+  {menu[section].length === 0 ? (
+    <p className="text-xs text-slate-500">No items.</p>
+  ) : (
+    <ul className="text-xs text-slate-400 max-h-40 overflow-y-auto pr-1">
+      {menu[section].map((item) => (
+        <li key={item.name} className="flex justify-between items-center py-0.5">
+          <span>
+            {item.name} ({item.perGuestOz ? `${item.perGuestOz}oz` : `${item.each} each`})
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => removeMenuItem(section, item.name)}
+            className="h-5 w-5 text-red-500 hover:text-red-400"
+          >
+            <XCircle size={12} />
+          </Button>
+        </li>
+      ))}
+    </ul>
+  )}
+</div>
               </motion.div>
             </CardContent>
           )}
