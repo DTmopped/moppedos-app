@@ -43,6 +43,7 @@ const DailyBriefingBuilder = () => {
     date, 
   };
 
+    console.log('PRINT DATA:', printData);
   await triggerPrint(PrintableBriefingSheet, printData, 'Daily Briefing Sheet');
   };
 
