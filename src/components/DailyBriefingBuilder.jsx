@@ -6,15 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.j
 import { Printer } from 'lucide-react';
 import { triggerPrint } from '@/components/prep/PrintUtils.jsx';
 import PrintableBriefingSheet from './PrintableBriefingSheet.jsx';
-
-// Temporary static forecast to simulate data from the parser
-const dummyForecast = {
-  '2025-06-11': {
-    lunchGuests: 90,
-    dinnerGuests: 75,
-    forecastedSales: 2475
-  }
-};
+import { supabase } from '@/lib/supabaseClient'; // adjust if different
 
 const DailyBriefingBuilder = () => {
   const [amGuests, setAmGuests] = useState('');
@@ -30,17 +22,30 @@ const DailyBriefingBuilder = () => {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   }));
 
-  // Format for key lookup: '2025-06-11'
-  const todayKey = new Date().toISOString().slice(0, 10);
-
+  // Fetch forecast from Supabase
   useEffect(() => {
-    const forecast = dummyForecast[todayKey];
-    if (forecast) {
-      setAmGuests(forecast.lunchGuests.toString());
-      setPmGuests(forecast.dinnerGuests.toString());
-      setForecasted(forecast.forecastedSales.toString());
-    }
-  }, [todayKey]);
+    const fetchForecast = async () => {
+      const todayKey = new Date().toISOString().slice(0, 10);
+      const { data, error } = await supabase
+        .from('forecasts')
+        .select('date, lunch_guests, dinner_guests, forecasted_sales')
+        .eq('date', todayKey)
+        .single();
+
+      if (error) {
+        console.error('Supabase error:', error);
+        return;
+      }
+
+      if (data) {
+        setAmGuests(data.lunch_guests?.toString() || '');
+        setPmGuests(data.dinner_guests?.toString() || '');
+        setForecasted(data.forecasted_sales?.toString() || '');
+      }
+    };
+
+    fetchForecast();
+  }, []);
 
   const calculateVariance = (f, a) => {
     const forecast = parseFloat(f);
@@ -51,27 +56,29 @@ const DailyBriefingBuilder = () => {
 
   const handleGenerate = () => {
     setTimeout(() => {
-      const printData = {
-        lunch: amGuests,
-        dinner: pmGuests,
-        forecast: forecasted,
-        actual,
-        variance: calculateVariance(forecasted, actual),
-        varianceNotes,
-        manager: mod,
-        notes: teamNote,
-        shoutouts: shoutOut,
-        callouts: callOut,
-        date
-      };
+      (async () => {
+        const printData = {
+          lunch: amGuests,
+          dinner: pmGuests,
+          forecast: forecasted,
+          actual,
+          variance: calculateVariance(forecasted, actual),
+          varianceNotes,
+          manager: mod,
+          notes: teamNote,
+          shoutouts: shoutOut,
+          callouts: callOut,
+          date,
+        };
 
-      console.log('PRINT DATA:', printData);
+        console.log('PRINT DATA:', printData);
 
-      triggerPrint(
-        (props) => <PrintableBriefingSheet {...props} />,
-        printData,
-        'Daily Briefing Sheet'
-      );
+        await triggerPrint(
+          (props) => <PrintableBriefingSheet {...props} />,
+          printData,
+          'Daily Briefing Sheet'
+        );
+      })();
     }, 0);
   };
 
