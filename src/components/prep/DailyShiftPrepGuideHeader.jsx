@@ -68,7 +68,7 @@ const DailyShiftPrepGuideHeader = ({
                   <Edit3 className="mr-2 h-4 w-4" /> Manage Menu
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px] glassmorphic-card">
+              <DialogContent className="sm:max-w-[720px] w-full rounded-xl bg-slate-900/90 backdrop-blur-md border border-slate-700 shadow-2xl">
                 <DialogHeader>
                   <DialogTitle className={`text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r ${titleColor}`}>
                     Manage Shift Prep Menu
