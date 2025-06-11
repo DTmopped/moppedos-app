@@ -30,22 +30,25 @@ const DailyBriefingBuilder = () => {
 
   const handleGenerate = async () => {
   const printData = {
-    lunch: amGuests,
-    dinner: pmGuests,
-    forecast: forecasted,
-    actual,
+    lunch: amGuests?.toString().trim() || '',
+    dinner: pmGuests?.toString().trim() || '',
+    forecast: forecasted?.toString().trim() || '',
+    actual: actual?.toString().trim() || '',
     variance: calculateVariance(forecasted, actual),
-    varianceNotes,
-    manager: mod,
-    notes: teamNote,
-    shoutouts: shoutOut,
-    callouts: callOut,
-    date, 
+    varianceNotes: varianceNotes?.trim() || '',
+    manager: mod?.trim() || '',
+    notes: teamNote?.trim() || '',
+    shoutouts: shoutOut?.trim() || '',
+    callouts: callOut?.trim() || '',
+    date: date || new Date().toLocaleDateString('en-US', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    }),
   };
 
-    console.log('PRINT DATA:', printData);
+  console.log('PRINT DATA:', printData); 
+
   await triggerPrint(PrintableBriefingSheet, printData, 'Daily Briefing Sheet');
-  };
+};
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
