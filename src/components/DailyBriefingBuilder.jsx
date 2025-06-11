@@ -28,30 +28,31 @@ const DailyBriefingBuilder = () => {
     return `${(((actualVal - forecast) / forecast) * 100).toFixed(1)}%`;
   };
 
-  const handleGenerate = async () => {
-  // Wait for the next tick to ensure state is fully updated before printing
-  setTimeout(async () => {
-    const printData = {
-      lunch: amGuests,
-      dinner: pmGuests,
-      forecast: forecasted,
-      actual,
-      variance: calculateVariance(forecasted, actual),
-      varianceNotes,
-      manager: mod,
-      notes: teamNote,
-      shoutouts: shoutOut,
-      callouts: callOut,
-      date,
-    };
+ const handleGenerate = () => {
+  setTimeout(() => {
+    (async () => {
+      const printData = {
+        lunch: amGuests,
+        dinner: pmGuests,
+        forecast: forecasted,
+        actual,
+        variance: calculateVariance(forecasted, actual),
+        varianceNotes,
+        manager: mod,
+        notes: teamNote,
+        shoutouts: shoutOut,
+        callouts: callOut,
+        date,
+      };
 
-    console.log('PRINT DATA:', printData);
+      console.log('PRINT DATA:', printData);
 
-    await triggerPrint(
-      () => <PrintableBriefingSheet {...printData} />,
-      printData,
-      'Daily Briefing Sheet'
-    );
+      await triggerPrint(
+        (props) => <PrintableBriefingSheet {...props} />,
+        printData,
+        'Daily Briefing Sheet'
+      );
+    })();
   }, 0);
 };
 
