@@ -4,8 +4,6 @@ import { Input } from '@/components/ui/input.jsx';
 import { Textarea } from '@/components/ui/textarea.jsx';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.jsx';
 import { Printer } from 'lucide-react';
-import { triggerPrint } from '@/components/prep/PrintUtils.jsx';
-import PrintableBriefingSheet from './PrintableBriefingSheet.jsx';
 
 const DailyBriefingBuilder = () => {
   const [amGuests, setAmGuests] = useState('');
@@ -29,31 +27,59 @@ const DailyBriefingBuilder = () => {
   };
 
   const handleGenerate = () => {
-    setTimeout(() => {
-      (async () => {
-        const printData = {
-          lunch: amGuests,
-          dinner: pmGuests,
-          forecast: forecasted,
-          actual,
-          variance: calculateVariance(forecasted, actual),
-          varianceNotes,
-          manager: mod,
-          notes: teamNote,
-          shoutouts: shoutOut,
-          callouts: callOut,
-          date,
-        };
+    const printData = {
+      lunch: amGuests,
+      dinner: pmGuests,
+      forecast: forecasted,
+      actual,
+      variance: calculateVariance(forecasted, actual),
+      varianceNotes,
+      manager: mod,
+      notes: teamNote,
+      shoutouts: shoutOut,
+      callouts: callOut,
+      date,
+    };
 
-        console.log('PRINT DATA:', printData);
-
-        await triggerPrint(
-          (props) => <PrintableBriefingSheet {...props} />,
-          printData,
-          'Daily Briefing Sheet'
-        );
-      })();
-    }, 0);
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Daily Briefing Sheet</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 2rem; }
+            h1, h2 { margin-bottom: 1rem; }
+            hr { margin: 1.5rem 0; }
+          </style>
+        </head>
+        <body>
+          <h1 style="text-align: center;">📋 Daily Briefing Sheet</h1>
+          <p><strong>Date:</strong> ${printData.date}</p>
+          <p><strong>Manager on Duty:</strong> ${printData.manager || '—'}</p>
+          <hr />
+          <h2>📊 Forecasted Volume</h2>
+          <p><strong>🌞 Lunch (AM):</strong> ${printData.lunch || '—'} guests</p>
+          <p><strong>🌙 Dinner (PM):</strong> ${printData.dinner || '—'} guests</p>
+          <hr />
+          <h2>💰 Forecast vs Actual</h2>
+          <p><strong>Forecasted Sales:</strong> $${printData.forecast || '—'}</p>
+          <p><strong>Actual Sales:</strong> $${printData.actual || '—'}</p>
+          <p><strong>Variance:</strong> ${printData.variance}</p>
+          <p><strong>Variance Notes:</strong> ${printData.varianceNotes || '—'}</p>
+          <hr />
+          <h2>🎉 Team Shout-Out</h2>
+          <p>${printData.shoutouts || '—'}</p>
+          <h2>📣 Team Call-Out</h2>
+          <p>${printData.callouts || '—'}</p>
+          <h2>📝 Notes to Team</h2>
+          <p>${printData.notes || '—'}</p>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
   };
 
   return (
