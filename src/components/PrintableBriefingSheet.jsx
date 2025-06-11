@@ -37,8 +37,8 @@ const PrintableBriefingSheet = (props) => {
 
       <section>
         <h2>📊 Forecasted Volume</h2>
-        <p><strong>🌞 Lunch:</strong> {lunch} guests</p>
-        <p><strong>🌙 Dinner:</strong> {dinner} guests</p>
+        <p><strong>🌞 Lunch:</strong> {lunch || '—'} guests</p>
+        <p><strong>🌙 Dinner:</strong> {dinner || '—'} guests</p>
       </section>
 
       <hr style={{ margin: '1.5rem 0' }} />
