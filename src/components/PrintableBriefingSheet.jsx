@@ -35,8 +35,8 @@ const PrintableBriefingSheet = ({
 
       <section>
         <h2>📊 Forecasted Volume</h2>
-        <p><strong>🌞 Lunch:</strong> {lunch || '—'} guests</p>
-        <p><strong>🌙 Dinner:</strong> {dinner || '—'} guests</p>
+        <p><strong>🌞 Lunch:</strong> {lunch} guests</p>
+        <p><strong>🌙 Dinner:</strong> {dinner} guests</p>
       </section>
 
       <hr style={{ margin: '1.5rem 0' }} />
@@ -51,20 +51,20 @@ const PrintableBriefingSheet = ({
 
       <hr style={{ margin: '1.5rem 0' }} />
 
-      <section>
-        <h2>🎉 Team Shout-Out</h2>
-        <p>{shoutouts}</p>
-      </section>
+    <section>
+       <h2>🎉 Team Shout-Out</h2>
+       <p><strong>Shout-Out:</strong> {shoutouts}</p>
+    </section>
 
-      <section>
-        <h2>📣 Team Call-Out</h2>
-        <p>{callouts}</p>
-      </section>
+    <section>
+       <h2>📣 Team Call-Out</h2>
+       <p><strong>Call-Out:</strong> {callouts}</p>
+   </section>
 
-      <section>
-        <h2>📝 Notes to Team</h2>
-        <p>{notes}</p>
-      </section>
+   <section>
+       <h2>📝 Notes to Team</h2>
+       <p><strong>Notes:</strong> {notes}</p>
+   </section>
     </div>
   );
 };
