@@ -27,7 +27,7 @@ const DailyShiftPrepGuideHeader = ({
   setManageMenuOpen,
   onSaveMenu,
 }) => {
-  const titleColor = PREP_GUIDE_ICON_COLORS.dailyShift;
+  const titleColor = PREP_GUIDE_ICON_COLORS.dailyShift || "from-green-400 to-emerald-500";
   const [currentMenuState, setCurrentMenuState] = React.useState(null);
 
   const handleSaveClicked = () => {
@@ -41,7 +41,7 @@ const DailyShiftPrepGuideHeader = ({
       <CardHeader className="pb-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
           <div className="flex items-center space-x-4 mb-4 sm:mb-0">
-            <div className={`p-3 rounded-full bg-gradient-to-tr ${titleColor} shadow-lg`}>
+            <div className={`p-3 rounded-full bg-gradient-to-tr ${titleColor} shadow-md`}>
               <Utensils className="h-8 w-8 text-white" />
             </div>
             <div>
@@ -56,12 +56,13 @@ const DailyShiftPrepGuideHeader = ({
               </CardDescription>
             </div>
           </div>
-          <div className="flex space-x-3 self-start sm:self-center">
+
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 self-start sm:self-center w-full sm:w-auto">
             <Dialog open={manageMenuOpen} onOpenChange={setManageMenuOpen}>
               <DialogTrigger asChild>
                 <Button
                   variant="outline"
-                  className="border-primary text-primary hover:bg-primary/10"
+                  className="border-primary text-primary hover:bg-primary/10 w-full sm:w-auto"
                   onClick={() => onManageMenuOpen(true)}
                 >
                   <Edit3 className="mr-2 h-4 w-4" /> Manage Menu
@@ -69,15 +70,21 @@ const DailyShiftPrepGuideHeader = ({
               </DialogTrigger>
               <DialogContent className="sm:max-w-[600px] glassmorphic-card">
                 <DialogHeader>
-                  <DialogTitle className={`gradient-text ${titleColor}`}>
+                  <DialogTitle className={`text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r ${titleColor}`}>
                     Manage Shift Prep Menu
                   </DialogTitle>
                 </DialogHeader>
-                <div className="py-4 max-h-[70vh] overflow-y-auto">
-                  <MenuEditorComponent
-                    sectionTitleColor={titleColor}
-                    onMenuChange={setCurrentMenuState}
-                  />
+                <div className="py-4 max-h-[65vh] overflow-y-auto">
+                  {MenuEditorComponent ? (
+                    <MenuEditorComponent
+                      sectionTitleColor={titleColor}
+                      onMenuChange={setCurrentMenuState}
+                    />
+                  ) : (
+                    <p className="text-sm text-red-500">
+                      Error: Menu editor component is not available.
+                    </p>
+                  )}
                 </div>
                 <DialogFooter className="sm:justify-between">
                   <DialogClose asChild>
@@ -89,10 +96,11 @@ const DailyShiftPrepGuideHeader = ({
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+
             <Button
               onClick={onPrint}
               variant="gradient"
-              className={`bg-gradient-to-r ${titleColor} hover:brightness-110`}
+              className={`w-full sm:w-auto bg-gradient-to-r ${titleColor} hover:brightness-110`}
             >
               <Printer className="mr-2 h-4 w-4" /> Print / PDF
             </Button>
