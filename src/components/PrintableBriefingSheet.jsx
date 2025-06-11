@@ -24,7 +24,7 @@ const PrintableBriefingSheet = (props) => {
         <tbody>
           <tr>
             <td><strong>Date:</strong></td>
-            <td>{new Date(date).toLocaleDateString()}</td>
+            <td>{date}</td>
           </tr>
           <tr>
             <td><strong>Manager on Duty:</strong></td>
