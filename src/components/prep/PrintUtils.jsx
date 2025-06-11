@@ -1,8 +1,14 @@
 import ReactDOMServer from 'react-dom/server';
 
 export const triggerPrint = (PrintableComponent, data, title) => {
+  // Normalize component: wrap with props if it’s not already a function receiving them
+  const ResolvedComponent =
+    typeof PrintableComponent === 'function'
+      ? (props) => <PrintableComponent {...props} />
+      : PrintableComponent;
+
   const printableComponentHtml = ReactDOMServer.renderToStaticMarkup(
-    <PrintableComponent {...data} />
+    <ResolvedComponent {...data} />
   );
 
   const iframe = document.createElement('iframe');
@@ -14,7 +20,7 @@ export const triggerPrint = (PrintableComponent, data, title) => {
   iframe.style.top = '-9999px';
 
   document.body.appendChild(iframe);
-  
+
   const doc = iframe.contentWindow.document;
   doc.open();
   doc.write(`
@@ -22,6 +28,18 @@ export const triggerPrint = (PrintableComponent, data, title) => {
     <html>
       <head>
         <title>${title}</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            padding: 2rem;
+          }
+          h1, h2 {
+            margin-bottom: 0.5rem;
+          }
+          p {
+            margin: 0.25rem 0;
+          }
+        </style>
       </head>
       <body>
         ${printableComponentHtml}
@@ -31,7 +49,7 @@ export const triggerPrint = (PrintableComponent, data, title) => {
   doc.close();
 
   iframe.contentWindow.focus();
-  
+
   const printPromise = new Promise((resolve, reject) => {
     let printed = false;
     const printTimeout = setTimeout(() => {
@@ -39,7 +57,7 @@ export const triggerPrint = (PrintableComponent, data, title) => {
         cleanup();
         reject(new Error("Print dialog timed out or was cancelled."));
       }
-    }, 60000); // 1 minute timeout for print dialog
+    }, 60000); // 1 min timeout
 
     const afterPrintHandler = () => {
       printed = true;
@@ -47,7 +65,7 @@ export const triggerPrint = (PrintableComponent, data, title) => {
       cleanup();
       resolve();
     };
-    
+
     const cleanup = () => {
       iframe.contentWindow.removeEventListener('afterprint', afterPrintHandler);
       if (iframe.parentNode) {
@@ -56,30 +74,16 @@ export const triggerPrint = (PrintableComponent, data, title) => {
     };
 
     iframe.contentWindow.addEventListener('afterprint', afterPrintHandler);
-    
-    // Fallback for browsers that don't robustly support afterprint
-    const attemptPrint = () => {
+
+    setTimeout(() => {
       try {
-        const result = iframe.contentWindow.print();
-        if (result && typeof result.then === 'function') {
-          result.then(afterPrintHandler).catch(err => {
-             // If user cancels print dialog, it might throw error or resolve/reject promise.
-            console.warn("Print dialog promise rejected or error:", err);
-            afterPrintHandler(); // Assume done, clean up.
-          });
-        } else {
-           // For browsers where print() is synchronous or doesn't return a promise
-           // Rely on timeout or manual afterprint event.
-        }
+        iframe.contentWindow.print();
       } catch (error) {
-        console.error("Error calling print:", error);
-        cleanup(); // Critical to cleanup if print() itself throws
+        console.error("Error triggering print:", error);
+        cleanup();
         reject(error);
       }
-    };
-
-    // Delay slightly to ensure content is fully rendered in iframe
-    setTimeout(attemptPrint, 500); 
+    }, 500);
   });
 
   return printPromise;
