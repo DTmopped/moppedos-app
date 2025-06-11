@@ -28,38 +28,33 @@ const DailyBriefingBuilder = () => {
     return `${(((actualVal - forecast) / forecast) * 100).toFixed(1)}%`;
   };
 
- const handleGenerate = () => {
-  setTimeout(() => {
-    (async () => {
-      const printData = {
-        lunch: amGuests,
-        dinner: pmGuests,
-        forecast: forecasted,
-        actual,
-        variance: calculateVariance(forecasted, actual),
-        varianceNotes,
-        manager: mod,
-        notes: teamNote,
-        shoutouts: shoutOut,
-        callouts: callOut,
-        date,
-      };
+  const handleGenerate = () => {
+    setTimeout(() => {
+      (async () => {
+        const printData = {
+          lunch: amGuests,
+          dinner: pmGuests,
+          forecast: forecasted,
+          actual,
+          variance: calculateVariance(forecasted, actual),
+          varianceNotes,
+          manager: mod,
+          notes: teamNote,
+          shoutouts: shoutOut,
+          callouts: callOut,
+          date,
+        };
 
-      console.log('PRINT DATA:', printData);
+        console.log('PRINT DATA:', printData);
 
-      await triggerPrint(
-        (props) => <PrintableBriefingSheet {...props} />,
-        printData,
-        'Daily Briefing Sheet'
-      );
-    })();
-  }, 0);
-};
-
-  console.log('PRINT DATA:', printData); 
-
-await triggerPrint((props) => <PrintableBriefingSheet {...props} />, printData, 'Daily Briefing Sheet');
-};
+        await triggerPrint(
+          (props) => <PrintableBriefingSheet {...props} />,
+          printData,
+          'Daily Briefing Sheet'
+        );
+      })();
+    }, 0);
+  };
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
