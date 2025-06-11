@@ -130,20 +130,22 @@ export const useMenuManager = (localStorageKey) => {
       className="bg-slate-700 border-slate-600 text-slate-200 placeholder-slate-500"
     />
   </div>
-  <div className="flex flex-col">
-    <Label className="text-xs text-slate-400 mb-1">Unit</Label>
+ <div className="flex flex-col">
+  <Label className="text-xs text-slate-400 mb-1">Unit</Label>
+  <div className="flex items-center space-x-1">
     <Select
       value={newItemForms[section]?.unit || 'oz'}
       onValueChange={(val) => handleNewItemChange(section, 'unit', val)}
     >
-      <SelectTrigger className="bg-slate-700 border-slate-600 text-slate-200">
+      <SelectTrigger className="bg-slate-700 border-slate-600 text-slate-200 w-[80px]">
         <SelectValue placeholder="Unit" />
       </SelectTrigger>
       <SelectContent className="bg-slate-700 border-slate-600 text-slate-200">
-        <SelectItem value="oz">per guest (oz)</SelectItem>
-        <SelectItem value="each">each per guest</SelectItem>
+        <SelectItem value="oz">oz</SelectItem>
+        <SelectItem value="each">each</SelectItem>
       </SelectContent>
     </Select>
+    <span className="text-xs text-slate-400">per guest</span>
   </div>
 </div>
 
