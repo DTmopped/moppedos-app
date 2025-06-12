@@ -30,7 +30,7 @@ const WeeklyForecastParser = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="space-y-6"
+      className="space-y-6 relative"
     >
       <Card className="shadow-xl border-slate-700 bg-slate-800/70 backdrop-blur-sm">
         <div className="flex justify-between items-center px-6 pt-6">
@@ -61,7 +61,7 @@ const WeeklyForecastParser = () => {
           />
 
           {adminMode && (
-            <div className="grid grid-cols-3 gap-4 mt-6">
+            <div className="grid grid-cols-3 gap-4 mt-6 animate-fade-in">
               <div>
                 <label className="block text-sm text-white mb-1">Capture Rate %</label>
                 <input
