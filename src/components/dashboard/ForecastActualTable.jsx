@@ -2,7 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table.jsx";
 
-const ForecastActualTable = ({ combinedData }) => {
+const ForecastActualTable = ({ combinedData = [] }) => {
   const foodTarget = 0.30;
   const bevTarget = 0.20;
   const laborTarget = 0.14;
@@ -16,12 +16,12 @@ const ForecastActualTable = ({ combinedData }) => {
 
   const totals = combinedData.reduce(
     (acc, d) => {
-      acc.forecastSales += d.forecastSales || 0;
-      if (d.hasActuals) {
-        acc.actualSales += d.actualSales;
-        acc.foodPct += d.foodPct;
-        acc.bevPct += d.bevPct;
-        acc.laborPct += d.laborPct;
+      acc.forecastSales += d?.forecastSales || 0;
+      if (d?.hasActuals) {
+        acc.actualSales += d.actualSales || 0;
+        acc.foodPct += d.foodPct || 0;
+        acc.bevPct += d.bevPct || 0;
+        acc.laborPct += d.laborPct || 0;
         acc.count++;
         if (d.foodPct > foodTarget) acc.foodOver++;
         if (d.bevPct > bevTarget) acc.bevOver++;
@@ -51,30 +51,41 @@ const ForecastActualTable = ({ combinedData }) => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {combinedData.map((day, index) => {
+          {combinedData?.map((day, index) => {
             const alerts = [];
-            if (day.hasActuals) {
+            if (day?.hasActuals) {
               if (day.foodPct > foodTarget) alerts.push("Food Over");
               if (day.bevPct > bevTarget) alerts.push("Bev Over");
               if (day.laborPct > laborTarget) alerts.push("Labor Over");
             }
-            const isToday = day.date === today;
+            const isToday = day?.date === today;
+
             return (
               <motion.tr
-                key={day.date + index}
+                key={day?.date || index}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: index * 0.03 }}
                 className={`border-b border-slate-200 text-sm hover:bg-slate-50 transition-colors ${isToday ? 'bg-yellow-100' : ''}`}
               >
-                <TableCell>{day.date}</TableCell>
-                <TableCell className="text-right">{day.forecastSales.toFixed(2)}</TableCell>
-                <TableCell className="text-right">{day.hasActuals ? day.actualSales.toFixed(2) : "N/A"}</TableCell>
-                <TableCell className={`text-right ${getClass(day.foodPct, foodTarget)}`}>{day.hasActuals ? `${(day.foodPct * 100).toFixed(1)}%` : "N/A"}</TableCell>
-                <TableCell className={`text-right ${getClass(day.bevPct, bevTarget)}`}>{day.hasActuals ? `${(day.bevPct * 100).toFixed(1)}%` : "N/A"}</TableCell>
-                <TableCell className={`text-right ${getClass(day.laborPct, laborTarget)}`}>{day.hasActuals ? `${(day.laborPct * 100).toFixed(1)}%` : "N/A"}</TableCell>
+                <TableCell>{day?.date || "N/A"}</TableCell>
+                <TableCell className="text-right">{day?.forecastSales?.toFixed(2) || "0.00"}</TableCell>
+                <TableCell className="text-right">{day?.hasActuals ? day.actualSales.toFixed(2) : "N/A"}</TableCell>
+                <TableCell className={`text-right ${getClass(day?.foodPct, foodTarget)}`}>
+                  {day?.hasActuals ? `${(day.foodPct * 100).toFixed(1)}%` : "N/A"}
+                </TableCell>
+                <TableCell className={`text-right ${getClass(day?.bevPct, bevTarget)}`}>
+                  {day?.hasActuals ? `${(day.bevPct * 100).toFixed(1)}%` : "N/A"}
+                </TableCell>
+                <TableCell className={`text-right ${getClass(day?.laborPct, laborTarget)}`}>
+                  {day?.hasActuals ? `${(day.laborPct * 100).toFixed(1)}%` : "N/A"}
+                </TableCell>
                 <TableCell>
-                  {!day.hasActuals ? "No Actuals" : alerts.length === 0 ? "On Target" : alerts.join(", ")}
+                  {!day?.hasActuals
+                    ? "No Actuals"
+                    : alerts.length === 0
+                    ? "On Target"
+                    : alerts.join(", ")}
                 </TableCell>
               </motion.tr>
             );
