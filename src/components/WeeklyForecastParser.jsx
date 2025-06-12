@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "./ui/card.jsx";
-import { AlertTriangle, Settings2 } from "lucide-react";
+import { AlertTriangle, ShieldAlert } from "lucide-react";
 import ForecastHeader from "./forecast/ForecastHeader.jsx";
 import ForecastInputArea from "./forecast/ForecastInputArea.jsx";
 import ForecastResultsTable from "./forecast/ForecastResultsTable.jsx";
@@ -17,9 +17,11 @@ const WeeklyForecastParser = () => {
     setError,
     captureRate,
     setCaptureRate,
-    avgSpend,
-    setAvgSpend
+    spendPerGuest,
+    setSpendPerGuest
   } = useWeeklyForecastLogic();
+
+  const [adminMode, setAdminMode] = useState(false);
 
   return (
     <motion.div
@@ -28,7 +30,11 @@ const WeeklyForecastParser = () => {
       transition={{ duration: 0.5 }}
       className="space-y-6"
     >
-      <Card className="shadow-xl border-slate-700 bg-slate-800/70 backdrop-blur-sm">
+      <Card className="shadow-xl border-slate-700 bg-slate-800/70 backdrop-blur-sm relative">
+        <div className="absolute top-4 right-4 flex items-center space-x-2 text-slate-300 text-xs cursor-pointer hover:text-white" onClick={() => setAdminMode(!adminMode)}>
+          <ShieldAlert size={14} className="mr-1" />
+          <span>Admin Mode</span>
+        </div>
         <ForecastHeader />
         <CardContent>
           <ForecastInputArea 
@@ -37,35 +43,30 @@ const WeeklyForecastParser = () => {
             generateForecast={generateForecast}
           />
 
-          <div className="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-2 text-sm text-white/80">
-              <Settings2 size={16} className="text-white/50" /> Admin Controls
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 w-full sm:w-auto">
-              <div className="text-sm">
-                <label htmlFor="captureRate" className="block text-white/70 mb-1">Capture Rate %</label>
+          {adminMode && (
+            <div className="mt-6 grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-slate-300 text-sm mb-1 block">Capture Rate %</label>
                 <input
-                  id="captureRate"
                   type="number"
-                  step="0.01"
                   value={captureRate}
-                  onChange={(e) => setCaptureRate(parseFloat(e.target.value))}
-                  className="w-full bg-slate-700 text-white rounded px-2 py-1 border border-slate-600"
+                  onChange={(e) => setCaptureRate(e.target.value)}
+                  placeholder="e.g. 8"
+                  className="w-full px-3 py-2 rounded-md bg-slate-900 text-white border border-slate-600 placeholder-slate-500"
                 />
               </div>
-              <div className="text-sm">
-                <label htmlFor="avgSpend" className="block text-white/70 mb-1">Spend per Guest ($)</label>
+              <div>
+                <label className="text-slate-300 text-sm mb-1 block">Spend per Guest ($)</label>
                 <input
-                  id="avgSpend"
                   type="number"
-                  step="1"
-                  value={avgSpend}
-                  onChange={(e) => setAvgSpend(parseFloat(e.target.value))}
-                  className="w-full bg-slate-700 text-white rounded px-2 py-1 border border-slate-600"
+                  value={spendPerGuest}
+                  onChange={(e) => setSpendPerGuest(e.target.value)}
+                  placeholder="e.g. 40"
+                  className="w-full px-3 py-2 rounded-md bg-slate-900 text-white border border-slate-600 placeholder-slate-500"
                 />
               </div>
             </div>
-          </div>
+          )}
 
           {error && (
             <motion.div
