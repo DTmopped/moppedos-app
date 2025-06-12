@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "./ui/card.jsx";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Settings2 } from "lucide-react";
 import ForecastHeader from "./forecast/ForecastHeader.jsx";
 import ForecastInputArea from "./forecast/ForecastInputArea.jsx";
 import ForecastResultsTable from "./forecast/ForecastResultsTable.jsx";
@@ -14,7 +14,11 @@ const WeeklyForecastParser = () => {
     forecastDataUI,
     error,
     generateForecast,
-    setError
+    setError,
+    captureRate,
+    setCaptureRate,
+    avgSpend,
+    setAvgSpend
   } = useWeeklyForecastLogic();
 
   return (
@@ -32,6 +36,37 @@ const WeeklyForecastParser = () => {
             setInputText={setInputText}
             generateForecast={generateForecast}
           />
+
+          <div className="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-2 text-sm text-white/80">
+              <Settings2 size={16} className="text-white/50" /> Admin Controls
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 w-full sm:w-auto">
+              <div className="text-sm">
+                <label htmlFor="captureRate" className="block text-white/70 mb-1">Capture Rate %</label>
+                <input
+                  id="captureRate"
+                  type="number"
+                  step="0.01"
+                  value={captureRate}
+                  onChange={(e) => setCaptureRate(parseFloat(e.target.value))}
+                  className="w-full bg-slate-700 text-white rounded px-2 py-1 border border-slate-600"
+                />
+              </div>
+              <div className="text-sm">
+                <label htmlFor="avgSpend" className="block text-white/70 mb-1">Spend per Guest ($)</label>
+                <input
+                  id="avgSpend"
+                  type="number"
+                  step="1"
+                  value={avgSpend}
+                  onChange={(e) => setAvgSpend(parseFloat(e.target.value))}
+                  className="w-full bg-slate-700 text-white rounded px-2 py-1 border border-slate-600"
+                />
+              </div>
+            </div>
+          </div>
+
           {error && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
