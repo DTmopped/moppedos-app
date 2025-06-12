@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "./ui/card.jsx";
-import { AlertTriangle, UsersCog } from "lucide-react";
+import { AlertTriangle, Cog } from "lucide-react";
 import ForecastHeader from "./forecast/ForecastHeader.jsx";
 import ForecastInputArea from "./forecast/ForecastInputArea.jsx";
 import ForecastResultsTable from "./forecast/ForecastResultsTable.jsx";
 import { useWeeklyForecastLogic } from "../hooks/useWeeklyForecastLogic";
+import { Button } from "./ui/button.jsx";
 
 const WeeklyForecastParser = () => {
   const {
@@ -16,42 +17,81 @@ const WeeklyForecastParser = () => {
     generateForecast,
     setError,
     captureRate,
-    spendPerGuest,
     setCaptureRate,
+    spendPerGuest,
     setSpendPerGuest,
-    amPercent,
-    pmPercent,
-    setAmPercent,
-    setPmPercent,
-    adminMode,
-    toggleAdmin
+    mealSplit,
+    setMealSplit
   } = useWeeklyForecastLogic();
+
+  const [admin, setAdmin] = useState(false);
+  const toggleAdmin = () => setAdmin(!admin);
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="space-y-6"
+      className="space-y-6 relative"
     >
-      <Card className="shadow-xl border-slate-700 bg-slate-800/70 backdrop-blur-sm">
-        <div className="flex items-center justify-between px-6 pt-6">
-          <ForecastHeader />
-          <button
-            onClick={toggleAdmin}
-            className="text-xs text-slate-300 hover:text-white border border-slate-500 px-3 py-1 rounded-md flex items-center space-x-2"
-          >
-            <UsersCog size={14} className="mr-1" />
-            <span>Admin Mode</span>
-          </button>
-        </div>
+      <Button
+        onClick={toggleAdmin}
+        variant="ghost"
+        className="text-xs text-slate-400 hover:text-slate-100 absolute top-0 right-0 mt-3 mr-4 flex items-center space-x-1"
+      >
+        <Cog className="w-4 h-4 mr-1" />
+        <span>Admin Mode</span>
+      </Button>
 
+      <Card className="shadow-xl border-slate-700 bg-slate-800/70 backdrop-blur-sm">
+        <ForecastHeader />
         <CardContent>
+          <p className="text-sm text-slate-400 mb-3">
+            Capture Rate: <span className="font-semibold text-white">{(captureRate * 100).toFixed(1)}%</span> &nbsp;|&nbsp; 
+            Avg Spend: <span className="font-semibold text-white">${spendPerGuest}</span>
+          </p>
+
           <ForecastInputArea 
             inputText={inputText}
             setInputText={setInputText}
             generateForecast={generateForecast}
           />
+
+          {admin && (
+            <div className="mt-6 border-t border-slate-600 pt-4 space-y-4 text-sm text-slate-300">
+              <p className="font-semibold text-white mb-2">🔧 Admin Controls</p>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block mb-1">Capture Rate (%)</label>
+                  <input
+                    type="number"
+                    value={captureRate * 100}
+                    onChange={(e) => setCaptureRate(Number(e.target.value) / 100)}
+                    className="w-full rounded-md p-2 bg-slate-700 text-white border border-slate-500"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1">Avg Spend ($)</label>
+                  <input
+                    type="number"
+                    value={spendPerGuest}
+                    onChange={(e) => setSpendPerGuest(Number(e.target.value))}
+                    className="w-full rounded-md p-2 bg-slate-700 text-white border border-slate-500"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1">Meal Split (%) AM</label>
+                  <input
+                    type="number"
+                    value={mealSplit}
+                    onChange={(e) => setMealSplit(Number(e.target.value))}
+                    className="w-full rounded-md p-2 bg-slate-700 text-white border border-slate-500"
+                  />
+                  <p className="text-xs mt-1 text-slate-400 italic">PM will be {100 - mealSplit}%</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {error && (
             <motion.div
@@ -63,51 +103,6 @@ const WeeklyForecastParser = () => {
               <span>{error}</span>
             </motion.div>
           )}
-
-          {adminMode && (
-            <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
-                <label className="text-xs text-slate-400">Capture Rate %</label>
-                <input
-                  type="number"
-                  value={captureRate}
-                  onChange={(e) => setCaptureRate(Number(e.target.value))}
-                  className="w-full bg-slate-900 border border-slate-600 rounded-md px-3 py-2 text-white"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-slate-400">Spend per Guest ($)</label>
-                <input
-                  type="number"
-                  value={spendPerGuest}
-                  onChange={(e) => setSpendPerGuest(Number(e.target.value))}
-                  className="w-full bg-slate-900 border border-slate-600 rounded-md px-3 py-2 text-white"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-slate-400">AM Shift %</label>
-                <input
-                  type="number"
-                  value={amPercent}
-                  onChange={(e) => setAmPercent(Number(e.target.value))}
-                  className="w-full bg-slate-900 border border-slate-600 rounded-md px-3 py-2 text-white"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-slate-400">PM Shift %</label>
-                <input
-                  type="number"
-                  value={pmPercent}
-                  onChange={(e) => setPmPercent(Number(e.target.value))}
-                  className="w-full bg-slate-900 border border-slate-600 rounded-md px-3 py-2 text-white"
-                />
-              </div>
-            </div>
-          )}
-
-          <div className="mt-4 text-xs text-slate-400">
-            Uses <span className="text-pink-300 font-medium">{captureRate}%</span> capture rate and <span className="text-pink-300 font-medium">${spendPerGuest}</span> spend/guest.
-          </div>
         </CardContent>
       </Card>
 
@@ -117,3 +112,4 @@ const WeeklyForecastParser = () => {
 };
 
 export default WeeklyForecastParser;
+
