@@ -18,6 +18,22 @@ import { motion } from "framer-motion";
 const ForecastResultsTable = ({ forecastDataUI }) => {
   if (!forecastDataUI || forecastDataUI.length === 0) return null;
 
+  const getVarianceBar = (forecast, actual) => {
+    if (actual == null || forecast == null) return null;
+    const diff = actual - forecast;
+    const percent = Math.abs(diff / forecast) * 100;
+    const isOver = diff >= 0;
+    const barColor = actual === forecast ? 'bg-slate-400' : isOver ? 'bg-green-500' : 'bg-red-500';
+    return (
+      <div className="w-full bg-slate-600/30 h-2 rounded">
+        <div
+          className={`h-2 rounded ${barColor}`}
+          style={{ width: `${Math.min(percent, 100)}%` }}
+        />
+      </div>
+    );
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
@@ -43,6 +59,7 @@ const ForecastResultsTable = ({ forecastDataUI }) => {
                   <TableHead className="text-right min-w-[100px] text-slate-300">Food (30%)</TableHead>
                   <TableHead className="text-right min-w-[100px] text-slate-300">Bev (20%)</TableHead>
                   <TableHead className="text-right min-w-[100px] text-slate-300">Labor (14%)</TableHead>
+                  <TableHead className="text-right min-w-[120px] text-slate-300">Variance</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -61,74 +78,28 @@ const ForecastResultsTable = ({ forecastDataUI }) => {
                       {row.date || ''}
                     </TableCell>
                     <TableCell className="text-right text-slate-300 tabular-nums">
-                      {row.pax.toLocaleString()}
+                      {row.pax?.toLocaleString?.() ?? 'N/A'}
                     </TableCell>
                     <TableCell className="text-right text-slate-300 tabular-nums">
-                      {Math.round(row.guests)}
+                      {row.guests != null ? Math.round(row.guests) : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right text-green-400 tabular-nums">
-                      {row.sales.toFixed(2)}
+                      {row.sales != null ? row.sales.toFixed(2) : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right text-orange-400 tabular-nums">
-                      {row.food.toFixed(2)}
+                      {row.food != null ? row.food.toFixed(2) : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right text-sky-400 tabular-nums">
-                      {row.bev.toFixed(2)}
+                      {row.bev != null ? row.bev.toFixed(2) : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right text-purple-400 tabular-nums">
-                      {row.labor.toFixed(2)}
+                      {row.labor != null ? row.labor.toFixed(2) : 'N/A'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {getVarianceBar(row.salesForecasted, row.salesActual)}
                     </TableCell>
                   </motion.tr>
                 ))}
-
-                {/* ✅ MTD + EOM Summary Row */}
-                {(() => {
-                  const today = new Date();
-                  const currentMonth = today.getMonth();
-                  const currentYear = today.getFullYear();
-
-                  const rowsThisMonth = forecastDataUI.filter(row => {
-                    const rowDate = new Date(row.date);
-                    return rowDate.getMonth() === currentMonth && rowDate.getFullYear() === currentYear;
-                  });
-
-                  const mtdRows = rowsThisMonth.filter(row => new Date(row.date) <= today);
-                  const actualRows = mtdRows.filter(row => row.sales > 0);
-
-                  const mtdForecast = mtdRows.reduce((acc, row) => acc + row.sales, 0);
-                  const mtdFood = actualRows.reduce((acc, row) => acc + row.food, 0);
-                  const mtdBev = actualRows.reduce((acc, row) => acc + row.bev, 0);
-                  const mtdLabor = actualRows.reduce((acc, row) => acc + row.labor, 0);
-                  const mtdActuals = mtdFood + mtdBev + mtdLabor;
-
-                  const avg = (val, len) => (len > 0 ? val / len : 0);
-
-                  const eomForecast = rowsThisMonth.reduce((acc, row) => acc + row.sales, 0);
-                  const daysWithActuals = actualRows.length;
-                  const totalDaysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-                  const projectedEOM = daysWithActuals > 0 ? (mtdActuals / daysWithActuals) * totalDaysInMonth : 0;
-                  const varianceProjection = projectedEOM - eomForecast;
-
-                  return (
-                    <TableRow className="bg-slate-900/70 font-semibold border-t border-slate-600">
-                      <TableCell colSpan={2} className="text-slate-200">MTD Summary</TableCell>
-                      <TableCell />
-                      <TableCell />
-                      <TableCell className="text-right text-green-300 tabular-nums">
-                        {mtdActuals.toFixed(2)}
-                      </TableCell>
-                      <TableCell className="text-right text-orange-300 tabular-nums">
-                        {avg(mtdFood, daysWithActuals).toFixed(2)}
-                      </TableCell>
-                      <TableCell className="text-right text-sky-300 tabular-nums">
-                        {avg(mtdBev, daysWithActuals).toFixed(2)}
-                      </TableCell>
-                      <TableCell className="text-right text-purple-300 tabular-nums">
-                        {avg(mtdLabor, daysWithActuals).toFixed(2)}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })()}
               </TableBody>
             </Table>
           </div>
