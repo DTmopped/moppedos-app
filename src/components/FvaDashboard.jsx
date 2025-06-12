@@ -10,13 +10,13 @@ import PrintableFvaDashboard from "./dashboard/PrintableFvaDashboard.jsx";
 
 const FvaDashboard = () => {
   const { forecastData, actualData } = useData();
-
   const [foodTarget, setFoodTarget] = useState(0.30);
   const [bevTarget, setBevTarget] = useState(0.20);
   const [laborTarget, setLaborTarget] = useState(0.14);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
-  const currentMonth = "2025-05"; // For testing
+  const currentMonth = "2025-05";
 
   const combinedData = forecastData.map(forecast => {
     const actual = actualData.find(a => a.date === forecast.date);
@@ -131,6 +131,11 @@ const FvaDashboard = () => {
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-6">
+      <div className="flex justify-end pr-4">
+        <Button variant="ghost" size="sm" onClick={() => setIsAdmin(prev => !prev)}>
+          {isAdmin ? "👤 Admin Mode: ON" : "👥 Admin Mode"}
+        </Button>
+      </div>
       <div className="grid grid-cols-4 gap-4">
         <Card><CardContent className="p-4"><p className="text-sm text-slate-500">MTD Forecasted Sales</p><p className="text-lg font-semibold text-slate-800">${mtd.forecastSales.toLocaleString()}</p></CardContent></Card>
         <Card><CardContent className="p-4"><p className="text-sm text-slate-500">MTD Actual Sales</p><p className="text-lg font-semibold text-green-700">${mtd.actualSales.toLocaleString()}</p></CardContent></Card>
@@ -139,9 +144,62 @@ const FvaDashboard = () => {
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        <Card><CardContent className="p-4"><p className="text-sm text-slate-700">MTD Avg Food Cost % <span className="text-xs text-slate-700 font-medium">(Goal: {(foodTarget * 100).toFixed(0)}%)</span></p><p className="text-lg font-semibold text-red-600">{(mtd.foodPct * 100).toFixed(1)}%</p></CardContent></Card>
-        <Card><CardContent className="p-4"><p className="text-sm text-slate-700">MTD Avg Beverage Cost % <span className="text-xs text-slate-700 font-medium">(Goal: {(bevTarget * 100).toFixed(0)}%)</span></p><p className="text-lg font-semibold text-blue-600">{(mtd.bevPct * 100).toFixed(1)}%</p></CardContent></Card>
-        <Card><CardContent className="p-4"><p className="text-sm text-slate-700">MTD Avg Labor Cost % <span className="text-xs text-slate-700 font-medium">(Goal: {(laborTarget * 100).toFixed(0)}%)</span></p><p className="text-lg font-semibold text-purple-600">{(mtd.laborPct * 100).toFixed(1)}%</p></CardContent></Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-slate-500">
+              MTD Avg Food Cost % <span className="text-slate-700 text-xs">(Goal: {(foodTarget * 100).toFixed(0)}%)</span>
+            </p>
+            {isAdmin ? (
+              <input
+                type="number"
+                step="0.01"
+                value={foodTarget}
+                onChange={e => setFoodTarget(parseFloat(e.target.value))}
+                className="mt-1 w-full px-2 py-1 border border-slate-300 rounded-md text-sm"
+              />
+            ) : (
+              <p className="text-lg font-semibold text-red-600">{(mtd.foodPct * 100).toFixed(1)}%</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-slate-500">
+              MTD Avg Beverage Cost % <span className="text-slate-700 text-xs">(Goal: {(bevTarget * 100).toFixed(0)}%)</span>
+            </p>
+            {isAdmin ? (
+              <input
+                type="number"
+                step="0.01"
+                value={bevTarget}
+                onChange={e => setBevTarget(parseFloat(e.target.value))}
+                className="mt-1 w-full px-2 py-1 border border-slate-300 rounded-md text-sm"
+              />
+            ) : (
+              <p className="text-lg font-semibold text-blue-600">{(mtd.bevPct * 100).toFixed(1)}%</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-slate-500">
+              MTD Avg Labor Cost % <span className="text-slate-700 text-xs">(Goal: {(laborTarget * 100).toFixed(0)}%)</span>
+            </p>
+            {isAdmin ? (
+              <input
+                type="number"
+                step="0.01"
+                value={laborTarget}
+                onChange={e => setLaborTarget(parseFloat(e.target.value))}
+                className="mt-1 w-full px-2 py-1 border border-slate-300 rounded-md text-sm"
+              />
+            ) : (
+              <p className="text-lg font-semibold text-purple-600">{(mtd.laborPct * 100).toFixed(1)}%</p>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       <Card className="shadow-xl bg-white text-slate-800 border border-slate-200">
@@ -151,8 +209,12 @@ const FvaDashboard = () => {
               <BarChartHorizontalBig className="h-8 w-8 text-white" />
             </div>
             <div>
-              <CardTitle className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500">Forecast vs. Actual Dashboard</CardTitle>
-              <CardDescription className="text-slate-500">Daily comparison of forecasted and actual performance metrics.</CardDescription>
+              <CardTitle className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500">
+                Forecast vs. Actual Dashboard
+              </CardTitle>
+              <CardDescription className="text-slate-500">
+                Daily comparison of forecasted and actual performance metrics.
+              </CardDescription>
             </div>
           </div>
           <div className="flex space-x-2">
@@ -166,7 +228,9 @@ const FvaDashboard = () => {
         </CardHeader>
         <CardContent>
           <ForecastActualTable combinedData={combinedData} />
-          <p className="text-xs text-slate-400 mt-4 italic">Note: This dashboard sources data from the central data store. Future enhancements could involve integrating data from other parser tools within the application.</p>
+          <p className="text-xs text-slate-400 mt-4 italic">
+            Note: This dashboard sources data from the central data store. Future enhancements could involve integrating data from other parser tools within the application.
+          </p>
         </CardContent>
       </Card>
     </motion.div>
