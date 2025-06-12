@@ -10,7 +10,7 @@ import PrintableFvaDashboard from "./dashboard/PrintableFvaDashboard.jsx";
 
 const foodTarget = 0.30;
 const bevTarget = 0.20;
-laborTarget = 0.14;
+const laborTarget = 0.14;
 
 const FvaDashboard = () => {
   const { forecastData, actualData } = useData();
