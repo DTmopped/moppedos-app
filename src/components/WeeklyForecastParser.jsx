@@ -1,13 +1,14 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "./ui/card.jsx";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, UserCog } from "lucide-react";
 import ForecastHeader from "./forecast/ForecastHeader.jsx";
 import ForecastInputArea from "./forecast/ForecastInputArea.jsx";
 import ForecastResultsTable from "./forecast/ForecastResultsTable.jsx";
 import { useWeeklyForecastLogic } from "../hooks/useWeeklyForecastLogic";
 
 const WeeklyForecastParser = () => {
+  const [adminMode, setAdminMode] = useState(false);
   const {
     inputText,
     setInputText,
@@ -16,12 +17,10 @@ const WeeklyForecastParser = () => {
     generateForecast,
     setError,
     captureRate,
-    setCaptureRate,
     spendPerGuest,
+    setCaptureRate,
     setSpendPerGuest
   } = useWeeklyForecastLogic();
-
-  const [showAdmin, setShowAdmin] = useState(false);
 
   return (
     <motion.div
@@ -31,41 +30,41 @@ const WeeklyForecastParser = () => {
       className="space-y-6"
     >
       <Card className="shadow-xl border-slate-700 bg-slate-800/70 backdrop-blur-sm">
-        <div className="flex items-center justify-between px-6 pt-6">
-          <ForecastHeader />
+        <div className="flex items-center justify-between px-6 pt-4">
+          <ForecastHeader captureRate={captureRate} spendPerGuest={spendPerGuest} />
           <button
-            onClick={() => setShowAdmin(prev => !prev)}
-            className="text-sm font-medium text-slate-300 hover:text-white hover:underline flex items-center"
+            className="flex items-center space-x-1 text-xs text-slate-300 hover:text-white border border-slate-600 rounded px-2 py-1"
+            onClick={() => setAdminMode(!adminMode)}
           >
-            👤 Admin Mode
+            <UserCog className="h-4 w-4" />
+            <span>Admin Mode</span>
           </button>
         </div>
-
-        <CardContent className="pt-2">
+        <CardContent>
           <ForecastInputArea 
             inputText={inputText}
             setInputText={setInputText}
             generateForecast={generateForecast}
           />
 
-          {showAdmin && (
-            <div className="mt-6 border-t border-slate-700 pt-4 grid grid-cols-2 gap-4">
+          {adminMode && (
+            <div className="mt-4 grid grid-cols-2 gap-4">
               <div>
-                <label className="text-slate-200 text-sm mb-1 block">Capture Rate %</label>
+                <label className="text-sm text-slate-300 mb-1 block">Capture Rate %</label>
                 <input
                   type="number"
                   value={captureRate}
-                  onChange={e => setCaptureRate(e.target.value)}
-                  className="w-full p-2 rounded-md bg-slate-900 text-white border border-slate-600"
+                  onChange={e => setCaptureRate(Number(e.target.value))}
+                  className="w-full px-3 py-2 rounded bg-slate-900 border border-slate-700 text-white"
                 />
               </div>
               <div>
-                <label className="text-slate-200 text-sm mb-1 block">Spend per Guest ($)</label>
+                <label className="text-sm text-slate-300 mb-1 block">Spend per Guest ($)</label>
                 <input
                   type="number"
                   value={spendPerGuest}
-                  onChange={e => setSpendPerGuest(e.target.value)}
-                  className="w-full p-2 rounded-md bg-slate-900 text-white border border-slate-600"
+                  onChange={e => setSpendPerGuest(Number(e.target.value))}
+                  className="w-full px-3 py-2 rounded bg-slate-900 border border-slate-700 text-white"
                 />
               </div>
             </div>
