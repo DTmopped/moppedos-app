@@ -1,5 +1,5 @@
 import React from "react";
-import ReactDOMServer from 'react-dom/server';
+import ReactDOMServer from "react-dom/server";
 import { motion } from "framer-motion";
 import { Button } from "./ui/button.jsx";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card.jsx";
@@ -16,11 +16,11 @@ const FvaDashboard = () => {
   const { forecastData, actualData } = useData();
   console.log("forecastData:", forecastData);
   console.log("actualData:", actualData);
-  const today = new Date().toISOString().split('T')[0];
+
+  const today = new Date().toISOString().split("T")[0];
   const currentMonth = today.slice(0, 7);
 
   const combinedData = forecastData.map(forecast => {
-    console.log("combinedData:", combinedData);
     const actual = actualData.find(a => a.date === forecast.date);
     if (actual) {
       const foodPct = actual.actualSales > 0 ? actual.foodCost / actual.actualSales : 0;
@@ -28,8 +28,20 @@ const FvaDashboard = () => {
       const laborPct = actual.actualSales > 0 ? actual.laborCost / actual.actualSales : 0;
       return { ...forecast, ...actual, foodPct, bevPct, laborPct, hasActuals: true };
     }
-    return { ...forecast, actualSales: 0, foodCost: 0, beverageCost: 0, laborCost: 0, foodPct: 0, bevPct: 0, laborPct: 0, hasActuals: false };
+    return {
+      ...forecast,
+      actualSales: 0,
+      foodCost: 0,
+      beverageCost: 0,
+      laborCost: 0,
+      foodPct: 0,
+      bevPct: 0,
+      laborPct: 0,
+      hasActuals: false
+    };
   });
+
+  console.log("combinedData:", combinedData);
 
   const mtdData = combinedData.filter(d => d.date.startsWith(currentMonth) && d.date <= today);
   const eomData = combinedData.filter(d => d.date.startsWith(currentMonth));
@@ -59,13 +71,13 @@ const FvaDashboard = () => {
     const printableComponentHtml = ReactDOMServer.renderToStaticMarkup(
       <PrintableFvaDashboard combinedData={combinedData} printDate={printDate} targets={targets} />
     );
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'absolute';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = '0';
-    iframe.style.left = '-9999px';
-    iframe.style.top = '-9999px';
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "absolute";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.style.left = "-9999px";
+    iframe.style.top = "-9999px";
     document.body.appendChild(iframe);
     const doc = iframe.contentWindow.document;
     doc.open();
@@ -86,9 +98,21 @@ const FvaDashboard = () => {
         const bev = d.hasActuals ? `${(d.bevPct * 100).toFixed(1)}%` : "N/A";
         const labor = d.hasActuals ? `${(d.laborPct * 100).toFixed(1)}%` : "N/A";
         const alert = d.hasActuals
-          ? [d.foodPct > foodTarget ? "Food Over" : null, d.bevPct > bevTarget ? "Bev Over" : null, d.laborPct > laborTarget ? "Labor Over" : null].filter(Boolean).join(", ") || "On Target"
+          ? [
+              d.foodPct > foodTarget ? "Food Over" : null,
+              d.bevPct > bevTarget ? "Bev Over" : null,
+              d.laborPct > laborTarget ? "Labor Over" : null
+            ].filter(Boolean).join(", ") || "On Target"
           : "No Actuals";
-        return [d.date, d.forecastSales, d.hasActuals ? d.actualSales : "N/A", food, bev, labor, alert];
+        return [
+          d.date,
+          d.forecastSales,
+          d.hasActuals ? d.actualSales : "N/A",
+          food,
+          bev,
+          labor,
+          alert
+        ];
       })
     ];
     const csv = rows.map(row => row.join(",")).join("\n");
@@ -102,12 +126,13 @@ const FvaDashboard = () => {
   };
 
   if (!combinedData || combinedData.length === 0) {
-  return (
-    <div className="p-8 text-center text-red-600 font-bold text-lg">
-      🚫 No data available to render the dashboard.
-    </div>
-  );
-}
+    return (
+      <div className="p-8 text-center text-red-600 font-bold text-lg">
+        🚫 No data available to render the dashboard.
+      </div>
+    );
+  }
+
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-6">
       <div className="grid grid-cols-4 gap-4">
@@ -124,18 +149,28 @@ const FvaDashboard = () => {
               <BarChartHorizontalBig className="h-8 w-8 text-white" />
             </div>
             <div>
-              <CardTitle className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500">Forecast vs. Actual Dashboard</CardTitle>
-              <CardDescription className="text-slate-500">Daily comparison of forecasted and actual performance metrics.</CardDescription>
+              <CardTitle className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500">
+                Forecast vs. Actual Dashboard
+              </CardTitle>
+              <CardDescription className="text-slate-500">
+                Daily comparison of forecasted and actual performance metrics.
+              </CardDescription>
             </div>
           </div>
           <div className="flex space-x-2">
-            <Button onClick={handlePrint} variant="outline" className="border-indigo-500 text-indigo-500 hover:bg-indigo-100"><Printer className="mr-2 h-4 w-4" /> Print Report</Button>
-            <Button onClick={exportToCSV} variant="outline" className="border-blue-500 text-blue-500 hover:bg-blue-100"><FileDown className="mr-2 h-4 w-4" /> Export CSV</Button>
+            <Button onClick={handlePrint} variant="outline" className="border-indigo-500 text-indigo-500 hover:bg-indigo-100">
+              <Printer className="mr-2 h-4 w-4" /> Print Report
+            </Button>
+            <Button onClick={exportToCSV} variant="outline" className="border-blue-500 text-blue-500 hover:bg-blue-100">
+              <FileDown className="mr-2 h-4 w-4" /> Export CSV
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
           <ForecastActualTable combinedData={combinedData} />
-          <p className="text-xs text-slate-400 mt-4 italic">Note: This dashboard sources data from the central data store. Future enhancements could involve integrating data from other parser tools within the application.</p>
+          <p className="text-xs text-slate-400 mt-4 italic">
+            Note: This dashboard sources data from the central data store. Future enhancements could involve integrating data from other parser tools within the application.
+          </p>
         </CardContent>
       </Card>
     </motion.div>
