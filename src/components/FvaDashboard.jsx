@@ -18,7 +18,7 @@ const FvaDashboard = () => {
   console.log("actualData:", actualData);
 
   const today = new Date().toISOString().split("T")[0];
-  const currentMonth = today.slice(0, 7);
+  const currentMonth = "2025-05";
 
   const combinedData = forecastData.map(forecast => {
     const actual = actualData.find(a => a.date === forecast.date);
