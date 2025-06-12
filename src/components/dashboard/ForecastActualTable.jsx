@@ -137,5 +137,4 @@ const FvaDashboard = () => {
   );
 };
 
-export default FvaDashboard;
 export default ForecastActualTable;
