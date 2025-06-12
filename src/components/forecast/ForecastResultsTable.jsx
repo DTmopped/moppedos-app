@@ -80,6 +80,55 @@ const ForecastResultsTable = ({ forecastDataUI }) => {
                     </TableCell>
                   </motion.tr>
                 ))}
+
+                {/* ✅ MTD + EOM Summary Row */}
+                {(() => {
+                  const today = new Date();
+                  const currentMonth = today.getMonth();
+                  const currentYear = today.getFullYear();
+
+                  const rowsThisMonth = forecastDataUI.filter(row => {
+                    const rowDate = new Date(row.date);
+                    return rowDate.getMonth() === currentMonth && rowDate.getFullYear() === currentYear;
+                  });
+
+                  const mtdRows = rowsThisMonth.filter(row => new Date(row.date) <= today);
+                  const actualRows = mtdRows.filter(row => row.sales > 0);
+
+                  const mtdForecast = mtdRows.reduce((acc, row) => acc + row.sales, 0);
+                  const mtdFood = actualRows.reduce((acc, row) => acc + row.food, 0);
+                  const mtdBev = actualRows.reduce((acc, row) => acc + row.bev, 0);
+                  const mtdLabor = actualRows.reduce((acc, row) => acc + row.labor, 0);
+                  const mtdActuals = mtdFood + mtdBev + mtdLabor;
+
+                  const avg = (val, len) => (len > 0 ? val / len : 0);
+
+                  const eomForecast = rowsThisMonth.reduce((acc, row) => acc + row.sales, 0);
+                  const daysWithActuals = actualRows.length;
+                  const totalDaysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+                  const projectedEOM = daysWithActuals > 0 ? (mtdActuals / daysWithActuals) * totalDaysInMonth : 0;
+                  const varianceProjection = projectedEOM - eomForecast;
+
+                  return (
+                    <TableRow className="bg-slate-900/70 font-semibold border-t border-slate-600">
+                      <TableCell colSpan={2} className="text-slate-200">MTD Summary</TableCell>
+                      <TableCell />
+                      <TableCell />
+                      <TableCell className="text-right text-green-300 tabular-nums">
+                        {mtdActuals.toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-right text-orange-300 tabular-nums">
+                        {avg(mtdFood, daysWithActuals).toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-right text-sky-300 tabular-nums">
+                        {avg(mtdBev, daysWithActuals).toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-right text-purple-300 tabular-nums">
+                        {avg(mtdLabor, daysWithActuals).toFixed(2)}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })()}
               </TableBody>
             </Table>
           </div>
