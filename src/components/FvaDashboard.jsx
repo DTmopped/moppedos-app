@@ -141,7 +141,26 @@ const FvaDashboard = () => {
         <Card><CardContent className="p-4"><p className="text-sm text-slate-500">MTD Variance</p><p className="text-lg font-semibold text-blue-700">${(mtd.actualSales - mtd.forecastSales).toLocaleString()}</p></CardContent></Card>
         <Card><CardContent className="p-4"><p className="text-sm text-slate-500">EOM Forecast</p><p className="text-lg font-semibold text-purple-700">${eom.forecastSales.toLocaleString()}</p></CardContent></Card>
       </div>
-
+<div className="grid grid-cols-3 gap-4">
+  <Card>
+    <CardContent className="p-4">
+      <p className="text-sm text-slate-500">MTD Avg Food Cost %</p>
+      <p className="text-lg font-semibold text-red-600">{(mtd.foodPct * 100).toFixed(1)}%</p>
+    </CardContent>
+  </Card>
+  <Card>
+    <CardContent className="p-4">
+      <p className="text-sm text-slate-500">MTD Avg Bev Cost %</p>
+      <p className="text-lg font-semibold text-blue-600">{(mtd.bevPct * 100).toFixed(1)}%</p>
+    </CardContent>
+  </Card>
+  <Card>
+    <CardContent className="p-4">
+      <p className="text-sm text-slate-500">MTD Avg Labor Cost %</p>
+      <p className="text-lg font-semibold text-purple-600">{(mtd.laborPct * 100).toFixed(1)}%</p>
+    </CardContent>
+  </Card>
+</div>
       <Card className="shadow-xl bg-white text-slate-800 border border-slate-200">
         <CardHeader className="pb-4 flex flex-row items-center justify-between">
           <div className="flex items-center space-x-4">
