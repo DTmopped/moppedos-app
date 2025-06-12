@@ -1,14 +1,13 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "./ui/card.jsx";
-import { AlertTriangle, UserCog } from "lucide-react";
+import { AlertTriangle, UsersCog } from "lucide-react";
 import ForecastHeader from "./forecast/ForecastHeader.jsx";
 import ForecastInputArea from "./forecast/ForecastInputArea.jsx";
 import ForecastResultsTable from "./forecast/ForecastResultsTable.jsx";
 import { useWeeklyForecastLogic } from "../hooks/useWeeklyForecastLogic";
 
 const WeeklyForecastParser = () => {
-  const [adminMode, setAdminMode] = useState(false);
   const {
     inputText,
     setInputText,
@@ -19,7 +18,13 @@ const WeeklyForecastParser = () => {
     captureRate,
     spendPerGuest,
     setCaptureRate,
-    setSpendPerGuest
+    setSpendPerGuest,
+    amPercent,
+    pmPercent,
+    setAmPercent,
+    setPmPercent,
+    adminMode,
+    toggleAdmin
   } = useWeeklyForecastLogic();
 
   return (
@@ -30,45 +35,23 @@ const WeeklyForecastParser = () => {
       className="space-y-6"
     >
       <Card className="shadow-xl border-slate-700 bg-slate-800/70 backdrop-blur-sm">
-        <div className="flex items-center justify-between px-6 pt-4">
-          <ForecastHeader captureRate={captureRate} spendPerGuest={spendPerGuest} />
+        <div className="flex items-center justify-between px-6 pt-6">
+          <ForecastHeader />
           <button
-            className="flex items-center space-x-1 text-xs text-slate-300 hover:text-white border border-slate-600 rounded px-2 py-1"
-            onClick={() => setAdminMode(!adminMode)}
+            onClick={toggleAdmin}
+            className="text-xs text-slate-300 hover:text-white border border-slate-500 px-3 py-1 rounded-md flex items-center space-x-2"
           >
-            <UserCog className="h-4 w-4" />
+            <UsersCog size={14} className="mr-1" />
             <span>Admin Mode</span>
           </button>
         </div>
+
         <CardContent>
           <ForecastInputArea 
             inputText={inputText}
             setInputText={setInputText}
             generateForecast={generateForecast}
           />
-
-          {adminMode && (
-            <div className="mt-4 grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm text-slate-300 mb-1 block">Capture Rate %</label>
-                <input
-                  type="number"
-                  value={captureRate}
-                  onChange={e => setCaptureRate(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded bg-slate-900 border border-slate-700 text-white"
-                />
-              </div>
-              <div>
-                <label className="text-sm text-slate-300 mb-1 block">Spend per Guest ($)</label>
-                <input
-                  type="number"
-                  value={spendPerGuest}
-                  onChange={e => setSpendPerGuest(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded bg-slate-900 border border-slate-700 text-white"
-                />
-              </div>
-            </div>
-          )}
 
           {error && (
             <motion.div
@@ -80,6 +63,51 @@ const WeeklyForecastParser = () => {
               <span>{error}</span>
             </motion.div>
           )}
+
+          {adminMode && (
+            <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <label className="text-xs text-slate-400">Capture Rate %</label>
+                <input
+                  type="number"
+                  value={captureRate}
+                  onChange={(e) => setCaptureRate(Number(e.target.value))}
+                  className="w-full bg-slate-900 border border-slate-600 rounded-md px-3 py-2 text-white"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-slate-400">Spend per Guest ($)</label>
+                <input
+                  type="number"
+                  value={spendPerGuest}
+                  onChange={(e) => setSpendPerGuest(Number(e.target.value))}
+                  className="w-full bg-slate-900 border border-slate-600 rounded-md px-3 py-2 text-white"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-slate-400">AM Shift %</label>
+                <input
+                  type="number"
+                  value={amPercent}
+                  onChange={(e) => setAmPercent(Number(e.target.value))}
+                  className="w-full bg-slate-900 border border-slate-600 rounded-md px-3 py-2 text-white"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-slate-400">PM Shift %</label>
+                <input
+                  type="number"
+                  value={pmPercent}
+                  onChange={(e) => setPmPercent(Number(e.target.value))}
+                  className="w-full bg-slate-900 border border-slate-600 rounded-md px-3 py-2 text-white"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="mt-4 text-xs text-slate-400">
+            Uses <span className="text-pink-300 font-medium">{captureRate}%</span> capture rate and <span className="text-pink-300 font-medium">${spendPerGuest}</span> spend/guest.
+          </div>
         </CardContent>
       </Card>
 
