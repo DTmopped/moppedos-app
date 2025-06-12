@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import ReactDOMServer from "react-dom/server";
 import { motion } from "framer-motion";
 import { Button } from "./ui/button.jsx";
@@ -8,14 +8,15 @@ import { useData } from "../contexts/DataContext";
 import ForecastActualTable from "./dashboard/ForecastActualTable.jsx";
 import PrintableFvaDashboard from "./dashboard/PrintableFvaDashboard.jsx";
 
-const foodTarget = 0.30;
-const bevTarget = 0.20;
-const laborTarget = 0.14;
-
 const FvaDashboard = () => {
   const { forecastData, actualData } = useData();
+
+  const [foodTarget, setFoodTarget] = useState(0.30);
+  const [bevTarget, setBevTarget] = useState(0.20);
+  const [laborTarget, setLaborTarget] = useState(0.14);
+
   const today = new Date().toISOString().split("T")[0];
-  const currentMonth = "2025-05";
+  const currentMonth = "2025-05"; // For testing
 
   const combinedData = forecastData.map(forecast => {
     const actual = actualData.find(a => a.date === forecast.date);
@@ -25,7 +26,17 @@ const FvaDashboard = () => {
       const laborPct = actual.actualSales > 0 ? actual.laborCost / actual.actualSales : 0;
       return { ...forecast, ...actual, foodPct, bevPct, laborPct, hasActuals: true };
     }
-    return { ...forecast, actualSales: 0, foodCost: 0, beverageCost: 0, laborCost: 0, foodPct: 0, bevPct: 0, laborPct: 0, hasActuals: false };
+    return {
+      ...forecast,
+      actualSales: 0,
+      foodCost: 0,
+      beverageCost: 0,
+      laborCost: 0,
+      foodPct: 0,
+      bevPct: 0,
+      laborPct: 0,
+      hasActuals: false
+    };
   });
 
   const mtdData = combinedData.filter(d => d.date.startsWith(currentMonth) && d.date <= today);
@@ -89,7 +100,15 @@ const FvaDashboard = () => {
               d.laborPct > laborTarget ? "Labor Over" : null
             ].filter(Boolean).join(", ") || "On Target"
           : "No Actuals";
-        return [d.date, d.forecastSales, d.hasActuals ? d.actualSales : "N/A", food, bev, labor, alert];
+        return [
+          d.date,
+          d.forecastSales,
+          d.hasActuals ? d.actualSales : "N/A",
+          food,
+          bev,
+          labor,
+          alert
+        ];
       })
     ];
     const csv = rows.map(row => row.join(",")).join("\n");
@@ -103,22 +122,26 @@ const FvaDashboard = () => {
   };
 
   if (!combinedData || combinedData.length === 0) {
-    return <div className="p-8 text-center text-red-600 font-bold text-lg">🚫 No data available to render the dashboard.</div>;
+    return (
+      <div className="p-8 text-center text-red-600 font-bold text-lg">
+        🚫 No data available to render the dashboard.
+      </div>
+    );
   }
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card><CardContent className="p-4" title="Total forecasted sales for the current month"><p className="text-sm text-slate-500">MTD Forecasted Sales</p><p className="text-lg font-semibold text-slate-800">${mtd.forecastSales.toLocaleString()}</p></CardContent></Card>
-        <Card><CardContent className="p-4" title="Sum of actual sales with actuals this month"><p className="text-sm text-slate-500">MTD Actual Sales</p><p className="text-lg font-semibold text-green-700">${mtd.actualSales.toLocaleString()}</p></CardContent></Card>
-        <Card><CardContent className="p-4" title="Difference between forecast and actual sales"><p className="text-sm text-slate-500">MTD Sales Variance</p><p className={`text-lg font-semibold ${mtd.actualSales - mtd.forecastSales >= 0 ? 'text-green-700' : 'text-red-600'}`}>${(mtd.actualSales - mtd.forecastSales).toLocaleString()}</p></CardContent></Card>
-        <Card><CardContent className="p-4" title="Total sales forecast for the full month"><p className="text-sm text-slate-500">EOM Forecasted Sales</p><p className="text-lg font-semibold text-purple-700">${eom.forecastSales.toLocaleString()}</p></CardContent></Card>
+      <div className="grid grid-cols-4 gap-4">
+        <Card><CardContent className="p-4"><p className="text-sm text-slate-500">MTD Forecasted Sales</p><p className="text-lg font-semibold text-slate-800">${mtd.forecastSales.toLocaleString()}</p></CardContent></Card>
+        <Card><CardContent className="p-4"><p className="text-sm text-slate-500">MTD Actual Sales</p><p className="text-lg font-semibold text-green-700">${mtd.actualSales.toLocaleString()}</p></CardContent></Card>
+        <Card><CardContent className="p-4"><p className="text-sm text-slate-500">MTD Sales Variance</p><p className="text-lg font-semibold text-red-600">${(mtd.actualSales - mtd.forecastSales).toLocaleString()}</p></CardContent></Card>
+        <Card><CardContent className="p-4"><p className="text-sm text-slate-500">EOM Forecasted Sales</p><p className="text-lg font-semibold text-purple-700">${eom.forecastSales.toLocaleString()}</p></CardContent></Card>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card><CardContent className="p-4" title="Average food cost % for the current month"><p className="text-sm text-slate-500">MTD Avg Food Cost %</p><p className="text-lg font-semibold text-red-600">{(mtd.foodPct * 100).toFixed(1)}%</p></CardContent></Card>
-        <Card><CardContent className="p-4" title="Average beverage cost % for the current month"><p className="text-sm text-slate-500">MTD Avg Beverage Cost %</p><p className="text-lg font-semibold text-blue-600">{(mtd.bevPct * 100).toFixed(1)}%</p></CardContent></Card>
-        <Card><CardContent className="p-4" title="Average labor cost % for the current month"><p className="text-sm text-slate-500">MTD Avg Labor Cost %</p><p className="text-lg font-semibold text-purple-600">{(mtd.laborPct * 100).toFixed(1)}%</p></CardContent></Card>
+      <div className="grid grid-cols-3 gap-4">
+        <Card><CardContent className="p-4"><p className="text-sm text-slate-700">MTD Avg Food Cost % <span className="text-xs text-slate-700 font-medium">(Goal: {(foodTarget * 100).toFixed(0)}%)</span></p><p className="text-lg font-semibold text-red-600">{(mtd.foodPct * 100).toFixed(1)}%</p></CardContent></Card>
+        <Card><CardContent className="p-4"><p className="text-sm text-slate-700">MTD Avg Beverage Cost % <span className="text-xs text-slate-700 font-medium">(Goal: {(bevTarget * 100).toFixed(0)}%)</span></p><p className="text-lg font-semibold text-blue-600">{(mtd.bevPct * 100).toFixed(1)}%</p></CardContent></Card>
+        <Card><CardContent className="p-4"><p className="text-sm text-slate-700">MTD Avg Labor Cost % <span className="text-xs text-slate-700 font-medium">(Goal: {(laborTarget * 100).toFixed(0)}%)</span></p><p className="text-lg font-semibold text-purple-600">{(mtd.laborPct * 100).toFixed(1)}%</p></CardContent></Card>
       </div>
 
       <Card className="shadow-xl bg-white text-slate-800 border border-slate-200">
@@ -128,9 +151,7 @@ const FvaDashboard = () => {
               <BarChartHorizontalBig className="h-8 w-8 text-white" />
             </div>
             <div>
-              <CardTitle className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500">
-                Forecast vs. Actual Dashboard
-              </CardTitle>
+              <CardTitle className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500">Forecast vs. Actual Dashboard</CardTitle>
               <CardDescription className="text-slate-500">Daily comparison of forecasted and actual performance metrics.</CardDescription>
             </div>
           </div>
