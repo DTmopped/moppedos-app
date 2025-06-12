@@ -5,7 +5,7 @@ import { Button } from "./ui/button.jsx";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card.jsx";
 import { BarChartHorizontalBig, Printer, FileDown } from "lucide-react";
 import { useData } from "../contexts/DataContext";
-import ForecastActualTable from "./dashboard/ForecastActualTable.jsx";
+import ForecastActualTable from "./ForecastActualTable.jsx";
 import PrintableFvaDashboard from "./dashboard/PrintableFvaDashboard.jsx";
 
 const foodTarget = 0.30;
