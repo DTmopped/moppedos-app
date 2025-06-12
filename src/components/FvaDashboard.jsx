@@ -1,5 +1,5 @@
 import React from "react";
-import ReactDOMServer from 'react-dom/server';
+import ReactDOMServer from "react-dom/server";
 import { motion } from "framer-motion";
 import { Button } from "./ui/button.jsx";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card.jsx";
@@ -32,11 +32,11 @@ const FvaDashboard = () => {
       foodPct: 0,
       bevPct: 0,
       laborPct: 0,
-      hasActuals: false
+      hasActuals: false,
     };
   });
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split("T")[0];
 
   const handlePrint = () => {
     const printDate = new Date();
@@ -50,13 +50,13 @@ const FvaDashboard = () => {
       />
     );
 
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'absolute';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = '0';
-    iframe.style.left = '-9999px';
-    iframe.style.top = '-9999px';
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "absolute";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.style.left = "-9999px";
+    iframe.style.top = "-9999px";
 
     document.body.appendChild(iframe);
 
@@ -92,16 +92,8 @@ const FvaDashboard = () => {
               d.laborPct > laborTarget ? "Labor Over" : null,
             ].filter(Boolean).join(", ") || "On Target"
           : "No Actuals";
-        return [
-          d.date,
-          d.forecastSales,
-          d.hasActuals ? d.actualSales : "N/A",
-          food,
-          bev,
-          labor,
-          alert
-        ];
-      })
+        return [d.date, d.forecastSales, d.hasActuals ? d.actualSales : "N/A", food, bev, labor, alert];
+      }),
     ];
     const csv = rows.map(row => row.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
