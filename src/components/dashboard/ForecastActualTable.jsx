@@ -5,7 +5,7 @@ import { Button } from "../ui/button.jsx";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card.jsx";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table.jsx";
 import { BarChartHorizontalBig, Printer, AlertTriangle, CheckCircle2, FileDown } from "lucide-react";
-import { useData } from "../contexts/DataContext";
+import { useData } from "../../contexts/DataContext";
 import PrintableFvaDashboard from "./dashboard/PrintableFvaDashboard.jsx";
 
 const foodTarget = 0.30;
