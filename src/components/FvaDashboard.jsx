@@ -14,10 +14,13 @@ laborTarget = 0.14;
 
 const FvaDashboard = () => {
   const { forecastData, actualData } = useData();
+  console.log("forecastData:", forecastData);
+  console.log("actualData:", actualData);
   const today = new Date().toISOString().split('T')[0];
   const currentMonth = today.slice(0, 7);
 
   const combinedData = forecastData.map(forecast => {
+    console.log("combinedData:", combinedData);
     const actual = actualData.find(a => a.date === forecast.date);
     if (actual) {
       const foodPct = actual.actualSales > 0 ? actual.foodCost / actual.actualSales : 0;
@@ -98,6 +101,13 @@ const FvaDashboard = () => {
     URL.revokeObjectURL(url);
   };
 
+  if (!combinedData || combinedData.length === 0) {
+  return (
+    <div className="p-8 text-center text-red-600 font-bold text-lg">
+      🚫 No data available to render the dashboard.
+    </div>
+  );
+}
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-6">
       <div className="grid grid-cols-4 gap-4">
