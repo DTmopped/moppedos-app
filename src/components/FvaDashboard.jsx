@@ -10,10 +10,12 @@ import PrintableFvaDashboard from "./dashboard/PrintableFvaDashboard.jsx";
 
 const foodTarget = 0.30;
 const bevTarget = 0.20;
-const laborTarget = 0.14;
+laborTarget = 0.14;
 
 const FvaDashboard = () => {
   const { forecastData, actualData } = useData();
+  const today = new Date().toISOString().split('T')[0];
+  const currentMonth = today.slice(0, 7);
 
   const combinedData = forecastData.map(forecast => {
     const actual = actualData.find(a => a.date === forecast.date);
@@ -23,48 +25,37 @@ const FvaDashboard = () => {
       const laborPct = actual.actualSales > 0 ? actual.laborCost / actual.actualSales : 0;
       return { ...forecast, ...actual, foodPct, bevPct, laborPct, hasActuals: true };
     }
-    return {
-      ...forecast,
-      actualSales: 0,
-      foodCost: 0,
-      beverageCost: 0,
-      laborCost: 0,
-      foodPct: 0,
-      bevPct: 0,
-      laborPct: 0,
-      hasActuals: false
-    };
+    return { ...forecast, actualSales: 0, foodCost: 0, beverageCost: 0, laborCost: 0, foodPct: 0, bevPct: 0, laborPct: 0, hasActuals: false };
   });
 
-  const today = new Date().toISOString().split('T')[0];
-  const month = today.slice(0, 7);
+  const mtdData = combinedData.filter(d => d.date.startsWith(currentMonth) && d.date <= today);
+  const eomData = combinedData.filter(d => d.date.startsWith(currentMonth));
 
-  const mtdForecast = forecastData
-    .filter(d => d.date.startsWith(month) && d.date <= today)
-    .reduce((sum, d) => sum + d.forecastSales, 0);
+  const getAverages = data => {
+    const count = data.filter(d => d.hasActuals).length;
+    const sumSales = data.reduce((acc, d) => acc + (d.forecastSales || 0), 0);
+    const sumActual = data.reduce((acc, d) => acc + (d.hasActuals ? d.actualSales : 0), 0);
+    const foodPct = data.reduce((acc, d) => acc + (d.hasActuals ? d.foodPct : 0), 0);
+    const bevPct = data.reduce((acc, d) => acc + (d.hasActuals ? d.bevPct : 0), 0);
+    const laborPct = data.reduce((acc, d) => acc + (d.hasActuals ? d.laborPct : 0), 0);
+    return {
+      forecastSales: sumSales,
+      actualSales: sumActual,
+      foodPct: count ? (foodPct / count) : 0,
+      bevPct: count ? (bevPct / count) : 0,
+      laborPct: count ? (laborPct / count) : 0
+    };
+  };
 
-  const mtdActual = actualData
-    .filter(d => d.date.startsWith(month) && d.date <= today)
-    .reduce((sum, d) => sum + d.actualSales, 0);
-
-  const mtdVariance = mtdActual - mtdForecast;
-
-  const eomForecast = forecastData
-    .filter(d => d.date.startsWith(month))
-    .reduce((sum, d) => sum + d.forecastSales, 0);
+  const mtd = getAverages(mtdData);
+  const eom = getAverages(eomData);
 
   const handlePrint = () => {
     const printDate = new Date();
     const targets = { foodTarget, bevTarget, laborTarget };
-
     const printableComponentHtml = ReactDOMServer.renderToStaticMarkup(
-      <PrintableFvaDashboard
-        combinedData={combinedData}
-        printDate={printDate}
-        targets={targets}
-      />
+      <PrintableFvaDashboard combinedData={combinedData} printDate={printDate} targets={targets} />
     );
-
     const iframe = document.createElement('iframe');
     iframe.style.position = 'absolute';
     iframe.style.width = '0';
@@ -72,20 +63,11 @@ const FvaDashboard = () => {
     iframe.style.border = '0';
     iframe.style.left = '-9999px';
     iframe.style.top = '-9999px';
-
     document.body.appendChild(iframe);
-
     const doc = iframe.contentWindow.document;
     doc.open();
-    doc.write(`
-      <!DOCTYPE html>
-      <html>
-        <head><title>FVA Dashboard - Print</title></head>
-        <body>${printableComponentHtml}</body>
-      </html>
-    `);
+    doc.write(`<!DOCTYPE html><html><head><title>FVA Dashboard - Print</title></head><body>${printableComponentHtml}</body></html>`);
     doc.close();
-
     iframe.contentWindow.focus();
     setTimeout(() => {
       iframe.contentWindow.print();
@@ -101,27 +83,14 @@ const FvaDashboard = () => {
         const bev = d.hasActuals ? `${(d.bevPct * 100).toFixed(1)}%` : "N/A";
         const labor = d.hasActuals ? `${(d.laborPct * 100).toFixed(1)}%` : "N/A";
         const alert = d.hasActuals
-          ? [
-              d.foodPct > foodTarget ? "Food Over" : null,
-              d.bevPct > bevTarget ? "Bev Over" : null,
-              d.laborPct > laborTarget ? "Labor Over" : null,
-            ].filter(Boolean).join(", ") || "On Target"
+          ? [d.foodPct > foodTarget ? "Food Over" : null, d.bevPct > bevTarget ? "Bev Over" : null, d.laborPct > laborTarget ? "Labor Over" : null].filter(Boolean).join(", ") || "On Target"
           : "No Actuals";
-        return [
-          d.date,
-          d.forecastSales,
-          d.hasActuals ? d.actualSales : "N/A",
-          food,
-          bev,
-          labor,
-          alert
-        ];
+        return [d.date, d.forecastSales, d.hasActuals ? d.actualSales : "N/A", food, bev, labor, alert];
       })
     ];
     const csv = rows.map(row => row.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
-
     const link = document.createElement("a");
     link.href = url;
     link.download = `fva-dashboard-${today}.csv`;
@@ -130,29 +99,12 @@ const FvaDashboard = () => {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="space-y-6"
-    >
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-sm text-slate-800">
-        <div className="p-4 rounded-lg bg-indigo-50 shadow-sm border border-indigo-200">
-          <p className="text-xs text-slate-500">MTD Forecast</p>
-          <p className="font-semibold">${mtdForecast.toLocaleString()}</p>
-        </div>
-        <div className="p-4 rounded-lg bg-green-50 shadow-sm border border-green-200">
-          <p className="text-xs text-slate-500">MTD Actual</p>
-          <p className="font-semibold">${mtdActual.toLocaleString()}</p>
-        </div>
-        <div className={`p-4 rounded-lg shadow-sm border ${mtdVariance >= 0 ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
-          <p className="text-xs text-slate-500">MTD Variance</p>
-          <p className="font-semibold">${mtdVariance.toLocaleString()}</p>
-        </div>
-        <div className="p-4 rounded-lg bg-purple-50 shadow-sm border border-purple-200">
-          <p className="text-xs text-slate-500">EOM Forecast</p>
-          <p className="font-semibold">${eomForecast.toLocaleString()}</p>
-        </div>
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-6">
+      <div className="grid grid-cols-4 gap-4">
+        <Card><CardContent className="p-4"><p className="text-sm text-slate-500">MTD Forecast</p><p className="text-lg font-semibold text-slate-800">${mtd.forecastSales.toLocaleString()}</p></CardContent></Card>
+        <Card><CardContent className="p-4"><p className="text-sm text-slate-500">MTD Actual</p><p className="text-lg font-semibold text-green-700">${mtd.actualSales.toLocaleString()}</p></CardContent></Card>
+        <Card><CardContent className="p-4"><p className="text-sm text-slate-500">MTD Variance</p><p className="text-lg font-semibold text-blue-700">${(mtd.actualSales - mtd.forecastSales).toLocaleString()}</p></CardContent></Card>
+        <Card><CardContent className="p-4"><p className="text-sm text-slate-500">EOM Forecast</p><p className="text-lg font-semibold text-purple-700">${eom.forecastSales.toLocaleString()}</p></CardContent></Card>
       </div>
 
       <Card className="shadow-xl bg-white text-slate-800 border border-slate-200">
@@ -162,37 +114,18 @@ const FvaDashboard = () => {
               <BarChartHorizontalBig className="h-8 w-8 text-white" />
             </div>
             <div>
-              <CardTitle className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500">
-                Forecast vs. Actual Dashboard
-              </CardTitle>
-              <CardDescription className="text-slate-500">
-                Daily comparison of forecasted and actual performance metrics.
-              </CardDescription>
+              <CardTitle className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500">Forecast vs. Actual Dashboard</CardTitle>
+              <CardDescription className="text-slate-500">Daily comparison of forecasted and actual performance metrics.</CardDescription>
             </div>
           </div>
           <div className="flex space-x-2">
-            <Button
-              onClick={handlePrint}
-              variant="outline"
-              className="border-indigo-500 text-indigo-500 hover:bg-indigo-100"
-            >
-              <Printer className="mr-2 h-4 w-4" /> Print Report
-            </Button>
-            <Button
-              onClick={exportToCSV}
-              variant="outline"
-              className="border-blue-500 text-blue-500 hover:bg-blue-100"
-            >
-              <FileDown className="mr-2 h-4 w-4" /> Export CSV
-            </Button>
+            <Button onClick={handlePrint} variant="outline" className="border-indigo-500 text-indigo-500 hover:bg-indigo-100"><Printer className="mr-2 h-4 w-4" /> Print Report</Button>
+            <Button onClick={exportToCSV} variant="outline" className="border-blue-500 text-blue-500 hover:bg-blue-100"><FileDown className="mr-2 h-4 w-4" /> Export CSV</Button>
           </div>
         </CardHeader>
         <CardContent>
           <ForecastActualTable combinedData={combinedData} />
-          <p className="text-xs text-slate-400 mt-4 italic">
-            Note: This dashboard sources data from the central data store.
-            Future enhancements could involve integrating data from other parser tools within the application.
-          </p>
+          <p className="text-xs text-slate-400 mt-4 italic">Note: This dashboard sources data from the central data store. Future enhancements could involve integrating data from other parser tools within the application.</p>
         </CardContent>
       </Card>
     </motion.div>
