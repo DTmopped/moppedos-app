@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "./ui/card.jsx";
-import { Cog } from "lucide-react";  // Updated icon
+import { Cog } from "lucide-react";
 import ForecastHeader from "./forecast/ForecastHeader.jsx";
 import ForecastInputArea from "./forecast/ForecastInputArea.jsx";
 import ForecastResultsTable from "./forecast/ForecastResultsTable.jsx";
@@ -48,7 +48,7 @@ const WeeklyForecastParser = () => {
           </div>
           <button
             onClick={toggleAdminMode}
-            className="text-slate-300 hover:text-white border border-slate-500 hover:border-white px-3 py-1 text-sm rounded-md flex items-center"
+            className="text-slate-300 hover:text-white border border-slate-500 hover:border-white px-3 py-1 text-sm rounded-md flex items-center bg-slate-700 hover:bg-slate-600 transition-colors"
           >
             <Cog className="h-4 w-4 mr-1" /> Admin Mode
           </button>
