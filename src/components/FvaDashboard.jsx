@@ -10,7 +10,12 @@ import PrintableFvaDashboard from "./dashboard/PrintableFvaDashboard.jsx";
 
 const FvaDashboard = () => {
   const { forecastData, actualData } = useData();
-  const [isAdmin, setIsAdmin] = useState(false);
+ const [isAdmin, setIsAdmin] = useState(() => {
+  return localStorage.getItem("isAdminMode") === "true";
+});
+  useEffect(() => {
+  localStorage.setItem("isAdminMode", isAdmin.toString());
+}, [isAdmin]);
 
   // Admin goal %s with localStorage persistence
   const [foodTarget, setFoodTarget] = useState(() => parseFloat(localStorage.getItem("foodCostGoal")) || 0.30);
