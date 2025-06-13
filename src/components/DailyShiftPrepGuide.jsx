@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { motion } from "framer-motion";
-import { useData } from "../../contexts/DataContext.jsx"; // ✅ fixed relative path
+import { useData } from "../contexts/DataContext.jsx";
 import DailyShiftPrepGuideHeader from "./prep/DailyShiftPrepGuideHeader.jsx";
 import DayPrepCard from "./prep/DayPrepCard.jsx";
 import { triggerPrint } from "./prep/PrintUtils.jsx";
