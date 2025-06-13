@@ -51,7 +51,9 @@ const DailyShiftPrepGuideHeader = ({
               <CardDescription className="text-muted-foreground">
                 Shift-based prep quantities. Current Adjustment Factor:{' '}
                 <span className="font-semibold text-primary">
-                  {adjustmentFactor.toFixed(2)}x
+                  {typeof adjustmentFactor === 'number'
+                    ? `${adjustmentFactor.toFixed(2)}x`
+                    : '—'}
                 </span>
               </CardDescription>
             </div>
@@ -87,15 +89,19 @@ const DailyShiftPrepGuideHeader = ({
                   )}
                 </div>
                 <DialogFooter className="flex justify-end gap-3 mt-2 sm:mt-4 border-t border-slate-700 pt-4">
-  <DialogClose asChild>
-    <Button variant="outline" className="text-sm px-4 py-2">
-      Cancel
-    </Button>
-  </DialogClose>
-  <Button onClick={handleSaveClicked} variant="gradient" className="px-4 py-2 text-sm font-semibold">
-    <Save className="mr-2 h-4 w-4" /> Save Menu
-  </Button>
-</DialogFooter>
+                  <DialogClose asChild>
+                    <Button variant="outline" className="text-sm px-4 py-2">
+                      Cancel
+                    </Button>
+                  </DialogClose>
+                  <Button
+                    onClick={handleSaveClicked}
+                    variant="gradient"
+                    className="px-4 py-2 text-sm font-semibold"
+                  >
+                    <Save className="mr-2 h-4 w-4" /> Save Menu
+                  </Button>
+                </DialogFooter>
               </DialogContent>
             </Dialog>
 
