@@ -15,7 +15,6 @@ export const useDailyShiftPrepGuideLogic = () => {
   useEffect(() => {
     if (!forecastData || forecastData.length === 0) return;
 
-    // Determine adjustment factor
     const latestActuals = actualData?.[actualData.length - 1];
     const latestForecast = forecastData?.[actualData?.length - 1];
     let factor = 1;
@@ -24,10 +23,13 @@ export const useDailyShiftPrepGuideLogic = () => {
     }
     setAdjustmentFactor(factor);
 
-    const portionToLbs = (oz, guests) => ((guests * oz) / 16).toFixed(1);
+    const portionToLbs = (oz, guests) => {
+      if (!oz || !guests || isNaN(oz) || isNaN(guests)) return 0;
+      return ((guests * oz) / 16).toFixed(1);
+    };
 
     const newData = forecastData.map((entry) => {
-      const guests = entry.guests;
+      const guests = Number(entry.guests || 0);
       const adjGuests = guests * factor;
       const amGuests = Math.round(adjGuests * (amSplit / 100));
       const pmGuests = Math.round(adjGuests - amGuests);
@@ -40,12 +42,12 @@ export const useDailyShiftPrepGuideLogic = () => {
           color: guestCount === amGuests ? "text-yellow-600" : "text-blue-600",
           icon: guestCount === amGuests ? "🌞" : "🌙",
           prepItems: [
-            // Sandwiches (by lb)
+            // Sandwich proteins (by lb)
             { id: uuidv4(), name: "Pulled Pork (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Chopped Brisket (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Chopped Chicken (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
 
-            // Coleslaw (Topping + Side, calculated once)
+            // Coleslaw combined: 2oz/sandwich + 4oz/guest as side
             { id: uuidv4(), name: "Coleslaw", quantity: portionToLbs((2 * totalSandwiches) + (4 * guestCount), 1), unit: "lbs" },
 
             // Bread
@@ -59,7 +61,7 @@ export const useDailyShiftPrepGuideLogic = () => {
             { id: uuidv4(), name: "St Louis Ribs", quantity: portionToLbs(16, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Beef Short Rib", quantity: portionToLbs(24, guestCount), unit: "lbs" },
 
-            // Sides by lb
+            // Sides by lb or each
             { id: uuidv4(), name: "Collard Greens", quantity: portionToLbs(4, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Mac N Cheese", quantity: portionToLbs(4, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Baked Beans", quantity: portionToLbs(4, guestCount), unit: "lbs" },
@@ -105,4 +107,6 @@ export const useDailyShiftPrepGuideLogic = () => {
     handleSaveMenu: () => {},
   };
 };
+
+
 
