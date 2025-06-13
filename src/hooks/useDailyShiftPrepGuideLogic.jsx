@@ -33,6 +33,14 @@ export const useDailyShiftPrepGuideLogic = () => {
       const adjGuests = guests * factor;
       const amGuests = Math.round(adjGuests * (amSplit / 100));
       const pmGuests = Math.round(adjGuests - amGuests);
+      console.log("👥 Guests Breakdown:", {
+  date: entry.date,
+  rawGuests: guests,
+  adjustmentFactor: factor,
+  adjGuests,
+  amGuests,
+  pmGuests
+});
 
       const generateShift = (guestCount) => {
         const totalSandwiches = guestCount * 3;
