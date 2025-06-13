@@ -4,7 +4,6 @@ import { useToast } from '../components/ui/use-toast.jsx';
 import { getDayFromDate, DAY_ORDER } from "@/lib/dateUtils.js";
 import { CheckCircle } from "lucide-react";
 
-// Pulls cost % from admin-set localStorage values
 const getCostPercentages = () => ({
   food: Number(localStorage.getItem("foodCostGoal") || 0.3),
   bev: Number(localStorage.getItem("bevCostGoal") || 0.2),
@@ -113,31 +112,22 @@ export const useWeeklyForecastLogic = () => {
     DAY_ORDER.forEach((dayName, index) => {
       if (parsedDayData[dayName] !== undefined) {
         const pax = parsedDayData[dayName];
-        const guests = Math.round(pax * (captureRate / 100));
+        const guests = pax * (captureRate / 100);
         const sales = guests * spendPerGuest;
         const food = sales * foodPct;
         const bev = sales * bevPct;
         const labor = sales * laborPct;
         const forecastDate = getDayFromDate(baseDate, index);
 
-        processedData.push({
-          day: dayName,
-          date: forecastDate,
-          pax,
-          guests,
-          sales,
-          food,
-          bev,
-          labor,
-        });
+        processedData.push({ day: dayName, date: forecastDate, pax, guests, sales, food, bev, labor });
 
         addForecastEntry({
           date: forecastDate,
-          guests,
           forecastSales: sales,
           forecastedFood: food,
           forecastedBev: bev,
           forecastedLabor: labor,
+          guests // ✅ ADDED — required for prep logic
         });
 
         totalTraffic += pax;
@@ -159,7 +149,7 @@ export const useWeeklyForecastLogic = () => {
         food: totalFood,
         bev: totalBev,
         labor: totalLabor,
-        isTotal: true,
+        isTotal: true
       });
     }
 
@@ -167,7 +157,7 @@ export const useWeeklyForecastLogic = () => {
     if (entriesAddedToContext > 0) {
       toast({
         title: "Weekly Forecast Parsed & Saved",
-        description: `${entriesAddedToContext} entries added for week starting ${baseDate}.\`,
+        description: `${entriesAddedToContext} entries added for week starting ${baseDate}.`,
         action: <CheckCircle className="text-green-500" />,
       });
     }
@@ -188,6 +178,6 @@ export const useWeeklyForecastLogic = () => {
     amSplit,
     setAmSplit,
     adminMode,
-    toggleAdminMode,
+    toggleAdminMode
   };
 };
