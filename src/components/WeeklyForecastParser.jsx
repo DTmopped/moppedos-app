@@ -110,7 +110,11 @@ const WeeklyForecastParser = () => {
         </CardContent>
       </Card>
 
-      <ForecastResultsTable forecastDataUI={forecastDataUI} />
+      <ForecastResultsTable 
+  forecastDataUI={forecastDataUI}
+  captureRate={captureRate}
+  spendPerGuest={spendPerGuest}
+/>
     </motion.div>
   );
 };
