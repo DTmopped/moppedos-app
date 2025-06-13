@@ -119,5 +119,6 @@ export const useDailyShiftPrepGuideLogic = () => {
     menu: {},
     MenuEditorComponent: null,
     handleSaveMenu: () => {},
-  };
+ };
+}; 
 
