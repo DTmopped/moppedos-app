@@ -18,27 +18,21 @@ export const useDailyShiftPrepGuideLogic = () => {
     const latestActuals = actualData?.[actualData.length - 1];
     const latestForecast = forecastData?.[actualData?.length - 1];
     let factor = 1;
-
     if (latestActuals && latestForecast && latestForecast.guests > 0) {
       factor = latestActuals.guests / latestForecast.guests;
     }
-
     setAdjustmentFactor(factor);
 
     const portionToLbs = (oz, guests) => {
       if (!oz || !guests || isNaN(oz) || isNaN(guests)) return 0;
-      return ((oz * guests) / 16).toFixed(1);
+      return ((guests * oz) / 16).toFixed(1);
     };
 
     const newData = forecastData.map((entry) => {
       const guests = Number(entry.guests || 0);
-      console.log("🧮 Forecast Entry Guests Check:", entry.date, guests);
-
-      const adjGuests = Math.round(guests * factor);
+      const adjGuests = guests * factor;
       const amGuests = Math.round(adjGuests * (amSplit / 100));
       const pmGuests = Math.round(adjGuests - amGuests);
-
-      console.log("👥 Guests Breakdown:", { guests, adjGuests, amGuests, pmGuests });
 
       const generateShift = (guestCount) => {
         const totalSandwiches = guestCount * 3;
@@ -48,7 +42,7 @@ export const useDailyShiftPrepGuideLogic = () => {
           color: guestCount === amGuests ? "text-yellow-600" : "text-blue-600",
           icon: guestCount === amGuests ? "🌞" : "🌙",
           prepItems: [
-            // Sammies
+            // Sandwich meats (by lb)
             { id: uuidv4(), name: "Pulled Pork (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Chopped Brisket (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Chopped Chicken (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
@@ -57,7 +51,7 @@ export const useDailyShiftPrepGuideLogic = () => {
             { id: uuidv4(), name: "Buns", quantity: guestCount * 3, unit: "each" },
             { id: uuidv4(), name: "Texas Toast", quantity: guestCount, unit: "each" },
 
-            // Coleslaw (Topping + Side)
+            // Coleslaw — side + topping
             {
               id: uuidv4(),
               name: "Coleslaw",
@@ -65,7 +59,7 @@ export const useDailyShiftPrepGuideLogic = () => {
               unit: "lbs"
             },
 
-            // BBQ Meats
+            // BBQ meats (by lb)
             { id: uuidv4(), name: "Pulled Pork", quantity: portionToLbs(6, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Brisket", quantity: portionToLbs(6, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Half Chicken", quantity: portionToLbs(16, guestCount), unit: "lbs" },
@@ -90,19 +84,16 @@ export const useDailyShiftPrepGuideLogic = () => {
 
       return {
         date: entry.date,
-        guests,
-        adjustmentFactor: factor,
-        adjGuests,
+        guests: Math.round(adjGuests),
         amGuests,
         pmGuests,
         shifts: {
           am: generateShift(amGuests),
           pm: generateShift(pmGuests),
-        }
+        },
       };
     });
 
-    console.log("✅ Final dailyShiftPrepData:", newData);
     setDailyShiftPrepData(newData);
   }, [forecastData, actualData, amSplit]);
 
