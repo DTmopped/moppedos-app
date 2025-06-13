@@ -5,7 +5,7 @@ import DailyShiftPrepGuideHeader from "./prep/DailyShiftPrepGuideHeader.jsx";
 import DayPrepCard from "./prep/DayPrepCard.jsx";
 import { triggerPrint } from "./prep/PrintUtils.jsx";
 import PrintableDailyShiftPrepGuide from "./prep/PrintableDailyShiftPrepGuide.jsx";
-import { useDailyShiftPrepGuideLogic } from "../../hooks/useDailyShiftPrepGuideLogic.jsx";
+import { useDailyShiftPrepGuideLogic } from "../hooks/useDailyShiftPrepGuideLogic.jsx";
 import { useToast } from "./ui/use-toast.jsx";
 import { PREP_GUIDE_ICON_COLORS } from "../../config/prepGuideConfig.jsx";
 
