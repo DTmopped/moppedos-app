@@ -53,7 +53,7 @@ const PrepGuideContent = ({
           <PrepSectionCard
             key={section}
             sectionTitle={section}
-            prepText={prepTextBySection[section]}
+            prepText={prepTextBySection[section] || ""}
             titleColor={titleColor}
             iconColor={iconColorClass}
           />
@@ -65,9 +65,9 @@ const PrepGuideContent = ({
   if (guideType === 'dailyShift') {
     return (
       <div className="space-y-6">
-        {dailyShiftPrepData.map((dayData, index) => (
+        {(dailyShiftPrepData || []).map((dayData, index) => (
           <DayPrepCard 
-            key={dayData.date + index} 
+            key={(dayData?.date || index) + index} 
             dayData={dayData} 
             onPrepTaskChange={onPrepTaskChange} 
           />
