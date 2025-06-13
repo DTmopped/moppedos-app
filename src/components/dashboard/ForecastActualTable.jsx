@@ -1,106 +1,64 @@
 import React from "react";
-import { motion } from "framer-motion";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table.jsx";
 
-const ForecastActualTable = ({ combinedData = [] }) => {
-  const foodTarget = 0.30;
-  const bevTarget = 0.20;
-  const laborTarget = 0.14;
-
-  const getClass = (pct, target) => {
-    if (isNaN(pct)) return "";
-    return pct > target ? "bg-red-200 text-red-700" : "bg-green-200 text-green-700";
-  };
-
-  const today = new Date().toISOString().split('T')[0];
-
-  const totals = combinedData.reduce(
-    (acc, d) => {
-      acc.forecastSales += d?.forecastSales || 0;
-      if (d?.hasActuals) {
-        acc.actualSales += d.actualSales || 0;
-        acc.foodPct += d.foodPct || 0;
-        acc.bevPct += d.bevPct || 0;
-        acc.laborPct += d.laborPct || 0;
-        acc.count++;
-        if (d.foodPct > foodTarget) acc.foodOver++;
-        if (d.bevPct > bevTarget) acc.bevOver++;
-        if (d.laborPct > laborTarget) acc.laborOver++;
-      }
-      return acc;
-    },
-    { forecastSales: 0, actualSales: 0, foodPct: 0, bevPct: 0, laborPct: 0, count: 0, foodOver: 0, bevOver: 0, laborOver: 0 }
-  );
-
-  const avgFood = totals.count > 0 ? totals.foodPct / totals.count : 0;
-  const avgBev = totals.count > 0 ? totals.bevPct / totals.count : 0;
-  const avgLabor = totals.count > 0 ? totals.laborPct / totals.count : 0;
-
+const ForecastActualTable = ({ combinedData, foodTarget, bevTarget, laborTarget }) => {
   return (
-    <div className="overflow-x-auto rounded-md border border-slate-300 shadow-inner">
-      <Table>
-        <TableHeader className="bg-slate-100">
-          <TableRow className="border-slate-200 text-slate-600">
-            <TableHead>Date</TableHead>
-            <TableHead className="text-right">Forecasted Sales ($)</TableHead>
-            <TableHead className="text-right">Actual Sales ($)</TableHead>
-            <TableHead className="text-right">Food Cost %</TableHead>
-            <TableHead className="text-right">Bev Cost %</TableHead>
-            <TableHead className="text-right">Labor Cost %</TableHead>
-            <TableHead>Alerts</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {combinedData?.map((day, index) => {
-            const alerts = [];
-            if (day?.hasActuals) {
-              if (day.foodPct > foodTarget) alerts.push("Food Over");
-              if (day.bevPct > bevTarget) alerts.push("Bev Over");
-              if (day.laborPct > laborTarget) alerts.push("Labor Over");
-            }
-            const isToday = day?.date === today;
+    <div className="overflow-x-auto">
+      <table className="w-full table-auto border-collapse text-sm text-slate-800">
+        <thead className="bg-slate-100 text-slate-600 font-semibold border-b border-slate-300">
+          <tr>
+            <th className="p-2 text-left">Date</th>
+            <th className="p-2 text-right">Forecasted Sales ($)</th>
+            <th className="p-2 text-right">Actual Sales ($)</th>
+            <th className="p-2 text-right">Food Cost %</th>
+            <th className="p-2 text-right">Bev Cost %</th>
+            <th className="p-2 text-right">Labor Cost %</th>
+            <th className="p-2 text-left">Alerts</th>
+          </tr>
+        </thead>
+        <tbody>
+          {combinedData.map((row, idx) => {
+            const foodClass = row.hasActuals && row.foodPct > foodTarget
+              ? "bg-red-100 text-red-700"
+              : "bg-green-100 text-green-700";
+
+            const bevClass = row.hasActuals && row.bevPct > bevTarget
+              ? "bg-red-100 text-red-700"
+              : "bg-green-100 text-green-700";
+
+            const laborClass = row.hasActuals && row.laborPct > laborTarget
+              ? "bg-red-100 text-red-700"
+              : "bg-green-100 text-green-700";
+
+            const alert = row.hasActuals
+              ? [
+                  row.foodPct > foodTarget ? "Food Over" : null,
+                  row.bevPct > bevTarget ? "Bev Over" : null,
+                  row.laborPct > laborTarget ? "Labor Over" : null
+                ].filter(Boolean).join(", ") || "On Target"
+              : "No Actuals";
 
             return (
-              <motion.tr
-                key={day?.date || index}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: index * 0.03 }}
-                className={`border-b border-slate-200 text-sm hover:bg-slate-50 transition-colors ${isToday ? 'bg-yellow-100' : ''}`}
-              >
-                <TableCell>{day?.date || "N/A"}</TableCell>
-                <TableCell className="text-right">{day?.forecastSales?.toFixed(2) || "0.00"}</TableCell>
-                <TableCell className="text-right">{day?.hasActuals ? day.actualSales.toFixed(2) : "N/A"}</TableCell>
-                <TableCell className={`text-right ${getClass(day?.foodPct, foodTarget)}`}>
-                  {day?.hasActuals ? `${(day.foodPct * 100).toFixed(1)}%` : "N/A"}
-                </TableCell>
-                <TableCell className={`text-right ${getClass(day?.bevPct, bevTarget)}`}>
-                  {day?.hasActuals ? `${(day.bevPct * 100).toFixed(1)}%` : "N/A"}
-                </TableCell>
-                <TableCell className={`text-right ${getClass(day?.laborPct, laborTarget)}`}>
-                  {day?.hasActuals ? `${(day.laborPct * 100).toFixed(1)}%` : "N/A"}
-                </TableCell>
-                <TableCell>
-                  {!day?.hasActuals
-                    ? "No Actuals"
-                    : alerts.length === 0
-                    ? "On Target"
-                    : alerts.join(", ")}
-                </TableCell>
-              </motion.tr>
+              <tr key={idx} className="border-b border-slate-200 hover:bg-slate-50">
+                <td className="p-2">{row.date}</td>
+                <td className="p-2 text-right">{row.forecastSales?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                <td className="p-2 text-right">
+                  {row.hasActuals ? row.actualSales?.toLocaleString(undefined, { maximumFractionDigits: 2 }) : "N/A"}
+                </td>
+                <td className={`p-2 text-right ${row.hasActuals ? foodClass : "text-slate-400"}`}>
+                  {row.hasActuals ? `${(row.foodPct * 100).toFixed(1)}%` : "N/A"}
+                </td>
+                <td className={`p-2 text-right ${row.hasActuals ? bevClass : "text-slate-400"}`}>
+                  {row.hasActuals ? `${(row.bevPct * 100).toFixed(1)}%` : "N/A"}
+                </td>
+                <td className={`p-2 text-right ${row.hasActuals ? laborClass : "text-slate-400"}`}>
+                  {row.hasActuals ? `${(row.laborPct * 100).toFixed(1)}%` : "N/A"}
+                </td>
+                <td className="p-2 text-left text-sm italic text-slate-500">{alert}</td>
+              </tr>
             );
           })}
-          <TableRow className="font-semibold bg-slate-200 text-slate-800">
-            <TableCell>Totals / Avg</TableCell>
-            <TableCell className="text-right">{totals.forecastSales.toFixed(2)}</TableCell>
-            <TableCell className="text-right">{totals.actualSales.toFixed(2)}</TableCell>
-            <TableCell className={`text-right ${getClass(avgFood, foodTarget)}`}>{(avgFood * 100).toFixed(1)}%</TableCell>
-            <TableCell className={`text-right ${getClass(avgBev, bevTarget)}`}>{(avgBev * 100).toFixed(1)}%</TableCell>
-            <TableCell className={`text-right ${getClass(avgLabor, laborTarget)}`}>{(avgLabor * 100).toFixed(1)}%</TableCell>
-            <TableCell>{`Food Over: ${totals.foodOver}, Bev Over: ${totals.bevOver}, Labor Over: ${totals.laborOver}`}</TableCell>
-          </TableRow>
-        </TableBody>
-      </Table>
+        </tbody>
+      </table>
     </div>
   );
 };
