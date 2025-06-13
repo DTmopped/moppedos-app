@@ -33,6 +33,8 @@ export const useDailyShiftPrepGuideLogic = () => {
       const pmGuests = Math.round(adjGuests - amGuests);
 
       const generateShift = (guestCount) => {
+        const totalSandwiches = guestCount * 3;
+
         return {
           name: guestCount === amGuests ? "AM" : "PM",
           color: guestCount === amGuests ? "text-yellow-600" : "text-blue-600",
@@ -43,8 +45,8 @@ export const useDailyShiftPrepGuideLogic = () => {
             { id: uuidv4(), name: "Chopped Brisket (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Chopped Chicken (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
 
-            // Coleslaw on Sammies (2 oz each)
-           { id: uuidv4(), name: "Coleslaw", quantity: portionToLbs((2 * totalSandwiches) + (4 * guestCount)), unit: "lbs" },
+            // Coleslaw (Topping + Side, calculated once)
+            { id: uuidv4(), name: "Coleslaw", quantity: portionToLbs((2 * totalSandwiches) + (4 * guestCount), 1), unit: "lbs" },
 
             // Bread
             { id: uuidv4(), name: "Buns", quantity: Math.ceil(guestCount * 3), unit: "each" },
@@ -62,7 +64,6 @@ export const useDailyShiftPrepGuideLogic = () => {
             { id: uuidv4(), name: "Mac N Cheese", quantity: portionToLbs(4, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Baked Beans", quantity: portionToLbs(4, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Corn Casserole", quantity: portionToLbs(4, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "Cole Slaw", quantity: portionToLbs(3, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Corn Muffin", quantity: Math.ceil(guestCount), unit: "each" },
             { id: uuidv4(), name: "Honey Butter", quantity: portionToLbs(1, guestCount), unit: "lbs" },
 
