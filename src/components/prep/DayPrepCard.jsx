@@ -33,8 +33,9 @@ const DayPrepCard = ({ dayData, onPrepTaskChange }) => {
   };
 
   const amGuests = typeof dayData.amGuests === 'number' ? dayData.amGuests.toFixed(0) : '—';
-  const pmGuests = typeof dayData.guests === 'number' && typeof dayData.amGuests === 'number'
-    ? (dayData.guests - dayData.amGuests).toFixed(0)
+  const totalGuests = typeof dayData.forecastGuests === 'number' ? dayData.forecastGuests : null;
+  const pmGuests = totalGuests !== null && typeof dayData.amGuests === 'number'
+    ? (totalGuests - dayData.amGuests).toFixed(0)
     : '—';
 
   return (
@@ -137,3 +138,4 @@ const DayPrepCard = ({ dayData, onPrepTaskChange }) => {
 };
 
 export default DayPrepCard;
+
