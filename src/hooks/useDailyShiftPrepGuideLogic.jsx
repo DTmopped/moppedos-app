@@ -18,9 +18,11 @@ export const useDailyShiftPrepGuideLogic = () => {
     const latestActuals = actualData?.[actualData.length - 1];
     const latestForecast = forecastData?.[actualData?.length - 1];
     let factor = 1;
+
     if (latestActuals && latestForecast && latestForecast.guests > 0) {
       factor = latestActuals.guests / latestForecast.guests;
     }
+
     setAdjustmentFactor(factor);
 
     const portionToLbs = (oz, guests) => {
@@ -34,55 +36,44 @@ export const useDailyShiftPrepGuideLogic = () => {
       const amGuests = Math.round(adjGuests * (amSplit / 100));
       const pmGuests = Math.round(adjGuests - amGuests);
 
-      console.log("🔎 Forecast Entry Guests Check:", entry.date, entry.guests);
-      console.log("👥 Guests Breakdown:", {
-        date: entry.date,
-        rawGuests: guests,
-        adjusted: adjGuests,
-        am: amGuests,
-        pm: pmGuests,
-      });
-
-      const generateShift = (guestCount, shiftLabel) => {
-        console.log(`🧮 Generating shift for ${shiftLabel} | guestCount:`, guestCount);
+      const generateShift = (guestCount) => {
         const totalSandwiches = guestCount * 3;
-
         return {
-          name: shiftLabel,
-          color: shiftLabel === "AM" ? "text-yellow-600" : "text-blue-600",
-          icon: shiftLabel === "AM" ? "🌞" : "🌙",
+          name: guestCount === amGuests ? "AM" : "PM",
+          color: guestCount === amGuests ? "text-yellow-600" : "text-blue-600",
+          icon: guestCount === amGuests ? "🌞" : "🌙",
           prepItems: [
-            // Sandwich meats (by lb)
+            // Sandwich meats
             { id: uuidv4(), name: "Pulled Pork (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Chopped Brisket (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Chopped Chicken (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
 
-            // Bread (each)
+            // Bread
             { id: uuidv4(), name: "Buns", quantity: guestCount * 3, unit: "each" },
             { id: uuidv4(), name: "Texas Toast", quantity: guestCount, unit: "each" },
 
-            // BBQ meats (by lb)
-            { id: uuidv4(), name: "Pulled Pork", quantity: portionToLbs(6, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "Brisket", quantity: portionToLbs(6, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "Half Chicken", quantity: portionToLbs(16, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "St Louis Ribs", quantity: portionToLbs(16, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "Beef Short Rib", quantity: portionToLbs(24, guestCount), unit: "lbs" },
-
-            // Sides (including coleslaw)
-            { id: uuidv4(), name: "Collard Greens", quantity: portionToLbs(4, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "Mac N Cheese", quantity: portionToLbs(4, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "Baked Beans", quantity: portionToLbs(4, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "Corn Casserole", quantity: portionToLbs(4, guestCount), unit: "lbs" },
+            // Sides
             {
               id: uuidv4(),
               name: "Coleslaw",
               quantity: portionToLbs((2 * totalSandwiches) + (4 * guestCount), 1),
               unit: "lbs"
             },
+            { id: uuidv4(), name: "Collard Greens", quantity: portionToLbs(4, guestCount), unit: "lbs" },
+            { id: uuidv4(), name: "Mac N Cheese", quantity: portionToLbs(4, guestCount), unit: "lbs" },
+            { id: uuidv4(), name: "Baked Beans", quantity: portionToLbs(4, guestCount), unit: "lbs" },
+            { id: uuidv4(), name: "Corn Casserole", quantity: portionToLbs(4, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Corn Muffin", quantity: guestCount, unit: "each" },
             { id: uuidv4(), name: "Honey Butter", quantity: guestCount, unit: "each" },
 
-            // Desserts (each)
+            // BBQ meats
+            { id: uuidv4(), name: "Pulled Pork", quantity: portionToLbs(6, guestCount), unit: "lbs" },
+            { id: uuidv4(), name: "Brisket", quantity: portionToLbs(6, guestCount), unit: "lbs" },
+            { id: uuidv4(), name: "Half Chicken", quantity: portionToLbs(16, guestCount), unit: "lbs" },
+            { id: uuidv4(), name: "St Louis Ribs", quantity: portionToLbs(16, guestCount), unit: "lbs" },
+            { id: uuidv4(), name: "Beef Short Rib", quantity: portionToLbs(24, guestCount), unit: "lbs" },
+
+            // Desserts
             { id: uuidv4(), name: "Banana Pudding", quantity: guestCount, unit: "each" },
             { id: uuidv4(), name: "Key Lime Pie", quantity: guestCount, unit: "each" },
             { id: uuidv4(), name: "Hummingbird Cake", quantity: guestCount, unit: "each" },
@@ -96,13 +87,12 @@ export const useDailyShiftPrepGuideLogic = () => {
         amGuests,
         pmGuests,
         shifts: {
-          am: generateShift(amGuests, "AM"),
-          pm: generateShift(pmGuests, "PM"),
+          am: generateShift(amGuests),
+          pm: generateShift(pmGuests),
         },
       };
     });
 
-    console.log("✅ Final dailyShiftPrepData:", newData);
     setDailyShiftPrepData(newData);
   }, [forecastData, actualData, amSplit]);
 
@@ -119,6 +109,6 @@ export const useDailyShiftPrepGuideLogic = () => {
     menu: {},
     MenuEditorComponent: null,
     handleSaveMenu: () => {},
- };
-}; 
+  };
+};
 
