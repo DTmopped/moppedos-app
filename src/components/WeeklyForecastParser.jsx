@@ -45,11 +45,12 @@ const WeeklyForecastParser = () => {
             <p className="text-slate-300 text-sm mt-1">
               Paste weekly passenger data (include <span className="font-mono font-bold">Date:</span> <span className="font-mono font-bold">YYYY-MM-DD</span> for Monday) to generate and save forecast. Uses <span className="text-pink-300 font-bold">{captureRate}%</span> capture rate and <span className="text-pink-300 font-bold">${spendPerGuest}</span> spend/guest.
             </p>
-            <p className="text-slate-400 text-xs pt-1">
-              Current Settings: <span className="text-white font-semibold">Capture Rate: {captureRate}%</span>   
-              <span className="text-white font-semibold">Avg Spend: ${spendPerGuest}</span>   
-              <span className="text-white font-semibold">AM Split: {amSplit}%</span>
-            </p>
+            <p className="text-sm text-slate-200 pt-2">
+              <span className="text-slate-100 font-semibold">Current Settings:</span>
+              <span className="text-pink-300 font-semibold ml-4">Capture Rate: {captureRate}%</span>
+              <span className="text-pink-300 font-semibold ml-4">Avg Spend: ${spendPerGuest}</span>
+              <span className="text-pink-300 font-semibold ml-4">AM Split: {amSplit}%</span>
+           </p>
           </div>
           <button
             type="button"
