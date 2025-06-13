@@ -47,6 +47,7 @@ const WeeklyForecastParser = () => {
             <p className="text-slate-400 text-xs pt-1">Current Settings: <span className="text-white font-semibold">Capture Rate: {captureRate}%</span>   <span className="text-white font-semibold">Avg Spend: ${spendPerGuest}</span>   <span className="text-white font-semibold">AM Split: {amSplit}%</span></p>
           </div>
           <button
+            type="button"
             onClick={toggleAdminMode}
             className="text-slate-300 hover:text-white border border-slate-500 hover:border-white px-3 py-1 text-sm rounded-md flex items-center bg-slate-700 hover:bg-slate-600 transition-colors"
           >
