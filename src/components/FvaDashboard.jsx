@@ -227,7 +227,12 @@ const FvaDashboard = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <ForecastActualTable combinedData={combinedData} />
+          <ForecastActualTable 
+            combinedData={combinedData} 
+            foodTarget={foodTarget} 
+            bevTarget={bevTarget} 
+            laborTarget={laborTarget}
+          />
           <p className="text-xs text-slate-400 mt-4 italic">
             Note: This dashboard sources data from the central data store. Future enhancements could involve integrating data from other parser tools within the application.
           </p>
