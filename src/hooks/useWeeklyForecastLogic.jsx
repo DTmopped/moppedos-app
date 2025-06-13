@@ -113,20 +113,31 @@ export const useWeeklyForecastLogic = () => {
     DAY_ORDER.forEach((dayName, index) => {
       if (parsedDayData[dayName] !== undefined) {
         const pax = parsedDayData[dayName];
-        const guests = pax * (captureRate / 100);
+        const guests = Math.round(pax * (captureRate / 100));
         const sales = guests * spendPerGuest;
         const food = sales * foodPct;
         const bev = sales * bevPct;
         const labor = sales * laborPct;
         const forecastDate = getDayFromDate(baseDate, index);
 
-        processedData.push({ day: dayName, date: forecastDate, pax, guests, sales, food, bev, labor });
+        processedData.push({
+          day: dayName,
+          date: forecastDate,
+          pax,
+          guests,
+          sales,
+          food,
+          bev,
+          labor,
+        });
+
         addForecastEntry({
           date: forecastDate,
+          guests,
           forecastSales: sales,
           forecastedFood: food,
           forecastedBev: bev,
-          forecastedLabor: labor
+          forecastedLabor: labor,
         });
 
         totalTraffic += pax;
@@ -148,7 +159,7 @@ export const useWeeklyForecastLogic = () => {
         food: totalFood,
         bev: totalBev,
         labor: totalLabor,
-        isTotal: true
+        isTotal: true,
       });
     }
 
@@ -156,7 +167,7 @@ export const useWeeklyForecastLogic = () => {
     if (entriesAddedToContext > 0) {
       toast({
         title: "Weekly Forecast Parsed & Saved",
-        description: `${entriesAddedToContext} entries added for week starting ${baseDate}.`,
+        description: `${entriesAddedToContext} entries added for week starting ${baseDate}.\`,
         action: <CheckCircle className="text-green-500" />,
       });
     }
@@ -177,6 +188,6 @@ export const useWeeklyForecastLogic = () => {
     amSplit,
     setAmSplit,
     adminMode,
-    toggleAdminMode
+    toggleAdminMode,
   };
 };
