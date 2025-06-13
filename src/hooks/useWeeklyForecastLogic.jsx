@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useData } from "../contexts/DataContext.jsx";
 import { useToast } from '../components/ui/use-toast.jsx';
-import { getDayFromDate, DAY_ORDER, COST_PERCENTAGES } from "@/lib/dateUtils.js";
+import { getDayFromDate, DAY_ORDER } from "@/lib/dateUtils.js";
 import { CheckCircle } from "lucide-react";
 
-// Fallback defaults
-const FALLBACK_CAPTURE_RATE = 8;
-const FALLBACK_SPEND_PER_GUEST = 40;
-const FALLBACK_AM_SPLIT = 60;
+const getCostPercentages = () => ({
+  food: Number(localStorage.getItem("foodCostPercent") || 0.3),
+  bev: Number(localStorage.getItem("bevCostPercent") || 0.2),
+  labor: Number(localStorage.getItem("laborCostPercent") || 0.14)
+});
 
 const parseWeeklyPassengerInput = (inputText) => {
   const dayRegex = /(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday):\s*([0-9,]+)/gi;
@@ -35,13 +36,13 @@ const extractBaseDateFromWeeklyInput = (inputText, setErrorCallback) => {
       const baseDate = dateMatch[1];
       const testDate = new Date(baseDate);
       if (isNaN(testDate.getTime())) {
-        setErrorCallback("Invalid base date found in input. Please use YYYY-MM-DD format (e.g., Date: 2025-05-13 for Monday).");
+        setErrorCallback("Invalid base date found. Use YYYY-MM-DD format.");
         return null;
       }
       return baseDate;
     }
   }
-  setErrorCallback("Base date line not found. Please include a line like 'Date: YYYY-MM-DD' (e.g., Date: 2025-05-13 for Monday).");
+  setErrorCallback("Missing date line. Use 'Date: YYYY-MM-DD'.");
   return null;
 };
 
@@ -52,19 +53,17 @@ export const useWeeklyForecastLogic = () => {
   const { addForecastEntry } = useData();
   const { toast } = useToast();
 
-  // Admin settings with persistence
-  const [captureRate, setCaptureRate] = useState(() => Number(localStorage.getItem("captureRate") || FALLBACK_CAPTURE_RATE));
-  const [spendPerGuest, setSpendPerGuest] = useState(() => Number(localStorage.getItem("spendPerGuest") || FALLBACK_SPEND_PER_GUEST));
-  const [amSplit, setAmSplit] = useState(() => Number(localStorage.getItem("amSplit") || FALLBACK_AM_SPLIT));
+  const [captureRate, setCaptureRate] = useState(() => Number(localStorage.getItem("captureRate") || 8));
+  const [spendPerGuest, setSpendPerGuest] = useState(() => Number(localStorage.getItem("spendPerGuest") || 40));
+  const [amSplit, setAmSplit] = useState(() => Number(localStorage.getItem("amSplit") || 60));
   const [adminMode, setAdminMode] = useState(() => localStorage.getItem("adminMode") === "true");
 
-  // Save admin inputs to localStorage
   useEffect(() => { localStorage.setItem("captureRate", captureRate); }, [captureRate]);
   useEffect(() => { localStorage.setItem("spendPerGuest", spendPerGuest); }, [spendPerGuest]);
   useEffect(() => { localStorage.setItem("amSplit", amSplit); }, [amSplit]);
   useEffect(() => { localStorage.setItem("adminMode", adminMode); }, [adminMode]);
 
-  const toggleAdminMode = () => setAdminMode((prev) => !prev);
+  const toggleAdminMode = () => setAdminMode(prev => !prev);
 
   const generateForecast = useCallback(() => {
     setError("");
@@ -77,14 +76,16 @@ export const useWeeklyForecastLogic = () => {
     const baseDate = extractBaseDateFromWeeklyInput(inputText, setError);
     if (!baseDate) return;
 
+    const { food: foodPct, bev: bevPct, labor: laborPct } = getCostPercentages();
     const { results: parsedDayData, foundData } = parseWeeklyPassengerInput(inputText);
+
     if (!foundData) {
-      setError("No valid day data found. Please check your input format (e.g., Monday: 15000).");
+      setError("No valid day data found. Check formatting.");
       return;
     }
 
-    let totalTraffic = 0, totalGuests = 0, totalSales = 0, totalFood = 0, totalBev = 0, totalLabor = 0;
     const processedData = [];
+    let totalTraffic = 0, totalGuests = 0, totalSales = 0, totalFood = 0, totalBev = 0, totalLabor = 0;
     let entriesAddedToContext = 0;
 
     DAY_ORDER.forEach((dayName, index) => {
@@ -92,9 +93,9 @@ export const useWeeklyForecastLogic = () => {
         const pax = parsedDayData[dayName];
         const guests = pax * (captureRate / 100);
         const sales = guests * spendPerGuest;
-        const food = sales * COST_PERCENTAGES.food;
-        const bev = sales * COST_PERCENTAGES.bev;
-        const labor = sales * COST_PERCENTAGES.labor;
+        const food = sales * foodPct;
+        const bev = sales * bevPct;
+        const labor = sales * laborPct;
         const forecastDate = getDayFromDate(baseDate, index);
 
         processedData.push({ day: dayName, date: forecastDate, pax, guests, sales, food, bev, labor });
@@ -119,7 +120,7 @@ export const useWeeklyForecastLogic = () => {
         food: totalFood,
         bev: totalBev,
         labor: totalLabor,
-        isTotal: true,
+        isTotal: true
       });
     }
 
@@ -127,7 +128,7 @@ export const useWeeklyForecastLogic = () => {
     if (entriesAddedToContext > 0) {
       toast({
         title: "Weekly Forecast Parsed & Saved",
-        description: `${entriesAddedToContext} forecast entries for week starting ${baseDate} added/updated.`,
+        description: `${entriesAddedToContext} entries added for week starting ${baseDate}.`,
         action: <CheckCircle className="text-green-500" />,
       });
     }
