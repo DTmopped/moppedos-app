@@ -11,7 +11,7 @@ export const useDailyShiftPrepGuideLogic = () => {
   const spendPerGuest = Number(localStorage.getItem("spendPerGuest") || 40);
   const amSplit = Number(localStorage.getItem("amSplit") || 60);
 
-  const menu = {}; // Can be extended if needed
+  const menu = {}; // Optional extension
   const MenuEditorComponent = null;
   const menuLoading = false;
   const manageMenuOpen = false;
@@ -30,9 +30,9 @@ export const useDailyShiftPrepGuideLogic = () => {
     if (!forecastData || forecastData.length === 0) return;
 
     const newPrepData = forecastData
-      .filter(entry => entry.date && entry.guests)
+      .filter(entry => entry.date && (entry.guests || (entry.guestsAm && entry.guestsPm)))
       .map(entry => {
-        const guests = entry.guests;
+        const guests = entry.guests ?? (entry.guestsAm + entry.guestsPm);
         const amGuests = guests * (amSplit / 100);
 
         const portion = (oz) => ((amGuests * oz) / 16).toFixed(1); // convert oz to lbs
