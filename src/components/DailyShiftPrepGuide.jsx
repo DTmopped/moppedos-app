@@ -1,83 +1,43 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import DailyShiftPrepGuideHeader from './prep/DailyShiftPrepGuideHeader.jsx';
-import PrepGuideContent from './prep/PrepGuideContent.jsx';
-import PrintableDailyShiftPrepGuide from './prep/PrintableDailyShiftPrepGuide.jsx';
-import { PREP_GUIDE_ICON_COLORS } from '@/config/prepGuideConfig.jsx';
-import { useDailyShiftPrepGuideLogic } from "@/hooks/useDailyShiftPrepGuideLogic.jsx";
-import { triggerPrint } from "./prep/PrintUtils.jsx";
-import { useToast } from './ui/use-toast.jsx';
+import React, { useMemo } from "react";
+import { useData } from "../../contexts/DataContext";
+import DailyShiftPrepGuideHeader from "./DailyShiftPrepGuideHeader";
+import DayPrepCard from "./DayPrepCard";
+
 const DailyShiftPrepGuide = () => {
-  const {
-    forecastData,
-    menu,
-    MenuEditorComponent,
-    menuLoading,
-    adjustmentFactor,
-    dailyShiftPrepData,
-    manageMenuOpen,
-    setManageMenuOpen,
-    printDate,
-    setPrintDate,
-    handlePrepTaskChange,
-    handleSaveMenu,
-  } = useDailyShiftPrepGuideLogic();
-  const { toast } = useToast();
+  const { forecastData, prepMenu } = useData();
 
-  const handleInitiatePrint = async () => {
-    const currentPrintDate = new Date();
-    setPrintDate(currentPrintDate);
+  // Get today's date in YYYY-MM-DD format
+  const today = new Date().toISOString().split("T")[0];
 
-    const printData = {
-      dailyShiftPrepData,
-      printDate: currentPrintDate,
-    };
-    
-    try {
-      await triggerPrint(PrintableDailyShiftPrepGuide, printData, "Daily Shift Prep Guide - Print");
-      toast({
-        title: "Print Processed",
-        description: "The print dialog has been closed or the print job was sent.",
-        variant: "success",
-      });
-    } catch (error) {
-      toast({
-        title: "Print Error",
-        description: error.message || "Could not complete the print operation.",
-        variant: "destructive",
-      });
-    }
-  };
+  // Find today's forecast
+  const todayForecast = forecastData.find(f => f.date === today);
 
-  const titleColor = PREP_GUIDE_ICON_COLORS.dailyShift;
+  const adjustedGuests = todayForecast ? todayForecast.guests : 0;
+
+  // Create shift prep data (morning vs evening split logic can be added here)
+  const amPrepItems = useMemo(() => {
+    if (!prepMenu || !Array.isArray(prepMenu)) return [];
+    return prepMenu.map(item => ({
+      ...item,
+      qty: "N/A",
+      shift: "AM",
+    }));
+  }, [prepMenu]);
+
+  if (!forecastData || forecastData.length === 0) {
+    return <div className="p-6 text-center text-red-600 font-semibold">🚫 No forecast data available. Generate a forecast first.</div>;
+  }
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }} 
-      animate={{ opacity: 1, y: 0 }} 
-      transition={{ duration: 0.5 }}
-      className="space-y-6"
-    >
-      <DailyShiftPrepGuideHeader
-        adjustmentFactor={adjustmentFactor}
-        onManageMenuOpen={() => setManageMenuOpen(true)}
-        onPrint={handleInitiatePrint}
-        MenuEditorComponent={MenuEditorComponent}
-        manageMenuOpen={manageMenuOpen}
-        setManageMenuOpen={setManageMenuOpen}
-        onSaveMenu={handleSaveMenu}
-      />
-
-      <PrepGuideContent
-        forecastData={forecastData}
-        menuLoading={menuLoading}
-        menu={menu}
-        dailyShiftPrepData={dailyShiftPrepData}
-        guideType="dailyShift"
-        titleColor={titleColor}
-        onPrepTaskChange={handlePrepTaskChange}
-      />
-    </motion.div>
+    <div className="p-6 space-y-6">
+      <DailyShiftPrepGuideHeader adjustedGuests={adjustedGuests} />
+      <div className="text-xl font-semibold text-orange-600 border-b pb-1 border-slate-300">AM Shift Prep</div>
+      <div className="grid gap-2">
+        {amPrepItems.map((item, index) => (
+          <DayPrepCard key={index} item={item} />
+        ))}
+      </div>
+    </div>
   );
 };
 
