@@ -4,10 +4,11 @@ import { useToast } from '../components/ui/use-toast.jsx';
 import { getDayFromDate, DAY_ORDER } from "@/lib/dateUtils.js";
 import { CheckCircle } from "lucide-react";
 
+// Pulls cost % from admin-set localStorage values
 const getCostPercentages = () => ({
-  food: Number(localStorage.getItem("foodCostPercent") || 0.3),
-  bev: Number(localStorage.getItem("bevCostPercent") || 0.2),
-  labor: Number(localStorage.getItem("laborCostPercent") || 0.14)
+  food: Number(localStorage.getItem("foodCostGoal") || 0.3),
+  bev: Number(localStorage.getItem("bevCostGoal") || 0.2),
+  labor: Number(localStorage.getItem("laborCostGoal") || 0.14)
 });
 
 const parseWeeklyPassengerInput = (inputText) => {
@@ -47,21 +48,42 @@ const extractBaseDateFromWeeklyInput = (inputText, setErrorCallback) => {
 };
 
 export const useWeeklyForecastLogic = () => {
-  const [inputText, setInputText] = useState("Date: 2025-05-13\nMonday: 15000\nTuesday: 16000\nWednesday: 15500\nThursday: 17000\nFriday: 19500\nSaturday: 18000\nSunday: 9000");
+  const [inputText, setInputText] = useState(
+    "Date: 2025-05-13\nMonday: 15000\nTuesday: 16000\nWednesday: 15500\nThursday: 17000\nFriday: 19500\nSaturday: 18000\nSunday: 9000"
+  );
   const [forecastDataUI, setForecastDataUI] = useState([]);
   const [error, setError] = useState("");
   const { addForecastEntry } = useData();
   const { toast } = useToast();
 
-  const [captureRate, setCaptureRate] = useState(() => Number(localStorage.getItem("captureRate") || 8));
-  const [spendPerGuest, setSpendPerGuest] = useState(() => Number(localStorage.getItem("spendPerGuest") || 40));
-  const [amSplit, setAmSplit] = useState(() => Number(localStorage.getItem("amSplit") || 60));
-  const [adminMode, setAdminMode] = useState(() => localStorage.getItem("adminMode") === "true");
+  const [captureRate, setCaptureRate] = useState(() =>
+    Number(localStorage.getItem("captureRate") || 8)
+  );
+  const [spendPerGuest, setSpendPerGuest] = useState(() =>
+    Number(localStorage.getItem("spendPerGuest") || 40)
+  );
+  const [amSplit, setAmSplit] = useState(() =>
+    Number(localStorage.getItem("amSplit") || 60)
+  );
+  const [adminMode, setAdminMode] = useState(() =>
+    localStorage.getItem("adminMode") === "true"
+  );
 
-  useEffect(() => { localStorage.setItem("captureRate", captureRate); }, [captureRate]);
-  useEffect(() => { localStorage.setItem("spendPerGuest", spendPerGuest); }, [spendPerGuest]);
-  useEffect(() => { localStorage.setItem("amSplit", amSplit); }, [amSplit]);
-  useEffect(() => { localStorage.setItem("adminMode", adminMode); }, [adminMode]);
+  useEffect(() => {
+    localStorage.setItem("captureRate", captureRate);
+  }, [captureRate]);
+
+  useEffect(() => {
+    localStorage.setItem("spendPerGuest", spendPerGuest);
+  }, [spendPerGuest]);
+
+  useEffect(() => {
+    localStorage.setItem("amSplit", amSplit);
+  }, [amSplit]);
+
+  useEffect(() => {
+    localStorage.setItem("adminMode", adminMode);
+  }, [adminMode]);
 
   const toggleAdminMode = () => setAdminMode(prev => !prev);
 
@@ -99,8 +121,13 @@ export const useWeeklyForecastLogic = () => {
         const forecastDate = getDayFromDate(baseDate, index);
 
         processedData.push({ day: dayName, date: forecastDate, pax, guests, sales, food, bev, labor });
-        addForecastEntry({ date: forecastDate, forecastSales: sales, forecastedFood: food, forecastedBev: bev, forecastedLabor: labor });
-        entriesAddedToContext++;
+        addForecastEntry({
+          date: forecastDate,
+          forecastSales: sales,
+          forecastedFood: food,
+          forecastedBev: bev,
+          forecastedLabor: labor
+        });
 
         totalTraffic += pax;
         totalGuests += guests;
@@ -108,6 +135,7 @@ export const useWeeklyForecastLogic = () => {
         totalFood += food;
         totalBev += bev;
         totalLabor += labor;
+        entriesAddedToContext++;
       }
     });
 
