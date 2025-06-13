@@ -7,35 +7,26 @@ import { BarChartHorizontalBig, Printer, FileDown } from "lucide-react";
 import { useData } from "../contexts/DataContext";
 import ForecastActualTable from "./dashboard/ForecastActualTable.jsx";
 import PrintableFvaDashboard from "./dashboard/PrintableFvaDashboard.jsx";
+import { cn } from "@/lib/utils";
 
 const FvaDashboard = () => {
   const { forecastData, actualData } = useData();
- const [isAdmin, setIsAdmin] = useState(() => {
-  return localStorage.getItem("isAdminMode") === "true";
-});
-  useEffect(() => {
-  localStorage.setItem("isAdminMode", isAdmin.toString());
-}, [isAdmin]);
 
-  // Admin goal %s with localStorage persistence
-  const [foodTarget, setFoodTarget] = useState(() => parseFloat(localStorage.getItem("foodCostGoal")) || 0.30);
-  const [bevTarget, setBevTarget] = useState(() => parseFloat(localStorage.getItem("bevCostGoal")) || 0.20);
+  const [isAdmin, setIsAdmin] = useState(() => localStorage.getItem("isAdminMode") === "true");
+  useEffect(() => {
+    localStorage.setItem("isAdminMode", isAdmin.toString());
+  }, [isAdmin]);
+
+  const [foodTarget, setFoodTarget] = useState(() => parseFloat(localStorage.getItem("foodCostGoal")) || 0.3);
+  const [bevTarget, setBevTarget] = useState(() => parseFloat(localStorage.getItem("bevCostGoal")) || 0.2);
   const [laborTarget, setLaborTarget] = useState(() => parseFloat(localStorage.getItem("laborCostGoal")) || 0.14);
 
-  useEffect(() => {
-    localStorage.setItem("foodCostGoal", foodTarget);
-  }, [foodTarget]);
-
-  useEffect(() => {
-    localStorage.setItem("bevCostGoal", bevTarget);
-  }, [bevTarget]);
-
-  useEffect(() => {
-    localStorage.setItem("laborCostGoal", laborTarget);
-  }, [laborTarget]);
+  useEffect(() => { localStorage.setItem("foodCostGoal", foodTarget); }, [foodTarget]);
+  useEffect(() => { localStorage.setItem("bevCostGoal", bevTarget); }, [bevTarget]);
+  useEffect(() => { localStorage.setItem("laborCostGoal", laborTarget); }, [laborTarget]);
 
   const today = new Date().toISOString().split("T")[0];
-  const currentMonth = "2025-05";
+  const currentMonth = "2025-05"; // adjust to dynamic later
 
   const combinedData = forecastData.map(forecast => {
     const actual = actualData.find(a => a.date === forecast.date);
@@ -140,14 +131,6 @@ const FvaDashboard = () => {
     URL.revokeObjectURL(url);
   };
 
-  if (!combinedData || combinedData.length === 0) {
-    return (
-      <div className="p-8 text-center text-red-600 font-bold text-lg">
-        🚫 No data available to render the dashboard.
-      </div>
-    );
-  }
-
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-6">
       <div className="flex justify-end pr-4">
@@ -164,44 +147,50 @@ const FvaDashboard = () => {
       </div>
 
       <div className="grid grid-cols-3 gap-4">
+        {/* Food */}
         <Card>
           <CardContent className="p-4">
             <p className="text-sm text-slate-500">
               MTD Avg Food Cost % <span className="text-slate-700 text-xs">(Goal: {(foodTarget * 100).toFixed(0)}%)</span>
             </p>
             {isAdmin ? (
-              <input type="number" step="0.01" value={foodTarget} onChange={e => setFoodTarget(parseFloat(e.target.value))}
-                className="mt-1 w-full px-2 py-1 border border-slate-300 rounded-md text-sm" />
+              <input type="number" step="0.01" value={foodTarget} onChange={e => setFoodTarget(parseFloat(e.target.value))} className="mt-1 w-full px-2 py-1 border border-slate-300 rounded-md text-sm" />
             ) : (
-              <p className="text-lg font-semibold text-red-600">{(mtd.foodPct * 100).toFixed(1)}%</p>
+              <p className={cn("text-lg font-semibold", mtd.foodPct > foodTarget ? "text-red-600" : "text-green-600")}>
+                {(mtd.foodPct * 100).toFixed(1)}%
+              </p>
             )}
           </CardContent>
         </Card>
 
+        {/* Beverage */}
         <Card>
           <CardContent className="p-4">
             <p className="text-sm text-slate-500">
               MTD Avg Beverage Cost % <span className="text-slate-700 text-xs">(Goal: {(bevTarget * 100).toFixed(0)}%)</span>
             </p>
             {isAdmin ? (
-              <input type="number" step="0.01" value={bevTarget} onChange={e => setBevTarget(parseFloat(e.target.value))}
-                className="mt-1 w-full px-2 py-1 border border-slate-300 rounded-md text-sm" />
+              <input type="number" step="0.01" value={bevTarget} onChange={e => setBevTarget(parseFloat(e.target.value))} className="mt-1 w-full px-2 py-1 border border-slate-300 rounded-md text-sm" />
             ) : (
-              <p className="text-lg font-semibold text-blue-600">{(mtd.bevPct * 100).toFixed(1)}%</p>
+              <p className={cn("text-lg font-semibold", mtd.bevPct > bevTarget ? "text-red-600" : "text-blue-600")}>
+                {(mtd.bevPct * 100).toFixed(1)}%
+              </p>
             )}
           </CardContent>
         </Card>
 
+        {/* Labor */}
         <Card>
           <CardContent className="p-4">
             <p className="text-sm text-slate-500">
               MTD Avg Labor Cost % <span className="text-slate-700 text-xs">(Goal: {(laborTarget * 100).toFixed(0)}%)</span>
             </p>
             {isAdmin ? (
-              <input type="number" step="0.01" value={laborTarget} onChange={e => setLaborTarget(parseFloat(e.target.value))}
-                className="mt-1 w-full px-2 py-1 border border-slate-300 rounded-md text-sm" />
+              <input type="number" step="0.01" value={laborTarget} onChange={e => setLaborTarget(parseFloat(e.target.value))} className="mt-1 w-full px-2 py-1 border border-slate-300 rounded-md text-sm" />
             ) : (
-              <p className="text-lg font-semibold text-purple-600">{(mtd.laborPct * 100).toFixed(1)}%</p>
+              <p className={cn("text-lg font-semibold", mtd.laborPct > laborTarget ? "text-red-600" : "text-purple-600")}>
+                {(mtd.laborPct * 100).toFixed(1)}%
+              </p>
             )}
           </CardContent>
         </Card>
@@ -232,12 +221,10 @@ const FvaDashboard = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <ForecastActualTable 
-            combinedData={combinedData}
-            foodTarget={foodTarget}
-            bevTarget={bevTarget}
-            laborTarget={laborTarget}
-          />
+          <ForecastActualTable combinedData={combinedData} />
+          <p className="text-xs text-slate-400 mt-4 italic">
+            Note: This dashboard sources data from the central data store. Future enhancements could involve integrating data from other parser tools within the application.
+          </p>
         </CardContent>
       </Card>
     </motion.div>
