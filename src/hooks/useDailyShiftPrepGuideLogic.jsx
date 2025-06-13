@@ -1,121 +1,107 @@
-import { useEffect, useState } from 'react';
-import { useData } from '@/contexts/DataContext.jsx';
-import { useMenuManager } from '@/hooks/useMenuManager';
+import { useState, useEffect } from "react";
+import { useData } from "@/contexts/DataContext.jsx";
+import { v4 as uuidv4 } from "uuid";
 
 export const useDailyShiftPrepGuideLogic = () => {
-  const { forecastData } = useData();
-  const {
-    menu,
-    MenuEditorComponent,
-    isLoading: menuLoading,
-    addMenuItem,
-    updateMenuItem,
-    deleteMenuItem,
-  } = useMenuManager('shiftPrep');
+  const { forecastData, actualData } = useData();
 
   const [adjustmentFactor, setAdjustmentFactor] = useState(1);
   const [dailyShiftPrepData, setDailyShiftPrepData] = useState([]);
-  const [printDate, setPrintDate] = useState(null);
-  const [manageMenuOpen, setManageMenuOpen] = useState(false);
 
-  const captureRate = Number(localStorage.getItem('captureRate') || 8);
-  const spendPerGuest = Number(localStorage.getItem('spendPerGuest') || 40);
-  const amSplit = Number(localStorage.getItem('amSplit') || 60);
+  const captureRate = Number(localStorage.getItem("captureRate") || 8);
+  const spendPerGuest = Number(localStorage.getItem("spendPerGuest") || 40);
+  const amSplit = Number(localStorage.getItem("amSplit") || 60);
 
   useEffect(() => {
-    if (!forecastData || forecastData.length === 0 || !menu) return;
+    if (!forecastData || forecastData.length === 0) return;
 
-    const newPrepData = forecastData.map((entry) => {
-      const guests = Math.round(entry.guests || 0);
-      const amGuests = Math.round(guests * (amSplit / 100));
-      const pmGuests = guests - amGuests;
+    // Determine adjustment factor
+    const latestActuals = actualData?.[actualData.length - 1];
+    const latestForecast = forecastData?.[actualData?.length - 1];
+    let factor = 1;
+    if (latestActuals && latestForecast && latestForecast.guests > 0) {
+      factor = latestActuals.guests / latestForecast.guests;
+    }
+    setAdjustmentFactor(factor);
 
-      const portion = (count, oz) => ({
-        each: count,
-        lbs: ((count * oz) / 16).toFixed(1),
-      });
+    const portionToLbs = (oz, guests) => ((guests * oz) / 16).toFixed(1);
 
-      const generateShiftItems = (guestCount) => {
-        const items = [];
-        if (!menu || Object.keys(menu).length === 0) return items;
+    const newData = forecastData.map((entry) => {
+      const guests = entry.guests;
+      const adjGuests = guests * factor;
+      const amGuests = Math.round(adjGuests * (amSplit / 100));
+      const pmGuests = Math.round(adjGuests - amGuests);
 
-        Object.keys(menu).forEach((sectionKey) => {
-          const section = menu[sectionKey];
-          section.forEach((item) => {
-            const { id, name, unit, portionSizeOz = 0, multiplier = 1 } = item;
-            let quantity = 0;
-            if (unit === 'lbs') {
-              quantity = ((guestCount * portionSizeOz * multiplier) / 16).toFixed(1);
-            } else {
-              quantity = Math.ceil(guestCount * multiplier);
-            }
-            items.push({ ...item, quantity });
-          });
-        });
+      const generateShift = (guestCount) => {
+        return {
+          name: guestCount === amGuests ? "AM" : "PM",
+          color: guestCount === amGuests ? "text-yellow-600" : "text-blue-600",
+          icon: guestCount === amGuests ? "🌞" : "🌙",
+          prepItems: [
+            // Sandwiches (by lb)
+            { id: uuidv4(), name: "Pulled Pork (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
+            { id: uuidv4(), name: "Chopped Brisket (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
+            { id: uuidv4(), name: "Chopped Chicken (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
 
-        return items;
+            // Coleslaw on Sammies (2 oz each)
+           { id: uuidv4(), name: "Coleslaw", quantity: portionToLbs((2 * totalSandwiches) + (4 * guestCount)), unit: "lbs" },
+
+            // Bread
+            { id: uuidv4(), name: "Buns", quantity: Math.ceil(guestCount * 3), unit: "each" },
+            { id: uuidv4(), name: "Texas Toast", quantity: Math.ceil(guestCount * 1), unit: "each" },
+
+            // BBQ by lb
+            { id: uuidv4(), name: "Pulled Pork", quantity: portionToLbs(6, guestCount), unit: "lbs" },
+            { id: uuidv4(), name: "Brisket", quantity: portionToLbs(6, guestCount), unit: "lbs" },
+            { id: uuidv4(), name: "Half Chicken", quantity: portionToLbs(16, guestCount), unit: "lbs" },
+            { id: uuidv4(), name: "St Louis Ribs", quantity: portionToLbs(16, guestCount), unit: "lbs" },
+            { id: uuidv4(), name: "Beef Short Rib", quantity: portionToLbs(24, guestCount), unit: "lbs" },
+
+            // Sides by lb
+            { id: uuidv4(), name: "Collard Greens", quantity: portionToLbs(4, guestCount), unit: "lbs" },
+            { id: uuidv4(), name: "Mac N Cheese", quantity: portionToLbs(4, guestCount), unit: "lbs" },
+            { id: uuidv4(), name: "Baked Beans", quantity: portionToLbs(4, guestCount), unit: "lbs" },
+            { id: uuidv4(), name: "Corn Casserole", quantity: portionToLbs(4, guestCount), unit: "lbs" },
+            { id: uuidv4(), name: "Cole Slaw", quantity: portionToLbs(3, guestCount), unit: "lbs" },
+            { id: uuidv4(), name: "Corn Muffin", quantity: Math.ceil(guestCount), unit: "each" },
+            { id: uuidv4(), name: "Honey Butter", quantity: portionToLbs(1, guestCount), unit: "lbs" },
+
+            // Desserts by each
+            { id: uuidv4(), name: "Banana Pudding", quantity: Math.ceil(guestCount), unit: "each" },
+            { id: uuidv4(), name: "Key Lime Pie", quantity: Math.ceil(guestCount), unit: "each" },
+            { id: uuidv4(), name: "Hummingbird Cake", quantity: Math.ceil(guestCount), unit: "each" },
+          ]
+        };
       };
 
       return {
         date: entry.date,
-        guests,
+        guests: Math.round(adjGuests),
         amGuests,
+        pmGuests,
         shifts: {
-          am: {
-            name: 'AM',
-            icon: '🌞',
-            color: 'text-yellow-500',
-            prepItems: generateShiftItems(amGuests),
-          },
-          pm: {
-            name: 'PM',
-            icon: '🌙',
-            color: 'text-purple-400',
-            prepItems: generateShiftItems(pmGuests),
-          },
+          am: generateShift(amGuests),
+          pm: generateShift(pmGuests)
         },
       };
     });
 
-    setDailyShiftPrepData(newPrepData);
-  }, [forecastData, menu, amSplit]);
-
-  const handlePrepTaskChange = (date, shiftKey, itemId, field, value) => {
-    setDailyShiftPrepData((prev) => {
-      return prev.map((day) => {
-        if (day.date !== date) return day;
-        const updatedShift = {
-          ...day.shifts[shiftKey],
-          prepItems: day.shifts[shiftKey].prepItems.map((item) =>
-            item.id === itemId ? { ...item, [field]: value } : item
-          ),
-        };
-        return {
-          ...day,
-          shifts: {
-            ...day.shifts,
-            [shiftKey]: updatedShift,
-          },
-        };
-      });
-    });
-  };
+    setDailyShiftPrepData(newData);
+  }, [forecastData, actualData, amSplit]);
 
   return {
     forecastData,
-    menu,
-    MenuEditorComponent,
-    menuLoading,
-    addMenuItem,
-    updateMenuItem,
-    deleteMenuItem,
     adjustmentFactor,
     dailyShiftPrepData,
-    manageMenuOpen,
-    setManageMenuOpen,
-    handlePrepTaskChange,
-    printDate,
-    setPrintDate,
+    printDate: null,
+    setPrintDate: () => {},
+    handlePrepTaskChange: () => {},
+    manageMenuOpen: false,
+    setManageMenuOpen: () => {},
+    menuLoading: false,
+    menu: {},
+    MenuEditorComponent: null,
+    handleSaveMenu: () => {},
   };
 };
 
