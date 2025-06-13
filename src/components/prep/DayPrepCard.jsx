@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 const DayPrepCard = ({ dayData, onPrepTaskChange }) => {
-  if (!dayData) return null;
+  if (!dayData || !dayData.shifts) return null;
 
   const handleAssignmentChange = (shiftKey, itemId, value) => {
     onPrepTaskChange(dayData.date, shiftKey, itemId, 'assignedTo', value);
@@ -33,9 +33,8 @@ const DayPrepCard = ({ dayData, onPrepTaskChange }) => {
   };
 
   const amGuests = typeof dayData.amGuests === 'number' ? dayData.amGuests.toFixed(0) : '—';
-  const totalGuests = typeof dayData.forecastGuests === 'number' ? dayData.forecastGuests : null;
-  const pmGuests = totalGuests !== null && typeof dayData.amGuests === 'number'
-    ? (totalGuests - dayData.amGuests).toFixed(0)
+  const pmGuests = typeof dayData.guests === 'number' && typeof dayData.amGuests === 'number'
+    ? (dayData.guests - dayData.amGuests).toFixed(0)
     : '—';
 
   return (
@@ -57,14 +56,16 @@ const DayPrepCard = ({ dayData, onPrepTaskChange }) => {
             </span>
           </CardTitle>
         </CardHeader>
+
         <CardContent className="space-y-6">
-          {dayData.shifts && Object.entries(dayData.shifts).map(([shiftKey, shiftInfo]) => (
+          {Object.entries(dayData.shifts).map(([shiftKey, shiftInfo]) => (
             <div key={shiftKey} className="border-t border-border/30 pt-4">
               <h4 className={cn("flex items-center text-lg font-medium mb-3", shiftInfo.color || "text-foreground")}>
                 {shiftInfo.icon}
                 {shiftInfo.name} Prep
               </h4>
-              {shiftInfo.prepItems?.length > 0 ? (
+
+              {Array.isArray(shiftInfo.prepItems) && shiftInfo.prepItems.length > 0 ? (
                 <div className="overflow-x-auto">
                   <Table className="min-w-full">
                     <TableHeader>
@@ -80,7 +81,6 @@ const DayPrepCard = ({ dayData, onPrepTaskChange }) => {
                       {shiftInfo.prepItems.map((item) => {
                         const fallbackText = getFallbackDisplayText(item);
                         let displayQuantity = item?.quantity?.toString().trim() || "N/A";
-
                         let displayUnit = (typeof item.unit === 'string' && item.unit.trim())
                           ? item.unit
                           : (typeof item.unit === 'number')
@@ -95,7 +95,9 @@ const DayPrepCard = ({ dayData, onPrepTaskChange }) => {
 
                         return (
                           <TableRow key={item.id} className="hover:bg-muted/20 dark:hover:bg-slate-800/30 transition-colors">
-                            <TableCell className="px-3 py-2.5 font-medium text-sm text-foreground truncate" title={item.name}>{item.name}</TableCell>
+                            <TableCell className="px-3 py-2.5 font-medium text-sm text-foreground truncate" title={item.name}>
+                              {item.name}
+                            </TableCell>
                             <TableCell className={cn("px-3 py-2.5 text-right text-sm", (displayQuantity === "N/A" || displayQuantity === "") ? "text-muted-foreground italic" : "text-primary font-semibold")}>
                               {displayQuantity}
                             </TableCell>
@@ -127,7 +129,9 @@ const DayPrepCard = ({ dayData, onPrepTaskChange }) => {
                   </Table>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground italic px-3 py-2">No prep items defined for this shift.</p>
+                <p className="text-sm text-muted-foreground italic px-3 py-2">
+                  No prep items defined for this shift.
+                </p>
               )}
             </div>
           ))}
