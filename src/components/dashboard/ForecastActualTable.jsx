@@ -1,59 +1,71 @@
 import React from "react";
+import { cn } from "@/lib/utils";
 
-const ForecastActualTable = ({ combinedData, foodTarget, bevTarget, laborTarget }) => {
+const getCostTargets = () => ({
+  food: parseFloat(localStorage.getItem("foodCostGoal")) || 0.3,
+  bev: parseFloat(localStorage.getItem("bevCostGoal")) || 0.2,
+  labor: parseFloat(localStorage.getItem("laborCostGoal")) || 0.14,
+});
+
+const ForecastActualTable = ({ combinedData }) => {
+  const { food: foodTarget, bev: bevTarget, labor: laborTarget } = getCostTargets();
+
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full table-auto border-collapse text-sm text-slate-800">
-        <thead className="bg-slate-100 text-slate-600 font-semibold border-b border-slate-300">
+    <div className="overflow-x-auto mt-4">
+      <table className="min-w-full text-sm text-left border border-slate-300">
+        <thead className="bg-slate-100 text-slate-600 uppercase text-xs">
           <tr>
-            <th className="p-2 text-left">Date</th>
-            <th className="p-2 text-right">Forecasted Sales ($)</th>
-            <th className="p-2 text-right">Actual Sales ($)</th>
-            <th className="p-2 text-right">Food Cost %</th>
-            <th className="p-2 text-right">Bev Cost %</th>
-            <th className="p-2 text-right">Labor Cost %</th>
-            <th className="p-2 text-left">Alerts</th>
+            <th className="px-3 py-2">Date</th>
+            <th className="px-3 py-2">Forecasted Sales ($)</th>
+            <th className="px-3 py-2">Actual Sales ($)</th>
+            <th className="px-3 py-2">Food Cost %</th>
+            <th className="px-3 py-2">Bev Cost %</th>
+            <th className="px-3 py-2">Labor Cost %</th>
+            <th className="px-3 py-2">Alerts</th>
           </tr>
         </thead>
         <tbody>
-          {combinedData.map((row, idx) => {
-            const foodClass = row.hasActuals && row.foodPct > foodTarget
-              ? "bg-red-100 text-red-700"
-              : "bg-green-100 text-green-700";
+          {combinedData.map((entry, index) => {
+            const food = entry.hasActuals ? entry.foodPct : null;
+            const bev = entry.hasActuals ? entry.bevPct : null;
+            const labor = entry.hasActuals ? entry.laborPct : null;
 
-            const bevClass = row.hasActuals && row.bevPct > bevTarget
-              ? "bg-red-100 text-red-700"
-              : "bg-green-100 text-green-700";
+            const foodClass = food !== null ? cn(
+              "font-semibold",
+              food > foodTarget ? "text-red-500 bg-red-100" : "text-green-600 bg-green-100"
+            ) : "text-slate-500";
+            const bevClass = bev !== null ? cn(
+              "font-semibold",
+              bev > bevTarget ? "text-red-500 bg-red-100" : "text-green-600 bg-green-100"
+            ) : "text-slate-500";
+            const laborClass = labor !== null ? cn(
+              "font-semibold",
+              labor > laborTarget ? "text-red-500 bg-red-100" : "text-green-600 bg-green-100"
+            ) : "text-slate-500";
 
-            const laborClass = row.hasActuals && row.laborPct > laborTarget
-              ? "bg-red-100 text-red-700"
-              : "bg-green-100 text-green-700";
-
-            const alert = row.hasActuals
+            const alert = entry.hasActuals
               ? [
-                  row.foodPct > foodTarget ? "Food Over" : null,
-                  row.bevPct > bevTarget ? "Bev Over" : null,
-                  row.laborPct > laborTarget ? "Labor Over" : null
+                  food > foodTarget ? "Food Over" : null,
+                  bev > bevTarget ? "Bev Over" : null,
+                  labor > laborTarget ? "Labor Over" : null
                 ].filter(Boolean).join(", ") || "On Target"
               : "No Actuals";
 
             return (
-              <tr key={idx} className="border-b border-slate-200 hover:bg-slate-50">
-                <td className="p-2">{row.date}</td>
-                <td className="p-2 text-right">{row.forecastSales?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                <td className="p-2 text-right">
-                  {row.hasActuals ? row.actualSales?.toLocaleString(undefined, { maximumFractionDigits: 2 }) : "N/A"}
+              <tr key={index} className="border-t border-slate-200">
+                <td className="px-3 py-2">{entry.date}</td>
+                <td className="px-3 py-2">{entry.forecastSales?.toLocaleString()}</td>
+                <td className="px-3 py-2">{entry.hasActuals ? entry.actualSales?.toLocaleString() : "N/A"}</td>
+                <td className="px-3 py-2">
+                  {food !== null ? <span className={foodClass}>{(food * 100).toFixed(1)}%</span> : "N/A"}
                 </td>
-                <td className={`p-2 text-right ${row.hasActuals ? foodClass : "text-slate-400"}`}>
-                  {row.hasActuals ? `${(row.foodPct * 100).toFixed(1)}%` : "N/A"}
+                <td className="px-3 py-2">
+                  {bev !== null ? <span className={bevClass}>{(bev * 100).toFixed(1)}%</span> : "N/A"}
                 </td>
-                <td className={`p-2 text-right ${row.hasActuals ? bevClass : "text-slate-400"}`}>
-                  {row.hasActuals ? `${(row.bevPct * 100).toFixed(1)}%` : "N/A"}
+                <td className="px-3 py-2">
+                  {labor !== null ? <span className={laborClass}>{(labor * 100).toFixed(1)}%</span> : "N/A"}
                 </td>
-                <td className={`p-2 text-right ${row.hasActuals ? laborClass : "text-slate-400"}`}>
-                  {row.hasActuals ? `${(row.laborPct * 100).toFixed(1)}%` : "N/A"}
-                </td>
-                <td className="p-2 text-left text-sm italic text-slate-500">{alert}</td>
+                <td className="px-3 py-2 text-slate-700 text-xs">{alert}</td>
               </tr>
             );
           })}
