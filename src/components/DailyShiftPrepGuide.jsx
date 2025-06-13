@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { useData } from "../../contexts/DataContext";
+import { useData } from "@/contexts/DataContext.jsx";
 import DailyShiftPrepGuideHeader from "./DailyShiftPrepGuideHeader";
 import DayPrepCard from "./DayPrepCard";
 
