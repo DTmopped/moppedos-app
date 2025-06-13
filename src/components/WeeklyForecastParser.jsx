@@ -24,6 +24,10 @@ const WeeklyForecastParser = () => {
     toggleAdminMode
   } = useWeeklyForecastLogic();
 
+  const foodPct = Number(localStorage.getItem("foodCostPercent") || 0.3);
+  const bevPct = Number(localStorage.getItem("bevCostPercent") || 0.2);
+  const laborPct = Number(localStorage.getItem("laborCostPercent") || 0.14);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -35,9 +39,7 @@ const WeeklyForecastParser = () => {
         <div className="flex justify-between items-center px-6 pt-6">
           <div>
             <h2 className="text-pink-400 font-bold text-xl flex items-center">
-              <span className="bg-pink-600 p-2 rounded-full mr-3 text-white">
-                <span role="img" aria-label="calculator">🧮</span>
-              </span>
+              <span className="bg-pink-600 p-2 rounded-full mr-3 text-white">🧮</span>
               Weekly Forecast Parser
             </h2>
             <p className="text-slate-300 text-sm mt-1">
@@ -118,6 +120,9 @@ const WeeklyForecastParser = () => {
         forecastDataUI={forecastDataUI}
         captureRate={captureRate}
         spendPerGuest={spendPerGuest}
+        foodPct={foodPct}
+        bevPct={bevPct}
+        laborPct={laborPct}
       />
     </motion.div>
   );
