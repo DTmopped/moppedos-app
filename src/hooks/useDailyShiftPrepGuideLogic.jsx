@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useData } from "@/contexts/DataContext.jsx";
 
 export const useDailyShiftPrepGuideLogic = () => {
@@ -11,7 +11,7 @@ export const useDailyShiftPrepGuideLogic = () => {
   const spendPerGuest = Number(localStorage.getItem("spendPerGuest") || 40);
   const amSplit = Number(localStorage.getItem("amSplit") || 60);
 
-  const menu = {}; // Can be extended if needed
+  const menu = {}; // Not editable in this version
   const MenuEditorComponent = null;
   const menuLoading = false;
   const manageMenuOpen = false;
@@ -29,12 +29,17 @@ export const useDailyShiftPrepGuideLogic = () => {
   };
 
   useEffect(() => {
+    console.log("🟡 Raw forecastData received:", forecastData);
+    console.log("📦 Parsed settings:", {
+      captureRate,
+      spendPerGuest,
+      amSplit,
+    });
+
     if (!forecastData || forecastData.length === 0) {
       console.log("⛔ No forecast data available.");
       return;
     }
-
-    console.log("✅ Forecast data received in Shift Prep:", forecastData);
 
     const newPrepData = forecastData
       .filter(entry => entry.date && (entry.guests || entry.pax))
@@ -42,7 +47,7 @@ export const useDailyShiftPrepGuideLogic = () => {
         const guests = entry.guests || (entry.pax * (captureRate / 100));
         const amGuests = guests * (amSplit / 100);
 
-        const portion = (oz) => ((amGuests * oz) / 16).toFixed(1); // convert oz to lbs
+        const portion = (oz) => ((amGuests * oz) / 16).toFixed(1);
 
         const items = [
           { item: "Pulled Pork Sandwich", qty: Math.ceil(amGuests * 1), unit: "each" },
@@ -58,6 +63,8 @@ export const useDailyShiftPrepGuideLogic = () => {
           { item: "Texas Toast", qty: Math.ceil(amGuests * 1), unit: "each" },
         ];
 
+        console.log("✅ Generated prep for", entry.date, { guests, amGuests, items });
+
         return {
           date: entry.date,
           guests,
@@ -66,9 +73,9 @@ export const useDailyShiftPrepGuideLogic = () => {
         };
       });
 
-    console.log("🧪 Generated Shift Prep Data:", newPrepData);
     setDailyShiftPrepData(newPrepData);
-  }, [forecastData, amSplit]);
+    console.log("✅ Final dailyShiftPrepData:", newPrepData);
+  }, [forecastData, amSplit, captureRate]);
 
   return {
     forecastData,
@@ -82,6 +89,6 @@ export const useDailyShiftPrepGuideLogic = () => {
     handlePrepTaskChange,
     handleSaveMenu,
     printDate,
-    setPrintDate,
+    setPrintDate
   };
 };
