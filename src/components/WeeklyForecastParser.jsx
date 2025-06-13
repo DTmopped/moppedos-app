@@ -49,7 +49,11 @@ const WeeklyForecastParser = () => {
           <button
             type="button"
             onClick={toggleAdminMode}
-            className="text-slate-300 hover:text-white border border-slate-500 hover:border-white px-3 py-1 text-sm rounded-md flex items-center bg-slate-700 hover:bg-slate-600 transition-colors"
+            className={`text-sm rounded-md flex items-center px-3 py-1 transition-colors border ${
+              adminMode
+                ? "bg-pink-600 text-white border-white"
+                : "text-slate-300 border-slate-500 hover:text-white hover:border-white bg-slate-700 hover:bg-slate-600"
+            }`}
           >
             <Cog className="h-4 w-4 mr-1" /> Admin Mode
           </button>
