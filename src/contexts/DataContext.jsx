@@ -4,15 +4,14 @@ const DataContext = createContext();
 
 export const useData = () => useContext(DataContext);
 
-// ✅ Forecast data must include guest count (used by prep logic)
 const initialForecastData = [
-  { date: '2025-05-13', guests: 1050 },
-  { date: '2025-05-14', guests: 1120 },
-  { date: '2025-05-15', guests: 1085 },
-  { date: '2025-05-16', guests: 1190 },
-  { date: '2025-05-17', guests: 1365 },
-  { date: '2025-05-18', guests: 1260 },
-  { date: '2025-05-19', guests: 630 }
+  { date: '2025-05-13', forecastSales: 5200, forecastedFood: 1560, forecastedBev: 1040, forecastedLabor: 728, guests: 130 },
+  { date: '2025-05-14', forecastSales: 5100, forecastedFood: 1530, forecastedBev: 1020, forecastedLabor: 714, guests: 127 },
+  { date: '2025-05-15', forecastSales: 5000, forecastedFood: 1500, forecastedBev: 1000, forecastedLabor: 700, guests: 125 },
+  { date: '2025-05-16', forecastSales: 5300, forecastedFood: 1590, forecastedBev: 1060, forecastedLabor: 742, guests: 132 },
+  { date: '2025-05-17', forecastSales: 6000, forecastedFood: 1800, forecastedBev: 1200, forecastedLabor: 840, guests: 150 },
+  { date: '2025-05-18', forecastSales: 6200, forecastedFood: 1860, forecastedBev: 1240, forecastedLabor: 868, guests: 155 },
+  { date: '2025-05-19', forecastSales: 5800, forecastedFood: 1740, forecastedBev: 1160, forecastedLabor: 812, guests: 145 },
 ];
 
 const initialActualData = [
@@ -53,10 +52,14 @@ export const DataProvider = ({ children }) => {
       const existingEntryIndex = prev.findIndex(entry => entry.date === newEntry.date);
       if (existingEntryIndex > -1) {
         const updatedData = [...prev];
-        updatedData[existingEntryIndex] = { ...updatedData[existingEntryIndex], ...newEntry };
+        updatedData[existingEntryIndex] = {
+          ...updatedData[existingEntryIndex],
+          ...newEntry,
+          guests: newEntry.guests
+        };
         return updatedData;
       }
-      return [...prev, newEntry].sort((a, b) => new Date(a.date) - new Date(b.date));
+      return [...prev, { ...newEntry, guests: newEntry.guests }].sort((a, b) => new Date(a.date) - new Date(b.date));
     });
   }, []);
 
@@ -75,11 +78,12 @@ export const DataProvider = ({ children }) => {
   const value = {
     forecastData,
     actualData,
-    posData,
+    posData, 
     addForecastEntry,
     addActualEntry,
-    setPosData,
+    setPosData 
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 };
+
