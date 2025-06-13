@@ -7,11 +7,11 @@ export const useDailyShiftPrepGuideLogic = () => {
   const [adjustmentFactor, setAdjustmentFactor] = useState(1);
   const [dailyShiftPrepData, setDailyShiftPrepData] = useState([]);
 
-  const captureRate = Number(localStorage.getItem("captureRate") || 8);
-  const spendPerGuest = Number(localStorage.getItem("spendPerGuest") || 40);
-  const amSplit = Number(localStorage.getItem("amSplit") || 60);
+  const captureRate = useMemo(() => Number(localStorage.getItem("captureRate") || 8), []);
+  const spendPerGuest = useMemo(() => Number(localStorage.getItem("spendPerGuest") || 40), []);
+  const amSplit = useMemo(() => Number(localStorage.getItem("amSplit") || 60), []);
 
-  const menu = {}; // Optional extension
+  const menu = {}; // Can be extended if needed
   const MenuEditorComponent = null;
   const menuLoading = false;
   const manageMenuOpen = false;
@@ -30,9 +30,9 @@ export const useDailyShiftPrepGuideLogic = () => {
     if (!forecastData || forecastData.length === 0) return;
 
     const newPrepData = forecastData
-      .filter(entry => entry.date && (entry.guests || (entry.guestsAm && entry.guestsPm)))
+      .filter(entry => entry.date && (entry.guests || entry.pax))
       .map(entry => {
-        const guests = entry.guests ?? (entry.guestsAm + entry.guestsPm);
+        const guests = entry.guests || (entry.pax * (captureRate / 100));
         const amGuests = guests * (amSplit / 100);
 
         const portion = (oz) => ((amGuests * oz) / 16).toFixed(1); // convert oz to lbs
@@ -60,7 +60,7 @@ export const useDailyShiftPrepGuideLogic = () => {
       });
 
     setDailyShiftPrepData(newPrepData);
-  }, [forecastData, amSplit]);
+  }, [forecastData, captureRate, amSplit]);
 
   return {
     forecastData,
@@ -77,3 +77,4 @@ export const useDailyShiftPrepGuideLogic = () => {
     setPrintDate: () => {}
   };
 };
+
