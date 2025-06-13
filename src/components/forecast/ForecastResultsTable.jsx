@@ -1,6 +1,6 @@
 import React from "react";
 
-const ForecastResultsTable = ({ forecastDataUI, captureRate, spendPerGuest }) => {
+const ForecastResultsTable = ({ forecastDataUI, captureRate, spendPerGuest, foodPct, bevPct, laborPct }) => {
   return (
     <div className="mt-6">
       <h3 className="text-pink-300 font-semibold mb-2 text-lg">Forecast Results</h3>
@@ -13,9 +13,9 @@ const ForecastResultsTable = ({ forecastDataUI, captureRate, spendPerGuest }) =>
               <th className="p-2">Passengers</th>
               <th className="p-2">Guests ({captureRate}%)</th>
               <th className="p-2">Sales (${spendPerGuest})</th>
-              <th className="p-2">Food (30%)</th>
-              <th className="p-2">Bev (20%)</th>
-              <th className="p-2">Labor (14%)</th>
+              <th className="p-2">Food ({(foodPct * 100).toFixed(0)}%)</th>
+              <th className="p-2">Bev ({(bevPct * 100).toFixed(0)}%)</th>
+              <th className="p-2">Labor ({(laborPct * 100).toFixed(0)}%)</th>
               <th className="p-2">Variance</th>
             </tr>
           </thead>
@@ -31,18 +31,10 @@ const ForecastResultsTable = ({ forecastDataUI, captureRate, spendPerGuest }) =>
                 <td className="p-2">{row.date}</td>
                 <td className="p-2">{row.pax?.toLocaleString()}</td>
                 <td className="p-2">{Math.round(row.guests || 0).toLocaleString()}</td>
-                <td className="p-2 text-green-400">
-                  {row.sales?.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                </td>
-                <td className="p-2 text-orange-400">
-                  {row.food?.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                </td>
-                <td className="p-2 text-cyan-400">
-                  {row.bev?.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                </td>
-                <td className="p-2 text-purple-300">
-                  {row.labor?.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                </td>
+                <td className="p-2 text-green-400">{row.sales?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                <td className="p-2 text-orange-400">{row.food?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                <td className="p-2 text-cyan-400">{row.bev?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                <td className="p-2 text-purple-300">{row.labor?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
                 <td className="p-2">—</td>
               </tr>
             ))}
