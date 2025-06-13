@@ -1,115 +1,40 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useData } from '@/contexts/DataContext.jsx';
-import { useMenuManager } from '@/hooks/useMenuManager';
-import { calculateAdjustmentFactorUtil, generateDailyShiftPrepDataForDay } from '@/lib/prepGuideUtils.js';
-import { useToast } from '../components/ui/use-toast.jsx';
 
-const STORAGE_KEY_PREP_TASKS = 'dailyShiftPrepTasks';
+import { useEffect, useState } from "react";
+import { useData } from "../contexts/DataContext";
 
-export const useDailyShiftPrepGuideLogic = () => {
-  const { forecastData, actualData } = useData();
-  const { menu, MenuEditorComponent, isLoading: menuLoading, saveMenu } = useMenuManager('dailyShiftPrepGuideMenu');
-  const [adjustmentFactor, setAdjustmentFactorState] = useState(1);
-  const [dailyShiftPrepData, setDailyShiftPrepData] = useState([]);
-  const [manageMenuOpen, setManageMenuOpen] = useState(false);
-  const [printDate, setPrintDate] = useState(new Date());
-  const [storedPrepTasks, setStoredPrepTasks] = useState({});
-  const { toast } = useToast();
+export const useDailyShiftPrepGuideLogic = (date) => {
+  const { forecastData } = useData();
+  const [prepItems, setPrepItems] = useState([]);
 
   useEffect(() => {
-    const loadedTasks = localStorage.getItem(STORAGE_KEY_PREP_TASKS);
-    if (loadedTasks) {
-      setStoredPrepTasks(JSON.parse(loadedTasks));
-    }
-  }, []);
+    const amSplit = Number(localStorage.getItem("amSplit")) || 60;
+    const captureRate = Number(localStorage.getItem("captureRate")) || 8;
+    const spendPerGuest = Number(localStorage.getItem("spendPerGuest")) || 40;
 
-  const savePrepTasksToStorage = useCallback((tasks) => {
-    localStorage.setItem(STORAGE_KEY_PREP_TASKS, JSON.stringify(tasks));
-  }, []);
+    const targetForecast = forecastData.find(d => d.date === date);
+    if (!targetForecast) return;
 
-  const calculateAndSetData = useCallback(() => {
-    if (menuLoading) return;
+    const guests = targetForecast.guests || (targetForecast.pax * (captureRate / 100));
+    const amGuests = guests * (amSplit / 100);
 
-    const adjFactor = calculateAdjustmentFactorUtil(actualData, forecastData);
-    setAdjustmentFactorState(adjFactor);
+    const portion = (oz) => ((amGuests * oz) / 16).toFixed(1); // convert oz to lbs
 
-    if (!forecastData || forecastData.length === 0 || !menu || Object.keys(menu).length === 0) {
-      setDailyShiftPrepData([]);
-      return;
-    }
+    const calculatedItems = [
+      { item: "Pulled Pork Sandwich", qty: Math.ceil(amGuests * 1), unit: "each" },
+      { item: "Chopped Brisket Sandwich", qty: Math.ceil(amGuests * 1), unit: "each" },
+      { item: "Chopped Chicken Sandwich", qty: Math.ceil(amGuests * 1), unit: "each" },
+      { item: "Buns", qty: Math.ceil(amGuests * 3), unit: "each" },
+      { item: "Pulled Pork", qty: portion(4), unit: "lbs" },
+      { item: "Chopped Brisket", qty: portion(4), unit: "lbs" },
+      { item: "Chopped Chicken", qty: portion(4), unit: "lbs" },
+      { item: "Coleslaw", qty: portion(3), unit: "lbs" },
+      { item: "Mac & Cheese", qty: portion(4), unit: "lbs" },
+      { item: "Green Beans", qty: portion(4), unit: "lbs" },
+      { item: "Texas Toast", qty: Math.ceil(amGuests * 1), unit: "each" },
+    ];
 
-    const newDailyPrep = forecastData.map(day =>
-      generateDailyShiftPrepDataForDay(day, adjFactor, menu, storedPrepTasks)
-    );
-    setDailyShiftPrepData(newDailyPrep);
-  }, [menu, forecastData, actualData, menuLoading, storedPrepTasks]);
+    setPrepItems(calculatedItems);
+  }, [date, forecastData]);
 
-  useEffect(() => {
-    calculateAndSetData();
-  }, [calculateAndSetData]);
-
-  const handlePrepTaskChange = useCallback((date, shiftKey, itemId, field, value) => {
-    setDailyShiftPrepData(prevData =>
-      prevData.map(day => {
-        if (day.date === date) {
-          const updatedShifts = { ...day.shifts };
-          if (updatedShifts[shiftKey]) {
-            updatedShifts[shiftKey] = {
-              ...updatedShifts[shiftKey],
-              prepItems: updatedShifts[shiftKey].prepItems.map(item =>
-                item.id === itemId ? { ...item, [field]: value } : item
-              ),
-            };
-          }
-          return { ...day, shifts: updatedShifts };
-        }
-        return day;
-      })
-    );
-
-    const taskKey = `${date}-${shiftKey}-${itemId}`;
-    const updatedStoredTasks = {
-      ...storedPrepTasks,
-      [taskKey]: {
-        ...(storedPrepTasks[taskKey] || { id: itemId, date, shiftKey }),
-        [field]: value,
-      },
-    };
-    setStoredPrepTasks(updatedStoredTasks);
-    savePrepTasksToStorage(updatedStoredTasks);
-  }, [storedPrepTasks, savePrepTasksToStorage]);
-
-  const handleSaveMenu = async (newMenu) => {
-    try {
-      await saveMenu(newMenu);
-      toast({
-        title: "Menu Saved",
-        description: "Daily Shift Prep Guide menu has been updated.",
-        variant: "success",
-      });
-      calculateAndSetData();
-    } catch (error) {
-      toast({
-        title: "Error Saving Menu",
-        description: "Could not save the menu. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  return {
-    forecastData,
-    actualData,
-    menu,
-    MenuEditorComponent,
-    menuLoading,
-    adjustmentFactor,
-    dailyShiftPrepData,
-    manageMenuOpen,
-    setManageMenuOpen,
-    printDate,
-    setPrintDate,
-    handlePrepTaskChange,
-    handleSaveMenu,
-  };
+  return prepItems;
 };
