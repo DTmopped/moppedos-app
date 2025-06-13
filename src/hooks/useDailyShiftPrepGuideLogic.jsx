@@ -7,12 +7,10 @@ export const useDailyShiftPrepGuideLogic = () => {
   const [adjustmentFactor, setAdjustmentFactor] = useState(1);
   const [dailyShiftPrepData, setDailyShiftPrepData] = useState([]);
 
-  // Settings from localStorage
   const captureRate = Number(localStorage.getItem("captureRate") || 8);
   const spendPerGuest = Number(localStorage.getItem("spendPerGuest") || 40);
   const amSplit = Number(localStorage.getItem("amSplit") || 60);
 
-  // Stub menu values for compatibility
   const menu = {};
   const MenuEditorComponent = null;
   const menuLoading = false;
@@ -29,26 +27,22 @@ export const useDailyShiftPrepGuideLogic = () => {
   };
 
   useEffect(() => {
-    console.log("🟡 Raw forecastData received:", forecastData);
-
     if (!forecastData || forecastData.length === 0) return;
 
+    console.log("🌕 Raw forecastData received:", forecastData);
+
     const newPrepData = forecastData
-      .filter(entry => {
-        const hasValidGuestData = typeof entry.guests === 'number' || typeof entry.pax === 'number';
-        console.log("🔎 Entry keys:", Object.keys(entry));
-        return entry.date && hasValidGuestData;
-      })
+      .filter(entry => entry.forecastSales && entry.date)
       .map(entry => {
-        const guests = entry.guests ?? (entry.pax * (captureRate / 100));
+        const guests = entry.forecastSales / spendPerGuest;
         const amGuests = guests * (amSplit / 100);
 
-        const portion = (oz) => ((amGuests * oz) / 16).toFixed(1); // oz to lbs
+        const portion = (oz) => ((amGuests * oz) / 16).toFixed(1);
 
         const items = [
-          { item: "Pulled Pork Sandwich", qty: Math.ceil(amGuests * 1), unit: "each" },
-          { item: "Chopped Brisket Sandwich", qty: Math.ceil(amGuests * 1), unit: "each" },
-          { item: "Chopped Chicken Sandwich", qty: Math.ceil(amGuests * 1), unit: "each" },
+          { item: "Pulled Pork Sandwich", qty: Math.ceil(amGuests), unit: "each" },
+          { item: "Chopped Brisket Sandwich", qty: Math.ceil(amGuests), unit: "each" },
+          { item: "Chopped Chicken Sandwich", qty: Math.ceil(amGuests), unit: "each" },
           { item: "Buns", qty: Math.ceil(amGuests * 3), unit: "each" },
           { item: "Pulled Pork", qty: portion(4), unit: "lbs" },
           { item: "Chopped Brisket", qty: portion(4), unit: "lbs" },
@@ -56,20 +50,20 @@ export const useDailyShiftPrepGuideLogic = () => {
           { item: "Coleslaw", qty: portion(3), unit: "lbs" },
           { item: "Mac & Cheese", qty: portion(4), unit: "lbs" },
           { item: "Green Beans", qty: portion(4), unit: "lbs" },
-          { item: "Texas Toast", qty: Math.ceil(amGuests * 1), unit: "each" },
+          { item: "Texas Toast", qty: Math.ceil(amGuests), unit: "each" },
         ];
 
         return {
           date: entry.date,
-          guests,
-          amGuests,
+          guests: guests.toFixed(0),
+          amGuests: amGuests.toFixed(0),
           items,
         };
       });
 
     console.log("✅ Final dailyShiftPrepData:", newPrepData);
     setDailyShiftPrepData(newPrepData);
-  }, [forecastData, amSplit, captureRate]);
+  }, [forecastData, amSplit, spendPerGuest]);
 
   return {
     forecastData,
