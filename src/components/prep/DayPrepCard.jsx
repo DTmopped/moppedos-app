@@ -32,6 +32,11 @@ const DayPrepCard = ({ dayData, onPrepTaskChange }) => {
     return displayText;
   };
 
+  const amGuests = typeof dayData.amGuests === 'number' ? dayData.amGuests.toFixed(0) : '—';
+  const pmGuests = typeof dayData.guests === 'number' && typeof dayData.amGuests === 'number'
+    ? (dayData.guests - dayData.amGuests).toFixed(0)
+    : '—';
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
@@ -41,8 +46,14 @@ const DayPrepCard = ({ dayData, onPrepTaskChange }) => {
       <Card className="glassmorphic-card no-print card-hover-glow">
         <CardHeader className="pb-3">
           <CardTitle className="text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-lime-500">
-            {new Date(dayData.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-            <span className="text-sm font-normal text-muted-foreground ml-2">(Adj. Guests: {dayData.totalGuests.toFixed(0)})</span>
+            {new Date(dayData.date + 'T00:00:00').toLocaleDateString('en-US', {
+              weekday: 'long',
+              month: 'long',
+              day: 'numeric',
+            })}
+            <span className="text-sm font-normal text-muted-foreground ml-2">
+              (AM: {amGuests} / PM: {pmGuests})
+            </span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -69,9 +80,13 @@ const DayPrepCard = ({ dayData, onPrepTaskChange }) => {
                         const fallbackText = getFallbackDisplayText(item);
                         let displayQuantity = item?.quantity?.toString().trim() || "N/A";
 
-                        let displayUnit = (typeof item.unit === 'string' && item.unit.trim()) ? item.unit
-                          : (typeof item.unit === 'number') ? String(item.unit)
-                          : (displayQuantity !== "N/A" && displayQuantity !== "General Task") ? "" : fallbackText;
+                        let displayUnit = (typeof item.unit === 'string' && item.unit.trim())
+                          ? item.unit
+                          : (typeof item.unit === 'number')
+                          ? String(item.unit)
+                          : (displayQuantity !== "N/A" && displayQuantity !== "General Task")
+                          ? ""
+                          : fallbackText;
 
                         if (displayQuantity === "N/A" && displayUnit === fallbackText && fallbackText !== "General Task") {
                           displayQuantity = "";
