@@ -7,21 +7,21 @@ export const useDailyShiftPrepGuideLogic = () => {
   const [adjustmentFactor, setAdjustmentFactor] = useState(1);
   const [dailyShiftPrepData, setDailyShiftPrepData] = useState([]);
 
+  // Settings from localStorage
   const captureRate = Number(localStorage.getItem("captureRate") || 8);
   const spendPerGuest = Number(localStorage.getItem("spendPerGuest") || 40);
   const amSplit = Number(localStorage.getItem("amSplit") || 60);
 
-  const menu = {}; // Placeholder, currently unused
+  // Stub menu values for compatibility
+  const menu = {};
   const MenuEditorComponent = null;
   const menuLoading = false;
   const manageMenuOpen = false;
   const setManageMenuOpen = () => {};
   const handleSaveMenu = () => {};
-  const printDate = null;
-  const setPrintDate = () => {};
 
   const handlePrepTaskChange = (dayIndex, itemIndex, updatedItem) => {
-    setDailyShiftPrepData((prev) => {
+    setDailyShiftPrepData(prev => {
       const copy = [...prev];
       copy[dayIndex].items[itemIndex] = updatedItem;
       return copy;
@@ -30,17 +30,20 @@ export const useDailyShiftPrepGuideLogic = () => {
 
   useEffect(() => {
     console.log("🟡 Raw forecastData received:", forecastData);
-    console.log("📦 Parsed settings:", { captureRate, spendPerGuest, amSplit });
 
     if (!forecastData || forecastData.length === 0) return;
 
     const newPrepData = forecastData
-      .filter((entry) => entry.date && (entry.guests || entry.pax))
-      .map((entry) => {
+      .filter(entry => {
+        const hasValidGuestData = typeof entry.guests === 'number' || typeof entry.pax === 'number';
+        console.log("🔎 Entry keys:", Object.keys(entry));
+        return entry.date && hasValidGuestData;
+      })
+      .map(entry => {
         const guests = entry.guests ?? (entry.pax * (captureRate / 100));
         const amGuests = guests * (amSplit / 100);
 
-        const portion = (oz) => ((amGuests * oz) / 16).toFixed(1);
+        const portion = (oz) => ((amGuests * oz) / 16).toFixed(1); // oz to lbs
 
         const items = [
           { item: "Pulled Pork Sandwich", qty: Math.ceil(amGuests * 1), unit: "each" },
@@ -79,7 +82,7 @@ export const useDailyShiftPrepGuideLogic = () => {
     setManageMenuOpen,
     handlePrepTaskChange,
     handleSaveMenu,
-    printDate,
-    setPrintDate,
+    printDate: null,
+    setPrintDate: () => {}
   };
 };
