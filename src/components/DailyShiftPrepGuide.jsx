@@ -1,43 +1,96 @@
 import React, { useMemo } from "react";
-import { useData } from "@/contexts/DataContext.jsx";
-import DailyShiftPrepGuideHeader from "./DailyShiftPrepGuideHeader";
-import DayPrepCard from "./DayPrepCard";
+import { motion } from "framer-motion";
+import { useData } from "../../contexts/DataContext.jsx"; // ✅ fixed relative path
+import DailyShiftPrepGuideHeader from "./prep/DailyShiftPrepGuideHeader.jsx";
+import DayPrepCard from "./prep/DayPrepCard.jsx";
+import { triggerPrint } from "./prep/PrintUtils.jsx";
+import PrintableDailyShiftPrepGuide from "./prep/PrintableDailyShiftPrepGuide.jsx";
+import { useDailyShiftPrepGuideLogic } from "../../hooks/useDailyShiftPrepGuideLogic.jsx";
+import { useToast } from "./ui/use-toast.jsx";
+import { PREP_GUIDE_ICON_COLORS } from "../../config/prepGuideConfig.jsx";
 
 const DailyShiftPrepGuide = () => {
-  const { forecastData, prepMenu } = useData();
+  const {
+    forecastData,
+    menu,
+    MenuEditorComponent,
+    menuLoading,
+    adjustmentFactor,
+    dailyShiftPrepData,
+    manageMenuOpen,
+    setManageMenuOpen,
+    printDate,
+    setPrintDate,
+    handlePrepTaskChange,
+    handleSaveMenu,
+  } = useDailyShiftPrepGuideLogic();
 
-  // Get today's date in YYYY-MM-DD format
-  const today = new Date().toISOString().split("T")[0];
+  const { toast } = useToast();
+  const titleColor = PREP_GUIDE_ICON_COLORS.dailyShift;
 
-  // Find today's forecast
-  const todayForecast = forecastData.find(f => f.date === today);
+  const handleInitiatePrint = async () => {
+    const currentPrintDate = new Date();
+    setPrintDate(currentPrintDate);
 
-  const adjustedGuests = todayForecast ? todayForecast.guests : 0;
+    const printData = {
+      dailyShiftPrepData,
+      printDate: currentPrintDate,
+    };
 
-  // Create shift prep data (morning vs evening split logic can be added here)
-  const amPrepItems = useMemo(() => {
-    if (!prepMenu || !Array.isArray(prepMenu)) return [];
-    return prepMenu.map(item => ({
-      ...item,
-      qty: "N/A",
-      shift: "AM",
-    }));
-  }, [prepMenu]);
+    try {
+      await triggerPrint(PrintableDailyShiftPrepGuide, printData, "Daily Shift Prep Guide - Print");
+      toast({
+        title: "Print Processed",
+        description: "The print dialog has been closed or the print job was sent.",
+        variant: "success",
+      });
+    } catch (error) {
+      toast({
+        title: "Print Error",
+        description: error.message || "Could not complete the print operation.",
+        variant: "destructive",
+      });
+    }
+  };
 
-  if (!forecastData || forecastData.length === 0) {
-    return <div className="p-6 text-center text-red-600 font-semibold">🚫 No forecast data available. Generate a forecast first.</div>;
-  }
+  const renderedCards = useMemo(() => {
+    if (!dailyShiftPrepData || dailyShiftPrepData.length === 0) {
+      return (
+        <div className="text-muted-foreground text-sm px-4">
+          No data available. Ensure forecast has been generated for this day.
+        </div>
+      );
+    }
+
+    return dailyShiftPrepData.map((section, index) => (
+      <DayPrepCard
+        key={section.title + index}
+        section={section}
+        onPrepTaskChange={handlePrepTaskChange}
+        menuLoading={menuLoading}
+        titleColor={titleColor}
+      />
+    ));
+  }, [dailyShiftPrepData, handlePrepTaskChange, menuLoading, titleColor]);
 
   return (
-    <div className="p-6 space-y-6">
-      <DailyShiftPrepGuideHeader adjustedGuests={adjustedGuests} />
-      <div className="text-xl font-semibold text-orange-600 border-b pb-1 border-slate-300">AM Shift Prep</div>
-      <div className="grid gap-2">
-        {amPrepItems.map((item, index) => (
-          <DayPrepCard key={index} item={item} />
-        ))}
-      </div>
-    </div>
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }} 
+      animate={{ opacity: 1, y: 0 }} 
+      transition={{ duration: 0.5 }}
+      className="space-y-6"
+    >
+      <DailyShiftPrepGuideHeader
+        adjustmentFactor={adjustmentFactor}
+        onManageMenuOpen={() => setManageMenuOpen(true)}
+        onPrint={handleInitiatePrint}
+        MenuEditorComponent={MenuEditorComponent}
+        manageMenuOpen={manageMenuOpen}
+        setManageMenuOpen={setManageMenuOpen}
+        onSaveMenu={handleSaveMenu}
+      />
+      <div className="space-y-6">{renderedCards}</div>
+    </motion.div>
   );
 };
 
