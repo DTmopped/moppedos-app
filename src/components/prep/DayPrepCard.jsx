@@ -57,7 +57,7 @@ const DayPrepCard = ({ dayData, onPrepTaskChange }) => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {Object.entries(dayData.shifts).map(([shiftKey, shiftInfo]) => (
+          {dayData.shifts && Object.entries(dayData.shifts).map(([shiftKey, shiftInfo]) => (
             <div key={shiftKey} className="border-t border-border/30 pt-4">
               <h4 className={cn("flex items-center text-lg font-medium mb-3", shiftInfo.color || "text-foreground")}>
                 {shiftInfo.icon}
