@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button.jsx";
 import { Input } from "@/components/ui/input.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
@@ -20,7 +20,8 @@ const WeeklyForecastParser = () => {
     setAmSplit,
   } = useWeeklyForecastLogic();
 
-  // Grab the base date from inputText for display
+  const [adminVisible, setAdminVisible] = useState(true);
+
   const extractBaseDate = (input) => {
     const match = input.match(/Date:\s*(\d{4}-\d{2}-\d{2})/i);
     if (match && match[1]) {
@@ -33,7 +34,19 @@ const WeeklyForecastParser = () => {
   const formattedDate = extractBaseDate(inputText);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {/* Admin Button Top Right */}
+      <div className="absolute top-0 right-0 mt-2 mr-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setAdminVisible((prev) => !prev)}
+          className="border-pink-500 text-pink-300 hover:bg-pink-500/10"
+        >
+          {adminVisible ? "Hide Admin Tools" : "Show Admin Tools"}
+        </Button>
+      </div>
+
       <div className="bg-slate-800 p-5 rounded shadow-lg border border-slate-600">
         <h2 className="text-xl font-bold text-pink-400 mb-2">Weekly Forecast Parser</h2>
         <p className="text-sm text-slate-300 mb-3">
@@ -52,35 +65,37 @@ const WeeklyForecastParser = () => {
           className="w-full font-mono text-sm bg-slate-900 text-white border border-slate-700"
         />
 
-        <div className="flex flex-col sm:flex-row gap-3 mt-4">
-          <div className="flex-1">
-            <label className="block text-xs text-slate-400 mb-1">Capture Rate %</label>
-            <Input
-              type="number"
-              value={captureRate}
-              onChange={(e) => setCaptureRate(Number(e.target.value))}
-              className="w-full"
-            />
+        {adminVisible && (
+          <div className="flex flex-col sm:flex-row gap-3 mt-4">
+            <div className="flex-1">
+              <label className="block text-xs text-slate-400 mb-1">Capture Rate %</label>
+              <Input
+                type="number"
+                value={captureRate}
+                onChange={(e) => setCaptureRate(Number(e.target.value))}
+                className="w-full"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-xs text-slate-400 mb-1">Spend per Guest ($)</label>
+              <Input
+                type="number"
+                value={spendPerGuest}
+                onChange={(e) => setSpendPerGuest(Number(e.target.value))}
+                className="w-full"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-xs text-slate-400 mb-1">AM Split %</label>
+              <Input
+                type="number"
+                value={amSplit}
+                onChange={(e) => setAmSplit(Number(e.target.value))}
+                className="w-full"
+              />
+            </div>
           </div>
-          <div className="flex-1">
-            <label className="block text-xs text-slate-400 mb-1">Spend per Guest ($)</label>
-            <Input
-              type="number"
-              value={spendPerGuest}
-              onChange={(e) => setSpendPerGuest(Number(e.target.value))}
-              className="w-full"
-            />
-          </div>
-          <div className="flex-1">
-            <label className="block text-xs text-slate-400 mb-1">AM Split %</label>
-            <Input
-              type="number"
-              value={amSplit}
-              onChange={(e) => setAmSplit(Number(e.target.value))}
-              className="w-full"
-            />
-          </div>
-        </div>
+        )}
 
         <Button
           onClick={generateForecast}
