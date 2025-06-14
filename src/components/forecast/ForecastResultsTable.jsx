@@ -38,28 +38,30 @@ const ForecastResultsTable = ({ forecastDataUI }) => {
           <tbody>
             {forecastDataUI.map((row, idx) => (
               <tr key={idx} className={row.isTotal ? "bg-slate-800 font-semibold text-pink-200" : "border-t border-slate-700"}>
-                <td className="px-3 py-2">{row.day}</td>
+                <td className="px-3 py-2">{row.day || "—"}</td>
                 <td className="px-3 py-2">
-                  {new Date(row.date).toLocaleDateString("en-US")}
+                  {row.date && !row.isTotal
+                    ? new Date(row.date).toLocaleDateString("en-US")
+                    : row.isTotal ? "—" : "Invalid"}
                 </td>
-                <td className="px-3 py-2 text-right">{row.pax.toLocaleString()}</td>
-                <td className="px-3 py-2 text-right">{Math.round(row.guests).toLocaleString()}</td>
+                <td className="px-3 py-2 text-right">{row.pax?.toLocaleString() || "—"}</td>
+                <td className="px-3 py-2 text-right">{Math.round(row.guests || 0).toLocaleString()}</td>
                 <td className="px-3 py-2 text-right text-yellow-300">
-                  {row.amGuests && row.pmGuests
-                    ? `${row.amGuests.toLocaleString()} / ${row.pmGuests.toLocaleString()}`
+                  {(row.amGuests !== undefined && row.pmGuests !== undefined)
+                    ? `${Math.round(row.amGuests).toLocaleString()} / ${Math.round(row.pmGuests).toLocaleString()}`
                     : "—"}
                 </td>
                 <td className="px-3 py-2 text-right text-green-400">
-                  ${row.sales.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  ${row.sales?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || "—"}
                 </td>
                 <td className="px-3 py-2 text-right text-orange-300">
-                  ${row.food.toLocaleString(undefined, { maximumFractionDigits: 1 })}
+                  ${row.food?.toLocaleString(undefined, { maximumFractionDigits: 1 }) || "—"}
                 </td>
                 <td className="px-3 py-2 text-right text-cyan-300">
-                  ${row.bev.toLocaleString(undefined, { maximumFractionDigits: 1 })}
+                  ${row.bev?.toLocaleString(undefined, { maximumFractionDigits: 1 }) || "—"}
                 </td>
                 <td className="px-3 py-2 text-right text-purple-300">
-                  ${row.labor.toLocaleString(undefined, { maximumFractionDigits: 1 })}
+                  ${row.labor?.toLocaleString(undefined, { maximumFractionDigits: 1 }) || "—"}
                 </td>
                 <td className="px-3 py-2 text-right text-slate-400">—</td>
               </tr>
