@@ -5,6 +5,20 @@ import { Textarea } from "@/components/ui/textarea.jsx";
 import { useWeeklyForecastLogic } from "@/hooks/useWeeklyForecastLogic.jsx";
 import ForecastResultsTable from "@/components/forecast/ForecastResultsTable.jsx";
 
+// Updated MM-DD-YYYY formatter
+const extractBaseDate = (input) => {
+  const match = input.match(/Date:\s*(\d{4}-\d{2}-\d{2})/i);
+  if (match && match[1]) {
+    const parsed = new Date(match[1]);
+    if (isNaN(parsed.getTime())) return null;
+    const mm = String(parsed.getMonth() + 1).padStart(2, "0");
+    const dd = String(parsed.getDate()).padStart(2, "0");
+    const yyyy = parsed.getFullYear();
+    return `${mm}-${dd}-${yyyy}`;
+  }
+  return null;
+};
+
 const WeeklyForecastParser = () => {
   const {
     inputText,
@@ -22,20 +36,6 @@ const WeeklyForecastParser = () => {
     toggleAdminMode,
   } = useWeeklyForecastLogic();
 
-  const extractBaseDate = (input) => {
-  const match = input.match(/Date:\s*(\d{4}-\d{2}-\d{2})/i);
-  if (match && match[1]) {
-    const parsed = new Date(match[1]);
-    if (isNaN(parsed.getTime())) return null;
-
-    const mm = String(parsed.getMonth() + 1).padStart(2, '0');
-    const dd = String(parsed.getDate()).padStart(2, '0');
-    const yyyy = parsed.getFullYear();
-    return `${mm}-${dd}-${yyyy}`;
-  }
-  return null;
-};
-
   const formattedDate = extractBaseDate(inputText);
 
   return (
@@ -44,10 +44,10 @@ const WeeklyForecastParser = () => {
         <div className="flex justify-between items-start">
           <div>
             <h2 className="text-xl font-bold text-pink-400 mb-1">Weekly Forecast Parser</h2>
-           <p className="text-sm text-slate-300 mb-2">
-           Paste weekly passenger data (include <strong>Date: MM-DD-YYYY</strong> for Monday) to generate and save forecast.
-            Uses <span className="font-semibold text-pink-300">{captureRate}%</span> capture rate and <span className="font-semibold text-pink-300">${spendPerGuest}</span> spend/guest.
-          </p>
+            <p className="text-sm text-slate-300 mb-2">
+              Paste weekly passenger data (include <strong>Date: MM-DD-YYYY</strong> for Monday) to generate and save forecast.
+              Uses <span className="font-semibold text-pink-300">{captureRate}%</span> capture rate and <span className="font-semibold text-pink-300">${spendPerGuest}</span> spend/guest.
+            </p>
             {formattedDate && (
               <p className="text-xs text-pink-300 mb-2">
                 Week Starting: <span className="text-white font-semibold">{formattedDate}</span>
@@ -70,42 +70,45 @@ const WeeklyForecastParser = () => {
         />
 
         <div className="flex flex-col sm:flex-row gap-3 mt-4">
+          {/* Capture Rate */}
           <div className="flex-1">
             <label className="block text-xs text-slate-400 mb-1">Capture Rate %</label>
             {adminMode ? (
-              <input
+              <Input
                 type="number"
                 value={captureRate}
                 onChange={(e) => setCaptureRate(Number(e.target.value))}
-                className="w-full bg-slate-900 text-white px-3 py-2 rounded border border-slate-600"
+                className="w-full"
               />
             ) : (
               <p className="text-sm text-slate-100">{captureRate}%</p>
             )}
           </div>
 
+          {/* Spend per Guest */}
           <div className="flex-1">
             <label className="block text-xs text-slate-400 mb-1">Spend per Guest ($)</label>
             {adminMode ? (
-              <input
+              <Input
                 type="number"
                 value={spendPerGuest}
                 onChange={(e) => setSpendPerGuest(Number(e.target.value))}
-                className="w-full bg-slate-900 text-white px-3 py-2 rounded border border-slate-600"
+                className="w-full"
               />
             ) : (
               <p className="text-sm text-slate-100">${spendPerGuest}</p>
             )}
           </div>
 
+          {/* AM Split */}
           <div className="flex-1">
             <label className="block text-xs text-slate-400 mb-1">AM Split %</label>
             {adminMode ? (
-              <input
+              <Input
                 type="number"
                 value={amSplit}
                 onChange={(e) => setAmSplit(Number(e.target.value))}
-                className="w-full bg-slate-900 text-white px-3 py-2 rounded border border-slate-600"
+                className="w-full"
               />
             ) : (
               <p className="text-sm text-slate-100">
@@ -131,4 +134,3 @@ const WeeklyForecastParser = () => {
 };
 
 export default WeeklyForecastParser;
-
