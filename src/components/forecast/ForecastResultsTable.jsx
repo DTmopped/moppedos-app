@@ -27,6 +27,7 @@ const ForecastResultsTable = ({ forecastDataUI }) => {
               <th className="px-3 py-2 text-left">Date</th>
               <th className="px-3 py-2 text-right">Passengers</th>
               <th className="px-3 py-2 text-right">Guests (%)</th>
+              <th className="px-3 py-2 text-right">AM / PM Split</th>
               <th className="px-3 py-2 text-right">Sales ($)</th>
               <th className="px-3 py-2 text-right">{foodLabel}</th>
               <th className="px-3 py-2 text-right">{bevLabel}</th>
@@ -41,6 +42,11 @@ const ForecastResultsTable = ({ forecastDataUI }) => {
                 <td className="px-3 py-2">{row.date}</td>
                 <td className="px-3 py-2 text-right">{row.pax.toLocaleString()}</td>
                 <td className="px-3 py-2 text-right">{Math.round(row.guests).toLocaleString()}</td>
+                <td className="px-3 py-2 text-right text-yellow-300">
+                  {row.amGuests && row.pmGuests
+                    ? `${row.amGuests.toLocaleString()} / ${row.pmGuests.toLocaleString()}`
+                    : "—"}
+                </td>
                 <td className="px-3 py-2 text-right text-green-400">${row.sales.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
                 <td className="px-3 py-2 text-right text-orange-300">${row.food.toLocaleString(undefined, { maximumFractionDigits: 1 })}</td>
                 <td className="px-3 py-2 text-right text-cyan-300">${row.bev.toLocaleString(undefined, { maximumFractionDigits: 1 })}</td>
