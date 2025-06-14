@@ -2,106 +2,96 @@ import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button.jsx";
 import { useWeeklyForecastLogic } from "@/hooks/useWeeklyForecastLogic.jsx";
 import ForecastResultsTable from "@/components/forecast/ForecastResultsTable.jsx";
+import ForecastHeader from "@/components/forecast/ForecastHeader.jsx";
+import ForecastInputArea from "@/components/forecast/ForecastInputArea.jsx";
 
 const WeeklyForecastParser = () => {
   const {
-    inputText,
-    setInputText,
-    forecastDataUI,
-    error,
-    setError,
-    generateForecast,
+    inputData,
+    setInputData,
     captureRate,
-    setCaptureRate,
     spendPerGuest,
-    setSpendPerGuest,
     amSplit,
-    setAmSplit,
+    forecastDataUI,
+    handleGenerateForecast,
     adminMode,
-    toggleAdminMode
+    setAdminMode,
+    handleInputChange,
+    handleCaptureRateChange,
+    handleSpendChange,
+    handleAmSplitChange,
+    weekStartDate
   } = useWeeklyForecastLogic();
 
-  const startDate = forecastDataUI?.[0]?.date
-    ? new Date(forecastDataUI[0].date).toLocaleDateString("en-US")
+  const formattedWeekDate = weekStartDate
+    ? new Date(weekStartDate).toLocaleDateString("en-US")
     : null;
 
   useEffect(() => {
-    setError(""); // Clear error on mount/reset
+    document.title = "Weekly Forecast | Mopped OS";
   }, []);
 
   return (
     <div className="space-y-6">
-      <div className="p-4 rounded-xl border bg-slate-800 border-slate-600 text-white">
-        <h2 className="text-pink-400 font-bold text-lg flex items-center gap-2 mb-2">
-          <span className="text-xl">🧮</span> Weekly Forecast Parser
-        </h2>
-        <p className="text-sm text-slate-300 mb-2">
-          Paste weekly passenger data (include <strong>Date: YYYY-MM-DD</strong> for Monday) to generate and save forecast.
-          Uses <span className="font-bold text-pink-300">{captureRate}%</span> capture rate and <span className="font-bold text-pink-300">${spendPerGuest}</span> spend/guest.
-        </p>
+      <ForecastHeader />
 
-        <textarea
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          rows={8}
-          className="w-full p-3 rounded-md bg-slate-900 text-white font-mono border border-slate-700"
-          placeholder={`Date: 2025-05-12\nMonday: 15000\nTuesday: 16000\n...`}
+      <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-4 space-y-4">
+        <ForecastInputArea
+          inputData={inputData}
+          onInputChange={handleInputChange}
         />
 
-        {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
+        {formattedWeekDate && (
+          <p className="text-sm text-slate-400">
+            Showing forecast for week of <strong>{formattedWeekDate}</strong>
+          </p>
+        )}
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div>
-            <label className="text-sm text-slate-300 block mb-1">Capture Rate %</label>
+            <label className="text-xs text-slate-400">Capture Rate %</label>
             <input
               type="number"
               value={captureRate}
-              onChange={(e) => setCaptureRate(Number(e.target.value))}
-              className="w-full rounded-md p-2 bg-slate-700 text-white"
+              onChange={handleCaptureRateChange}
+              className="w-full rounded bg-slate-900 border border-slate-700 px-3 py-2 text-white"
             />
           </div>
           <div>
-            <label className="text-sm text-slate-300 block mb-1">Spend per Guest ($)</label>
+            <label className="text-xs text-slate-400">Spend per Guest ($)</label>
             <input
               type="number"
               value={spendPerGuest}
-              onChange={(e) => setSpendPerGuest(Number(e.target.value))}
-              className="w-full rounded-md p-2 bg-slate-700 text-white"
+              onChange={handleSpendChange}
+              className="w-full rounded bg-slate-900 border border-slate-700 px-3 py-2 text-white"
             />
           </div>
           <div>
-            <label className="text-sm text-slate-300 block mb-1">AM Split %</label>
+            <label className="text-xs text-slate-400">AM Split %</label>
             <input
               type="number"
               value={amSplit}
-              onChange={(e) => setAmSplit(Number(e.target.value))}
-              className="w-full rounded-md p-2 bg-slate-700 text-white"
+              onChange={handleAmSplitChange}
+              className="w-full rounded bg-slate-900 border border-slate-700 px-3 py-2 text-white"
             />
-            <p className="text-xs text-slate-400 mt-1">PM Split: {100 - amSplit}%</p>
+            <p className="text-xs text-slate-500 mt-1">PM Split: {100 - amSplit}%</p>
           </div>
-          <div className="flex flex-col justify-end">
+          <div className="flex items-end gap-3">
             <Button
-              onClick={generateForecast}
-              className="w-full bg-pink-600 hover:bg-pink-700 text-white font-semibold"
+              onClick={handleGenerateForecast}
+              className="bg-pink-600 hover:bg-pink-700 text-white w-full"
             >
-              ➕ Generate Forecast & Save
+              + Generate Forecast & Save
             </Button>
-            <Button
-              variant="ghost"
-              onClick={toggleAdminMode}
-              className="mt-2 text-xs text-pink-300"
+            <button
+              onClick={() => setAdminMode(!adminMode)}
+              className="text-xs text-pink-300 underline whitespace-nowrap"
             >
-              {adminMode ? "✅ Admin Mode On" : "Enable Admin Mode"}
-            </Button>
+              {adminMode ? "Disable Admin Mode" : "Enable Admin Mode"}
+            </button>
           </div>
         </div>
       </div>
-
-      {startDate && (
-        <div className="text-sm text-slate-400 mt-4 mb-2">
-          Showing forecast for week of <span className="font-semibold text-white">{startDate}</span>
-        </div>
-      )}
 
       <ForecastResultsTable forecastDataUI={forecastDataUI} />
     </div>
