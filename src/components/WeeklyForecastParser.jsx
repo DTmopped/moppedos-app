@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button.jsx";
 import { Input } from "@/components/ui/input.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
 import { useWeeklyForecastLogic } from "@/hooks/useWeeklyForecastLogic.jsx";
-import ForecastResultsTable from "@/components/ForecastResultsTable.jsx";
+import ForecastResultsTable from "@/components/forecast/ForecastResultsTable.jsx";
 
 const WeeklyForecastParser = () => {
   const {
