@@ -23,19 +23,25 @@ const WeeklyForecastParser = () => {
   } = useWeeklyForecastLogic();
 
   useEffect(() => {
+    // Restore values from localStorage on load
     const savedCapture = localStorage.getItem("captureRate");
     const savedSpend = localStorage.getItem("spendPerGuest");
     const savedSplit = localStorage.getItem("amSplit");
+    const savedAdmin = localStorage.getItem("adminMode");
+
     if (savedCapture) setCaptureRate(Number(savedCapture));
     if (savedSpend) setSpendPerGuest(Number(savedSpend));
     if (savedSplit) setAmSplit(Number(savedSplit));
+    if (savedAdmin === "true") setAdminMode(true);
   }, []);
 
   useEffect(() => {
+    // Persist values to localStorage
     localStorage.setItem("captureRate", captureRate);
     localStorage.setItem("spendPerGuest", spendPerGuest);
     localStorage.setItem("amSplit", amSplit);
-  }, [captureRate, spendPerGuest, amSplit]);
+    localStorage.setItem("adminMode", adminMode);
+  }, [captureRate, spendPerGuest, amSplit, adminMode]);
 
   const extractBaseDate = (input) => {
     const match = input.match(/Date:\s*(\d{4}-\d{2}-\d{2})/i);
@@ -51,12 +57,12 @@ const WeeklyForecastParser = () => {
   return (
     <div className="space-y-6">
       <div className="relative bg-slate-800 p-5 rounded shadow-lg border border-slate-600">
-        {/* Admin Mode Toggle */}
+        {/* Admin Button */}
         <div className="absolute top-0 right-0 mt-2 mr-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setAdminMode(prev => !prev)}
+            onClick={() => setAdminMode((prev) => !prev)}
             className="border-pink-500 text-pink-300 hover:bg-pink-500/10"
           >
             {adminMode ? "Disable Admin Mode" : "Enable Admin Mode"}
@@ -80,7 +86,6 @@ const WeeklyForecastParser = () => {
           className="w-full font-mono text-sm bg-slate-900 text-white border border-slate-700"
         />
 
-        {/* Always Show Fields — Lock unless Admin */}
         <div className="flex flex-col sm:flex-row gap-3 mt-4">
           <div className="flex-1">
             <label className="block text-xs text-slate-400 mb-1">Capture Rate %</label>
@@ -114,7 +119,6 @@ const WeeklyForecastParser = () => {
           </div>
         </div>
 
-        {/* Action Button */}
         <Button
           onClick={generateForecast}
           className="mt-4 w-full bg-pink-600 hover:bg-pink-700 text-white"
