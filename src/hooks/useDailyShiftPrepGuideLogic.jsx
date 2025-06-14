@@ -8,19 +8,17 @@ export const useDailyShiftPrepGuideLogic = () => {
   const [adjustmentFactor, setAdjustmentFactor] = useState(1);
   const [dailyShiftPrepData, setDailyShiftPrepData] = useState([]);
 
-  const captureRate = Number(localStorage.getItem("captureRate") || 8);
-  const spendPerGuest = Number(localStorage.getItem("spendPerGuest") || 40);
-  const amSplit = Number(localStorage.getItem("amSplit") || 60);
-
   useEffect(() => {
     if (!forecastData || forecastData.length === 0) return;
 
     const latestActuals = actualData?.[actualData.length - 1];
     const latestForecast = forecastData?.[actualData?.length - 1];
     let factor = 1;
+
     if (latestActuals && latestForecast && latestForecast.guests > 0) {
       factor = latestActuals.guests / latestForecast.guests;
     }
+
     setAdjustmentFactor(factor);
 
     const portionToLbs = (oz, guests) => {
@@ -31,50 +29,41 @@ export const useDailyShiftPrepGuideLogic = () => {
     const newData = forecastData.map((entry) => {
       const guests = Number(entry.guests || 0);
       const adjGuests = guests * factor;
-      const amGuests = Math.round(adjGuests * (amSplit / 100));
-      const pmGuests = Math.round(adjGuests - amGuests);
 
-      const generateShift = (guestCount) => {
+      // Now use existing amGuests and pmGuests if available
+      const amGuests = Math.round((entry.amGuests || adjGuests * 0.6) * factor);
+      const pmGuests = Math.round((entry.pmGuests || adjGuests * 0.4) * factor);
+
+      const generateShift = (guestCount, label) => {
         const totalSandwiches = guestCount * 3;
 
         return {
-          name: guestCount === amGuests ? "AM" : "PM",
-          color: guestCount === amGuests ? "text-yellow-600" : "text-blue-600",
-          icon: guestCount === amGuests ? "🌞" : "🌙",
+          name: label,
+          color: label === "AM" ? "text-yellow-600" : "text-blue-600",
+          icon: label === "AM" ? "🌞" : "🌙",
           prepItems: [
-            // Sandwich meats (by lb)
             { id: uuidv4(), name: "Pulled Pork (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Chopped Brisket (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Chopped Chicken (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
-
-            // Bread
             { id: uuidv4(), name: "Buns", quantity: guestCount * 3, unit: "each" },
             { id: uuidv4(), name: "Texas Toast", quantity: guestCount, unit: "each" },
-
-            // Coleslaw — side + topping
             {
               id: uuidv4(),
               name: "Coleslaw",
               quantity: portionToLbs((2 * totalSandwiches) + (4 * guestCount), 1),
               unit: "lbs"
             },
-
-            // BBQ meats (by lb)
             { id: uuidv4(), name: "Pulled Pork", quantity: portionToLbs(6, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Brisket", quantity: portionToLbs(6, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Half Chicken", quantity: portionToLbs(16, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "St Louis Ribs", quantity: portionToLbs(16, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Beef Short Rib", quantity: portionToLbs(24, guestCount), unit: "lbs" },
-
-            // Sides
             { id: uuidv4(), name: "Collard Greens", quantity: portionToLbs(4, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Mac N Cheese", quantity: portionToLbs(4, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Baked Beans", quantity: portionToLbs(4, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Corn Casserole", quantity: portionToLbs(4, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Corn Muffin", quantity: guestCount, unit: "each" },
             { id: uuidv4(), name: "Honey Butter", quantity: guestCount, unit: "each" },
-
-            // Desserts
             { id: uuidv4(), name: "Banana Pudding", quantity: guestCount, unit: "each" },
             { id: uuidv4(), name: "Key Lime Pie", quantity: guestCount, unit: "each" },
             { id: uuidv4(), name: "Hummingbird Cake", quantity: guestCount, unit: "each" },
@@ -88,14 +77,14 @@ export const useDailyShiftPrepGuideLogic = () => {
         amGuests,
         pmGuests,
         shifts: {
-          am: generateShift(amGuests),
-          pm: generateShift(pmGuests),
+          am: generateShift(amGuests, "AM"),
+          pm: generateShift(pmGuests, "PM"),
         },
       };
     });
 
     setDailyShiftPrepData(newData);
-  }, [forecastData, actualData, amSplit]);
+  }, [forecastData, actualData]);
 
   return {
     forecastData,
