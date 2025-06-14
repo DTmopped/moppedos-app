@@ -35,9 +35,9 @@ const initialPosData = {
   "Pulled Pork Sandwich": 120,
   "Chopped Brisket Sandwich": 95,
   "Chopped Chicken Sandwich": 80,
-  "Buns": 300, 
-  "Pulled Pork": 200, 
-  "Mac & Cheese": 150, 
+  "Buns": 300,
+  "Pulled Pork": 200,
+  "Mac & Cheese": 150,
   "House Pickles (32 oz jars)": 10,
   "To-Go Cups/Lids": 400,
 };
@@ -50,16 +50,20 @@ export const DataProvider = ({ children }) => {
   const addForecastEntry = useCallback((newEntry) => {
     setForecastData(prev => {
       const existingEntryIndex = prev.findIndex(entry => entry.date === newEntry.date);
+      const updatedEntry = {
+        ...newEntry,
+        guests: newEntry.guests,
+        amGuests: newEntry.amGuests,
+        pmGuests: newEntry.pmGuests
+      };
+
       if (existingEntryIndex > -1) {
         const updatedData = [...prev];
-        updatedData[existingEntryIndex] = {
-          ...updatedData[existingEntryIndex],
-          ...newEntry,
-          guests: newEntry.guests
-        };
+        updatedData[existingEntryIndex] = { ...updatedData[existingEntryIndex], ...updatedEntry };
         return updatedData;
       }
-      return [...prev, { ...newEntry, guests: newEntry.guests }].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      return [...prev, updatedEntry].sort((a, b) => new Date(a.date) - new Date(b.date));
     });
   }, []);
 
@@ -78,10 +82,10 @@ export const DataProvider = ({ children }) => {
   const value = {
     forecastData,
     actualData,
-    posData, 
+    posData,
     addForecastEntry,
     addActualEntry,
-    setPosData 
+    setPosData
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
