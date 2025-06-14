@@ -16,10 +16,7 @@ export const useDailyShiftPrepGuideLogic = () => {
     if (!forecastData || forecastData.length === 0) return;
 
     const latestActuals = actualData?.[actualData.length - 1];
-    const latestForecast = forecastData?.find(
-      (entry) => entry.date === latestActuals?.date
-    );
-
+    const latestForecast = forecastData?.[actualData?.length - 1];
     let factor = 1;
     if (latestActuals && latestForecast && latestForecast.guests > 0) {
       factor = latestActuals.guests / latestForecast.guests;
@@ -32,43 +29,45 @@ export const useDailyShiftPrepGuideLogic = () => {
     };
 
     const newData = forecastData.map((entry) => {
-      const guests = Number(entry.guests || 0);
-      const amGuests = Number(entry.amGuests || 0);
-      const pmGuests = Number(entry.pmGuests || 0);
+      const adjGuests = (entry.guests || 0) * factor;
+      const amGuests = (entry.amGuests || 0) * factor;
+      const pmGuests = (entry.pmGuests || 0) * factor;
 
-      const adjGuests = guests * factor;
-      const adjAM = Math.round(amGuests * factor);
-      const adjPM = Math.round(pmGuests * factor);
-
-      const generateShift = (guestCount, isAM) => {
+      const generateShift = (guestCount, shiftName) => {
         const totalSandwiches = guestCount * 3;
+
         return {
-          name: isAM ? "AM" : "PM",
-          color: isAM ? "text-yellow-600" : "text-blue-600",
-          icon: isAM ? "🌞" : "🌙",
+          name: shiftName.toUpperCase(),
+          color: shiftName === "am" ? "text-yellow-600" : "text-blue-600",
+          icon: shiftName === "am" ? "🌞" : "🌙",
           prepItems: [
             { id: uuidv4(), name: "Pulled Pork (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Chopped Brisket (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Chopped Chicken (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
+
             { id: uuidv4(), name: "Buns", quantity: guestCount * 3, unit: "each" },
             { id: uuidv4(), name: "Texas Toast", quantity: guestCount, unit: "each" },
+
             {
               id: uuidv4(),
               name: "Coleslaw",
               quantity: portionToLbs((2 * totalSandwiches) + (4 * guestCount), 1),
               unit: "lbs"
             },
+
             { id: uuidv4(), name: "Pulled Pork", quantity: portionToLbs(6, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Brisket", quantity: portionToLbs(6, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Half Chicken", quantity: portionToLbs(16, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "St Louis Ribs", quantity: portionToLbs(16, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Beef Short Rib", quantity: portionToLbs(24, guestCount), unit: "lbs" },
+
             { id: uuidv4(), name: "Collard Greens", quantity: portionToLbs(4, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Mac N Cheese", quantity: portionToLbs(4, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Baked Beans", quantity: portionToLbs(4, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Corn Casserole", quantity: portionToLbs(4, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Corn Muffin", quantity: guestCount, unit: "each" },
             { id: uuidv4(), name: "Honey Butter", quantity: guestCount, unit: "each" },
+
             { id: uuidv4(), name: "Banana Pudding", quantity: guestCount, unit: "each" },
             { id: uuidv4(), name: "Key Lime Pie", quantity: guestCount, unit: "each" },
             { id: uuidv4(), name: "Hummingbird Cake", quantity: guestCount, unit: "each" },
@@ -79,17 +78,17 @@ export const useDailyShiftPrepGuideLogic = () => {
       return {
         date: entry.date,
         guests: Math.round(adjGuests),
-        amGuests: adjAM,
-        pmGuests: adjPM,
+        amGuests: Math.round(amGuests),
+        pmGuests: Math.round(pmGuests),
         shifts: {
-          am: generateShift(adjAM, true),
-          pm: generateShift(adjPM, false),
-        },
+          am: generateShift(amGuests, "am"),
+          pm: generateShift(pmGuests, "pm")
+        }
       };
     });
 
     setDailyShiftPrepData(newData);
-  }, [forecastData, actualData]);
+  }, [forecastData, actualData, amSplit]);
 
   return {
     forecastData,
