@@ -70,7 +70,6 @@ const WeeklyForecastParser = () => {
         />
 
         <div className="flex flex-col sm:flex-row gap-3 mt-4">
-          {/* Capture Rate */}
           <div className="flex-1">
             <label className="block text-xs text-slate-400 mb-1">Capture Rate %</label>
             {adminMode ? (
@@ -78,14 +77,12 @@ const WeeklyForecastParser = () => {
                 type="number"
                 value={captureRate}
                 onChange={(e) => setCaptureRate(Number(e.target.value))}
-                className="w-full"
               />
             ) : (
-              <p className="text-sm text-slate-100">{captureRate}%</p>
+              <p className="text-sm text-white">{captureRate}%</p>
             )}
           </div>
 
-          {/* Spend per Guest */}
           <div className="flex-1">
             <label className="block text-xs text-slate-400 mb-1">Spend per Guest ($)</label>
             {adminMode ? (
@@ -93,14 +90,12 @@ const WeeklyForecastParser = () => {
                 type="number"
                 value={spendPerGuest}
                 onChange={(e) => setSpendPerGuest(Number(e.target.value))}
-                className="w-full"
               />
             ) : (
-              <p className="text-sm text-slate-100">${spendPerGuest}</p>
+              <p className="text-sm text-white">${spendPerGuest}</p>
             )}
           </div>
 
-          {/* AM Split */}
           <div className="flex-1">
             <label className="block text-xs text-slate-400 mb-1">AM Split %</label>
             {adminMode ? (
@@ -108,12 +103,9 @@ const WeeklyForecastParser = () => {
                 type="number"
                 value={amSplit}
                 onChange={(e) => setAmSplit(Number(e.target.value))}
-                className="w-full"
               />
             ) : (
-              <p className="text-sm text-slate-100">
-                {amSplit}% <span className="text-slate-400 text-xs">(PM: {100 - amSplit}%)</span>
-              </p>
+              <p className="text-sm text-white">{amSplit}% <span className="text-slate-400 text-xs">(PM: {100 - amSplit}%)</span></p>
             )}
           </div>
         </div>
