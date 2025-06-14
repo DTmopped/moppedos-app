@@ -84,7 +84,13 @@ export const useWeeklyForecastLogic = () => {
     localStorage.setItem("adminMode", adminMode);
   }, [adminMode]);
 
-  const toggleAdminMode = () => setAdminMode(prev => !prev);
+  const toggleAdminMode = () => {
+  setAdminMode(prev => {
+    const newValue = !prev;
+    localStorage.setItem("adminMode", newValue);
+    return newValue;
+  });
+};
 
   const generateForecast = useCallback(() => {
     setError("");
