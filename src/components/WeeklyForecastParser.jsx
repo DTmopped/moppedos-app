@@ -1,115 +1,98 @@
-import React, { useEffect, useState } from "react";
-import { useToast } from "@/components/ui/use-toast.jsx";
+import React from "react";
 import { Button } from "@/components/ui/button.jsx";
+import { Input } from "@/components/ui/input.jsx";
+import { Textarea } from "@/components/ui/textarea.jsx";
 import { useWeeklyForecastLogic } from "@/hooks/useWeeklyForecastLogic.jsx";
-import ForecastResultsTable from "@/components/forecast/ForecastResultsTable.jsx";
+import ForecastResultsTable from "@/components/ForecastResultsTable.jsx";
 
 const WeeklyForecastParser = () => {
-  const { toast } = useToast();
   const {
-    forecastText,
-    setForecastText,
-    adminMode,
-    toggleAdminMode,
-    captureRate,
-    spendPerGuest,
-    amSplit,
-    setCaptureRate,
-    setSpendPerGuest,
-    setAmSplit,
+    inputText,
+    setInputText,
     forecastDataUI,
-    handleGenerateForecast,
+    error,
+    generateForecast,
+    captureRate,
+    setCaptureRate,
+    spendPerGuest,
+    setSpendPerGuest,
+    amSplit,
+    setAmSplit,
   } = useWeeklyForecastLogic();
 
-  const handlePaste = (e) => {
-    const pastedText = e.clipboardData.getData("Text");
-    setForecastText(pastedText);
+  // Grab the base date from inputText for display
+  const extractBaseDate = (input) => {
+    const match = input.match(/Date:\s*(\d{4}-\d{2}-\d{2})/i);
+    if (match && match[1]) {
+      const parsed = new Date(match[1]);
+      return isNaN(parsed.getTime()) ? null : parsed.toLocaleDateString("en-US");
+    }
+    return null;
   };
 
-  const handleClick = () => {
-    const success = handleGenerateForecast();
-    if (!success) {
-      toast({ title: "Parsing error", description: "Could not generate forecast. Check input format.", variant: "destructive" });
-    }
-  };
+  const formattedDate = extractBaseDate(inputText);
 
   return (
-    <div className="space-y-6 pb-10">
-      <div className="rounded-xl border border-slate-700 bg-slate-800/80 p-6 shadow-md relative">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-semibold text-pink-400">
-            🧾 Weekly Forecast Parser
-          </h2>
-          <button
-            onClick={toggleAdminMode}
-            className="text-xs text-pink-300 underline hover:text-pink-200"
-          >
-            {adminMode ? "Disable Admin Mode" : "Enable Admin Mode"}
-          </button>
-        </div>
-        <p className="text-sm text-slate-300 mb-4">
-          Paste weekly passenger data (include <span className="font-semibold text-white">Date: YYYY-MM-DD</span> for Monday) to generate and save forecast.
-          Uses <span className="text-pink-300 font-semibold">{captureRate}%</span> capture rate and <span className="text-pink-300 font-semibold">${spendPerGuest}</span> spend/guest.
+    <div className="space-y-6">
+      <div className="bg-slate-800 p-5 rounded shadow-lg border border-slate-600">
+        <h2 className="text-xl font-bold text-pink-400 mb-2">Weekly Forecast Parser</h2>
+        <p className="text-sm text-slate-300 mb-3">
+          Paste weekly passenger data (include <strong>Date: YYYY-MM-DD</strong> for Monday) to generate and save forecast.
+          Uses <span className="font-semibold text-pink-300">{captureRate}%</span> capture rate and <span className="font-semibold text-pink-300">${spendPerGuest}</span> spend/guest.
         </p>
 
-        <div className="mb-4">
-          <label className="text-sm text-white font-medium block mb-2">
-            Weekly Passenger Data
-          </label>
-          <textarea
-            className="w-full min-h-[180px] rounded-md bg-slate-900 border border-slate-700 p-3 text-white font-mono text-sm"
-            value={forecastText}
-            onChange={(e) => setForecastText(e.target.value)}
-            onPaste={handlePaste}
-            placeholder={`Example:\nDate: YYYY-MM-DD (for Monday)\nMonday: 15000\nTuesday: 16000\n...`}
-          />
-        </div>
-
-        {adminMode && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            <div>
-              <label className="block text-sm text-white mb-1">Capture Rate %</label>
-              <input
-                type="number"
-                value={captureRate}
-                onChange={(e) => setCaptureRate(Number(e.target.value))}
-                className="w-full rounded-md bg-slate-900 border border-slate-700 p-2 text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-white mb-1">Spend per Guest ($)</label>
-              <input
-                type="number"
-                value={spendPerGuest}
-                onChange={(e) => setSpendPerGuest(Number(e.target.value))}
-                className="w-full rounded-md bg-slate-900 border border-slate-700 p-2 text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-white mb-1">AM Split %</label>
-              <input
-                type="number"
-                value={amSplit}
-                onChange={(e) => setAmSplit(Number(e.target.value))}
-                className="w-full rounded-md bg-slate-900 border border-slate-700 p-2 text-white"
-              />
-              <p className="text-xs text-slate-400 mt-1">PM Split: {100 - amSplit}%</p>
-            </div>
-          </div>
+        {formattedDate && (
+          <p className="text-xs text-pink-300 mb-1">Week Starting: <span className="font-medium text-white">{formattedDate}</span></p>
         )}
 
+        <Textarea
+          value={inputText}
+          onChange={(e) => setInputText(e.target.value)}
+          rows={8}
+          className="w-full font-mono text-sm bg-slate-900 text-white border border-slate-700"
+        />
+
+        <div className="flex flex-col sm:flex-row gap-3 mt-4">
+          <div className="flex-1">
+            <label className="block text-xs text-slate-400 mb-1">Capture Rate %</label>
+            <Input
+              type="number"
+              value={captureRate}
+              onChange={(e) => setCaptureRate(Number(e.target.value))}
+              className="w-full"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-xs text-slate-400 mb-1">Spend per Guest ($)</label>
+            <Input
+              type="number"
+              value={spendPerGuest}
+              onChange={(e) => setSpendPerGuest(Number(e.target.value))}
+              className="w-full"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-xs text-slate-400 mb-1">AM Split %</label>
+            <Input
+              type="number"
+              value={amSplit}
+              onChange={(e) => setAmSplit(Number(e.target.value))}
+              className="w-full"
+            />
+          </div>
+        </div>
+
         <Button
-          onClick={handleClick}
-          variant="gradient"
-          className="w-full justify-center"
+          onClick={generateForecast}
+          className="mt-4 w-full bg-pink-600 hover:bg-pink-700 text-white"
         >
-          ↗ Generate Forecast & Save
+          Generate Forecast & Save
         </Button>
+
+        {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
       </div>
 
-      {forecastDataUI && forecastDataUI.length > 0 && (
-        <ForecastResultsTable forecastDataUI={forecastDataUI} />
-      )}
+      <ForecastResultsTable forecastDataUI={forecastDataUI} />
     </div>
   );
 };
