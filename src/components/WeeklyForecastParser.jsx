@@ -65,45 +65,42 @@ const WeeklyForecastParser = () => {
         />
 
         <div className="flex flex-col sm:flex-row gap-3 mt-4">
-          {/* Capture Rate */}
           <div className="flex-1">
             <label className="block text-xs text-slate-400 mb-1">Capture Rate %</label>
             {adminMode ? (
-              <Input
+              <input
                 type="number"
                 value={captureRate}
                 onChange={(e) => setCaptureRate(Number(e.target.value))}
-                className="w-full"
+                className="w-full bg-slate-900 text-white px-3 py-2 rounded border border-slate-600"
               />
             ) : (
               <p className="text-sm text-slate-100">{captureRate}%</p>
             )}
           </div>
 
-          {/* Spend per Guest */}
           <div className="flex-1">
             <label className="block text-xs text-slate-400 mb-1">Spend per Guest ($)</label>
             {adminMode ? (
-              <Input
+              <input
                 type="number"
                 value={spendPerGuest}
                 onChange={(e) => setSpendPerGuest(Number(e.target.value))}
-                className="w-full"
+                className="w-full bg-slate-900 text-white px-3 py-2 rounded border border-slate-600"
               />
             ) : (
               <p className="text-sm text-slate-100">${spendPerGuest}</p>
             )}
           </div>
 
-          {/* AM Split */}
           <div className="flex-1">
             <label className="block text-xs text-slate-400 mb-1">AM Split %</label>
             {adminMode ? (
-              <Input
+              <input
                 type="number"
                 value={amSplit}
                 onChange={(e) => setAmSplit(Number(e.target.value))}
-                className="w-full"
+                className="w-full bg-slate-900 text-white px-3 py-2 rounded border border-slate-600"
               />
             ) : (
               <p className="text-sm text-slate-100">
