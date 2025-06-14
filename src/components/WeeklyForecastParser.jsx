@@ -1,6 +1,5 @@
 import React from "react";
 import { Button } from "@/components/ui/button.jsx";
-import { Input } from "@/components/ui/input.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
 import { useWeeklyForecastLogic } from "@/hooks/useWeeklyForecastLogic.jsx";
 import ForecastResultsTable from "@/components/forecast/ForecastResultsTable.jsx";
@@ -27,9 +26,8 @@ const WeeklyForecastParser = () => {
     if (match && match[1]) {
       const parsed = new Date(match[1]);
       if (isNaN(parsed.getTime())) return null;
-
-      const mm = String(parsed.getMonth() + 1).padStart(2, '0');
-      const dd = String(parsed.getDate()).padStart(2, '0');
+      const mm = String(parsed.getMonth() + 1).padStart(2, "0");
+      const dd = String(parsed.getDate()).padStart(2, "0");
       const yyyy = parsed.getFullYear();
       return `${mm}-${dd}-${yyyy}`;
     }
@@ -43,14 +41,19 @@ const WeeklyForecastParser = () => {
       <div className="bg-slate-800 p-5 rounded shadow-lg border border-slate-600 relative">
         <div className="flex justify-between items-start">
           <div>
-            <h2 className="text-xl font-bold text-pink-400 mb-1">Weekly Forecast Parser</h2>
+            <h2 className="text-xl font-bold text-pink-400 mb-1">
+              Weekly Forecast Parser
+            </h2>
             <p className="text-sm text-slate-300 mb-2">
-              Paste weekly passenger data (include <strong>Date: MM-DD-YYYY</strong> for Monday) to generate and save forecast.
-              Uses <span className="font-semibold text-pink-300">{captureRate}%</span> capture rate and <span className="font-semibold text-pink-300">${spendPerGuest}</span> spend/guest.
+              Paste weekly passenger data (include <strong>Date: MM-DD-YYYY</strong> for Monday)
+              to generate and save forecast. Uses{" "}
+              <span className="font-semibold text-pink-300">{captureRate}%</span> capture rate and{" "}
+              <span className="font-semibold text-pink-300">${spendPerGuest}</span> spend/guest.
             </p>
             {formattedDate && (
               <p className="text-xs text-pink-300 mb-2">
-                Week Starting: <span className="text-white font-semibold">{formattedDate}</span>
+                Week Starting:{" "}
+                <span className="text-white font-semibold">{formattedDate}</span>
               </p>
             )}
           </div>
@@ -70,42 +73,59 @@ const WeeklyForecastParser = () => {
         />
 
         <div className="flex flex-col sm:flex-row gap-3 mt-4">
+          {/* Capture Rate */}
           <div className="flex-1">
-            <label className="block text-xs text-slate-400 mb-1">Capture Rate %</label>
+            <label className="block text-xs text-slate-400 mb-1">
+              Capture Rate %
+            </label>
             {adminMode ? (
-              <Input
+              <input
                 type="number"
                 value={captureRate}
                 onChange={(e) => setCaptureRate(Number(e.target.value))}
+                className="w-full px-2 py-1 rounded bg-slate-900 text-white border border-slate-600"
               />
             ) : (
               <p className="text-sm text-white">{captureRate}%</p>
             )}
           </div>
 
+          {/* Spend per Guest */}
           <div className="flex-1">
-            <label className="block text-xs text-slate-400 mb-1">Spend per Guest ($)</label>
+            <label className="block text-xs text-slate-400 mb-1">
+              Spend per Guest ($)
+            </label>
             {adminMode ? (
-              <Input
+              <input
                 type="number"
                 value={spendPerGuest}
                 onChange={(e) => setSpendPerGuest(Number(e.target.value))}
+                className="w-full px-2 py-1 rounded bg-slate-900 text-white border border-slate-600"
               />
             ) : (
               <p className="text-sm text-white">${spendPerGuest}</p>
             )}
           </div>
 
+          {/* AM Split */}
           <div className="flex-1">
-            <label className="block text-xs text-slate-400 mb-1">AM Split %</label>
+            <label className="block text-xs text-slate-400 mb-1">
+              AM Split %
+            </label>
             {adminMode ? (
-              <Input
+              <input
                 type="number"
                 value={amSplit}
                 onChange={(e) => setAmSplit(Number(e.target.value))}
+                className="w-full px-2 py-1 rounded bg-slate-900 text-white border border-slate-600"
               />
             ) : (
-              <p className="text-sm text-white">{amSplit}% <span className="text-slate-400 text-xs">(PM: {100 - amSplit}%)</span></p>
+              <p className="text-sm text-white">
+                {amSplit}%{" "}
+                <span className="text-slate-400 text-xs">
+                  (PM: {100 - amSplit}%)
+                </span>
+              </p>
             )}
           </div>
         </div>
