@@ -160,6 +160,8 @@ export const useWeeklyForecastLogic = () => {
         day: "Total / Avg",
         pax: totalTraffic,
         guests: totalGuests,
+        amGuests: "-",
+        pmGuests: "-",
         sales: totalSales,
         food: totalFood,
         bev: totalBev,
@@ -196,3 +198,4 @@ export const useWeeklyForecastLogic = () => {
     toggleAdminMode
   };
 };
+
