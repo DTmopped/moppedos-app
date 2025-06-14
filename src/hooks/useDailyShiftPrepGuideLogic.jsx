@@ -13,12 +13,11 @@ export const useDailyShiftPrepGuideLogic = () => {
 
     const latestActuals = actualData?.[actualData.length - 1];
     const latestForecast = forecastData?.[actualData?.length - 1];
-    let factor = 1;
 
+    let factor = 1;
     if (latestActuals && latestForecast && latestForecast.guests > 0) {
       factor = latestActuals.guests / latestForecast.guests;
     }
-
     setAdjustmentFactor(factor);
 
     const portionToLbs = (oz, guests) => {
@@ -26,62 +25,60 @@ export const useDailyShiftPrepGuideLogic = () => {
       return ((guests * oz) / 16).toFixed(1);
     };
 
-    const newData = forecastData.map((entry) => {
-      const guests = Number(entry.guests || 0);
-      const adjGuests = guests * factor;
+    const newData = forecastData
+      .filter((entry) => entry.amGuests !== undefined && entry.pmGuests !== undefined)
+      .map((entry) => {
+        const amGuests = Math.round(entry.amGuests * factor);
+        const pmGuests = Math.round(entry.pmGuests * factor);
 
-      // Now use existing amGuests and pmGuests if available
-      const amGuests = Math.round((entry.amGuests || adjGuests * 0.6) * factor);
-      const pmGuests = Math.round((entry.pmGuests || adjGuests * 0.4) * factor);
+        const generateShift = (guestCount, label) => {
+          const totalSandwiches = guestCount * 3;
 
-      const generateShift = (guestCount, label) => {
-        const totalSandwiches = guestCount * 3;
+          return {
+            name: label,
+            color: label === "AM" ? "text-yellow-600" : "text-blue-600",
+            icon: label === "AM" ? "🌞" : "🌙",
+            prepItems: [
+              { id: uuidv4(), name: "Pulled Pork (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
+              { id: uuidv4(), name: "Chopped Brisket (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
+              { id: uuidv4(), name: "Chopped Chicken (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
+              { id: uuidv4(), name: "Buns", quantity: guestCount * 3, unit: "each" },
+              { id: uuidv4(), name: "Texas Toast", quantity: guestCount, unit: "each" },
+              {
+                id: uuidv4(),
+                name: "Coleslaw",
+                quantity: portionToLbs((2 * totalSandwiches) + (4 * guestCount), 1),
+                unit: "lbs"
+              },
+              { id: uuidv4(), name: "Pulled Pork", quantity: portionToLbs(6, guestCount), unit: "lbs" },
+              { id: uuidv4(), name: "Brisket", quantity: portionToLbs(6, guestCount), unit: "lbs" },
+              { id: uuidv4(), name: "Half Chicken", quantity: portionToLbs(16, guestCount), unit: "lbs" },
+              { id: uuidv4(), name: "St Louis Ribs", quantity: portionToLbs(16, guestCount), unit: "lbs" },
+              { id: uuidv4(), name: "Beef Short Rib", quantity: portionToLbs(24, guestCount), unit: "lbs" },
+              { id: uuidv4(), name: "Collard Greens", quantity: portionToLbs(4, guestCount), unit: "lbs" },
+              { id: uuidv4(), name: "Mac N Cheese", quantity: portionToLbs(4, guestCount), unit: "lbs" },
+              { id: uuidv4(), name: "Baked Beans", quantity: portionToLbs(4, guestCount), unit: "lbs" },
+              { id: uuidv4(), name: "Corn Casserole", quantity: portionToLbs(4, guestCount), unit: "lbs" },
+              { id: uuidv4(), name: "Corn Muffin", quantity: guestCount, unit: "each" },
+              { id: uuidv4(), name: "Honey Butter", quantity: guestCount, unit: "each" },
+              { id: uuidv4(), name: "Banana Pudding", quantity: guestCount, unit: "each" },
+              { id: uuidv4(), name: "Key Lime Pie", quantity: guestCount, unit: "each" },
+              { id: uuidv4(), name: "Hummingbird Cake", quantity: guestCount, unit: "each" },
+            ]
+          };
+        };
 
         return {
-          name: label,
-          color: label === "AM" ? "text-yellow-600" : "text-blue-600",
-          icon: label === "AM" ? "🌞" : "🌙",
-          prepItems: [
-            { id: uuidv4(), name: "Pulled Pork (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "Chopped Brisket (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "Chopped Chicken (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "Buns", quantity: guestCount * 3, unit: "each" },
-            { id: uuidv4(), name: "Texas Toast", quantity: guestCount, unit: "each" },
-            {
-              id: uuidv4(),
-              name: "Coleslaw",
-              quantity: portionToLbs((2 * totalSandwiches) + (4 * guestCount), 1),
-              unit: "lbs"
-            },
-            { id: uuidv4(), name: "Pulled Pork", quantity: portionToLbs(6, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "Brisket", quantity: portionToLbs(6, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "Half Chicken", quantity: portionToLbs(16, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "St Louis Ribs", quantity: portionToLbs(16, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "Beef Short Rib", quantity: portionToLbs(24, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "Collard Greens", quantity: portionToLbs(4, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "Mac N Cheese", quantity: portionToLbs(4, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "Baked Beans", quantity: portionToLbs(4, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "Corn Casserole", quantity: portionToLbs(4, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "Corn Muffin", quantity: guestCount, unit: "each" },
-            { id: uuidv4(), name: "Honey Butter", quantity: guestCount, unit: "each" },
-            { id: uuidv4(), name: "Banana Pudding", quantity: guestCount, unit: "each" },
-            { id: uuidv4(), name: "Key Lime Pie", quantity: guestCount, unit: "each" },
-            { id: uuidv4(), name: "Hummingbird Cake", quantity: guestCount, unit: "each" },
-          ]
+          date: entry.date,
+          guests: Math.round(entry.guests * factor),
+          amGuests,
+          pmGuests,
+          shifts: {
+            am: generateShift(amGuests, "AM"),
+            pm: generateShift(pmGuests, "PM")
+          }
         };
-      };
-
-      return {
-        date: entry.date,
-        guests: Math.round(adjGuests),
-        amGuests,
-        pmGuests,
-        shifts: {
-          am: generateShift(amGuests, "AM"),
-          pm: generateShift(pmGuests, "PM"),
-        },
-      };
-    });
+      });
 
     setDailyShiftPrepData(newData);
   }, [forecastData, actualData]);
