@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button.jsx";
 import { Input } from "@/components/ui/input.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
@@ -6,7 +6,7 @@ import { useWeeklyForecastLogic } from "@/hooks/useWeeklyForecastLogic.jsx";
 import ForecastResultsTable from "@/components/forecast/ForecastResultsTable.jsx";
 
 const WeeklyForecastParser = () => {
-  const [adminVisible, setAdminVisible] = useState(true);
+  const [adminMode, setAdminMode] = useState(false);
 
   const {
     inputText,
@@ -22,6 +22,21 @@ const WeeklyForecastParser = () => {
     setAmSplit,
   } = useWeeklyForecastLogic();
 
+  useEffect(() => {
+    const savedCapture = localStorage.getItem("captureRate");
+    const savedSpend = localStorage.getItem("spendPerGuest");
+    const savedSplit = localStorage.getItem("amSplit");
+    if (savedCapture) setCaptureRate(Number(savedCapture));
+    if (savedSpend) setSpendPerGuest(Number(savedSpend));
+    if (savedSplit) setAmSplit(Number(savedSplit));
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("captureRate", captureRate);
+    localStorage.setItem("spendPerGuest", spendPerGuest);
+    localStorage.setItem("amSplit", amSplit);
+  }, [captureRate, spendPerGuest, amSplit]);
+
   const extractBaseDate = (input) => {
     const match = input.match(/Date:\s*(\d{4}-\d{2}-\d{2})/i);
     if (match && match[1]) {
@@ -36,15 +51,15 @@ const WeeklyForecastParser = () => {
   return (
     <div className="space-y-6">
       <div className="relative bg-slate-800 p-5 rounded shadow-lg border border-slate-600">
-        {/* Admin Toggle Button */}
+        {/* Admin Mode Toggle */}
         <div className="absolute top-0 right-0 mt-2 mr-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setAdminVisible((prev) => !prev)}
+            onClick={() => setAdminMode(prev => !prev)}
             className="border-pink-500 text-pink-300 hover:bg-pink-500/10"
           >
-            {adminVisible ? "Hide Admin Tools" : "Show Admin Tools"}
+            {adminMode ? "Disable Admin Mode" : "Enable Admin Mode"}
           </Button>
         </div>
 
@@ -65,40 +80,41 @@ const WeeklyForecastParser = () => {
           className="w-full font-mono text-sm bg-slate-900 text-white border border-slate-700"
         />
 
-        {/* Admin Inputs */}
-        {adminVisible && (
-          <div className="flex flex-col sm:flex-row gap-3 mt-4">
-            <div className="flex-1">
-              <label className="block text-xs text-slate-400 mb-1">Capture Rate %</label>
-              <Input
-                type="number"
-                value={captureRate}
-                onChange={(e) => setCaptureRate(Number(e.target.value))}
-                className="w-full"
-              />
-            </div>
-            <div className="flex-1">
-              <label className="block text-xs text-slate-400 mb-1">Spend per Guest ($)</label>
-              <Input
-                type="number"
-                value={spendPerGuest}
-                onChange={(e) => setSpendPerGuest(Number(e.target.value))}
-                className="w-full"
-              />
-            </div>
-            <div className="flex-1">
-              <label className="block text-xs text-slate-400 mb-1">AM Split %</label>
-              <Input
-                type="number"
-                value={amSplit}
-                onChange={(e) => setAmSplit(Number(e.target.value))}
-                className="w-full"
-              />
-            </div>
+        {/* Always Show Fields — Lock unless Admin */}
+        <div className="flex flex-col sm:flex-row gap-3 mt-4">
+          <div className="flex-1">
+            <label className="block text-xs text-slate-400 mb-1">Capture Rate %</label>
+            <Input
+              type="number"
+              value={captureRate}
+              disabled={!adminMode}
+              onChange={(e) => setCaptureRate(Number(e.target.value))}
+              className={!adminMode ? "opacity-60 cursor-not-allowed" : ""}
+            />
           </div>
-        )}
+          <div className="flex-1">
+            <label className="block text-xs text-slate-400 mb-1">Spend per Guest ($)</label>
+            <Input
+              type="number"
+              value={spendPerGuest}
+              disabled={!adminMode}
+              onChange={(e) => setSpendPerGuest(Number(e.target.value))}
+              className={!adminMode ? "opacity-60 cursor-not-allowed" : ""}
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-xs text-slate-400 mb-1">AM Split %</label>
+            <Input
+              type="number"
+              value={amSplit}
+              disabled={!adminMode}
+              onChange={(e) => setAmSplit(Number(e.target.value))}
+              className={!adminMode ? "opacity-60 cursor-not-allowed" : ""}
+            />
+          </div>
+        </div>
 
-        {/* Forecast Button */}
+        {/* Action Button */}
         <Button
           onClick={generateForecast}
           className="mt-4 w-full bg-pink-600 hover:bg-pink-700 text-white"
@@ -109,7 +125,6 @@ const WeeklyForecastParser = () => {
         {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
       </div>
 
-      {/* Forecast Table */}
       <ForecastResultsTable forecastDataUI={forecastDataUI} />
     </div>
   );
