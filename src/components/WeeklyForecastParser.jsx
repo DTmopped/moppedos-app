@@ -5,20 +5,6 @@ import { Textarea } from "@/components/ui/textarea.jsx";
 import { useWeeklyForecastLogic } from "@/hooks/useWeeklyForecastLogic.jsx";
 import ForecastResultsTable from "@/components/forecast/ForecastResultsTable.jsx";
 
-// Updated MM-DD-YYYY formatter
-const extractBaseDate = (input) => {
-  const match = input.match(/Date:\s*(\d{4}-\d{2}-\d{2})/i);
-  if (match && match[1]) {
-    const parsed = new Date(match[1]);
-    if (isNaN(parsed.getTime())) return null;
-    const mm = String(parsed.getMonth() + 1).padStart(2, "0");
-    const dd = String(parsed.getDate()).padStart(2, "0");
-    const yyyy = parsed.getFullYear();
-    return `${mm}-${dd}-${yyyy}`;
-  }
-  return null;
-};
-
 const WeeklyForecastParser = () => {
   const {
     inputText,
@@ -35,6 +21,20 @@ const WeeklyForecastParser = () => {
     adminMode,
     toggleAdminMode,
   } = useWeeklyForecastLogic();
+
+  const extractBaseDate = (input) => {
+    const match = input.match(/Date:\s*(\d{4}-\d{2}-\d{2})/i);
+    if (match && match[1]) {
+      const parsed = new Date(match[1]);
+      if (isNaN(parsed.getTime())) return null;
+
+      const mm = String(parsed.getMonth() + 1).padStart(2, '0');
+      const dd = String(parsed.getDate()).padStart(2, '0');
+      const yyyy = parsed.getFullYear();
+      return `${mm}-${dd}-${yyyy}`;
+    }
+    return null;
+  };
 
   const formattedDate = extractBaseDate(inputText);
 
