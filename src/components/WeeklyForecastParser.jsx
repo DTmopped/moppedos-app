@@ -6,6 +6,8 @@ import { useWeeklyForecastLogic } from "@/hooks/useWeeklyForecastLogic.jsx";
 import ForecastResultsTable from "@/components/forecast/ForecastResultsTable.jsx";
 
 const WeeklyForecastParser = () => {
+  const [adminVisible, setAdminVisible] = useState(true);
+
   const {
     inputText,
     setInputText,
@@ -20,8 +22,6 @@ const WeeklyForecastParser = () => {
     setAmSplit,
   } = useWeeklyForecastLogic();
 
-  const [adminVisible, setAdminVisible] = useState(true);
-
   const extractBaseDate = (input) => {
     const match = input.match(/Date:\s*(\d{4}-\d{2}-\d{2})/i);
     if (match && match[1]) {
@@ -34,20 +34,20 @@ const WeeklyForecastParser = () => {
   const formattedDate = extractBaseDate(inputText);
 
   return (
-    <div className="space-y-6 relative">
-      {/* Admin Button Top Right */}
-      <div className="absolute top-0 right-0 mt-2 mr-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setAdminVisible((prev) => !prev)}
-          className="border-pink-500 text-pink-300 hover:bg-pink-500/10"
-        >
-          {adminVisible ? "Hide Admin Tools" : "Show Admin Tools"}
-        </Button>
-      </div>
+    <div className="space-y-6">
+      <div className="relative bg-slate-800 p-5 rounded shadow-lg border border-slate-600">
+        {/* Admin Toggle Button */}
+        <div className="absolute top-0 right-0 mt-2 mr-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setAdminVisible((prev) => !prev)}
+            className="border-pink-500 text-pink-300 hover:bg-pink-500/10"
+          >
+            {adminVisible ? "Hide Admin Tools" : "Show Admin Tools"}
+          </Button>
+        </div>
 
-      <div className="bg-slate-800 p-5 rounded shadow-lg border border-slate-600">
         <h2 className="text-xl font-bold text-pink-400 mb-2">Weekly Forecast Parser</h2>
         <p className="text-sm text-slate-300 mb-3">
           Paste weekly passenger data (include <strong>Date: YYYY-MM-DD</strong> for Monday) to generate and save forecast.
@@ -65,6 +65,7 @@ const WeeklyForecastParser = () => {
           className="w-full font-mono text-sm bg-slate-900 text-white border border-slate-700"
         />
 
+        {/* Admin Inputs */}
         {adminVisible && (
           <div className="flex flex-col sm:flex-row gap-3 mt-4">
             <div className="flex-1">
@@ -97,6 +98,7 @@ const WeeklyForecastParser = () => {
           </div>
         )}
 
+        {/* Forecast Button */}
         <Button
           onClick={generateForecast}
           className="mt-4 w-full bg-pink-600 hover:bg-pink-700 text-white"
@@ -107,6 +109,7 @@ const WeeklyForecastParser = () => {
         {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
       </div>
 
+      {/* Forecast Table */}
       <ForecastResultsTable forecastDataUI={forecastDataUI} />
     </div>
   );
