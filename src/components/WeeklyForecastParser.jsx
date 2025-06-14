@@ -23,13 +23,18 @@ const WeeklyForecastParser = () => {
   } = useWeeklyForecastLogic();
 
   const extractBaseDate = (input) => {
-    const match = input.match(/Date:\s*(\d{4}-\d{2}-\d{2})/i);
-    if (match && match[1]) {
-      const parsed = new Date(match[1]);
-      return isNaN(parsed.getTime()) ? null : parsed.toLocaleDateString("en-US");
-    }
-    return null;
-  };
+  const match = input.match(/Date:\s*(\d{4}-\d{2}-\d{2})/i);
+  if (match && match[1]) {
+    const parsed = new Date(match[1]);
+    if (isNaN(parsed.getTime())) return null;
+
+    const mm = String(parsed.getMonth() + 1).padStart(2, '0');
+    const dd = String(parsed.getDate()).padStart(2, '0');
+    const yyyy = parsed.getFullYear();
+    return `${mm}-${dd}-${yyyy}`;
+  }
+  return null;
+};
 
   const formattedDate = extractBaseDate(inputText);
 
