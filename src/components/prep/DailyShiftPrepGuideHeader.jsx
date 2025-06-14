@@ -1,122 +1,62 @@
-import React from 'react';
-import { Button } from '@/components/ui/button.jsx';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/components/ui/card.jsx';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-  DialogClose,
-} from '@/components/ui/dialog.jsx';
-import { Printer, Edit3, Utensils, Save } from 'lucide-react';
-import { PREP_GUIDE_ICON_COLORS } from '@/config/prepGuideConfig.jsx';
+import React from "react";
 
-const DailyShiftPrepGuideHeader = ({
-  adjustmentFactor,
-  onManageMenuOpen,
-  onPrint,
-  MenuEditorComponent,
-  manageMenuOpen,
-  setManageMenuOpen,
-  onSaveMenu,
-}) => {
-  const titleColor = PREP_GUIDE_ICON_COLORS.dailyShift || "from-green-400 to-emerald-500";
-  const [currentMenuState, setCurrentMenuState] = React.useState(null);
-
-  const handleSaveClicked = () => {
-    if (onSaveMenu && currentMenuState) {
-      onSaveMenu(currentMenuState);
-    }
-  };
+const PrepGuideContent = ({ dailyShiftPrepData, guideType, titleColor }) => {
+  if (!dailyShiftPrepData || dailyShiftPrepData.length === 0) {
+    return (
+      <div className="text-center text-sm text-muted-foreground mt-10">
+        No prep data available for this period.
+      </div>
+    );
+  }
 
   return (
-    <Card className="glassmorphic-card no-print card-hover-glow">
-      <CardHeader className="pb-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-          <div className="flex items-center space-x-4 mb-4 sm:mb-0">
-            <div className={`p-3 rounded-full bg-gradient-to-tr ${titleColor} shadow-md`}>
-              <Utensils className="h-8 w-8 text-white" />
-            </div>
+    <div className="space-y-6">
+      {dailyShiftPrepData.map((day, idx) => (
+        <div key={idx} className="rounded-lg border border-slate-700 p-4 shadow-md bg-slate-900">
+          <div className="flex justify-between items-center mb-3">
             <div>
-              <CardTitle className={`text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r ${titleColor}`}>
-                Daily Shift Prep Guide
-              </CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Shift-based prep quantities. Current Adjustment Factor:{' '}
-                <span className="font-semibold text-primary">
-                  {typeof adjustmentFactor === 'number'
-                    ? `${adjustmentFactor.toFixed(2)}x`
-                    : '—'}
-                </span>
-              </CardDescription>
+              <h4 className="text-lg font-semibold text-white">
+                {new Date(day.date).toLocaleDateString("en-US", {
+                  weekday: "long",
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric"
+                })}
+              </h4>
+              <p className="text-sm text-muted-foreground">
+                Guests: {day.guests.toLocaleString()} &middot; AM: {day.amGuests.toLocaleString()} / PM: {day.pmGuests.toLocaleString()}
+              </p>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 self-start sm:self-center w-full sm:w-auto">
-            <Dialog open={manageMenuOpen} onOpenChange={setManageMenuOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="border-primary text-primary hover:bg-primary/10 w-full sm:w-auto"
-                  onClick={() => onManageMenuOpen(true)}
-                >
-                  <Edit3 className="mr-2 h-4 w-4" /> Manage Menu
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[720px] w-full rounded-xl bg-slate-900/90 backdrop-blur-md border border-slate-700 shadow-2xl">
-                <DialogHeader>
-                  <DialogTitle className={`text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r ${titleColor}`}>
-                    Manage Shift Prep Menu
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="py-4 max-h-[65vh] overflow-y-auto">
-                  {MenuEditorComponent ? (
-                    <MenuEditorComponent
-                      sectionTitleColor={titleColor}
-                      onMenuChange={setCurrentMenuState}
-                    />
-                  ) : (
-                    <p className="text-sm text-red-500">
-                      Error: Menu editor component is not available.
-                    </p>
-                  )}
-                </div>
-                <DialogFooter className="flex justify-end gap-3 mt-2 sm:mt-4 border-t border-slate-700 pt-4">
-                  <DialogClose asChild>
-                    <Button variant="outline" className="text-sm px-4 py-2">
-                      Cancel
-                    </Button>
-                  </DialogClose>
-                  <Button
-                    onClick={handleSaveClicked}
-                    variant="gradient"
-                    className="px-4 py-2 text-sm font-semibold"
-                  >
-                    <Save className="mr-2 h-4 w-4" /> Save Menu
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {["am", "pm"].map((shiftKey) => {
+              const shift = day.shifts?.[shiftKey];
+              if (!shift) return null;
 
-            <Button
-              onClick={onPrint}
-              variant="gradient"
-              className={`w-full sm:w-auto bg-gradient-to-r ${titleColor} hover:brightness-110`}
-            >
-              <Printer className="mr-2 h-4 w-4" /> Print / PDF
-            </Button>
+              return (
+                <div key={shiftKey} className="p-4 border border-slate-600 rounded-lg bg-slate-800">
+                  <h5 className={`text-md font-semibold mb-2 ${shift.color}`}>
+                    {shift.icon} {shift.name} SHIFT
+                  </h5>
+                  <ul className="space-y-1 text-sm text-white">
+                    {shift.prepItems.map((item) => (
+                      <li key={item.id} className="flex justify-between border-b border-slate-700 py-1">
+                        <span>{item.name}</span>
+                        <span className="font-mono text-right">
+                          {item.quantity} {item.unit}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
           </div>
         </div>
-      </CardHeader>
-    </Card>
+      ))}
+    </div>
   );
 };
 
-export default DailyShiftPrepGuideHeader;
+export default PrepGuideContent;
