@@ -39,10 +39,10 @@ const WeeklyForecastParser = () => {
         <div className="flex justify-between items-start">
           <div>
             <h2 className="text-xl font-bold text-pink-400 mb-1">Weekly Forecast Parser</h2>
-            <p className="text-sm text-slate-300 mb-2">
-              Paste weekly passenger data (include <strong>Date: YYYY-MM-DD</strong> for Monday) to generate and save forecast.
-              Uses <span className="font-semibold text-pink-300">{captureRate}%</span> capture rate and <span className="font-semibold text-pink-300">${spendPerGuest}</span> spend/guest.
-            </p>
+           <p className="text-sm text-slate-300 mb-2">
+           Paste weekly passenger data (include <strong>Date: MM-DD-YYYY</strong> for Monday) to generate and save forecast.
+            Uses <span className="font-semibold text-pink-300">{captureRate}%</span> capture rate and <span className="font-semibold text-pink-300">${spendPerGuest}</span> spend/guest.
+          </p>
             {formattedDate && (
               <p className="text-xs text-pink-300 mb-2">
                 Week Starting: <span className="text-white font-semibold">{formattedDate}</span>
