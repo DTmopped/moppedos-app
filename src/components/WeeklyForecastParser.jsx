@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button.jsx";
 import { useWeeklyForecastLogic } from "@/hooks/useWeeklyForecastLogic.jsx";
-import ForecastResultsTable from "@/components/ForecastResultsTable.jsx";
+import ForecastResultsTable from "@/components/forecast/ForecastResultsTable.jsx";
 
 const WeeklyForecastParser = () => {
   const {
