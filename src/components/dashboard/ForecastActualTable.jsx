@@ -53,9 +53,13 @@ const ForecastActualTable = ({ combinedData }) => {
 
             return (
               <tr key={index} className="border-t border-slate-200">
-                <td className="px-3 py-2">{entry.date}</td>
+                <td className="px-3 py-2">
+                  {entry.date ? new Date(entry.date).toLocaleDateString("en-US") : "—"}
+                </td>
                 <td className="px-3 py-2">{entry.forecastSales?.toLocaleString()}</td>
-                <td className="px-3 py-2">{entry.hasActuals ? entry.actualSales?.toLocaleString() : "N/A"}</td>
+                <td className="px-3 py-2">
+                  {entry.hasActuals ? entry.actualSales?.toLocaleString() : "N/A"}
+                </td>
                 <td className="px-3 py-2">
                   {food !== null ? <span className={foodClass}>{(food * 100).toFixed(1)}%</span> : "N/A"}
                 </td>
