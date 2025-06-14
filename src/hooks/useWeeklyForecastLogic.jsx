@@ -113,13 +113,26 @@ export const useWeeklyForecastLogic = () => {
       if (parsedDayData[dayName] !== undefined) {
         const pax = parsedDayData[dayName];
         const guests = pax * (captureRate / 100);
+        const amGuests = Math.round(guests * (amSplit / 100));
+        const pmGuests = Math.round(guests - amGuests);
         const sales = guests * spendPerGuest;
         const food = sales * foodPct;
         const bev = sales * bevPct;
         const labor = sales * laborPct;
         const forecastDate = getDayFromDate(baseDate, index);
 
-        processedData.push({ day: dayName, date: forecastDate, pax, guests, sales, food, bev, labor });
+        processedData.push({
+          day: dayName,
+          date: forecastDate,
+          pax,
+          guests,
+          amGuests,
+          pmGuests,
+          sales,
+          food,
+          bev,
+          labor
+        });
 
         addForecastEntry({
           date: forecastDate,
@@ -127,7 +140,9 @@ export const useWeeklyForecastLogic = () => {
           forecastedFood: food,
           forecastedBev: bev,
           forecastedLabor: labor,
-          guests // ✅ ADDED — required for prep logic
+          guests,
+          amGuests,
+          pmGuests
         });
 
         totalTraffic += pax;
@@ -161,7 +176,7 @@ export const useWeeklyForecastLogic = () => {
         action: <CheckCircle className="text-green-500" />,
       });
     }
-  }, [inputText, addForecastEntry, toast, captureRate, spendPerGuest]);
+  }, [inputText, addForecastEntry, toast, captureRate, spendPerGuest, amSplit]);
 
   return {
     inputText,
