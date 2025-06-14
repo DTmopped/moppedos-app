@@ -16,12 +16,11 @@ const ForecastResultsTable = ({ forecastDataUI }) => {
   const bevLabel = `Bev (${(bev * 100).toFixed(0)}%)`;
   const laborLabel = `Labor (${(labor * 100).toFixed(0)}%)`;
 
-  // Compute totals for AM and PM if they exist
-  const totalAM = forecastDataUI
+  // Calculate total AM and PM guests
+  const totalAm = forecastDataUI
     .filter(row => !row.isTotal)
     .reduce((sum, row) => sum + (row.amGuests || 0), 0);
-
-  const totalPM = forecastDataUI
+  const totalPm = forecastDataUI
     .filter(row => !row.isTotal)
     .reduce((sum, row) => sum + (row.pmGuests || 0), 0);
 
@@ -51,12 +50,12 @@ const ForecastResultsTable = ({ forecastDataUI }) => {
                 <td className="px-3 py-2">
                   {row.date ? new Date(row.date).toLocaleDateString("en-US") : "—"}
                 </td>
-                <td className="px-3 py-2 text-right">{row.pax?.toLocaleString?.() || "—"}</td>
-                <td className="px-3 py-2 text-right">{row.guests ? Math.round(row.guests).toLocaleString() : "—"}</td>
+                <td className="px-3 py-2 text-right">{row.pax?.toLocaleString() ?? "—"}</td>
+                <td className="px-3 py-2 text-right">{Math.round(row.guests || 0).toLocaleString()}</td>
                 <td className="px-3 py-2 text-right text-yellow-300">
-                  {(row.amGuests || row.pmGuests)
-                    ? `${row.amGuests?.toLocaleString?.() || 0} / ${row.pmGuests?.toLocaleString?.() || 0}`
-                    : "—"}
+                  {row.isTotal
+                    ? `${totalAm.toLocaleString()} / ${totalPm.toLocaleString()}`
+                    : `${row.amGuests?.toLocaleString() || 0} / ${row.pmGuests?.toLocaleString() || 0}`}
                 </td>
                 <td className="px-3 py-2 text-right text-green-400">
                   ${row.sales?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || "—"}
@@ -73,33 +72,6 @@ const ForecastResultsTable = ({ forecastDataUI }) => {
                 <td className="px-3 py-2 text-right text-slate-400">—</td>
               </tr>
             ))}
-            {/* Totals Row Fix */}
-            <tr className="bg-slate-800 font-semibold text-pink-200">
-              <td className="px-3 py-2">Total / Avg</td>
-              <td className="px-3 py-2">—</td>
-              <td className="px-3 py-2 text-right">
-                {forecastDataUI[forecastDataUI.length - 1]?.pax?.toLocaleString?.() || "—"}
-              </td>
-              <td className="px-3 py-2 text-right">
-                {forecastDataUI[forecastDataUI.length - 1]?.guests?.toLocaleString?.() || "—"}
-              </td>
-              <td className="px-3 py-2 text-right text-yellow-300">
-                {`${totalAM.toLocaleString()} / ${totalPM.toLocaleString()}`}
-              </td>
-              <td className="px-3 py-2 text-right text-green-400">
-                ${forecastDataUI[forecastDataUI.length - 1]?.sales?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || "—"}
-              </td>
-              <td className="px-3 py-2 text-right text-orange-300">
-                ${forecastDataUI[forecastDataUI.length - 1]?.food?.toLocaleString(undefined, { maximumFractionDigits: 1 }) || "—"}
-              </td>
-              <td className="px-3 py-2 text-right text-cyan-300">
-                ${forecastDataUI[forecastDataUI.length - 1]?.bev?.toLocaleString(undefined, { maximumFractionDigits: 1 }) || "—"}
-              </td>
-              <td className="px-3 py-2 text-right text-purple-300">
-                ${forecastDataUI[forecastDataUI.length - 1]?.labor?.toLocaleString(undefined, { maximumFractionDigits: 1 }) || "—"}
-              </td>
-              <td className="px-3 py-2 text-right text-slate-400">—</td>
-            </tr>
           </tbody>
         </table>
       </div>
