@@ -16,7 +16,7 @@ export const useDailyShiftPrepGuideLogic = () => {
   useEffect(() => {
     if (!forecastData || forecastData.length === 0) return;
 
-    console.log("Forecast Data for Prep Guide:", forecastData);
+  
 
     // Auto-set printDate to the first forecasted date
     if (!printDate) {
@@ -50,8 +50,7 @@ console.log("Adjustment Factor:", factor);
     const amGuests = Number(entry.amGuests) * factor || 0;
     const pmGuests = Number(entry.pmGuests) * factor || 0;
 
-    console.log(`Date ${entry.date} — Guests: ${entry.guests}, AM: ${entry.amGuests}, PM: ${entry.pmGuests}, Factor: ${factor}`);
-
+    
       const generateShift = (guestCount, shiftName) => {
         const totalSandwiches = guestCount * 3;
 
