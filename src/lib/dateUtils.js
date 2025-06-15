@@ -23,7 +23,9 @@ export const COST_PERCENTAGES = {
  */
 export const extractBaseDateFromWeeklyInput = (inputText) => {
   const lines = inputText.trim().split("\n");
-  const dateLine = lines.find((line) => /date:\s*(\d{2}-\d{2}-\d{4})/i.test(line));
+  const dateLine = lines.find((line) =>
+    /date:\s*(\d{2}-\d{2}-\d{4})/i.test(line)
+  );
   if (dateLine) {
     const match = dateLine.match(/date:\s*(\d{2})-(\d{2})-(\d{4})/i); // MM-DD-YYYY
     if (match) {
@@ -40,16 +42,16 @@ export const extractBaseDateFromWeeklyInput = (inputText) => {
 
 /**
  * Returns a YYYY-MM-DD string offset from the provided date.
- * Assumes the input date is already Monday and does NOT realign it.
+ * Uses UTC-safe math to avoid timezone-based shifts.
  */
 export const getDayFromDate = (dateString, dayOffset = 0) => {
   const [year, month, day] = dateString.split("-").map(Number);
-  const date = new Date(year, month - 1, day);
-  date.setDate(date.getDate() + dayOffset);
+  const date = new Date(Date.UTC(year, month - 1, day)); // ✅ UTC-safe
+  date.setUTCDate(date.getUTCDate() + dayOffset);         // ✅ add offset safely
 
-  const yyyy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, '0');
-  const dd = String(date.getDate()).padStart(2, '0');
+  const yyyy = date.getUTCFullYear();
+  const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(date.getUTCDate()).padStart(2, '0');
 
   return `${yyyy}-${mm}-${dd}`;
 };
