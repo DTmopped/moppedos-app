@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
 import { useWeeklyForecastLogic } from "@/hooks/useWeeklyForecastLogic.jsx";
 import ForecastResultsTable from "@/components/forecast/ForecastResultsTable.jsx";
-import { extractBaseDateFromWeeklyInput } from "../../lib/dateUtils.js"; // ✅ Move here
+import { extractBaseDateFromWeeklyInput } from "../../lib/dateUtils.js";
 
 const WeeklyForecastParser = () => {
   const {
@@ -23,28 +23,13 @@ const WeeklyForecastParser = () => {
   } = useWeeklyForecastLogic();
 
   const rawBaseDateStr = extractBaseDateFromWeeklyInput(inputText);
-  let formattedDate = null;
-  if (rawBaseDateStr) {
-    formattedDate = new Date(rawBaseDateStr).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  }
-  return null;
-};
-
-import { extractBaseDateFromWeeklyInput } from "../../lib/dateUtils.js";
-// New formattedDate assignment
-const rawBaseDateStr = extractBaseDateFromWeeklyInput(inputText);
-let formattedDate = null;
-if (rawBaseDateStr) {
-  formattedDate = new Date(rawBaseDateStr).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
+  const formattedDate = rawBaseDateStr
+    ? new Date(rawBaseDateStr).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : null;
 
   return (
     <div className="space-y-6">
@@ -55,8 +40,7 @@ if (rawBaseDateStr) {
               Weekly Forecast Parser
             </h2>
             <p className="text-sm text-slate-300 mb-2">
-              Paste weekly passenger data (include <strong>Date: MM-DD-YYYY</strong> for Monday)
-              to generate and save forecast. Uses{" "}
+              Paste weekly passenger data (include <strong>Date: MM-DD-YYYY</strong> for Monday) to generate and save forecast. Uses{" "}
               <span className="font-semibold text-pink-300">{captureRate}%</span> capture rate and{" "}
               <span className="font-semibold text-pink-300">${spendPerGuest}</span> spend/guest.
             </p>
@@ -77,11 +61,11 @@ if (rawBaseDateStr) {
 
         <Textarea
           value={inputText}
-         onChange={(e) => {
-  const value = e.target.value;
-  setInputText(value);
-  localStorage.setItem("weeklyForecastInput", value);
-}}
+          onChange={(e) => {
+            const value = e.target.value;
+            setInputText(value);
+            localStorage.setItem("weeklyForecastInput", value);
+          }}
           rows={8}
           className="w-full font-mono text-sm bg-slate-900 text-white border border-slate-700"
         />
