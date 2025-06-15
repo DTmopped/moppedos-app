@@ -1,3 +1,4 @@
+// Define the order of days used for forecast processing
 export const DAY_ORDER = [
   "Monday",
   "Tuesday",
@@ -8,12 +9,36 @@ export const DAY_ORDER = [
   "Sunday"
 ];
 
+// Default cost percentages (can be overridden in localStorage)
 export const COST_PERCENTAGES = {
   food: 0.32,
   bev: 0.07,
   labor: 0.25
 };
 
+/**
+ * Extracts a base date string from input text
+ * Expects format: "Date: YYYY-MM-DD"
+ */
+export const extractBaseDateFromWeeklyInput = (inputText) => {
+  const lines = inputText.trim().split("\n");
+  const dateLine = lines.find((line) => /date:\s*([\d\-]+)/i.test(line));
+  if (dateLine) {
+    const dateMatch = dateLine.match(/date:\s*([\d\-]+)/i);
+    if (dateMatch && dateMatch[1]) {
+      const testDate = new Date(dateMatch[1]);
+      if (!isNaN(testDate.getTime())) {
+        return dateMatch[1];
+      }
+    }
+  }
+  return null;
+};
+
+/**
+ * Returns a YYYY-MM-DD string offset from a base date
+ * The returned date is always calculated from the Monday of the input week.
+ */
 export const getDayFromDate = (dateString, dayOffset = 0) => {
   const [year, month, day] = dateString.split("-").map(Number);
   const inputDate = new Date(year, month - 1, day);
@@ -23,7 +48,7 @@ export const getDayFromDate = (dateString, dayOffset = 0) => {
   const daysToSubtract = baseDay === 0 ? 6 : baseDay - 1;
   inputDate.setDate(inputDate.getDate() - daysToSubtract);
 
-  // Apply offset
+  // Apply offset for other days of the week
   inputDate.setDate(inputDate.getDate() + dayOffset);
 
   const yyyy = inputDate.getFullYear();
