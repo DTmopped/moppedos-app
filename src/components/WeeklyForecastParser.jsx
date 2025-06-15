@@ -22,6 +22,8 @@ const WeeklyForecastParser = () => {
     toggleAdminMode,
   } = useWeeklyForecastLogic();
 
+  import { getDayFromDate } from "@/lib/dateUtils.js"; // ✅ KEEP THIS
+  
   const rawBaseDateStr = extractBaseDateFromWeeklyInput(inputText);
   const formattedDate = rawBaseDateStr
     ? new Date(getDayFromDate(rawBaseDateStr, 0)).toLocaleDateString("en-US", {
