@@ -46,9 +46,9 @@ export const extractBaseDateFromWeeklyInput = (inputText) => {
  */
 export const getDayFromDate = (dateString, dayOffset = 0) => {
   const [year, month, day] = dateString.split("-").map(Number);
-  const date = new Date(`${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}T00:00:00`);
-  date.setDate(date.getDate() + dayOffset);
-
+  const date = new Date(Date.UTC(year, month - 1, day)); // Use UTC to prevent timezone shift
+date.setUTCDate(date.getUTCDate() + dayOffset);
+  
   const yyyy = date.getFullYear();
   const mm = String(date.getMonth() + 1).padStart(2, '0');
   const dd = String(date.getDate()).padStart(2, '0');
