@@ -96,7 +96,12 @@ export const useWeeklyForecastLogic = () => {
   const generateForecast = useCallback(() => {
     setError("");
     setForecastDataUI([]);
-    if (!inputText.trim()) {
+
+  const processedData = [];
+  let totalTraffic = 0, totalGuests = 0, totalSales = 0, totalFood = 0, totalBev = 0, totalLabor = 0;
+  let entriesAddedToContext = 0;
+    
+  if (!inputText.trim()) {
       setError("Input cannot be empty.");
       return;
     }
