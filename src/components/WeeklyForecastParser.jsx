@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
 import { useWeeklyForecastLogic } from "@/hooks/useWeeklyForecastLogic.jsx";
 import ForecastResultsTable from "@/components/forecast/ForecastResultsTable.jsx";
-import { extractBaseDateFromWeeklyInput } from "@/hooks/useWeeklyForecastLogic.jsx";
+import { extractBaseDateFromWeeklyInput } from "@/lib/dateUtils.js";
 
 const WeeklyForecastParser = () => {
   const {
@@ -38,10 +38,9 @@ const extractBaseDate = (input) => {
   return null;
 };
 
-import { extractBaseDateFromWeeklyInput } from "@/hooks/useWeeklyForecastLogic.jsx"; // Make sure this is in your imports at the top
-
+import { extractBaseDateFromWeeklyInput } from "@/lib/dateUtils.js";
 // New formattedDate assignment
-const rawBaseDateStr = extractBaseDateFromWeeklyInput(inputText, () => {});
+const rawBaseDateStr = extractBaseDateFromWeeklyInput(inputText);
 const formattedDate = rawBaseDateStr
   ? new Date(rawBaseDateStr).toLocaleDateString("en-US", {
       year: "numeric",
