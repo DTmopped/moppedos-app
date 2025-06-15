@@ -101,8 +101,8 @@ export const useWeeklyForecastLogic = () => {
       return;
     }
 
-    const baseDate = extractBaseDateFromWeeklyInput(inputText, setError);
-    if (!baseDate) return;
+    const baseDateStr = extractBaseDateFromWeeklyInput(inputText, setError);
+if (!baseDateStr) return;
 
     const { food: foodPct, bev: bevPct, labor: laborPct } = getCostPercentages();
     const { results: parsedDayData, foundData } = parseWeeklyPassengerInput(inputText);
@@ -112,9 +112,11 @@ export const useWeeklyForecastLogic = () => {
       return;
     }
 
-   const monday = new Date(baseDate);
-const baseDay = monday.getDay(); // 0 = Sun, 1 = Mon, etc.
-monday.setDate(monday.getDate() - ((baseDay + 6) % 7)); // Force to Monday
+  const baseDate = new Date(baseDateStr);
+const baseDay = baseDate.getDay(); // 0 = Sun, 1 = Mon, etc.
+baseDate.setDate(baseDate.getDate() - ((baseDay + 6) % 7)); // Snap to Monday
+
+const monday = baseDate;
 
 DAY_ORDER.forEach((dayName, index) => {
   if (parsedDayData[dayName] !== undefined) {
