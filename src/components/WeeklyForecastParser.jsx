@@ -41,15 +41,14 @@ const extractBaseDate = (input) => {
 import { extractBaseDateFromWeeklyInput } from "../lib/dateUtils.js";
 // New formattedDate assignment
 const rawBaseDateStr = extractBaseDateFromWeeklyInput(inputText);
-const formattedDate = (
-  rawBaseDateStr
-    ? new Date(rawBaseDateStr).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric"
-      })
-    : null
-);
+let formattedDate = null;
+if (rawBaseDateStr) {
+  formattedDate = new Date(rawBaseDateStr).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
 
   return (
     <div className="space-y-6">
