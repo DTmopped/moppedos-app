@@ -22,13 +22,15 @@ export const COST_PERCENTAGES = {
  */
 export const extractBaseDateFromWeeklyInput = (inputText) => {
   const lines = inputText.trim().split("\n");
-  const dateLine = lines.find((line) => /date:\s*([\d\-]+)/i.test(line));
+  const dateLine = lines.find((line) => /date:\s*(\d{2}-\d{2}-\d{4})/i.test(line));
   if (dateLine) {
-    const dateMatch = dateLine.match(/date:\s*([\d\-]+)/i);
-    if (dateMatch && dateMatch[1]) {
-      const testDate = new Date(dateMatch[1]);
+    const match = dateLine.match(/date:\s*(\d{2})-(\d{2})-(\d{4})/i); // MM-DD-YYYY
+    if (match) {
+      const [, mm, dd, yyyy] = match;
+      const formatted = `${yyyy}-${mm}-${dd}`;
+      const testDate = new Date(formatted);
       if (!isNaN(testDate.getTime())) {
-        return dateMatch[1];
+        return formatted;
       }
     }
   }
