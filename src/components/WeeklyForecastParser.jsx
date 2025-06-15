@@ -22,15 +22,14 @@ const WeeklyForecastParser = () => {
   } = useWeeklyForecastLogic();
 
 const extractBaseDate = (input) => {
-  const match = input.match(/Date:\s*(\d{4}-\d{2}-\d{2})/i);
+  const match = input.match(/Date:\s*(\d{2}-\d{2}-\d{4})/i); // MM-DD-YYYY
   if (match && match[1]) {
-    const parsed = new Date(match[1]);
+    const [mm, dd, yyyy] = match[1].split("-");
+    const parsed = new Date(`${yyyy}-${mm}-${dd}`);
     if (isNaN(parsed.getTime())) return null;
 
-    // Snap to the **previous** Sunday to align with weekly layout starting Monday
-    const dayOfWeek = parsed.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-    const offsetToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-    parsed.setDate(parsed.getDate() + offsetToMonday);
+    const dayOfWeek = parsed.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+    parsed.setDate(parsed.getDate() - ((dayOfWeek + 6) % 7)); // Snap to previous Monday
 
     return parsed.toLocaleDateString("en-US", {
       year: "numeric",
