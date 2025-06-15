@@ -1,20 +1,36 @@
 import React, { useState } from "react";
-import { ChevronDown, ChevronRight, Info } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Info } from "lucide-react";
 
 const categoryMap = {
-  "BBQ Meats": ["Pulled Pork", "Brisket", "Half Chicken", "STL Louis Ribs", "Beef Short Ribs"],
-  Sandwiches: ["Pulled Pork Sandwich", "Brisket Sandwich"],
-  Sides: ["Collard Greens", "Mac n Cheese", "Baked Beans", "Corn Casserole", "Corn Muffin", "Honey Butter", "Coleslaw"],
-  Breads: ["Buns", "Texas Toast"],
-  Desserts: ["Banana Pudding", "Key Lime Pie", "Hummingbird Cake"],
+  "Pulled Pork (Sammies)": "Sammies",
+  "Chopped Brisket (Sammies)": "Sammies",
+  "Chopped Chicken (Sammies)": "Sammies",
+  "Pulled Pork": "BBQ Meats",
+  "Brisket": "BBQ Meats",
+  "Half Chicken": "BBQ Meats",
+  "St Louis Ribs": "BBQ Meats",
+  "Beef Short Rib": "BBQ Meats",
+  "Collard Greens": "Sides",
+  "Mac N Cheese": "Sides",
+  "Baked Beans": "Sides",
+  "Corn Casserole": "Sides",
+  "Corn Muffin": "Sides",
+  "Honey Butter": "Sides",
+  "Coleslaw": "Sides",
+  "Buns": "Breads",
+  "Texas Toast": "Breads",
+  "Banana Pudding": "Desserts",
+  "Key Lime Pie": "Desserts",
+  "Hummingbird Cake": "Desserts"
 };
 
-const getCategory = (itemName) => {
-  for (const [category, items] of Object.entries(categoryMap)) {
-    if (items.includes(itemName)) return category;
-  }
-  return "Other";
+const categoryIcons = {
+  "Sammies": "🥪 Sammies",
+  "BBQ Meats": "🔥 BBQ Meats",
+  "Sides": "🥗 Sides",
+  "Breads": "🍞 Breads",
+  "Desserts": "🍰 Desserts",
+  "Other": "📦 Other"
 };
 
 const PrepGuideContent = ({ dailyShiftPrepData }) => {
@@ -35,19 +51,29 @@ const PrepGuideContent = ({ dailyShiftPrepData }) => {
     }));
   };
 
+  const groupByCategory = (items) => {
+    const groups = {};
+    for (const item of items) {
+      const category = categoryMap[item.name] || "Other";
+      if (!groups[category]) groups[category] = [];
+      groups[category].push(item);
+    }
+    return groups;
+  };
+
   return (
     <div className="space-y-4">
       {dailyShiftPrepData.map((day, idx) => {
         const isExpanded = expandedDays[day.date] || false;
 
         return (
-          <div key={idx} className="border border-slate-300 rounded-lg bg-white">
+          <div key={idx} className="border border-slate-300 rounded-lg bg-white shadow">
             <button
               onClick={() => toggleDay(day.date)}
-              className="w-full flex items-center justify-between px-4 py-3 bg-slate-100 hover:bg-slate-200 rounded-t-lg"
+              className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100 rounded-t-lg"
             >
               <div>
-                <h4 className="text-slate-800 font-medium">
+                <h4 className="text-base font-semibold text-slate-800">
                   {new Date(day.date).toLocaleDateString("en-US", {
                     weekday: "long",
                     month: "short",
@@ -58,67 +84,57 @@ const PrepGuideContent = ({ dailyShiftPrepData }) => {
                   Guests: {day.guests.toLocaleString()} &middot; AM: {day.amGuests.toLocaleString()} / PM: {day.pmGuests.toLocaleString()}
                 </p>
               </div>
-              {isExpanded ? <ChevronDown className="text-slate-800" /> : <ChevronRight className="text-slate-800" />}
+              <span className="text-slate-400">{isExpanded ? "▾" : "▸"}</span>
             </button>
 
             {isExpanded && (
-              <div className="px-4 py-4 bg-slate-50 space-y-4 border-t border-slate-300">
+              <div className="px-4 py-4 space-y-6">
                 {['am', 'pm'].map((shiftKey) => {
                   const shift = day.shifts?.[shiftKey];
                   if (!shift) return null;
 
-                  // Group items by category
-                  const grouped = {};
-                  for (const item of shift.prepItems) {
-                    const category = getCategory(item.name);
-                    if (!grouped[category]) grouped[category] = [];
-                    grouped[category].push(item);
-                  }
+                  const groupedItems = groupByCategory(shift.prepItems);
 
                   return (
-                    <div key={shiftKey} className="bg-white border border-slate-200 rounded-md p-4 shadow">
-                      <h5 className="text-md font-semibold text-slate-700 mb-3">
-                        {shift.icon} {shift.name} SHIFT
+                    <div key={shiftKey}>
+                      <h5 className="text-sm font-semibold text-slate-700 mb-2">
+                        {shift.icon} {shift.name.toUpperCase()} SHIFT
                       </h5>
-                      {Object.entries(grouped).map(([section, items]) => (
-                        <div key={section} className="mb-4">
-                          <h6 className="text-sm font-bold text-slate-600 mb-2 uppercase tracking-wide">{section}</h6>
-                          {items.length === 0 ? (
-                            <p className="text-sm text-slate-400 flex items-center gap-2">
-                              <Info size={14} /> No prep items listed.
-                            </p>
-                          ) : (
-                            <table className="w-full text-sm border-collapse">
-                              <thead>
-                                <tr className="text-left border-b border-slate-200">
-                                  <th className="py-1">Item</th>
-                                  <th className="py-1 text-right">Qty</th>
-                                  <th className="py-1">Unit</th>
-                                  <th className="py-1">Assign</th>
-                                  <th className="py-1 text-center">Done</th>
+                      {Object.keys(groupedItems).map((category) => (
+                        <div key={category} className="mb-6">
+                          <h6 className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-1">
+                            {categoryIcons[category] || category}
+                          </h6>
+                          <table className="w-full text-sm border-collapse">
+                            <thead>
+                              <tr className="bg-slate-100 text-left">
+                                <th className="p-2 border-b">Item</th>
+                                <th className="p-2 border-b text-right">Qty</th>
+                                <th className="p-2 border-b">Unit</th>
+                                <th className="p-2 border-b">Assign</th>
+                                <th className="p-2 border-b text-center">Done</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {groupedItems[category].map((item) => (
+                                <tr key={item.id} className="border-b">
+                                  <td className="p-2 text-slate-800">{item.name}</td>
+                                  <td className="p-2 text-right">{item.quantity}</td>
+                                  <td className="p-2">{item.unit}</td>
+                                  <td className="p-2">
+                                    <input
+                                      type="text"
+                                      placeholder="Assign"
+                                      className="w-full px-2 py-1 border border-slate-300 rounded"
+                                    />
+                                  </td>
+                                  <td className="p-2 text-center">
+                                    <input type="checkbox" />
+                                  </td>
                                 </tr>
-                              </thead>
-                              <tbody>
-                                {items.map((item) => (
-                                  <tr key={item.id} className="border-b border-slate-100">
-                                    <td className="py-1 pr-2">{item.name}</td>
-                                    <td className="py-1 text-right pr-2">{item.quantity}</td>
-                                    <td className="py-1 pr-2">{item.unit}</td>
-                                    <td className="py-1 pr-2">
-                                      <input
-                                        type="text"
-                                        placeholder="Assign"
-                                        className="w-full px-2 py-1 border border-slate-300 rounded"
-                                      />
-                                    </td>
-                                    <td className="py-1 text-center">
-                                      <input type="checkbox" />
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          )}
+                              ))}
+                            </tbody>
+                          </table>
                         </div>
                       ))}
                     </div>
