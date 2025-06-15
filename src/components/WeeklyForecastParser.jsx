@@ -22,9 +22,10 @@ const WeeklyForecastParser = () => {
     toggleAdminMode,
   } = useWeeklyForecastLogic();
 
-  const rawBaseDateStr = extractBaseDateFromWeeklyInput(inputText);
-  const formattedDate = rawBaseDateStr
-  ? new Date(rawBaseDateStr).toLocaleDateString("en-US", {
+const rawBaseDateStr = extractBaseDateFromWeeklyInput(inputText);
+
+const formattedDate = rawBaseDateStr
+  ? new Date(getDayFromDate(rawBaseDateStr, 0)).toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
       day: "numeric",
