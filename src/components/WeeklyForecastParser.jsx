@@ -24,12 +24,12 @@ const WeeklyForecastParser = () => {
 
   const rawBaseDateStr = extractBaseDateFromWeeklyInput(inputText);
   const formattedDate = rawBaseDateStr
-    ? new Date(getDayFromDate(rawBaseDateStr, 0)).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
-    : null;
+  ? new Date(rawBaseDateStr).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })
+  : null;
 
   return (
     <div className="space-y-6">
