@@ -16,17 +16,19 @@ export const COST_PERCENTAGES = {
 
 export const getDayFromDate = (dateString, dayOffset = 0) => {
   const [year, month, day] = dateString.split("-").map(Number);
-  const baseDate = new Date(year, month - 1, day);
+  const inputDate = new Date(year, month - 1, day);
 
-  // Normalize to start of day
-  baseDate.setHours(0, 0, 0, 0);
+  // Align to Monday of the same week (0 = Sun, 1 = Mon, ..., 6 = Sat)
+  const baseDay = inputDate.getDay();
+  const daysToSubtract = baseDay === 0 ? 6 : baseDay - 1;
+  inputDate.setDate(inputDate.getDate() - daysToSubtract);
 
-  // Add offset in days
-  baseDate.setDate(baseDate.getDate() + dayOffset);
+  // Apply offset
+  inputDate.setDate(inputDate.getDate() + dayOffset);
 
-  const yyyy = baseDate.getFullYear();
-  const mm = String(baseDate.getMonth() + 1).padStart(2, '0');
-  const dd = String(baseDate.getDate()).padStart(2, '0');
+  const yyyy = inputDate.getFullYear();
+  const mm = String(inputDate.getMonth() + 1).padStart(2, '0');
+  const dd = String(inputDate.getDate()).padStart(2, '0');
 
   return `${yyyy}-${mm}-${dd}`;
 };
