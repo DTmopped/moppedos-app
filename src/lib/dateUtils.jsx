@@ -9,6 +9,8 @@ export const COST_PERCENTAGES = {
 export const DAY_ORDER = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 export const getDayFromDate = (dateString, dayOffset) => {
+  console.log("✅ USING JSX VERSION OF getDayFromDate");
+
   const date = new Date(dateString);
   date.setDate(date.getDate() + dayOffset);
   const year = date.getFullYear();
