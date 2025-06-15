@@ -22,16 +22,14 @@ const WeeklyForecastParser = () => {
     toggleAdminMode,
   } = useWeeklyForecastLogic();
 
- import { getDayFromDate } from "@/lib/dateUtils.js"; // make sure this is near the top
-
-const rawBaseDateStr = extractBaseDateFromWeeklyInput(inputText);
-const formattedDate = rawBaseDateStr
-  ? new Date(getDayFromDate(rawBaseDateStr, 0)).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    })
-  : null;
+  const rawBaseDateStr = extractBaseDateFromWeeklyInput(inputText);
+  const formattedDate = rawBaseDateStr
+    ? new Date(getDayFromDate(rawBaseDateStr, 0)).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : null;
 
   return (
     <div className="space-y-6">
