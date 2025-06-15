@@ -14,10 +14,14 @@ export const COST_PERCENTAGES = {
   labor: 0.25
 };
 
-export const getDayFromDate = (dateString, dayOffset) => {
+export const getDayFromDate = (dateString, dayOffset = 0) => {
   const [year, month, day] = dateString.split("-").map(Number);
-  const baseDate = new Date(year, month - 1, day); // Always builds correct date
+  const baseDate = new Date(year, month - 1, day);
 
+  // Normalize to start of day
+  baseDate.setHours(0, 0, 0, 0);
+
+  // Add offset in days
   baseDate.setDate(baseDate.getDate() + dayOffset);
 
   const yyyy = baseDate.getFullYear();
@@ -26,16 +30,3 @@ export const getDayFromDate = (dateString, dayOffset) => {
 
   return `${yyyy}-${mm}-${dd}`;
 };
-
-  // Normalize to start of day
-  baseDate.setHours(0, 0, 0, 0);
-
-  // Add offset in days
-  baseDate.setDate(baseDate.getDate() + dayOffset);
-
-  const year = baseDate.getFullYear();
-  const month = String(baseDate.getMonth() + 1).padStart(2, '0');
-  const day = String(baseDate.getDate()).padStart(2, '0');
-
-  return `${year}-${month}-${day}`;
-}
