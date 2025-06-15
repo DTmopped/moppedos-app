@@ -117,12 +117,8 @@ if (!baseDateStr) return;
       return;
     }
 
-  const baseDate = new Date(baseDateStr);
-const baseDay = baseDate.getDay(); // 0 = Sun, 1 = Mon, etc.
-baseDate.setDate(baseDate.getDate() - ((baseDay + 6) % 7)); // Snap to Monday
-
-const monday = baseDate;
-
+  const monday = new Date(baseDateStr);
+    
 DAY_ORDER.forEach((dayName, index) => {
   if (parsedDayData[dayName] !== undefined) {
     const pax = parsedDayData[dayName];
