@@ -44,16 +44,14 @@ export const extractBaseDateFromWeeklyInput = (inputText) => {
  * Returns a YYYY-MM-DD string offset from the provided date.
  * Uses UTC-safe math to avoid timezone-based shifts.
  */
-export const getDayFromDate = (dateString, dayOffset = 0) => {
-  const [year, month, day] = dateString.split("-").map(Number);
-
-  // Build a new date explicitly in local time (not affected by UTC shift)
-  const baseDate = new Date(year, month - 1, day); // local midnight
+export const getDayFromDate = (baseDateStr, dayOffset = 0) => {
+  const [year, month, day] = baseDateStr.split("-").map(Number);
+  const baseDate = new Date(year, month - 1, day);
   baseDate.setDate(baseDate.getDate() + dayOffset);
 
   const yyyy = baseDate.getFullYear();
   const mm = String(baseDate.getMonth() + 1).padStart(2, '0');
   const dd = String(baseDate.getDate()).padStart(2, '0');
 
-  return `${yyyy}-${mm}-${dd}`;
+  return `${mm}/${dd}/${yyyy}`; // ← Use this for the table so it’s human-facing
 };
