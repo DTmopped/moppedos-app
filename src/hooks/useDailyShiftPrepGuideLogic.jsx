@@ -7,6 +7,7 @@ export const useDailyShiftPrepGuideLogic = () => {
 
   const [adjustmentFactor, setAdjustmentFactor] = useState(1);
   const [dailyShiftPrepData, setDailyShiftPrepData] = useState([]);
+  const [printDate, setPrintDate] = useState(null);
 
   const captureRate = Number(localStorage.getItem("captureRate") || 8);
   const spendPerGuest = Number(localStorage.getItem("spendPerGuest") || 40);
@@ -14,6 +15,11 @@ export const useDailyShiftPrepGuideLogic = () => {
 
   useEffect(() => {
     if (!forecastData || forecastData.length === 0) return;
+
+    // Auto-set printDate to the first forecasted date
+    if (!printDate) {
+      setPrintDate(forecastData[0].date);
+    }
 
     const latestActuals = actualData?.[actualData.length - 1];
     const latestForecast = forecastData?.[actualData?.length - 1];
@@ -88,14 +94,14 @@ export const useDailyShiftPrepGuideLogic = () => {
     });
 
     setDailyShiftPrepData(newData);
-  }, [forecastData, actualData, amSplit]);
+  }, [forecastData, actualData, amSplit, printDate]);
 
   return {
     forecastData,
     adjustmentFactor,
     dailyShiftPrepData,
-    printDate: null,
-    setPrintDate: () => {},
+    printDate,
+    setPrintDate,
     handlePrepTaskChange: () => {},
     manageMenuOpen: false,
     setManageMenuOpen: () => {},
