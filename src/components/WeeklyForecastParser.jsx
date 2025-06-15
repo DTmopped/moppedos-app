@@ -21,7 +21,7 @@ const WeeklyForecastParser = () => {
     toggleAdminMode,
   } = useWeeklyForecastLogic();
 
- const extractBaseDate = (input) => {
+const extractBaseDate = (input) => {
   const match = input.match(/Date:\s*(\d{4}-\d{2}-\d{2})/i);
   if (match && match[1]) {
     const parsed = new Date(match[1]);
@@ -36,7 +36,7 @@ const WeeklyForecastParser = () => {
       year: "numeric",
       month: "long",
       day: "numeric",
-    }); // e.g. "June 23, 2025"
+    });
   }
   return null;
 };
