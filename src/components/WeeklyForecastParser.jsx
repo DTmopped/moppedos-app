@@ -27,9 +27,9 @@ const extractBaseDate = (input) => {
     const parsed = new Date(match[1]);
     if (isNaN(parsed.getTime())) return null;
 
-    // Snap to Monday of that week
-    const dayOfWeek = parsed.getDay(); // 0 = Sunday, 1 = Monday, ...
-    const offsetToMonday = (dayOfWeek + 6) % 7 * -1;
+    // Snap to the **previous** Sunday to align with weekly layout starting Monday
+    const dayOfWeek = parsed.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    const offsetToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
     parsed.setDate(parsed.getDate() + offsetToMonday);
 
     return parsed.toLocaleDateString("en-US", {
