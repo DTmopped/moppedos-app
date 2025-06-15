@@ -16,6 +16,8 @@ export const useDailyShiftPrepGuideLogic = () => {
   useEffect(() => {
     if (!forecastData || forecastData.length === 0) return;
 
+    console.log("Forecast Data for Prep Guide:", forecastData);
+
     // Auto-set printDate to the first forecasted date
     if (!printDate) {
       setPrintDate(forecastData[0].date);
