@@ -17,7 +17,7 @@ export const COST_PERCENTAGES = {
 };
 
 /**
- * Extracts a base date string from input text
+ * Extracts a base date string from input text.
  * Expects format: "Date: YYYY-MM-DD"
  */
 export const extractBaseDateFromWeeklyInput = (inputText) => {
@@ -36,19 +36,14 @@ export const extractBaseDateFromWeeklyInput = (inputText) => {
 };
 
 /**
- * Returns a YYYY-MM-DD string offset from a base date
- * The returned date is always calculated from the Monday of the input week.
+ * Returns a YYYY-MM-DD string offset from the provided date.
+ * Assumes the input date is already Monday and does NOT realign it.
  */
 export const getDayFromDate = (dateString, dayOffset = 0) => {
   const [year, month, day] = dateString.split("-").map(Number);
   const inputDate = new Date(year, month - 1, day);
 
-  // Align to Monday of the same week (0 = Sun, 1 = Mon, ..., 6 = Sat)
-  const baseDay = inputDate.getDay();
-  const daysToSubtract = baseDay === 0 ? 6 : baseDay - 1;
-  inputDate.setDate(inputDate.getDate() - daysToSubtract);
-
-  // Apply offset for other days of the week
+  // ✅ Just apply the offset directly
   inputDate.setDate(inputDate.getDate() + dayOffset);
 
   const yyyy = inputDate.getFullYear();
