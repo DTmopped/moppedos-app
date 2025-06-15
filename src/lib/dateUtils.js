@@ -18,7 +18,8 @@ export const COST_PERCENTAGES = {
 
 /**
  * Extracts a base date string from input text.
- * Expects format: "Date: YYYY-MM-DD"
+ * Expects format: "Date: MM-DD-YYYY"
+ * Returns: "YYYY-MM-DD" or null
  */
 export const extractBaseDateFromWeeklyInput = (inputText) => {
   const lines = inputText.trim().split("\n");
@@ -45,12 +46,11 @@ export const getDayFromDate = (dateString, dayOffset = 0) => {
   const [year, month, day] = dateString.split("-").map(Number);
   const inputDate = new Date(year, month - 1, day);
 
-  // ✅ Just apply the offset directly
   inputDate.setDate(inputDate.getDate() + dayOffset);
 
   const yyyy = inputDate.getFullYear();
-  const mm = String(inputDate.getMonth() + 1).padStart(2, '0');
-  const dd = String(inputDate.getDate()).padStart(2, '0');
+  const mm = String(inputDate.getMonth() + 1).padStart(2, "0");
+  const dd = String(inputDate.getDate()).padStart(2, "0");
 
   return `${yyyy}-${mm}-${dd}`;
 };
