@@ -22,14 +22,10 @@ const WeeklyForecastParser = () => {
     toggleAdminMode,
   } = useWeeklyForecastLogic();
 
-const extractBaseDate = (input) => {
-  const match = input.match(/Date:\s*(\d{2})-(\d{2})-(\d{4})/i); // MM-DD-YYYY
-  if (match) {
-    const [, mm, dd, yyyy] = match;
-    const parsed = new Date(`${yyyy}-${mm}-${dd}`);
-    if (isNaN(parsed.getTime())) return null;
-
-    return parsed.toLocaleDateString("en-US", {
+  const rawBaseDateStr = extractBaseDateFromWeeklyInput(inputText);
+  let formattedDate = null;
+  if (rawBaseDateStr) {
+    formattedDate = new Date(rawBaseDateStr).toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
       day: "numeric",
