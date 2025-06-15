@@ -1,82 +1,91 @@
-import React from 'react';
-import { Card, CardContent } from '@/components/ui/card.jsx';
-import { Info, ShoppingBasket, Utensils } from 'lucide-react';
-import PrepSectionCard from '@/components/prep/PrepSectionCard.jsx';
-import DayPrepCard from '@/components/prep/DayPrepCard.jsx';
+import React, { useState } from "react";
+import { ChevronDown, ChevronRight, Info } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-const PrepGuideContent = ({
-  forecastData,
-  menuLoading,
-  menu,
-  prepTextBySection,
-  dailyShiftPrepData,
-  guideType,
-  titleColor,
-  onPrepTaskChange 
-}) => {
-  const iconColorClass = titleColor ? titleColor.split(' ')[1] : 'text-primary';
+const PrepGuideContent = ({ dailyShiftPrepData }) => {
+  const [expandedDays, setExpandedDays] = useState({});
 
-  if (menuLoading) {
+  if (!dailyShiftPrepData || dailyShiftPrepData.length === 0) {
     return (
-      <Card className="glassmorphic-card no-print">
-        <CardContent className="pt-6">
-          <div className="text-center text-muted-foreground flex flex-col items-center py-10">
-            {guideType === 'fullWeekly' ? 
-              <ShoppingBasket size={48} className={`mb-4 animate-pulse ${iconColorClass}`} /> :
-              <Utensils size={48} className={`mb-4 animate-pulse ${iconColorClass}`} />
-            }
-            <p className="text-lg font-semibold text-foreground">Loading Menu...</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!forecastData || forecastData.length === 0) {
-    return (
-      <Card className="glassmorphic-card no-print">
-        <CardContent className="pt-6">
-          <div className="text-center text-muted-foreground flex flex-col items-center py-10">
-            <Info size={48} className="mb-4 text-primary" />
-            <p className="text-lg font-semibold text-foreground">No Forecast Data Available</p>
-            <p>Input forecast data using a parser tool first to generate the prep guide.</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (guideType === 'fullWeekly') {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {Object.keys(menu).map(section => (
-          <PrepSectionCard
-            key={section}
-            sectionTitle={section}
-            prepText={prepTextBySection[section] || ""}
-            titleColor={titleColor}
-            iconColor={iconColorClass}
-          />
-        ))}
+      <div className="text-center text-sm text-muted-foreground mt-10">
+        No prep data available for this period.
       </div>
     );
   }
 
-  if (guideType === 'dailyShift') {
-    return (
-      <div className="space-y-6">
-        {(dailyShiftPrepData || []).map((dayData, index) => (
-          <DayPrepCard 
-            key={(dayData?.date || index) + index} 
-            dayData={dayData} 
-            onPrepTaskChange={onPrepTaskChange} 
-          />
-        ))}
-      </div>
-    );
-  }
+  const toggleDay = (date) => {
+    setExpandedDays((prev) => ({
+      ...prev,
+      [date]: !prev[date],
+    }));
+  };
 
-  return null;
+  return (
+    <div className="space-y-4">
+      {dailyShiftPrepData.map((day, idx) => {
+        const isExpanded = expandedDays[day.date] || false;
+
+        return (
+          <div key={idx} className="border border-slate-700 rounded-lg">
+            <button
+              onClick={() => toggleDay(day.date)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-slate-800 hover:bg-slate-700 rounded-t-lg"
+            >
+              <div>
+                <h4 className="text-white font-medium">
+                  {new Date(day.date).toLocaleDateString("en-US", {
+                    weekday: "long",
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </h4>
+                <p className="text-xs text-slate-400">
+                  Guests: {day.guests.toLocaleString()} &middot; AM: {day.amGuests.toLocaleString()} / PM: {day.pmGuests.toLocaleString()}
+                </p>
+              </div>
+              {isExpanded ? <ChevronDown className="text-white" /> : <ChevronRight className="text-white" />}
+            </button>
+
+            {isExpanded && (
+              <div className="px-4 py-4 bg-slate-900 space-y-4 border-t border-slate-600">
+                {["am", "pm"].map((shiftKey) => {
+                  const shift = day.shifts?.[shiftKey];
+                  if (!shift) return null;
+
+                  return (
+                    <div
+                      key={shiftKey}
+                      className="bg-slate-800 border border-slate-700 rounded-md p-4"
+                    >
+                      <h5 className="text-md font-semibold text-white mb-2">
+                        {shift.icon} {shift.name} SHIFT
+                      </h5>
+                      {shift.prepItems.length === 0 ? (
+                        <p className="text-sm text-slate-400 flex items-center gap-2">
+                          <Info size={14} /> No prep items listed.
+                        </p>
+                      ) : (
+                        <ul className="text-sm text-white space-y-1">
+                          {shift.prepItems.map((item) => (
+                            <li key={item.id} className="flex justify-between border-b border-slate-700 py-1">
+                              <span>{item.name}</span>
+                              <span className="font-mono text-right">
+                                {item.quantity} {item.unit}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
 };
 
 export default PrepGuideContent;
