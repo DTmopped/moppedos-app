@@ -4,8 +4,6 @@ import { cn } from "@/lib/utils";
 
 const categorizeItem = (itemName) => {
   const name = itemName.toLowerCase();
-
-  // Prioritize specific identifiers first
   if (name.includes("sammies") || name.includes("sandwich")) return "Sammies";
   if (name.includes("bun") || name.includes("texas toast")) return "Breads";
   if (
@@ -17,7 +15,6 @@ const categorizeItem = (itemName) => {
   if (
     ["pudding", "pie", "hummingbird"].some(m => name.includes(m))
   ) return "Desserts";
-
   return "Other";
 };
 
@@ -38,6 +35,8 @@ const PrepGuideContent = ({ dailyShiftPrepData }) => {
       [date]: !prev[date],
     }));
   };
+
+  const categoryOrder = ["BBQ Meats", "Sammies", "Breads", "Sides", "Desserts", "Other"];
 
   return (
     <div className="space-y-6">
@@ -70,7 +69,6 @@ const PrepGuideContent = ({ dailyShiftPrepData }) => {
                   const shift = day.shifts?.[shiftKey];
                   if (!shift) return null;
 
-                  // Group items by category
                   const categorized = {};
                   shift.prepItems.forEach((item) => {
                     const category = categorizeItem(item.name);
@@ -84,43 +82,53 @@ const PrepGuideContent = ({ dailyShiftPrepData }) => {
                         {shift.icon} {shift.name.toUpperCase()} SHIFT
                       </h5>
 
-                      {Object.entries(categorized).map(([category, items]) => (
-                        <div key={category} className="mb-6">
-                          <h6 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-2">
-                            {category}
-                          </h6>
-                          <table className="w-full text-sm border border-slate-200 rounded overflow-hidden">
-                            <thead className="bg-slate-100 text-gray-700">
-                              <tr>
-                                <th className="text-left px-3 py-2 font-medium">Item</th>
-                                <th className="text-right px-3 py-2 font-medium">Qty</th>
-                                <th className="text-left px-3 py-2 font-medium">Unit</th>
-                                <th className="text-left px-3 py-2 font-medium">Assign</th>
-                                <th className="text-center px-3 py-2 font-medium">Done</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {items.map((item, index) => (
-                                <tr key={item.id} className={index % 2 === 0 ? "bg-white" : "bg-slate-50"}>
-                                  <td className="px-3 py-2 text-gray-800">{item.name}</td>
-                                  <td className="px-3 py-2 text-right">{item.quantity}</td>
-                                  <td className="px-3 py-2">{item.unit}</td>
-                                  <td className="px-3 py-2">
-                                    <input
-                                      type="text"
-                                      placeholder="Assign"
-                                      className="w-full border border-slate-300 rounded px-2 py-1"
-                                    />
-                                  </td>
-                                  <td className="px-3 py-2 text-center">
-                                    <input type="checkbox" />
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      ))}
+                      {categoryOrder.map((category) => {
+                        const items = categorized[category];
+                        if (!items || items.length === 0) return null;
+
+                        return (
+                          <div key={category} className="mb-6">
+                            <h6 className="text-sm font-bold text-gray-600 uppercase tracking-wide mb-2">
+                              {category}
+                            </h6>
+                            <div className="overflow-x-auto border border-slate-200 rounded-lg">
+                              <table className="min-w-full text-sm text-gray-800">
+                                <thead className="bg-slate-100 text-gray-700">
+                                  <tr>
+                                    <th className="px-4 py-2 text-left w-1/3">Item</th>
+                                    <th className="px-2 py-2 text-right w-1/12">Qty</th>
+                                    <th className="px-2 py-2 text-left w-1/12">Unit</th>
+                                    <th className="px-2 py-2 text-left w-1/4">Assign</th>
+                                    <th className="px-2 py-2 text-center w-1/12">Done</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {items.map((item, index) => (
+                                    <tr
+                                      key={item.id}
+                                      className={index % 2 === 0 ? "bg-white" : "bg-slate-50"}
+                                    >
+                                      <td className="px-4 py-2">{item.name}</td>
+                                      <td className="px-2 py-2 text-right">{item.quantity}</td>
+                                      <td className="px-2 py-2">{item.unit}</td>
+                                      <td className="px-2 py-2">
+                                        <input
+                                          type="text"
+                                          placeholder="Assign"
+                                          className="w-full border border-slate-300 rounded px-2 py-1"
+                                        />
+                                      </td>
+                                      <td className="px-2 py-2 text-center">
+                                        <input type="checkbox" />
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   );
                 })}
