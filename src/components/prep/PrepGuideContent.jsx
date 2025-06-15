@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { ChevronDown, ChevronRight, Info } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 const PrepGuideContent = ({ dailyShiftPrepData }) => {
   const [expandedDays, setExpandedDays] = useState({});
@@ -26,62 +25,72 @@ const PrepGuideContent = ({ dailyShiftPrepData }) => {
         const isExpanded = expandedDays[day.date] || false;
 
         return (
-          <div key={idx} className="border border-slate-700 rounded-lg">
+          <div key={idx} className="border border-slate-300 rounded-lg bg-white shadow-md">
             <button
               onClick={() => toggleDay(day.date)}
-              className="w-full flex items-center justify-between px-4 py-3 bg-slate-800 hover:bg-slate-700 rounded-t-lg"
+              className="w-full flex items-center justify-between px-4 py-3 bg-slate-100 hover:bg-slate-200 rounded-t-lg"
             >
               <div>
-                <h4 className="text-white font-medium">
+                <h4 className="text-slate-800 font-semibold">
                   {new Date(day.date).toLocaleDateString("en-US", {
                     weekday: "long",
                     month: "short",
                     day: "numeric",
                   })}
                 </h4>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-muted-foreground">
                   Guests: {day.guests.toLocaleString()} &middot; AM: {day.amGuests.toLocaleString()} / PM: {day.pmGuests.toLocaleString()}
                 </p>
               </div>
-              {isExpanded ? (
-                <ChevronDown className="text-white" />
-              ) : (
-                <ChevronRight className="text-white" />
-              )}
+              {isExpanded ? <ChevronDown className="text-slate-800" /> : <ChevronRight className="text-slate-800" />}
             </button>
 
             {isExpanded && (
-              <div className="px-4 py-4 bg-slate-900 space-y-4 border-t border-slate-600">
+              <div className="px-4 py-4 bg-white space-y-6 border-t border-slate-300">
                 {["am", "pm"].map((shiftKey) => {
                   const shift = day.shifts?.[shiftKey];
                   if (!shift) return null;
 
                   return (
-                    <div
-                      key={shiftKey}
-                      className="bg-slate-800 border border-slate-700 rounded-md p-4"
-                    >
-                      <h5 className="text-md font-semibold text-white mb-2">
+                    <div key={shiftKey}>
+                      <h5 className="text-md font-semibold text-slate-800 mb-2">
                         {shift.icon} {shift.name} SHIFT
                       </h5>
                       {shift.prepItems.length === 0 ? (
-                        <p className="text-sm text-slate-400 flex items-center gap-2">
+                        <p className="text-sm text-muted-foreground flex items-center gap-2">
                           <Info size={14} /> No prep items listed.
                         </p>
                       ) : (
-                        <ul className="text-sm text-white space-y-1">
-                          {shift.prepItems.map((item) => (
-                            <li
-                              key={item.id}
-                              className="flex justify-between border-b border-slate-700 py-1"
-                            >
-                              <span>{item.name}</span>
-                              <span className="font-mono text-right">
-                                {item.quantity} {item.unit}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
+                        <table className="w-full text-sm border-collapse">
+                          <thead>
+                            <tr className="text-left bg-slate-50">
+                              <th className="p-2 border-b">Item</th>
+                              <th className="p-2 border-b text-right">Qty</th>
+                              <th className="p-2 border-b">Unit</th>
+                              <th className="p-2 border-b">Assigned To</th>
+                              <th className="p-2 border-b text-center">Done</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {shift.prepItems.map((item) => (
+                              <tr key={item.id} className="border-b">
+                                <td className="p-2">{item.name}</td>
+                                <td className="p-2 text-right">{item.quantity}</td>
+                                <td className="p-2">{item.unit}</td>
+                                <td className="p-2">
+                                  <input
+                                    type="text"
+                                    placeholder="Assign"
+                                    className="w-full px-2 py-1 border border-slate-300 rounded"
+                                  />
+                                </td>
+                                <td className="p-2 text-center">
+                                  <input type="checkbox" />
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       )}
                     </div>
                   );
