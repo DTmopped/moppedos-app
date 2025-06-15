@@ -43,7 +43,11 @@ const PrepGuideContent = ({ dailyShiftPrepData }) => {
                   Guests: {day.guests.toLocaleString()} &middot; AM: {day.amGuests.toLocaleString()} / PM: {day.pmGuests.toLocaleString()}
                 </p>
               </div>
-              {isExpanded ? <ChevronDown className="text-white" /> : <ChevronRight className="text-white" />}
+              {isExpanded ? (
+                <ChevronDown className="text-white" />
+              ) : (
+                <ChevronRight className="text-white" />
+              )}
             </button>
 
             {isExpanded && (
@@ -67,7 +71,10 @@ const PrepGuideContent = ({ dailyShiftPrepData }) => {
                       ) : (
                         <ul className="text-sm text-white space-y-1">
                           {shift.prepItems.map((item) => (
-                            <li key={item.id} className="flex justify-between border-b border-slate-700 py-1">
+                            <li
+                              key={item.id}
+                              className="flex justify-between border-b border-slate-700 py-1"
+                            >
                               <span>{item.name}</span>
                               <span className="font-mono text-right">
                                 {item.quantity} {item.unit}
