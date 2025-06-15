@@ -24,12 +24,21 @@ export const useDailyShiftPrepGuideLogic = () => {
     }
 
     const latestActuals = actualData?.[actualData.length - 1];
-    const latestForecast = forecastData?.[actualData?.length - 1];
-    let factor = 1;
-    if (latestActuals && latestForecast && latestForecast.guests > 0) {
-      factor = latestActuals.guests / latestForecast.guests;
-    }
-    setAdjustmentFactor(factor);
+const latestForecast = forecastData?.[forecastData.length - 1];
+let factor = 1;
+
+if (
+  latestActuals?.guests &&
+  latestForecast?.guests &&
+  !isNaN(latestActuals.guests) &&
+  !isNaN(latestForecast.guests) &&
+  latestForecast.guests > 0
+) {
+  factor = latestActuals.guests / latestForecast.guests;
+}
+
+setAdjustmentFactor(factor);
+console.log("Adjustment Factor:", factor);
 
     const portionToLbs = (oz, guests) => {
       if (!oz || !guests || isNaN(oz) || isNaN(guests)) return 0;
