@@ -28,7 +28,6 @@ const extractBaseDate = (input) => {
     const parsed = new Date(`${yyyy}-${mm}-${dd}`);
     if (isNaN(parsed.getTime())) return null;
 
-    // No snapping — we now trust input is a Monday
     return parsed.toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
@@ -38,7 +37,7 @@ const extractBaseDate = (input) => {
   return null;
 };
 
- const formattedDate =
+const formattedDate = extractBaseDate(inputText);
   forecastDataUI && forecastDataUI.length > 0 && forecastDataUI[0].date
     ? new Date(forecastDataUI[0].date).toLocaleDateString("en-US", {
         year: "numeric",
