@@ -67,7 +67,11 @@ const WeeklyForecastParser = () => {
 
         <Textarea
           value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
+         onChange={(e) => {
+  const value = e.target.value;
+  setInputText(value);
+  localStorage.setItem("weeklyForecastInput", value);
+}}
           rows={8}
           className="w-full font-mono text-sm bg-slate-900 text-white border border-slate-700"
         />
