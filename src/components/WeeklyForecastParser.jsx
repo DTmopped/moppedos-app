@@ -25,7 +25,7 @@ const WeeklyForecastParser = () => {
 const rawBaseDateStr = extractBaseDateFromWeeklyInput(inputText);
 
 const formattedDate = rawBaseDateStr
-  ? new Date(getDayFromDate(rawBaseDateStr, 0)).toLocaleDateString("en-US", {
+  ? new Date(rawBaseDateStr + "T00:00:00").toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
       day: "numeric",
