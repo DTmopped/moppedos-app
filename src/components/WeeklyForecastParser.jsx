@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
 import { useWeeklyForecastLogic } from "@/hooks/useWeeklyForecastLogic.jsx";
 import ForecastResultsTable from "@/components/forecast/ForecastResultsTable.jsx";
-import { extractBaseDateFromWeeklyInput } from "@/lib/dateUtils.js";
+import { extractBaseDateFromWeeklyInput } from "../lib/dateUtils.js";
 
 const WeeklyForecastParser = () => {
   const {
@@ -38,7 +38,7 @@ const extractBaseDate = (input) => {
   return null;
 };
 
-import { extractBaseDateFromWeeklyInput } from "@/lib/dateUtils.js";
+import { extractBaseDateFromWeeklyInput } from "../lib/dateUtils.js";
 // New formattedDate assignment
 const rawBaseDateStr = extractBaseDateFromWeeklyInput(inputText);
 const formattedDate = (
