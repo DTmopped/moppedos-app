@@ -47,9 +47,10 @@ const extractBaseDateFromWeeklyInput = (inputText, setErrorCallback) => {
 };
 
 export const useWeeklyForecastLogic = () => {
-  const [inputText, setInputText] = useState(
-    "Date: 2025-05-13\nMonday: 15000\nTuesday: 16000\nWednesday: 15500\nThursday: 17000\nFriday: 19500\nSaturday: 18000\nSunday: 9000"
-  );
+  const [inputText, setInputText] = useState(() => {
+  return localStorage.getItem("weeklyForecastInput") ||
+    "Date: 2025-06-23\nMonday: 15000\nTuesday: 16000\nWednesday: 15500\nThursday: 17000\nFriday: 19500\nSaturday: 18000\nSunday: 9000";
+});
   const [forecastDataUI, setForecastDataUI] = useState([]);
   const [error, setError] = useState("");
   const { addForecastEntry } = useData();
