@@ -28,7 +28,7 @@ const extractBaseDate = (input) => {
     const parsed = new Date(`${yyyy}-${mm}-${dd}`);
     if (isNaN(parsed.getTime())) return null;
 
-    // Snap to same Monday (no offsetting anymore!)
+    // No snapping — we now trust input is a Monday
     return parsed.toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
