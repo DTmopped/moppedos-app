@@ -37,8 +37,8 @@ const extractBaseDate = (input) => {
   return null;
 };
 
-const formattedDate = extractBaseDate(inputText);
-  forecastDataUI && forecastDataUI.length > 0 && forecastDataUI[0].date
+const formattedDate =
+  forecastDataUI?.length > 0 && forecastDataUI[0].date
     ? new Date(forecastDataUI[0].date).toLocaleDateString("en-US", {
         year: "numeric",
         month: "long",
