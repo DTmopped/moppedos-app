@@ -117,8 +117,8 @@ if (!baseDateStr) return;
       return;
     }
 
-  const monday = new Date(baseDateStr);
-    
+  import { getDayFromDate } from "@/lib/dateUtils.js";
+
 DAY_ORDER.forEach((dayName, index) => {
   if (parsedDayData[dayName] !== undefined) {
     const pax = parsedDayData[dayName];
@@ -130,45 +130,41 @@ DAY_ORDER.forEach((dayName, index) => {
     const bev = sales * bevPct;
     const labor = sales * laborPct;
 
-    const currentDate = new Date(monday);
-    currentDate.setDate(monday.getDate() + index);
-    const yyyy = currentDate.getFullYear();
-    const mm = String(currentDate.getMonth() + 1).padStart(2, "0");
-    const dd = String(currentDate.getDate()).padStart(2, "0");
-    const forecastDate = `${yyyy}-${mm}-${dd}`;
-        processedData.push({
-          day: dayName,
-          date: forecastDate,
-          pax,
-          guests,
-          amGuests,
-          pmGuests,
-          sales,
-          food,
-          bev,
-          labor
-        });
+    const forecastDate = getDayFromDate(baseDateStr, index); // ✅ simplified
 
-        addForecastEntry({
-          date: forecastDate,
-          forecastSales: sales,
-          forecastedFood: food,
-          forecastedBev: bev,
-          forecastedLabor: labor,
-          guests,
-          amGuests,
-          pmGuests
-        });
-
-        totalTraffic += pax;
-        totalGuests += guests;
-        totalSales += sales;
-        totalFood += food;
-        totalBev += bev;
-        totalLabor += labor;
-        entriesAddedToContext++;
-      }
+    processedData.push({
+      day: dayName,
+      date: forecastDate,
+      pax,
+      guests,
+      amGuests,
+      pmGuests,
+      sales,
+      food,
+      bev,
+      labor
     });
+
+    addForecastEntry({
+      date: forecastDate,
+      forecastSales: sales,
+      forecastedFood: food,
+      forecastedBev: bev,
+      forecastedLabor: labor,
+      guests,
+      amGuests,
+      pmGuests
+    });
+
+    totalTraffic += pax;
+    totalGuests += guests;
+    totalSales += sales;
+    totalFood += food;
+    totalBev += bev;
+    totalLabor += labor;
+    entriesAddedToContext++;
+  }
+});
 
     if (processedData.length > 0) {
       processedData.push({
