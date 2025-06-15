@@ -14,11 +14,18 @@ export const COST_PERCENTAGES = {
   labor: 0.25
 };
 
-export function getDayFromDate(baseDateStr, dayOffset = 0) {
-  const baseDate = new Date(baseDateStr);
-  if (isNaN(baseDate.getTime())) {
-    throw new Error("Invalid base date");
-  }
+export const getDayFromDate = (dateString, dayOffset) => {
+  const [year, month, day] = dateString.split("-").map(Number);
+  const baseDate = new Date(year, month - 1, day); // Always builds correct date
+
+  baseDate.setDate(baseDate.getDate() + dayOffset);
+
+  const yyyy = baseDate.getFullYear();
+  const mm = String(baseDate.getMonth() + 1).padStart(2, '0');
+  const dd = String(baseDate.getDate()).padStart(2, '0');
+
+  return `${yyyy}-${mm}-${dd}`;
+};
 
   // Normalize to start of day
   baseDate.setHours(0, 0, 0, 0);
