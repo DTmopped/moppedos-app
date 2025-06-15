@@ -49,7 +49,7 @@ const extractBaseDateFromWeeklyInput = (inputText, setErrorCallback) => {
 export const useWeeklyForecastLogic = () => {
   const [inputText, setInputText] = useState(() => {
   return localStorage.getItem("weeklyForecastInput") ||
-    "Date: 2025-06-23\nMonday: 15000\nTuesday: 16000\nWednesday: 15500\nThursday: 17000\nFriday: 19500\nSaturday: 18000\nSunday: 9000";
+    "Date: 06-23-2025\nMonday: 15000\nTuesday: 16000\nWednesday: 15500\nThursday: 17000\nFriday: 19500\nSaturday: 18000\nSunday: 9000";
 });
   const [forecastDataUI, setForecastDataUI] = useState([]);
   const [error, setError] = useState("");
@@ -112,22 +112,27 @@ export const useWeeklyForecastLogic = () => {
       return;
     }
 
-    const processedData = [];
-    let totalTraffic = 0, totalGuests = 0, totalSales = 0, totalFood = 0, totalBev = 0, totalLabor = 0;
-    let entriesAddedToContext = 0;
+   const monday = new Date(baseDate);
+const baseDay = monday.getDay(); // 0 = Sun, 1 = Mon, etc.
+monday.setDate(monday.getDate() - ((baseDay + 6) % 7)); // Force to Monday
 
-    DAY_ORDER.forEach((dayName, index) => {
-      if (parsedDayData[dayName] !== undefined) {
-        const pax = parsedDayData[dayName];
-        const guests = pax * (captureRate / 100);
-        const amGuests = Math.round(guests * (amSplit / 100));
-        const pmGuests = Math.round(guests - amGuests);
-        const sales = guests * spendPerGuest;
-        const food = sales * foodPct;
-        const bev = sales * bevPct;
-        const labor = sales * laborPct;
-        const forecastDate = getDayFromDate(baseDate, index);
+DAY_ORDER.forEach((dayName, index) => {
+  if (parsedDayData[dayName] !== undefined) {
+    const pax = parsedDayData[dayName];
+    const guests = pax * (captureRate / 100);
+    const amGuests = Math.round(guests * (amSplit / 100));
+    const pmGuests = Math.round(guests - amGuests);
+    const sales = guests * spendPerGuest;
+    const food = sales * foodPct;
+    const bev = sales * bevPct;
+    const labor = sales * laborPct;
 
+    const currentDate = new Date(monday);
+    currentDate.setDate(monday.getDate() + index);
+    const yyyy = currentDate.getFullYear();
+    const mm = String(currentDate.getMonth() + 1).padStart(2, "0");
+    const dd = String(currentDate.getDate()).padStart(2, "0");
+    const forecastDate = `${yyyy}-${mm}-${dd}`;
         processedData.push({
           day: dayName,
           date: forecastDate,
