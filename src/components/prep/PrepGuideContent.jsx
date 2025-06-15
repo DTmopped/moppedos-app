@@ -10,6 +10,38 @@ const sectionIcons = {
   "Desserts": "🍰",
 };
 
+const categorizeItem = (itemName) => {
+  const name = itemName.toLowerCase();
+  if (["pulled pork", "brisket", "half chicken", "st louis ribs", "beef short rib"].some(m => name.includes(m))) {
+    return "BBQ Meats";
+  }
+  if (["sammies", "sandwich"].some(m => name.includes(m))) {
+    return "Sammies";
+  }
+  if (["bun", "texas toast"].some(m => name.includes(m))) {
+    return "Breads";
+  }
+  if (
+    ["slaw", "mac", "bean", "casserole", "collard", "corn muffin", "honey butter"].some(m => name.includes(m))
+  ) {
+    return "Sides";
+  }
+  if (["pudding", "pie", "hummingbird"].some(m => name.includes(m))) {
+    return "Desserts";
+  }
+  return "Other";
+};
+
+const groupItemsBySection = (items) => {
+  const grouped = {};
+  for (const item of items) {
+    const section = categorizeItem(item.name);
+    if (!grouped[section]) grouped[section] = [];
+    grouped[section].push(item);
+  }
+  return grouped;
+};
+
 const PrepGuideContent = ({ dailyShiftPrepData }) => {
   const [expandedDays, setExpandedDays] = useState({});
 
@@ -35,7 +67,6 @@ const PrepGuideContent = ({ dailyShiftPrepData }) => {
 
         return (
           <div key={idx} className="border border-slate-300 rounded-lg bg-white shadow-sm">
-            {/* Toggle Button */}
             <button
               onClick={() => toggleDay(day.date)}
               className="w-full flex items-center justify-between px-4 py-3 bg-slate-100 hover:bg-slate-200 rounded-t-lg"
@@ -55,12 +86,13 @@ const PrepGuideContent = ({ dailyShiftPrepData }) => {
               {isExpanded ? <ChevronDown className="text-slate-700" /> : <ChevronRight className="text-slate-700" />}
             </button>
 
-            {/* Prep Content */}
             {isExpanded && (
               <div className="px-4 py-4 space-y-6">
                 {["am", "pm"].map((shiftKey) => {
                   const shift = day.shifts?.[shiftKey];
                   if (!shift) return null;
+
+                  const sections = groupItemsBySection(shift.prepItems);
 
                   return (
                     <div key={shiftKey}>
@@ -68,7 +100,7 @@ const PrepGuideContent = ({ dailyShiftPrepData }) => {
                         {shift.icon} {shift.name.toUpperCase()} SHIFT
                       </h5>
 
-                      {Object.entries(shift.sections || {}).map(([sectionName, items]) => (
+                      {Object.entries(sections).map(([sectionName, items]) => (
                         <div key={sectionName} className="mb-6">
                           <h6 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-1">
                             {sectionIcons[sectionName] || "📦"} {sectionName}
