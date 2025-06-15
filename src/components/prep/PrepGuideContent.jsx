@@ -1,39 +1,23 @@
 import React, { useState } from "react";
 import { Info } from "lucide-react";
 
-const categoryMap = {
-  "Pulled Pork (Sammies)": "Sammies",
-  "Chopped Brisket (Sammies)": "Sammies",
-  "Chopped Chicken (Sammies)": "Sammies",
-  "Pulled Pork": "BBQ Meats",
-  "Brisket": "BBQ Meats",
-  "Half Chicken": "BBQ Meats",
-  "St Louis Ribs": "BBQ Meats",
-  "Beef Short Rib": "BBQ Meats",
-  "Collard Greens": "Sides",
-  "Mac N Cheese": "Sides",
-  "Baked Beans": "Sides",
-  "Corn Casserole": "Sides",
-  "Corn Muffin": "Sides",
-  "Honey Butter": "Sides",
-  "Coleslaw": "Sides",
-  "Buns": "Breads",
-  "Texas Toast": "Breads",
-  "Banana Pudding": "Desserts",
-  "Key Lime Pie": "Desserts",
-  "Hummingbird Cake": "Desserts"
-};
+const categoryOrder = [
+  "BBQ Meats",
+  "Sammies",
+  "Breads",
+  "Sides",
+  "Desserts",
+];
 
 const categoryIcons = {
-  "Sammies": "🥪 Sammies",
-  "BBQ Meats": "🔥 BBQ Meats",
-  "Sides": "🥗 Sides",
-  "Breads": "🍞 Breads",
-  "Desserts": "🍰 Desserts",
-  "Other": "📦 Other"
+  "Sammies": "🥪",
+  "BBQ Meats": "🔥",
+  "Sides": "🥗",
+  "Breads": "🍞",
+  "Desserts": "🍰",
 };
 
-const PrepGuideContent = ({ dailyShiftPrepData }) => {
+const PrepGuideContent = ({ dailyShiftPrepData, onPrepTaskChange }) => {
   const [expandedDays, setExpandedDays] = useState({});
 
   if (!dailyShiftPrepData || dailyShiftPrepData.length === 0) {
@@ -51,97 +35,109 @@ const PrepGuideContent = ({ dailyShiftPrepData }) => {
     }));
   };
 
-  const groupByCategory = (items) => {
-    const groups = {};
-    for (const item of items) {
-      const category = categoryMap[item.name] || "Other";
-      if (!groups[category]) groups[category] = [];
-      groups[category].push(item);
-    }
-    return groups;
-  };
-
   return (
-    <div className="space-y-4">
-      {dailyShiftPrepData.map((day, idx) => {
+    <div className="space-y-6">
+      {dailyShiftPrepData.map((day) => {
         const isExpanded = expandedDays[day.date] || false;
+        const dateObj = new Date(day.date);
+        const formattedDate = dateObj.toLocaleDateString("en-US", {
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+        });
 
         return (
-          <div key={idx} className="border border-slate-300 rounded-lg bg-white shadow">
+          <div key={day.date} className="border border-slate-300 bg-white shadow rounded-md">
             <button
+              className="w-full text-left px-4 py-3 bg-slate-100 border-b border-slate-300 text-slate-700 font-medium text-base flex justify-between items-center"
               onClick={() => toggleDay(day.date)}
-              className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100 rounded-t-lg"
             >
-              <div>
-                <h4 className="text-base font-semibold text-slate-800">
-                  {new Date(day.date).toLocaleDateString("en-US", {
-                    weekday: "long",
-                    month: "short",
-                    day: "numeric",
-                  })}
-                </h4>
-                <p className="text-xs text-slate-500">
-                  Guests: {day.guests.toLocaleString()} &middot; AM: {day.amGuests.toLocaleString()} / PM: {day.pmGuests.toLocaleString()}
-                </p>
-              </div>
-              <span className="text-slate-400">{isExpanded ? "▾" : "▸"}</span>
+              <span>
+                {formattedDate}
+                <span className="block text-sm text-muted-foreground font-normal">
+                  Guests: {day.guests} · AM: {day.amGuests} / PM: {day.pmGuests}
+                </span>
+              </span>
+              <span>{isExpanded ? "▾" : "▸"}</span>
             </button>
 
-            {isExpanded && (
-              <div className="px-4 py-4 space-y-6">
-                {['am', 'pm'].map((shiftKey) => {
-                  const shift = day.shifts?.[shiftKey];
-                  if (!shift) return null;
+            {isExpanded && ["am", "pm"].map((shiftKey) => {
+              const shift = day.shifts?.[shiftKey];
+              if (!shift || !shift.prepItems) return null;
 
-                  const groupedItems = groupByCategory(shift.prepItems);
+              // Categorize items
+              const categorized = {
+                "Sammies": [],
+                "BBQ Meats": [],
+                "Breads": [],
+                "Sides": [],
+                "Desserts": [],
+              };
 
-                  return (
-                    <div key={shiftKey}>
-                      <h5 className="text-sm font-semibold text-slate-700 mb-2">
-                        {shift.icon} {shift.name.toUpperCase()} SHIFT
-                      </h5>
-                      {Object.keys(groupedItems).map((category) => (
-                        <div key={category} className="mb-6">
-                          <h6 className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-1">
-                            {categoryIcons[category] || category}
-                          </h6>
-                          <table className="w-full text-sm border-collapse">
-                            <thead>
-                              <tr className="bg-slate-100 text-left">
-                                <th className="p-2 border-b">Item</th>
-                                <th className="p-2 border-b text-right">Qty</th>
-                                <th className="p-2 border-b">Unit</th>
-                                <th className="p-2 border-b">Assign</th>
-                                <th className="p-2 border-b text-center">Done</th>
+              shift.prepItems.forEach((item) => {
+                const name = item.name.toLowerCase();
+                if (name.includes("(sammies)")) categorized["Sammies"].push(item);
+                else if (["pulled pork", "brisket", "half chicken", "st louis ribs", "beef short rib"].some(v => name.includes(v))) categorized["BBQ Meats"].push(item);
+                else if (["buns", "texas toast"].some(v => name.includes(v))) categorized["Breads"].push(item);
+                else if (["collard greens", "mac n cheese", "baked beans", "corn casserole", "corn muffin", "honey butter", "coleslaw"].some(v => name.includes(v))) categorized["Sides"].push(item);
+                else if (["banana pudding", "key lime pie", "hummingbird cake"].some(v => name.includes(v))) categorized["Desserts"].push(item);
+                else categorized["Sides"].push(item); // fallback
+              });
+
+              return (
+                <div key={shiftKey} className="px-4 py-4 border-t border-slate-200 bg-slate-50">
+                  <h4 className="text-sm font-semibold text-slate-700 uppercase mb-4">
+                    {shift.icon} {shift.name} SHIFT
+                  </h4>
+
+                  {categoryOrder.map((category) => (
+                    categorized[category]?.length > 0 && (
+                      <div key={category} className="mb-6">
+                        <h5 className="text-slate-600 text-xs font-bold uppercase tracking-wide mb-2">
+                          {categoryIcons[category]} {category}
+                        </h5>
+                        <table className="w-full text-sm border-collapse">
+                          <thead className="bg-slate-100 text-slate-600">
+                            <tr>
+                              <th className="text-left py-2 px-4">Item</th>
+                              <th className="text-right py-2 px-4">Qty</th>
+                              <th className="text-left py-2 px-2">Unit</th>
+                              <th className="text-left py-2 px-2">Assign</th>
+                              <th className="text-center py-2 px-2">Done</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {categorized[category].map((item) => (
+                              <tr key={item.id} className="border-t border-slate-200">
+                                <td className="px-4 py-2 text-slate-800">{item.name}</td>
+                                <td className="px-4 py-2 text-right text-slate-800">{item.quantity}</td>
+                                <td className="px-2 py-2 text-slate-800">{item.unit}</td>
+                                <td className="px-2 py-2">
+                                  <input
+                                    type="text"
+                                    placeholder="Assign"
+                                    className="w-full px-2 py-1 border border-slate-300 rounded-md text-sm"
+                                    value={item.assignedTo || ""}
+                                    onChange={(e) => onPrepTaskChange(day.date, shiftKey, item.id, "assignedTo", e.target.value)}
+                                  />
+                                </td>
+                                <td className="px-2 py-2 text-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={item.completed || false}
+                                    onChange={(e) => onPrepTaskChange(day.date, shiftKey, item.id, "completed", e.target.checked)}
+                                  />
+                                </td>
                               </tr>
-                            </thead>
-                            <tbody>
-                              {groupedItems[category].map((item) => (
-                                <tr key={item.id} className="border-b">
-                                  <td className="p-2 text-slate-800">{item.name}</td>
-                                  <td className="p-2 text-right">{item.quantity}</td>
-                                  <td className="p-2">{item.unit}</td>
-                                  <td className="p-2">
-                                    <input
-                                      type="text"
-                                      placeholder="Assign"
-                                      className="w-full px-2 py-1 border border-slate-300 rounded"
-                                    />
-                                  </td>
-                                  <td className="p-2 text-center">
-                                    <input type="checkbox" />
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )
+                  ))}
+                </div>
+              );
+            })}
           </div>
         );
       })}
