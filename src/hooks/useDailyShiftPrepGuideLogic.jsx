@@ -37,9 +37,11 @@ export const useDailyShiftPrepGuideLogic = () => {
     };
 
     const newData = forecastData.map((entry) => {
-      const adjGuests = (entry.guests || 0) * factor;
-      const amGuests = (entry.amGuests || 0) * factor;
-      const pmGuests = (entry.pmGuests || 0) * factor;
+    const adjGuests = Number(entry.guests) * factor || 0;
+    const amGuests = Number(entry.amGuests) * factor || 0;
+    const pmGuests = Number(entry.pmGuests) * factor || 0;
+
+    console.log(`Date ${entry.date} — Guests: ${entry.guests}, AM: ${entry.amGuests}, PM: ${entry.pmGuests}, Factor: ${factor}`);
 
       const generateShift = (guestCount, shiftName) => {
         const totalSandwiches = guestCount * 3;
