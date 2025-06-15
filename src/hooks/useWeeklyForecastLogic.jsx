@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useData } from "../contexts/DataContext.jsx";
 import { useToast } from '../components/ui/use-toast.jsx';
-import { getDayFromDate, DAY_ORDER } from "@/lib/dateUtils.js";
+import { getDayFromDate, extractBaseDateFromWeeklyInput, DAY_ORDER } from "@/lib/dateUtils.js";
 import { CheckCircle } from "lucide-react";
 
 const getCostPercentages = () => ({
@@ -27,30 +27,11 @@ const parseWeeklyPassengerInput = (inputText) => {
   return { results, foundData };
 };
 
-const extractBaseDateFromWeeklyInput = (inputText, setErrorCallback) => {
-  const lines = inputText.trim().split("\n");
-  const dateLine = lines.find(line => /date:\s*([\d\-]+)/i.test(line));
-  if (dateLine) {
-    const dateMatch = dateLine.match(/date:\s*([\d\-]+)/i);
-    if (dateMatch && dateMatch[1]) {
-      const baseDate = dateMatch[1];
-      const testDate = new Date(baseDate);
-      if (isNaN(testDate.getTime())) {
-        setErrorCallback("Invalid base date found. Use YYYY-MM-DD format.");
-        return null;
-      }
-      return baseDate;
-    }
-  }
-  setErrorCallback("Missing date line. Use 'Date: YYYY-MM-DD'.");
-  return null;
-};
-
 export const useWeeklyForecastLogic = () => {
-  const [inputText, setInputText] = useState(() => {
-  return localStorage.getItem("weeklyForecastInput") ||
-    "Date: 06-23-2025\nMonday: 15000\nTuesday: 16000\nWednesday: 15500\nThursday: 17000\nFriday: 19500\nSaturday: 18000\nSunday: 9000";
-});
+  const [inputText, setInputText] = useState(() =>
+    localStorage.getItem("weeklyForecastInput") ||
+    "Date: 06-23-2025\nMonday: 15000\nTuesday: 16000\nWednesday: 15500\nThursday: 17000\nFriday: 19500\nSaturday: 18000\nSunday: 9000"
+  );
   const [forecastDataUI, setForecastDataUI] = useState([]);
   const [error, setError] = useState("");
   const { addForecastEntry } = useData();
@@ -86,28 +67,28 @@ export const useWeeklyForecastLogic = () => {
   }, [adminMode]);
 
   const toggleAdminMode = () => {
-  setAdminMode(prev => {
-    const newValue = !prev;
-    localStorage.setItem("adminMode", newValue);
-    return newValue;
-  });
-};
+    setAdminMode(prev => {
+      const newValue = !prev;
+      localStorage.setItem("adminMode", newValue);
+      return newValue;
+    });
+  };
 
   const generateForecast = useCallback(() => {
     setError("");
     setForecastDataUI([]);
 
-  const processedData = [];
-  let totalTraffic = 0, totalGuests = 0, totalSales = 0, totalFood = 0, totalBev = 0, totalLabor = 0;
-  let entriesAddedToContext = 0;
-    
-  if (!inputText.trim()) {
+    const processedData = [];
+    let totalTraffic = 0, totalGuests = 0, totalSales = 0, totalFood = 0, totalBev = 0, totalLabor = 0;
+    let entriesAddedToContext = 0;
+
+    if (!inputText.trim()) {
       setError("Input cannot be empty.");
       return;
     }
 
     const baseDateStr = extractBaseDateFromWeeklyInput(inputText, setError);
-if (!baseDateStr) return;
+    if (!baseDateStr) return;
 
     const { food: foodPct, bev: bevPct, labor: laborPct } = getCostPercentages();
     const { results: parsedDayData, foundData } = parseWeeklyPassengerInput(inputText);
@@ -117,54 +98,52 @@ if (!baseDateStr) return;
       return;
     }
 
-  import { getDayFromDate } from "@/lib/dateUtils.js";
+    DAY_ORDER.forEach((dayName, index) => {
+      if (parsedDayData[dayName] !== undefined) {
+        const pax = parsedDayData[dayName];
+        const guests = pax * (captureRate / 100);
+        const amGuests = Math.round(guests * (amSplit / 100));
+        const pmGuests = Math.round(guests - amGuests);
+        const sales = guests * spendPerGuest;
+        const food = sales * foodPct;
+        const bev = sales * bevPct;
+        const labor = sales * laborPct;
 
-DAY_ORDER.forEach((dayName, index) => {
-  if (parsedDayData[dayName] !== undefined) {
-    const pax = parsedDayData[dayName];
-    const guests = pax * (captureRate / 100);
-    const amGuests = Math.round(guests * (amSplit / 100));
-    const pmGuests = Math.round(guests - amGuests);
-    const sales = guests * spendPerGuest;
-    const food = sales * foodPct;
-    const bev = sales * bevPct;
-    const labor = sales * laborPct;
+        const forecastDate = getDayFromDate(baseDateStr, index);
 
-    const forecastDate = getDayFromDate(baseDateStr, index); // ✅ simplified
+        processedData.push({
+          day: dayName,
+          date: forecastDate,
+          pax,
+          guests,
+          amGuests,
+          pmGuests,
+          sales,
+          food,
+          bev,
+          labor
+        });
 
-    processedData.push({
-      day: dayName,
-      date: forecastDate,
-      pax,
-      guests,
-      amGuests,
-      pmGuests,
-      sales,
-      food,
-      bev,
-      labor
+        addForecastEntry({
+          date: forecastDate,
+          forecastSales: sales,
+          forecastedFood: food,
+          forecastedBev: bev,
+          forecastedLabor: labor,
+          guests,
+          amGuests,
+          pmGuests
+        });
+
+        totalTraffic += pax;
+        totalGuests += guests;
+        totalSales += sales;
+        totalFood += food;
+        totalBev += bev;
+        totalLabor += labor;
+        entriesAddedToContext++;
+      }
     });
-
-    addForecastEntry({
-      date: forecastDate,
-      forecastSales: sales,
-      forecastedFood: food,
-      forecastedBev: bev,
-      forecastedLabor: labor,
-      guests,
-      amGuests,
-      pmGuests
-    });
-
-    totalTraffic += pax;
-    totalGuests += guests;
-    totalSales += sales;
-    totalFood += food;
-    totalBev += bev;
-    totalLabor += labor;
-    entriesAddedToContext++;
-  }
-});
 
     if (processedData.length > 0) {
       processedData.push({
@@ -182,10 +161,11 @@ DAY_ORDER.forEach((dayName, index) => {
     }
 
     setForecastDataUI(processedData);
+
     if (entriesAddedToContext > 0) {
       toast({
         title: "Weekly Forecast Parsed & Saved",
-        description: `${entriesAddedToContext} entries added for week starting ${baseDate}.`,
+        description: `${entriesAddedToContext} entries added for week starting ${baseDateStr}.`,
         action: <CheckCircle className="text-green-500" />,
       });
     }
