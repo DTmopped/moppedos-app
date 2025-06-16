@@ -17,7 +17,7 @@ const DailyShiftPrepGuide = () => {
 
   const selectedDay = dailyShiftPrepData.find((d) => expandedDays[d.date]);
 
- const handleInitiatePrint = async () => {
+  const handleInitiatePrint = async () => {
     if (!selectedDay) {
       toast({
         title: "No Day Selected",
@@ -38,15 +38,6 @@ const DailyShiftPrepGuide = () => {
         {},
         "Daily Shift Prep Guide – Print"
       );
-      toast({ title: "Print processed", variant: "success" });
-    } catch (error) {
-      toast({
-        title: "Print failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
       toast({ title: "Print processed", variant: "success" });
     } catch (error) {
       toast({
