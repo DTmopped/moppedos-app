@@ -1,4 +1,5 @@
-mport ReactDOMServer from 'react-dom/server';
+import React from 'react';
+import ReactDOMServer from 'react-dom/server';
 
 export const triggerPrint = (PrintableComponent, data, title) => {
   const container = document.createElement('div');
@@ -48,12 +49,10 @@ export const triggerPrint = (PrintableComponent, data, title) => {
   `);
   doc.close();
 
-  // 🧠 Print after iframe fully loads
   iframe.onload = () => {
     iframe.contentWindow.focus();
     iframe.contentWindow.print();
 
-    // Clean up after print
     setTimeout(() => {
       document.body.removeChild(iframe);
       document.body.removeChild(container);
