@@ -17,10 +17,10 @@ const DailyShiftPrepGuide = () => {
   const handleInitiatePrint = async () => {
   try {
     await triggerPrint(
-  () => (
-    <PrintableDailyShiftPrepGuide
-      dailyShiftPrepData={dailyShiftPrepData}
-      printDate={new Date()}
+  PrintableDailyShiftPrepGuide,
+  { dailyShiftPrepData, printDate: new Date() },
+  "Daily Shift Prep Guide – Print"
+);
     />
   ),
   {},
