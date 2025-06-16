@@ -14,34 +14,29 @@ export const triggerPrint = (Component, props, title) => {
 
   document.body.appendChild(iframe);
 
-  const doc = iframe.contentDocument || iframe.contentWindow.document;
-
-  doc.open();
-  doc.write(`
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>${title}</title>
-        <style>
+ const doc = iframe.contentWindow.document;
+doc.open();
+doc.write(`
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <title>${title}</title>
+      <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+      <style>
+        @media print {
           html, body {
-            font-family: Arial, sans-serif;
-            font-size: 10pt;
-            color: black;
             background: white;
-            padding: 20px;
+            color: black;
           }
-          @media print {
-            body {
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-            }
-          }
-        </style>
-      </head>
-      <body>${html}</body>
-    </html>
-  `);
-  doc.close();
+        }
+      </style>
+    </head>
+    <body class="p-4">
+      ${printableComponentHtml}
+    </body>
+  </html>
+`);
+doc.close();
 
   // Delay ensures iframe content is ready before print
   iframe.onload = () => {
