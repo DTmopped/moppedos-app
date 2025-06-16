@@ -367,9 +367,11 @@ const DragDropScheduler = ({ initialWeekStartDate = new Date() }) => {
                 unassignedEmployees={unassignedEmployees}
                 employees={employees}
               />
-              <div className="flex-grow grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2">
-                {localCurrentWeekDates().map((date) => (
-                  <DailyScheduleCard
+             <LaborScheduleGrid 
+               scheduleData={scheduleData} 
+               weekDates={localCurrentWeekDates()}
+               isManager={true} // or false depending on current user's access
+              />
                     key={date}
                     date={date}
                     scheduleDataForDay={scheduleData[date] || {}}  // Add null check with default empty object
