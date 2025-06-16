@@ -31,7 +31,7 @@ doc.write(`
         }
       </style>
     </head>
-    <body class="p-4">
+    <body class="p-4 font-sans text-sm text-gray-800">
       ${printableComponentHtml}
     </body>
   </html>
