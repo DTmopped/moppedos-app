@@ -1,123 +1,77 @@
-
+// components/labor/LaborScheduleGrid.jsx
 import React from 'react';
-import { Droppable } from 'react-beautiful-dnd';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx';
-import { Button } from '@/components/ui/button.jsx';
-import { Loader2, AlertTriangle, CheckCircle, Brain } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { cn } from '../../src/lib/utils.js';
-import { SHIFT_BG_CLASSES } from '@/config/laborScheduleConfig.jsx';
-import ShiftSlot from '@/components/labor/ShiftSlot';
+import { cn } from '@/lib/utils';
 
-const DailyScheduleCard = ({
-  date,
-  scheduleDataForDay,
-  laborCostForDay,
-  optimalStaffingForDay,
-  handleAutoSchedule,
-  handleTimeChange,
-  isProcessingDay,
-  isSchedulerLoading,
+const LaborScheduleGrid = ({
+  scheduleData,
+  weekDates,
+  isManager = false,
 }) => {
+  const shifts = ['AM', 'PM'];
+
+  // Collect all unique roles used across the week, by shift
+  const getRolesByShift = (shiftType) => {
+    const roles = new Set();
+    weekDates.forEach((date) => {
+      const dayData = scheduleData[date] || {};
+      const shiftData = dayData[shiftType] || {};
+      Object.keys(shiftData).forEach(role => roles.add(role));
+    });
+    return Array.from(roles);
+  };
+
   return (
-    <Card className="overflow-hidden bg-slate-800/60 border-slate-700 shadow-lg flex flex-col">
-      <CardHeader className="bg-slate-700/50 p-2.5 border-b border-slate-600">
-        <div className="flex justify-between items-center mb-1">
-          <CardTitle className="text-sm font-medium text-slate-200">
-            {format(parseISO(date), 'EEE')}
-            <span className="block text-xs text-slate-400">{format(parseISO(date), 'MMM d')}</span>
-          </CardTitle>
-        </div>
-
-        <div className="flex justify-between items-center mb-2">
-          <div className="text-xs text-slate-300">
-            {optimalStaffingForDay ? (
-              <span className="font-medium">
-                Forecast: {optimalStaffingForDay.projectedGuests} guests
-              </span>
-            ) : (
-              <span className="text-slate-500">No forecast</span>
-            )}
-          </div>
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-7 px-2 text-purple-300 border-purple-500/50 hover:bg-purple-600/30 hover:text-purple-200"
-            onClick={() => handleAutoSchedule(date)}
-            disabled={!optimalStaffingForDay || isProcessingDay === date || isSchedulerLoading}
-          >
-            {isProcessingDay === date ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Brain className="h-3 w-3 mr-1" />}
-            Auto
-          </Button>
-        </div>
-
-        {laborCostForDay && (
-          <div className={cn(
-            "text-xs p-1 rounded mb-1 flex items-center justify-between",
-            laborCostForDay.isOverTarget
-              ? 'bg-red-700/50 text-red-300 border border-red-600/70'
-              : 'bg-green-700/50 text-green-300 border border-green-600/70'
-          )}>
-            <span>Labor: {laborCostForDay.laborCostPercentage.toFixed(1)}%</span>
-            {laborCostForDay.isOverTarget ? (
-              <AlertTriangle className="h-3 w-3" />
-            ) : (
-              <CheckCircle className="h-3 w-3" />
-            )}
-          </div>
-        )}
-        {optimalStaffingForDay && laborCostForDay && (
-          <div className="text-[10px] text-slate-400 leading-tight">
-            <span>Sales: ${optimalStaffingForDay?.projectedSales?.toFixed(2) || 'N/A'}</span>
-            <span className="ml-2">Cost: ${laborCostForDay.totalLaborCost.toFixed(2)}</span>
-          </div>
-        )}
-      </CardHeader>
-      <CardContent className="p-1.5 space-y-2 flex-grow lg:max-h-[calc(100vh-400px)] overflow-y-auto">
-        {scheduleDataForDay && Object.entries(scheduleDataForDay).map(([shiftType, roles]) => (
-          <div key={shiftType} className={cn("p-1.5 rounded", SHIFT_BG_CLASSES[shiftType]?.replace(/bg-(\w+)-(\d+)/, 'bg-$1-800/50 border border-$1-700').replace(/text-(\w+)-(\d+)/, 'text-$1-200') || 'bg-slate-700/50 border border-slate-600')}>
-            <h4 className="text-xs font-semibold mb-1 text-center text-slate-300">{shiftType}</h4>
-            {Object.entries(roles).map(([roleName, assignedEmpsInSlot]) => {
-              const optimalCount = optimalStaffingForDay?.optimalStaffing?.[roleName]?.[shiftType];
-              return (
-                <Droppable key={`${date}_${shiftType}_${roleName}`} droppableId={`${date}_${shiftType}_${roleName}`}>
-                  {(providedDroppableArea, snapshotDroppableArea) => (
-                    <div
-                      ref={providedDroppableArea.innerRef}
-                      {...providedDroppableArea.droppableProps}
-                      className={cn(
-                        "mb-1.5 p-1 rounded bg-slate-600/30 min-h-[60px]",
-                        snapshotDroppableArea.isDraggingOver && "bg-slate-500/50 ring-1 ring-pink-400"
-                      )}
-                    >
-                      <div className="flex justify-between items-center">
-                        <p className="text-[10px] font-medium text-slate-400 mb-0.5 uppercase tracking-wider">{roleName}</p>
-                        {optimalCount !== undefined && <span className="text-[9px] text-purple-300/70">Opt: {optimalCount}</span>}
-                      </div>
-
-                      {assignedEmpsInSlot.map((employee, index) => (
-                        <ShiftSlot
-                          key={employee.id.startsWith('empty-') ? employee.id : `${employee.id}_${employee.shift_id}`}
-                          employee={employee}
-                          index={index}
-                          handleTimeChange={handleTimeChange}
-                        />
-                      ))}
-                      {providedDroppableArea.placeholder}
-                      {assignedEmpsInSlot.filter(e => !e.id.startsWith('empty-')).length === 0 &&
-                        !assignedEmpsInSlot.find(e => e.id.startsWith('empty-')) && (
-                          <p className="text-[10px] text-slate-500 italic text-center pt-1 min-h-[44px] flex items-center justify-center">Drop Employee Here</p>
+    <div className="overflow-x-auto border border-slate-700 rounded-md">
+      <table className="min-w-full text-xs text-left text-slate-300">
+        <thead className="bg-slate-800/80 text-slate-400">
+          <tr>
+            <th className="px-2 py-1 bg-slate-900 text-slate-300 border-r border-slate-700">Shift</th>
+            <th className="px-2 py-1 bg-slate-900 text-slate-300 border-r border-slate-700">Position</th>
+            {weekDates.map(date => (
+              <th key={date} className="px-2 py-1 border-r border-slate-700">
+                {format(parseISO(date), 'EEE M/d')}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {shifts.map(shiftType => (
+            getRolesByShift(shiftType).map(role => (
+              <tr key={`${shiftType}-${role}`} className="border-t border-slate-700">
+                <td className="px-2 py-1 border-r border-slate-700 text-slate-400 font-semibold">{shiftType}</td>
+                <td className="px-2 py-1 border-r border-slate-700">{role}</td>
+                {weekDates.map(date => {
+                  const employees = scheduleData?.[date]?.[shiftType]?.[role] || [];
+                  const cellContent = employees
+                    .filter(e => e.id && !e.id.startsWith('empty-'))
+                    .map(e => (
+                      <div key={e.id} className="mb-1">
+                        <span>{e.name}</span>
+                        <span className="ml-1 text-slate-400">
+                          ({e.startTime || '—'}–{e.endTime || '—'})
+                        </span>
+                        {isManager && (
+                          <span className="ml-1 text-purple-400">
+                            ${e.payRate?.toFixed(2) || 'N/A'}
+                          </span>
                         )}
-                    </div>
-                  )}
-                </Droppable>
-              );
-            })}
-          </div>
-        ))}
-      </CardContent>
-    </Card>
+                      </div>
+                    ));
+
+                  return (
+                    <td key={`${date}-${role}-${shiftType}`} className="px-2 py-1 border-r border-slate-700 align-top">
+                      {cellContent.length > 0 ? cellContent : <span className="text-slate-500 italic">—</span>}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 };
 
-export default DailyScheduleCard;
+export default LaborScheduleGrid;
