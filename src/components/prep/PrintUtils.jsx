@@ -1,20 +1,20 @@
-import ReactDOMServer from 'react-dom/server';
+import React from 'react';
+import ReactDOM from 'react-dom';
 
 export const triggerPrint = (ComponentFn, props = {}, title = "Print") => {
-  const html = ReactDOMServer.renderToStaticMarkup(ComponentFn(props));
+  const container = document.createElement('div');
+  document.body.appendChild(container);
 
-  const iframe = document.createElement('iframe');
-  iframe.style.position = 'fixed';
-  iframe.style.right = '0';
-  iframe.style.bottom = '0';
-  iframe.style.width = '0';
-  iframe.style.height = '0';
-  iframe.style.border = '0';
-  document.body.appendChild(iframe);
+  const PrintWrapper = () => (
+    <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
+      <ComponentFn {...props} />
+    </div>
+  );
 
-  const doc = iframe.contentWindow.document;
-  doc.open();
-  doc.write(`
+  const printWindow = window.open('', title, 'width=800,height=600');
+  if (!printWindow) return;
+
+  printWindow.document.write(`
     <!DOCTYPE html>
     <html>
       <head>
@@ -22,21 +22,30 @@ export const triggerPrint = (ComponentFn, props = {}, title = "Print") => {
         <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
         <style>
           body {
-            font-family: Arial, sans-serif;
-            padding: 2rem;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
           }
         </style>
       </head>
       <body>
-        ${html}
-        <script>
-          window.onload = function () {
-            window.focus();
-            window.print();
-          }
-        </script>
+        <div id="print-root"></div>
       </body>
     </html>
   `);
-  doc.close();
+
+  printWindow.document.close();
+
+  const interval = setInterval(() => {
+    const root = printWindow.document.getElementById('print-root');
+    if (root) {
+      ReactDOM.render(<PrintWrapper />, root);
+      clearInterval(interval);
+
+      setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+        printWindow.close();
+      }, 500);
+    }
+  }, 100);
 };
