@@ -1,20 +1,21 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
+import ReactDOMServer from 'react-dom/server';
 
-export const triggerPrint = (ComponentFn, props = {}, title = "Print") => {
-  const container = document.createElement('div');
-  document.body.appendChild(container);
+export const triggerPrint = (ComponentFn, props, title) => {
+  // Render JSX from the passed component function
+  const html = ReactDOMServer.renderToStaticMarkup(ComponentFn());
 
-  const PrintWrapper = () => (
-    <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
-      <ComponentFn {...props} />
-    </div>
-  );
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'fixed';
+  iframe.style.right = '0';
+  iframe.style.bottom = '0';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = '0';
+  document.body.appendChild(iframe);
 
-  const printWindow = window.open('', title, 'width=800,height=600');
-  if (!printWindow) return;
-
-  printWindow.document.write(`
+  const doc = iframe.contentWindow.document;
+  doc.open();
+  doc.write(`
     <!DOCTYPE html>
     <html>
       <head>
@@ -22,30 +23,21 @@ export const triggerPrint = (ComponentFn, props = {}, title = "Print") => {
         <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
         <style>
           body {
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
+            font-family: Arial, sans-serif;
+            padding: 2rem;
           }
         </style>
       </head>
       <body>
-        <div id="print-root"></div>
+        ${html}
+        <script>
+          window.onload = function () {
+            window.focus();
+            window.print();
+          }
+        </script>
       </body>
     </html>
   `);
-
-  printWindow.document.close();
-
-  const interval = setInterval(() => {
-    const root = printWindow.document.getElementById('print-root');
-    if (root) {
-      ReactDOM.render(<PrintWrapper />, root);
-      clearInterval(interval);
-
-      setTimeout(() => {
-        printWindow.focus();
-        printWindow.print();
-        printWindow.close();
-      }, 500);
-    }
-  }, 100);
+  doc.close();
 };
