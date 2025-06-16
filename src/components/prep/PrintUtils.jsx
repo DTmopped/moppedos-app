@@ -1,6 +1,8 @@
 import ReactDOMServer from 'react-dom/server';
 
 export const triggerPrint = (PrintableComponent, data, title) => {
+  console.log("✅ triggerPrint called with data:", data, "and title:", title);
+
   // Normalize component: wrap with props if it’s not already a function receiving them
   const ResolvedComponent =
     typeof PrintableComponent === 'function'
@@ -22,6 +24,7 @@ export const triggerPrint = (PrintableComponent, data, title) => {
   document.body.appendChild(iframe);
 
   const doc = iframe.contentWindow.document;
+  console.log("🖨️ Writing HTML to iframe...");
   doc.open();
   doc.write(`
     <!DOCTYPE html>
@@ -63,6 +66,7 @@ export const triggerPrint = (PrintableComponent, data, title) => {
       printed = true;
       clearTimeout(printTimeout);
       cleanup();
+      console.log("✅ Print completed (afterprint fired)");
       resolve();
     };
 
@@ -77,9 +81,10 @@ export const triggerPrint = (PrintableComponent, data, title) => {
 
     setTimeout(() => {
       try {
+        console.log("📤 Triggering print from iframe...");
         iframe.contentWindow.print();
       } catch (error) {
-        console.error("Error triggering print:", error);
+        console.error("❌ Error triggering print:", error);
         cleanup();
         reject(error);
       }
