@@ -17,37 +17,27 @@ const DailyShiftPrepGuide = () => {
 
   const selectedDay = dailyShiftPrepData.find((d) => expandedDays[d.date]);
 
-  const handleInitiatePrint = async () => {
-    if (!selectedDay) {
-      toast({
-        title: "No Day Selected",
-        description: "Please expand a day before printing.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      await triggerPrint(
-        () => (
-          <PrintableDailyShiftPrepGuide
-            dailyShiftPrepData={[selectedDay]}
-            printDate={new Date()}
-          />
-        ),
-        {},
-        "Daily Shift Prep Guide – Print"
-      );
-      toast({ title: "Print processed", variant: "success" });
-    } catch (error) {
-      toast({
-        title: "Print failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
-
+ const handleInitiatePrint = async () => {
+  try {
+    await triggerPrint(
+      () => (
+        <PrintableDailyShiftPrepGuide
+          dailyShiftPrepData={dailyShiftPrepData}
+          printDate={new Date()}
+        />
+      ),
+      {},
+      "Daily Shift Prep Guide – Print"
+    );
+    toast({ title: "Print processed", variant: "success" });
+  } catch (error) {
+    toast({
+      title: "Print failed",
+      description: error.message,
+      variant: "destructive",
+    });
+  }
+};
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
