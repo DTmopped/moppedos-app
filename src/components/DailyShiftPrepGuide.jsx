@@ -17,19 +17,15 @@ const DailyShiftPrepGuide = () => {
 
 const handleInitiatePrint = async () => {
   try {
-   await triggerPrint(
+  await triggerPrint(
   () => (
-    <PrintableSmartPrepGuide
-      prepTextBySection={{
-        BBQ: "Brisket: 40 lbs\nRibs: 30 lbs",
-        Sandwiches: "Pulled Pork: 50 lbs\nBuns: 100 each"
-      }}
+    <PrintableDailyShiftPrepGuide
+      dailyShiftPrepData={dailyShiftPrepData}
       printDate={new Date()}
-      menu={{ BBQ: true, Sandwiches: true }}
     />
   ),
   {},
-  "Test Smart Prep Print"
+  "Daily Shift Prep Guide – Print"
 );
     toast({ title: "Print processed", variant: "success" });
   } catch (error) {
