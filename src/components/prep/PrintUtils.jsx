@@ -1,13 +1,8 @@
 import React from 'react';
 import ReactDOMServer from 'react-dom/server';
 
-export const triggerPrint = (PrintableComponent, data, title) => {
-  const container = document.createElement('div');
-  document.body.appendChild(container);
-
-  const html = ReactDOMServer.renderToStaticMarkup(
-    <PrintableComponent {...data} />
-  );
+export const triggerPrint = (Component, props, title) => {
+  const html = ReactDOMServer.renderToStaticMarkup(<Component {...props} />);
 
   const iframe = document.createElement('iframe');
   iframe.style.position = 'fixed';
@@ -20,6 +15,7 @@ export const triggerPrint = (PrintableComponent, data, title) => {
   document.body.appendChild(iframe);
 
   const doc = iframe.contentDocument || iframe.contentWindow.document;
+
   doc.open();
   doc.write(`
     <!DOCTYPE html>
@@ -42,20 +38,20 @@ export const triggerPrint = (PrintableComponent, data, title) => {
           }
         </style>
       </head>
-      <body>
-        ${html}
-      </body>
+      <body>${html}</body>
     </html>
   `);
   doc.close();
 
+  // Delay ensures iframe content is ready before print
   iframe.onload = () => {
-    iframe.contentWindow.focus();
-    iframe.contentWindow.print();
-
     setTimeout(() => {
-      document.body.removeChild(iframe);
-      document.body.removeChild(container);
-    }, 1000);
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+      }, 1000);
+    }, 250);
   };
 };
