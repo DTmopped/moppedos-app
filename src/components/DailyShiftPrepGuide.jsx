@@ -16,14 +16,14 @@ const DailyShiftPrepGuide = () => {
 
 const handleInitiatePrint = async () => {
   try {
-    triggerPrint(
-      PrintableDailyShiftPrepGuide,
-      {
-        dailyShiftPrepData,
-        printDate: new Date()
-      },
-      "Daily Shift Prep Guide – Print"
-    );
+    await triggerPrint(
+  PrintableDailyShiftPrepGuide,
+  {
+    dailyShiftPrepData,
+    printDate: new Date()
+  },
+  "Daily Shift Prep Guide – Print"
+);
     toast({ title: "Print processed", variant: "success" });
   } catch (error) {
     toast({
