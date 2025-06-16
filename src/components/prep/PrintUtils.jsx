@@ -1,7 +1,10 @@
-import ReactDOMServer from 'react-dom/server';
+mport ReactDOMServer from 'react-dom/server';
 
 export const triggerPrint = (PrintableComponent, data, title) => {
-  const htmlString = ReactDOMServer.renderToStaticMarkup(
+  const container = document.createElement('div');
+  document.body.appendChild(container);
+
+  const html = ReactDOMServer.renderToStaticMarkup(
     <PrintableComponent {...data} />
   );
 
@@ -11,11 +14,11 @@ export const triggerPrint = (PrintableComponent, data, title) => {
   iframe.style.bottom = '0';
   iframe.style.width = '0';
   iframe.style.height = '0';
-  iframe.style.border = 'none';
+  iframe.style.border = '0';
+
   document.body.appendChild(iframe);
 
   const doc = iframe.contentDocument || iframe.contentWindow.document;
-
   doc.open();
   doc.write(`
     <!DOCTYPE html>
@@ -23,11 +26,12 @@ export const triggerPrint = (PrintableComponent, data, title) => {
       <head>
         <title>${title}</title>
         <style>
-          body {
+          html, body {
             font-family: Arial, sans-serif;
-            padding: 2rem;
-            background: white;
+            font-size: 10pt;
             color: black;
+            background: white;
+            padding: 20px;
           }
           @media print {
             body {
@@ -37,15 +41,22 @@ export const triggerPrint = (PrintableComponent, data, title) => {
           }
         </style>
       </head>
-      <body>${htmlString}</body>
+      <body>
+        ${html}
+      </body>
     </html>
   `);
   doc.close();
 
-  const print = () => {
+  // 🧠 Print after iframe fully loads
+  iframe.onload = () => {
     iframe.contentWindow.focus();
     iframe.contentWindow.print();
-  };
 
-  setTimeout(print, 500); // allow time for iframe to render
+    // Clean up after print
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+      document.body.removeChild(container);
+    }, 1000);
+  };
 };
