@@ -1,10 +1,12 @@
 import React from 'react';
 
 const PrintableDailyShiftPrepGuide = ({ dailyShiftPrepData, printDate }) => {
-  if (!dailyShiftPrepData || dailyShiftPrepData.length === 0) {
-    return <div className="p-4">Loading print data or no daily prep data available...</div>;
-  }
+  console.log("🧾 dailyShiftPrepData received for print:", dailyShiftPrepData);
 
+  // TEMP: disable check to ensure print renders even if data isn't ready
+  // if (!dailyShiftPrepData || dailyShiftPrepData.length === 0) {
+  //   return <div className="p-4">Loading print data or no daily prep data available...</div>;
+  // }
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
