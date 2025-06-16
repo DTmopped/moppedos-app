@@ -1,8 +1,8 @@
 import React from 'react';
-import ReactDOMServer from 'react-dom/server';
+import { renderToString } from 'react-dom/server';
 
 export const triggerPrint = (Component, props, title) => {
-  const html = ReactDOMServer.renderToStaticMarkup(<Component {...props} />);
+ const html = renderToString(<Component {...props} />);
 
   const iframe = document.createElement('iframe');
   iframe.style.position = 'fixed';
