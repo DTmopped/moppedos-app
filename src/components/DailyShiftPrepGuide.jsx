@@ -5,7 +5,6 @@ import { triggerPrint } from "./prep/PrintUtils.jsx";
 import PrintableDailyShiftPrepGuide from "./prep/PrintableDailyShiftPrepGuide.jsx";
 import { useToast } from "./ui/use-toast.jsx";
 import PrepGuideContent from "./prep/PrepGuideContent.jsx";
-import PrintableSmartPrepGuide from "./prep/PrintableSmartPrepGuide.jsx";
 
 const DailyShiftPrepGuide = () => {
   const {
@@ -13,20 +12,18 @@ const DailyShiftPrepGuide = () => {
     adjustmentFactor,
   } = useDailyShiftPrepGuideLogic();
 
-  const { toast } = useToast();
   const [expandedDays, setExpandedDays] = useState({});
+  const { toast } = useToast();
+
+  const selectedDay = dailyShiftPrepData.find((d) => expandedDays[d.date]);
 
   const handleInitiatePrint = async () => {
-    const expandedDate = Object.keys(expandedDays).find((date) => expandedDays[date]);
-
-    if (!expandedDate) {
-      toast({ title: "Please expand a day before printing.", variant: "destructive" });
-      return;
-    }
-
-    const selectedDay = dailyShiftPrepData.find((d) => d.date === expandedDate);
     if (!selectedDay) {
-      toast({ title: "No prep data for selected day.", variant: "destructive" });
+      toast({
+        title: "No Day Selected",
+        description: "Please expand a day before printing.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -39,14 +36,14 @@ const DailyShiftPrepGuide = () => {
           />
         ),
         {},
-        `Daily Shift Prep Guide – ${expandedDate}`
+        "Daily Shift Prep Guide – Print"
       );
       toast({ title: "Print processed", variant: "success" });
     } catch (error) {
       toast({
         title: "Print failed",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
