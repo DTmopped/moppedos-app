@@ -1,53 +1,45 @@
 import React from 'react';
-import { createRoot } from 'react-dom/client';
+import { renderToStaticMarkup } from 'react-dom/server';
 
 export const triggerPrint = async (Component, props, title) => {
-  return new Promise((resolve, reject) => {
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = '0';
-    iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts');
-    document.body.appendChild(iframe);
+  const html = renderToStaticMarkup(<Component {...props} />);
 
-    const doc = iframe.contentDocument || iframe.contentWindow.document;
+  const fullHtml = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>${title}</title>
+        <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            padding: 2rem;
+          }
+          @media print {
+            body {
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        ${html}
+        <script>
+          window.onload = function () {
+            window.print();
+          };
+        </script>
+      </body>
+    </html>
+  `;
 
-    doc.open();
-    doc.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>${title}</title>
-          <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-        </head>
-        <body>
-          <div id="print-root"></div>
-        </body>
-      </html>
-    `);
-    doc.close();
+  const printWindow = window.open('', '_blank', 'width=800,height=600');
+  if (!printWindow) {
+    throw new Error("Popup blocked! Please allow popups for this site.");
+  }
 
-    const mountNode = doc.getElementById('print-root');
-
-    if (!mountNode) {
-      reject(new Error("Could not find print root node."));
-      return;
-    }
-
-    const root = createRoot(mountNode);
-    root.render(<Component {...props} />);
-
-    setTimeout(() => {
-      iframe.contentWindow.focus();
-      iframe.contentWindow.print();
-
-      setTimeout(() => {
-        document.body.removeChild(iframe);
-        resolve();
-      }, 1000);
-    }, 500);
-  });
+  printWindow.document.open();
+  printWindow.document.write(fullHtml);
+  printWindow.document.close();
 };
