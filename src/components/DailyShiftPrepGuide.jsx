@@ -5,6 +5,7 @@ import { triggerPrint } from "./prep/PrintUtils.jsx";
 import PrintableDailyShiftPrepGuide from "./prep/PrintableDailyShiftPrepGuide.jsx";
 import { useToast } from "./ui/use-toast.jsx";
 import PrepGuideContent from "./prep/PrepGuideContent.jsx";
+import PrintableSmartPrepGuide from "./prep/PrintableSmartPrepGuide.jsx";
 
 const DailyShiftPrepGuide = () => {
   const {
@@ -16,13 +17,19 @@ const DailyShiftPrepGuide = () => {
 
 const handleInitiatePrint = async () => {
   try {
-    await triggerPrint(
-  PrintableDailyShiftPrepGuide,
-  {
-    dailyShiftPrepData,
-    printDate: new Date()
-  },
-  "Daily Shift Prep Guide – Print"
+   await triggerPrint(
+  () => (
+    <PrintableSmartPrepGuide
+      prepTextBySection={{
+        BBQ: "Brisket: 40 lbs\nRibs: 30 lbs",
+        Sandwiches: "Pulled Pork: 50 lbs\nBuns: 100 each"
+      }}
+      printDate={new Date()}
+      menu={{ BBQ: true, Sandwiches: true }}
+    />
+  ),
+  {},
+  "Test Smart Prep Print"
 );
     toast({ title: "Print processed", variant: "success" });
   } catch (error) {
