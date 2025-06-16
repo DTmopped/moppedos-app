@@ -26,28 +26,19 @@ const EditableDailyScheduleTable = ({ day, dailyScheduleData, onUpdate }) => {
               <TableRow>
                 <TableHead className="min-w-[150px] text-foreground/80">Role</TableHead>
                 <TableHead className="min-w-[80px] text-foreground/80">Shift</TableHead>
-                <TableHead className="min-w-[180px] text-foreground/80">Employee Name</TableHead>
                 <TableHead className="min-w-[120px] text-foreground/80">Start Time</TableHead>
                 <TableHead className="min-w-[120px] text-foreground/80">End Time</TableHead>
+                <TableHead className="min-w-[180px] text-foreground/80">Employee Name</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {dailyScheduleData.map((slot, index) => (
-                <TableRow 
-                  key={`${day}-${slot.role}-${slot.shift}-${slot.slotIndex}-${index}`} 
+                <TableRow
+                  key={`${day}-${slot.role}-${slot.shift}-${slot.slotIndex}-${index}`}
                   className={cn(SHIFT_BG_CLASSES[slot.shift] || '', 'print:text-black')}
                 >
                   <TableCell className={cn('font-medium', slot.colorClass)}>{slot.role}</TableCell>
                   <TableCell className={cn(slot.colorClass)}>{slot.shift}</TableCell>
-                  <TableCell className={cn(slot.colorClass)}>
-                    <Input
-                      type="text"
-                      placeholder="Employee Name"
-                      value={slot.employeeName || ""}
-                      onChange={(e) => handleInputChange(slot.role, slot.shift, slot.slotIndex, 'employeeName', e.target.value)}
-                      className="text-xs p-1 h-8 bg-background/50 dark:bg-background/30 print:border-gray-300 print:bg-white"
-                    />
-                  </TableCell>
                   <TableCell className={cn(slot.colorClass)}>
                     <Input
                       type="time"
@@ -61,6 +52,15 @@ const EditableDailyScheduleTable = ({ day, dailyScheduleData, onUpdate }) => {
                       type="time"
                       value={slot.endTime || ""}
                       onChange={(e) => handleInputChange(slot.role, slot.shift, slot.slotIndex, 'endTime', e.target.value)}
+                      className="text-xs p-1 h-8 bg-background/50 dark:bg-background/30 print:border-gray-300 print:bg-white"
+                    />
+                  </TableCell>
+                  <TableCell className={cn(slot.colorClass)}>
+                    <Input
+                      type="text"
+                      placeholder="Employee Name"
+                      value={slot.employeeName || ""}
+                      onChange={(e) => handleInputChange(slot.role, slot.shift, slot.slotIndex, 'employeeName', e.target.value)}
                       className="text-xs p-1 h-8 bg-background/50 dark:bg-background/30 print:border-gray-300 print:bg-white"
                     />
                   </TableCell>
