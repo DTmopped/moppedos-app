@@ -1,52 +1,53 @@
 import React from 'react';
-import { renderToString } from 'react-dom/server';
+import { createRoot } from 'react-dom/client';
 
-export const triggerPrint = (Component, props, title) => {
- const html = renderToString(<Component {...props} />);
+export const triggerPrint = async (Component, props, title) => {
+  return new Promise((resolve, reject) => {
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts');
+    document.body.appendChild(iframe);
 
-  const iframe = document.createElement('iframe');
-  iframe.style.position = 'fixed';
-  iframe.style.right = '0';
-  iframe.style.bottom = '0';
-  iframe.style.width = '0';
-  iframe.style.height = '0';
-  iframe.style.border = '0';
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
 
-  document.body.appendChild(iframe);
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>${title}</title>
+          <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+        </head>
+        <body>
+          <div id="print-root"></div>
+        </body>
+      </html>
+    `);
+    doc.close();
 
- const doc = iframe.contentWindow.document;
-doc.open();
-doc.write(`
-  <!DOCTYPE html>
-  <html>
-    <head>
-      <title>${title}</title>
-      <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-      <style>
-        @media print {
-          html, body {
-            background: white;
-            color: black;
-          }
-        }
-      </style>
-    </head>
-    <body class="p-4 font-sans text-sm text-gray-800">
-      ${printableComponentHtml}
-    </body>
-  </html>
-`);
-doc.close();
+    const mountNode = doc.getElementById('print-root');
 
-  // Delay ensures iframe content is ready before print
-  iframe.onload = () => {
+    if (!mountNode) {
+      reject(new Error("Could not find print root node."));
+      return;
+    }
+
+    const root = createRoot(mountNode);
+    root.render(<Component {...props} />);
+
     setTimeout(() => {
       iframe.contentWindow.focus();
       iframe.contentWindow.print();
 
       setTimeout(() => {
         document.body.removeChild(iframe);
+        resolve();
       }, 1000);
-    }, 250);
-  };
+    }, 500);
+  });
 };
