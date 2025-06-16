@@ -8,17 +8,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { PlusCircle, XCircle, Edit3 } from 'lucide-react';
 
 const initialMenuData = {
-  Sandwiches: [
-    { name: "Pulled Pork Sandwich", perGuestOz: 4, unit: "oz" },
-    { name: "Chopped Brisket Sandwich", perGuestOz: 4, unit: "oz" },
-    { name: "Chopped Chicken Sandwich", perGuestOz: 4, unit: "oz" },
-    { name: "Buns", each: 1, unit: "each" }
-  ],
+ Sandwiches: [
+  { name: "Pulled Pork Sandwich", perGuestOz: 6, unit: "oz" },
+  { name: "Chopped Brisket Sandwich", perGuestOz: 6, unit: "oz" },
+  { name: "Chopped Chicken Sandwich", perGuestOz: 6, unit: "oz" },
+  { name: "Buns", each: 1, unit: "each" }
+],
   BBQ: [
-    { name: "Pulled Pork", perGuestOz: 6, unit: "oz" },
-    { name: "Chopped Brisket", perGuestOz: 6, unit: "oz" },
-    { name: "Brisket (Sliced)", perGuestOz: 6, unit: "oz" },
-    { name: "Bone-In Short Rib", perGuestOz: 8, unit: "oz" },
+    { name: "Brisket", perGuestLbs: 0.25, unit: "lbs" },
+    { name: "Pulled Pork", perGuestLbs: 0.25, unit: "lbs" },
+    { name: "Bone-In Short Rib", perGuestLbs: 1, unit: "lbs" },
     { name: "Half Chicken", each: 1, unit: "each" },
     { name: "St. Louis Ribs (1/2 rack)", each: 1, unit: "each" }
   ],
@@ -29,7 +28,11 @@ const initialMenuData = {
     { name: "Coleslaw", perGuestOz: 4, unit: "oz" },
     { name: "Corn Casserole", perGuestOz: 4, unit: "oz" },
     { name: "Corn Muffin", each: 1, unit: "each" }
+    { name: "Honey Butter", each: 1, unit: "each" }
   ],
+Bread: [
+    { name: "Buns", each: 1, unit: "each" },
+     { name: "Texas Toast", each: 1, unit: "each" }
   Desserts: [
     { name: "Banana Pudding", each: 1, unit: "each" },
     { name: "Hummingbird Cake", each: 1, unit: "each" },
