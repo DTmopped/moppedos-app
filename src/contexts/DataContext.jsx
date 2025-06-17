@@ -109,6 +109,9 @@ export const DataProvider = ({ children }) => {
   const [forecastData, setForecastData] = useState(initialForecastData);
   const [actualData, setActualData] = useState(initialActualData);
   const [posData, setPosData] = useState(initialPosData);
+  const [isAdminMode, setIsAdminMode] = useState(false); // NEW STATE
+
+  const toggleAdminMode = () => setIsAdminMode(prev => !prev); // NEW TOGGLE
 
   const addForecastEntry = useCallback((newEntry) => {
     setForecastData(prev => {
@@ -157,8 +160,14 @@ export const DataProvider = ({ children }) => {
     posData,
     addForecastEntry,
     addActualEntry,
-    setPosData
+    setPosData,
+    isAdminMode,       // 🟢 exposed in context
+    toggleAdminMode    // 🟢 exposed in context
   };
 
-  return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
+  return (
+    <DataContext.Provider value={value}>
+      {children}
+    </DataContext.Provider>
+  );
 };
