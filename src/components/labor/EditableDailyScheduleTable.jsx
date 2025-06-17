@@ -1,88 +1,77 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table.jsx';
-import { Input } from '@/components/ui/input.jsx';
-import { CalendarClock } from 'lucide-react';
+import { addDays, format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { ROLES, SHIFT_TIMES } from '@/config/laborScheduleConfig.jsx';
 
-// 👇 Tailwind classes for color logic
-const getRowColor = (employeeName, isManagerView = false) => {
-  if (!employeeName) return 'bg-green-100 text-green-900';         // needs assignment
-  if (employeeName && !isManagerView) return 'bg-blue-100 text-blue-900'; // assigned
-  return 'bg-slate-50'; // fallback/default
-};
+const shifts = ['AM', 'PM', 'SWING'];
 
-const EditableDailyScheduleTable = ({ day, dailyScheduleData, onUpdate, isManagerView = true }) => {
-  const handleInputChange = (roleName, shift, slotIndex, field, value) => {
-    onUpdate(day, roleName, shift, slotIndex, field, value);
+const EditableDailyScheduleTable = ({ weekStartDate, scheduleData, onScheduleChange }) => {
+  const weekDates = Array.from({ length: 7 }, (_, i) => addDays(weekStartDate, i));
+
+  const getAllRoles = () => {
+    const roleSet = new Set();
+    ROLES.forEach(role => role.shifts.forEach(shift => roleSet.add(`${role.name}__${shift}`)));
+    return Array.from(roleSet).map(str => {
+      const [name, shift] = str.split('__');
+      return { name, shift };
+    });
+  };
+
+  const renderShiftBlock = (dayKey, shift, role) => {
+    const employees = scheduleData?.[dayKey]?.[shift]?.[role] || [];
+    const roleConfig = ROLES.find(r => r.name === role);
+
+    return employees.map((emp) => (
+      <div
+        key={emp.id}
+        className={cn(
+          "rounded-md p-2 mb-1 text-xs shadow-sm border border-slate-400/30",
+          roleConfig?.colorClass || "bg-slate-700 text-white"
+        )}
+      >
+        <div className="font-semibold truncate">{emp.name || "Unassigned"}</div>
+        <div className="text-slate-600 dark:text-slate-300 text-xs">
+          {emp.start || SHIFT_TIMES[shift]?.start || "—"} – {emp.end || SHIFT_TIMES[shift]?.end || "—"}
+        </div>
+        <div className="text-[10px] italic text-slate-500">
+          {roleConfig?.abbreviation || role}
+        </div>
+      </div>
+    ));
   };
 
   return (
-    <Card className="glassmorphic-card mb-8 card-hover-glow">
-      <CardHeader>
-        <CardTitle className="text-xl font-semibold text-primary dark:text-sky-400 flex items-center">
-          <CalendarClock size={22} className="mr-3 text-primary dark:text-sky-400 no-print" />
-          {day}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-slate-100 dark:bg-slate-800">
-                <TableHead className="min-w-[160px] text-foreground/80">Role</TableHead>
-                <TableHead className="min-w-[80px] text-foreground/80">Shift</TableHead>
-                <TableHead className="min-w-[120px] text-foreground/80">Start Time</TableHead>
-                <TableHead className="min-w-[120px] text-foreground/80">End Time</TableHead>
-                <TableHead className="min-w-[180px] text-foreground/80">Employee Name</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {dailyScheduleData.map((slot, index) => {
-                const rowColor = getRowColor(slot.employeeName, isManagerView);
+    <div className="overflow-x-auto mt-6">
+      <table className="table-fixed border-collapse w-full text-sm">
+        <thead>
+          <tr className="bg-slate-800 text-white">
+            <th className="p-2 text-left w-[180px]">Role / Shift</th>
+            {weekDates.map((date) => (
+              <th key={date.toISOString()} className="p-2 text-center w-[140px]">
+                {format(date, 'EEE MM/dd')}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {getAllRoles().map(({ name: role, shift }) => (
+            <tr key={`${role}-${shift}`} className="border-t border-slate-300">
+              <td className="p-2 font-medium text-slate-700 dark:text-slate-200 whitespace-nowrap">
+                {role} ({shift})
+              </td>
+              {weekDates.map((date) => {
+                const dayKey = format(date, 'yyyy-MM-dd');
                 return (
-                  <TableRow key={`${day}-${slot.role}-${slot.shift}-${slot.slotIndex}-${index}`} className={cn(rowColor)}>
-                    <TableCell className="font-medium">{slot.role}</TableCell>
-                    <TableCell>{slot.shift}</TableCell>
-                    <TableCell>
-                      <Input
-                        type="time"
-                        value={slot.startTime || ''}
-                        onChange={(e) =>
-                          handleInputChange(slot.role, slot.shift, slot.slotIndex, 'startTime', e.target.value)
-                        }
-                        className="text-xs p-1 h-8 bg-white/70 dark:bg-slate-800 print:bg-white"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="time"
-                        value={slot.endTime || ''}
-                        onChange={(e) =>
-                          handleInputChange(slot.role, slot.shift, slot.slotIndex, 'endTime', e.target.value)
-                        }
-                        className="text-xs p-1 h-8 bg-white/70 dark:bg-slate-800 print:bg-white"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="text"
-                        placeholder="Employee Name"
-                        value={slot.employeeName || ''}
-                        onChange={(e) =>
-                          handleInputChange(slot.role, slot.shift, slot.slotIndex, 'employeeName', e.target.value)
-                        }
-                        className="text-xs p-1 h-8 bg-white/70 dark:bg-slate-800 print:bg-white"
-                      />
-                    </TableCell>
-                  </TableRow>
+                  <td key={dayKey} className="p-2 align-top bg-slate-100 dark:bg-slate-800 min-h-[100px]">
+                    {renderShiftBlock(dayKey, shift, role)}
+                  </td>
                 );
               })}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 };
 
