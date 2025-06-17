@@ -1,11 +1,11 @@
-import React from 'react';
-import { addDays, format, isValid } from 'date-fns';
+import React, { useContext } from 'react';
+import { addDays, format, isValid, parse } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { useData } from '@/contexts/DataContext';
 import { ROLES, SHIFT_TIMES } from '@/config/laborScheduleConfig.jsx';
+import { DataContext } from '@/contexts/DataContext';
 
 const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdate }) => {
-  const { isAdminMode } = useData();
+  const { isAdminMode } = useContext(DataContext);
 
   const weekDates = Array.from({ length: 7 }, (_, i) => {
     const date = addDays(weekStartDate, i);
@@ -28,35 +28,54 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
     return role?.shifts || [];
   };
 
-  const formatTime12hr = (timeStr) => {
-    const [hour, minute] = timeStr.split(':');
-    const date = new Date();
-    date.setHours(+hour);
-    date.setMinutes(+minute);
-    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-  };
-
   const renderShiftCell = (day, shift, role) => {
     const dateKey = format(day, 'yyyy-MM-dd');
-    const data = scheduleData?.[dateKey]?.[shift]?.[role] || [];
-    const defaultTime = SHIFT_TIMES[shift];
+    const defaultTimes = SHIFT_TIMES[shift];
+    const slots = scheduleData?.[dateKey]?.[shift]?.[role] || [];
 
     return (
-      <div className={cn(
-        'min-h-[64px] border rounded p-2 transition-all duration-200',
-        isAdminMode && 'hover:bg-yellow-50 cursor-pointer'
-      )}>
-        {data.length === 0 && (
+      <div className="min-h-[64px] border rounded p-2 bg-white dark:bg-slate-900">
+        {slots.length === 0 && (
           <div className="text-xs text-slate-400 italic">—</div>
         )}
-        {data.map((entry, idx) => (
-          <div key={idx} className="text-xs text-slate-600 dark:text-slate-300">
-            {entry.name || 'Unassigned'}{' '}
-            ({
-              isAdminMode
-                ? `${entry.start || defaultTime.start}–${entry.end || defaultTime.end}`
-                : `${formatTime12hr(entry.start || defaultTime.start)}–${formatTime12hr(entry.end || defaultTime.end)}`
-            })
+        {slots.map((entry, idx) => (
+          <div key={idx} className="text-xs text-slate-600 dark:text-slate-300 space-y-1">
+            <input
+              type="text"
+              placeholder="Name"
+              value={entry.name || ''}
+              onChange={(e) =>
+                onUpdate(dateKey, role, shift, idx, 'name', e.target.value)
+              }
+              className="w-full border-b text-xs outline-none bg-transparent placeholder:text-slate-400"
+            />
+            <div className="flex space-x-1 text-xs">
+              <input
+                type="text"
+                value={entry.start || defaultTimes.start}
+                onChange={(e) =>
+                  onUpdate(dateKey, role, shift, idx, 'start', e.target.value)
+                }
+                readOnly={!isAdminMode}
+                className={cn(
+                  "w-[60px] border-b outline-none",
+                  isAdminMode ? "bg-yellow-100" : "bg-transparent"
+                )}
+              />
+              <span>–</span>
+              <input
+                type="text"
+                value={entry.end || defaultTimes.end}
+                onChange={(e) =>
+                  onUpdate(dateKey, role, shift, idx, 'end', e.target.value)
+                }
+                readOnly={!isAdminMode}
+                className={cn(
+                  "w-[60px] border-b outline-none",
+                  isAdminMode ? "bg-yellow-100" : "bg-transparent"
+                )}
+              />
+            </div>
           </div>
         ))}
       </div>
@@ -70,7 +89,7 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
       </td>
       {weekDates.map((date, idx) => (
         <td key={idx} className="p-2 align-top">
-          {date ? renderShiftCell(date, shift, role) : <div className="text-red-500">Invalid Date</div>}
+          {date ? renderShiftCell(date, shift, role) : <div className="text-red-500">Invalid</div>}
         </td>
       ))}
     </tr>
