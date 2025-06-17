@@ -1,94 +1,62 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import { addDays, format, isValid } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { ROLES, SHIFT_TIMES } from '@/config/laborScheduleConfig.jsx';
 import { useData } from '@/contexts/DataContext';
-
-const parseTimeStringToDate = (timeStr) => {
-  if (!timeStr || typeof timeStr !== 'string') return null;
-  const parts = timeStr.split(':');
-  if (parts.length < 2) return null;
-  const [hours, minutes, seconds] = parts.map(Number);
-  const date = new Date();
-  date.setHours(hours, minutes, seconds || 0, 0);
-  return isValid(date) ? date : null;
-};
-
-const orderedRoles = [
-  'Meat Portioner',
-  'Side Portioner',
-  'Food Gopher',
-  'Cashier',
-  'Bartender',
-  'Kitchen Swing',
-  'Cashier Swing',
-  'Shift Lead'
-];
-
-const getShiftsForRole = (roleName) => {
-  const role = ROLES.find(r => r.name === roleName);
-  return role?.shifts || [];
-};
+import { ROLES, SHIFT_TIMES } from '@/config/laborScheduleConfig.jsx';
 
 const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdate }) => {
   const { isAdminMode } = useData();
-  
+
   const weekDates = Array.from({ length: 7 }, (_, i) => {
     const date = addDays(weekStartDate, i);
     return isValid(date) ? date : null;
   });
 
+  const orderedRoles = [
+    'Meat Portioner',
+    'Side Portioner',
+    'Food Gopher',
+    'Cashier',
+    'Bartender',
+    'Kitchen Swing',
+    'Cashier Swing',
+    'Shift Lead'
+  ];
+
+  const getShiftsForRole = (roleName) => {
+    const role = ROLES.find(r => r.name === roleName);
+    return role?.shifts || [];
+  };
+
+  const formatTime12hr = (timeStr) => {
+    const [hour, minute] = timeStr.split(':');
+    const date = new Date();
+    date.setHours(+hour);
+    date.setMinutes(+minute);
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  };
+
   const renderShiftCell = (day, shift, role) => {
     const dateKey = format(day, 'yyyy-MM-dd');
     const data = scheduleData?.[dateKey]?.[shift]?.[role] || [];
-
-    const handleChange = (idx, field, value) => {
-      if (!isAdminMode) return;
-      const updatedEntry = { ...data[idx], [field]: value };
-      const updatedData = [...data];
-      updatedData[idx] = updatedEntry;
-      onUpdate(dateKey, role, shift, idx, field, value);
-    };
+    const defaultTime = SHIFT_TIMES[shift];
 
     return (
       <div className={cn(
-        "min-h-[64px] border rounded p-2 bg-white dark:bg-slate-900",
-        isAdminMode && "cursor-pointer hover:bg-yellow-50"
+        'min-h-[64px] border rounded p-2 transition-all duration-200',
+        isAdminMode && 'hover:bg-yellow-50 cursor-pointer'
       )}>
         {data.length === 0 && (
           <div className="text-xs text-slate-400 italic">—</div>
         )}
         {data.map((entry, idx) => (
-          <div key={idx} className="text-xs text-slate-600 dark:text-slate-300 space-y-1">
-            {isAdminMode ? (
-              <>
-                <input
-                  value={entry.name || ""}
-                  onChange={e => handleChange(idx, 'name', e.target.value)}
-                  className="w-full bg-yellow-100 border text-xs px-1 py-[2px] rounded"
-                  placeholder="Name"
-                />
-                <div className="flex gap-1">
-                  <input
-                    type="text"
-                    value={entry.start || ""}
-                    onChange={e => handleChange(idx, 'start', e.target.value)}
-                    className="w-[60px] bg-yellow-100 border text-xs px-1 py-[2px] rounded"
-                    placeholder="Start"
-                  />
-                  <span>–</span>
-                  <input
-                    type="text"
-                    value={entry.end || ""}
-                    onChange={e => handleChange(idx, 'end', e.target.value)}
-                    className="w-[60px] bg-yellow-100 border text-xs px-1 py-[2px] rounded"
-                    placeholder="End"
-                  />
-                </div>
-              </>
-            ) : (
-              <div>{entry.name || 'Unassigned'} ({entry.start}–{entry.end})</div>
-            )}
+          <div key={idx} className="text-xs text-slate-600 dark:text-slate-300">
+            {entry.name || 'Unassigned'}{' '}
+            ({
+              isAdminMode
+                ? `${entry.start || defaultTime.start}–${entry.end || defaultTime.end}`
+                : `${formatTime12hr(entry.start || defaultTime.start)}–${formatTime12hr(entry.end || defaultTime.end)}`
+            })
           </div>
         ))}
       </div>
