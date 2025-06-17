@@ -2,34 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from 'supabaseClient.js';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card.jsx';
 import { Button } from '@/components/ui/button.jsx';
-import { format, parseISO, addDays, startOfWeek } from 'date-fns';
+import { format, parseISO, addDays, startOfWeek, isValid } from 'date-fns';
 import { fetchForecastData, calculateOptimalStaffing } from '@/lib/laborScheduleUtils.js';
 import { SPEND_PER_GUEST } from '@/config/laborScheduleConfig.jsx';
 import { Loader2, AlertTriangle, CheckCircle, CalendarDays, Users, DollarSign, Percent } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import WeeklyCalendarGrid from './WeeklyCalendarGrid';
-
-const CustomMetricCard = ({ title, value, icon, unit, trend, isLoading, cardClassName, valueClassName, titleClassName }) => (
-  <Card className={cn("bg-slate-800/70 border-slate-700 shadow-lg", cardClassName)}>
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle className={cn("text-sm font-medium text-slate-300", titleClassName)}>{title}</CardTitle>
-      {icon}
-    </CardHeader>
-    <CardContent>
-      {isLoading ? (
-        <Loader2 className="h-6 w-6 animate-spin text-purple-400" />
-      ) : (
-        <>
-          <div className={cn("text-2xl font-bold text-slate-100 tabular-nums", valueClassName)}>
-            {value}
-            {unit && <span className="text-xs text-slate-400 ml-1">{unit}</span>}
-          </div>
-          {trend && <p className="text-xs text-slate-400 mt-1">{trend}</p>}
-        </>
-      )}
-    </CardContent>
-  </Card>
-);
 
 const SchedulingDashboard = ({ initialWeekStartDate = new Date() }) => {
   const [weekStartDate, setWeekStartDate] = useState(startOfWeek(initialWeekStartDate, { weekStartsOn: 1 }));
@@ -38,12 +16,25 @@ const SchedulingDashboard = ({ initialWeekStartDate = new Date() }) => {
   const [metrics, setMetrics] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const weekDates = Array.from({ length: 7 }, (_, i) => format(addDays(weekStartDate, i), 'yyyy-MM-dd'));
+  const weekDates = Array.from({ length: 7 }, (_, i) => {
+    const date = addDays(weekStartDate, i);
+    return isValid(date) ? format(date, 'yyyy-MM-dd') : 'Invalid Date';
+  });
+
+  const parseTimeStringToDate = (timeStr) => {
+    if (!timeStr || typeof timeStr !== 'string') return null;
+    const parts = timeStr.split(':');
+    if (parts.length < 2) return null;
+    const date = new Date(0);
+    date.setUTCHours(+parts[0], +parts[1], +(parts[2] || 0));
+    return isNaN(date.getTime()) ? null : date;
+  };
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       setMetrics(null);
+
       const weekStartStr = format(weekStartDate, 'yyyy-MM-dd');
       const weekEndStr = format(addDays(weekStartDate, 6), 'yyyy-MM-dd');
 
@@ -67,6 +58,7 @@ const SchedulingDashboard = ({ initialWeekStartDate = new Date() }) => {
 
       if (schedules && schedules.length > 0) {
         const scheduleId = schedules[0].id;
+
         const { data: shifts, error: shiftsError } = await supabase
           .from('shifts')
           .select('*, employees(id, name, role, wage_rate)')
@@ -82,6 +74,7 @@ const SchedulingDashboard = ({ initialWeekStartDate = new Date() }) => {
           });
         }
       }
+
       setScheduleData(organizedShifts);
 
       if (fetchedForecast && organizedShifts) {
@@ -94,7 +87,12 @@ const SchedulingDashboard = ({ initialWeekStartDate = new Date() }) => {
     fetchData();
   }, [weekStartDate]);
 
-  const calculateAllMetrics = (schedule, forecast) => {
+  const calculateAllMetrics = (currentScheduleData, currentForecastData) => {
+    if (!currentScheduleData || !currentForecastData) {
+      setMetrics(null);
+      return;
+    }
+
     const newMetrics = {
       totalProjectedGuests: 0,
       totalProjectedSales: 0,
@@ -103,67 +101,62 @@ const SchedulingDashboard = ({ initialWeekStartDate = new Date() }) => {
       daysOverTarget: 0,
       dailyMetrics: {}
     };
-    const avgRate = 15;
+    const averageHourlyRate = 15;
 
     weekDates.forEach(date => {
-      const shifts = schedule[date] || [];
-      const forecastEntry = forecast.find(f => f.date === date);
+      const shifts = currentScheduleData[date] || [];
+      const forecast = currentForecastData.find(f => f.date === date);
 
-      let guests = 0, sales = 0, hours = 0, cost = 0;
+      let dailyProjectedGuests = 0;
+      let dailyProjectedSales = 0;
+      let dailyLaborHours = 0;
+      let dailyLaborCost = 0;
+      let dailyLaborPercentage = 0;
+      let dailyIsOverTarget = false;
 
-      if (forecastEntry) {
-        guests = forecastEntry.projectedGuests || 0;
-        sales = guests * SPEND_PER_GUEST;
-        newMetrics.totalProjectedGuests += guests;
-        newMetrics.totalProjectedSales += sales;
+      if (forecast) {
+        dailyProjectedGuests = forecast.projectedGuests || 0;
+        dailyProjectedSales = dailyProjectedGuests * SPEND_PER_GUEST;
+
+        newMetrics.totalProjectedGuests += dailyProjectedGuests;
+        newMetrics.totalProjectedSales += dailyProjectedSales;
 
         shifts.forEach(shift => {
-          if (
-            typeof shift.start_time === 'string' &&
-            typeof shift.end_time === 'string' &&
-            shift.start_time.includes(':') &&
-            shift.end_time.includes(':')
-          ) {
-            try {
-              const [sh, sm] = shift.start_time.split(':');
-              const [eh, em] = shift.end_time.split(':');
+          const start = parseTimeStringToDate(shift.start_time);
+          const end = parseTimeStringToDate(shift.end_time);
 
-              const s = new Date(0);
-              const e = new Date(0);
-              s.setUTCHours(+sh, +sm, 0);
-              e.setUTCHours(+eh, +em, 0);
-
-              if (e < s) e.setDate(e.getDate() + 1);
-
-              const d = (e - s) / 3600000;
-              if (d > 0) {
-                hours += d;
-                cost += d * (shift.employees?.wage_rate || avgRate);
-              }
-            } catch (err) {
-              console.error("Time parse error:", shift, err);
+          if (shift.employee_id && start && end) {
+            if (end < start) end.setUTCDate(end.getUTCDate() + 1);
+            const durationMs = end - start;
+            const durationHours = durationMs / (1000 * 60 * 60);
+            if (durationHours > 0) {
+              dailyLaborHours += durationHours;
+              const employeeWage = shift.employees?.wage_rate || averageHourlyRate;
+              dailyLaborCost += durationHours * employeeWage;
             }
-          } else {
-            console.warn("Skipping shift with invalid time:", shift);
           }
         });
 
-        newMetrics.totalLaborHours += hours;
-        newMetrics.totalLaborCost += cost;
+        newMetrics.totalLaborHours += dailyLaborHours;
+        newMetrics.totalLaborCost += dailyLaborCost;
 
-        const percent = sales > 0 ? (cost / sales) * 100 : 0;
-        const over = percent > 18;
-        if (over) newMetrics.daysOverTarget++;
+        dailyLaborPercentage = dailyProjectedSales > 0
+          ? (dailyLaborCost / dailyProjectedSales) * 100
+          : 0;
 
-        newMetrics.dailyMetrics[date] = {
-          projectedGuests: guests,
-          projectedSales: sales,
-          laborHours: hours,
-          laborCost: cost,
-          laborPercentage: percent,
-          isOverTarget: over
-        };
+        const targetPercentage = 18;
+        dailyIsOverTarget = dailyLaborPercentage > targetPercentage;
+        if (dailyIsOverTarget) newMetrics.daysOverTarget++;
       }
+
+      newMetrics.dailyMetrics[date] = {
+        projectedGuests: dailyProjectedGuests,
+        projectedSales: dailyProjectedSales,
+        laborHours: dailyLaborHours,
+        laborCost: dailyLaborCost,
+        laborPercentage: dailyLaborPercentage,
+        isOverTarget: dailyIsOverTarget
+      };
     });
 
     newMetrics.averageLaborPercentage = newMetrics.totalProjectedSales > 0
@@ -173,14 +166,51 @@ const SchedulingDashboard = ({ initialWeekStartDate = new Date() }) => {
     setMetrics(newMetrics);
   };
 
+  const changeWeek = (direction) => {
+    setWeekStartDate(prev => addDays(prev, direction * 7));
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64 p-4 md:p-6 bg-slate-900 rounded-lg shadow-xl">
+        <Loader2 className="h-8 w-8 animate-spin text-purple-400 mr-3" />
+        <p className="text-lg text-slate-400">Loading dashboard...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-4 space-y-6">
-      <h2 className="text-2xl font-semibold text-slate-100">Editable Weekly Labor Schedule</h2>
-      <WeeklyCalendarGrid
-        weekStartDate={weekStartDate}
-        scheduleData={scheduleData}
-        onScheduleChange={setScheduleData}
-      />
+    <div className="space-y-6 p-4 md:p-6 bg-slate-900 rounded-lg shadow-xl">
+      <Card className="glassmorphic-card bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+        <CardHeader className="border-b border-slate-700">
+          <div className="flex flex-col sm:flex-row justify-between items-center space-y-3 sm:space-y-0">
+            <CardTitle className="text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">
+              Weekly Scheduling Dashboard
+            </CardTitle>
+            <div className="flex items-center space-x-2">
+              <Button onClick={() => changeWeek(-1)} variant="outline" size="sm" className="text-slate-300 border-slate-600 hover:bg-slate-700 hover:text-purple-300">Prev Week</Button>
+              <span className="text-md font-semibold text-slate-300 whitespace-nowrap">
+                {format(weekStartDate, 'MMM dd, yyyy')}
+              </span>
+              <Button onClick={() => changeWeek(1)} variant="outline" size="sm" className="text-slate-300 border-slate-600 hover:bg-slate-700 hover:text-pink-300">Next Week</Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-6">
+          {scheduleData && (
+            <div className="mt-10">
+              <h3 className="text-lg font-semibold text-slate-200 mb-4">
+                Weekly Calendar View
+              </h3>
+              <WeeklyCalendarGrid
+                weekStartDate={weekStartDate}
+                scheduleData={scheduleData}
+                onScheduleChange={setScheduleData}
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
