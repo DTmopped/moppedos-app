@@ -13,19 +13,15 @@ const parseTimeStringToDate = (timeStr) => {
   return isValid(date) ? date : null;
 };
 
-// 🧠 Grouped & ordered roles with dynamic shifts
+// Grouped & ordered roles
 const orderedRoles = [
-  // Kitchen
   'Meat Portioner',
   'Side Portioner',
   'Food Gopher',
-  // FOH
   'Cashier',
   'Bartender',
-  // SWING
   'Kitchen Swing',
   'Cashier Swing',
-  // Lead
   'Shift Lead'
 ];
 
@@ -42,16 +38,43 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
 
   const renderShiftCell = (day, shift, role) => {
     const dateKey = format(day, 'yyyy-MM-dd');
-    const data = scheduleData?.[dateKey]?.[shift]?.[role] || [];
+    const entries = scheduleData?.[dateKey]?.[shift]?.[role] || [];
+
+    const handleFieldChange = (idx, field, value) => {
+      if (onUpdate) {
+        onUpdate(dateKey, role, shift, idx, field, value);
+      }
+    };
 
     return (
-      <div className="min-h-[64px] border rounded p-2 bg-white dark:bg-slate-900">
-        {data.length === 0 && (
+      <div className="min-h-[64px] border rounded p-2 bg-white dark:bg-slate-900 space-y-1">
+        {entries.length === 0 && (
           <div className="text-xs text-slate-400 italic">—</div>
         )}
-        {data.map((entry, idx) => (
-          <div key={idx} className="text-xs text-slate-600 dark:text-slate-300">
-            {entry.name || 'Unassigned'} ({entry.start}–{entry.end})
+
+        {entries.map((entry, idx) => (
+          <div key={idx} className="flex flex-col space-y-1">
+            <input
+              type="text"
+              className="w-full text-xs border border-slate-300 px-1 py-0.5 rounded"
+              value={entry.name || ''}
+              onChange={(e) => handleFieldChange(idx, 'name', e.target.value)}
+              placeholder="Name"
+            />
+            <div className="flex space-x-1">
+              <input
+                type="time"
+                className="w-1/2 text-xs border border-slate-300 px-1 py-0.5 rounded"
+                value={entry.start || ''}
+                onChange={(e) => handleFieldChange(idx, 'start', e.target.value)}
+              />
+              <input
+                type="time"
+                className="w-1/2 text-xs border border-slate-300 px-1 py-0.5 rounded"
+                value={entry.end || ''}
+                onChange={(e) => handleFieldChange(idx, 'end', e.target.value)}
+              />
+            </div>
           </div>
         ))}
       </div>
