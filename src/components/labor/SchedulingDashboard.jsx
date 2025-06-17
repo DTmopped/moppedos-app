@@ -7,6 +7,7 @@ import { fetchForecastData, calculateOptimalStaffing } from '@/lib/laborSchedule
 import { SPEND_PER_GUEST } from '@/config/laborScheduleConfig.jsx';
 import { Loader2, AlertTriangle, CheckCircle, CalendarDays, TrendingUp, Users, DollarSign, Percent } from 'lucide-react';
 import { cn } from "@/lib/utils";
+import WeeklyCalendarGrid from './WeeklyCalendarGrid';
 
 const CustomMetricCard = ({ title, value, icon, unit, trend, isLoading, cardClassName, valueClassName, titleClassName }) => (
   <Card className={cn("bg-slate-800/70 border-slate-700 shadow-lg", cardClassName)}>
@@ -331,6 +332,18 @@ const SchedulingDashboard = ({ initialWeekStartDate = new Date() }) => {
             </div>
           )}
         </CardContent>
+        {scheduleData && (
+  <div className="mt-10">
+    <h3 className="text-lg font-semibold text-slate-200 mb-4">
+      Weekly Calendar View
+    </h3>
+    <WeeklyCalendarGrid
+      weekStartDate={weekStartDate}
+      scheduleData={scheduleData}
+      onScheduleChange={setScheduleData}
+    />
+  </div>
+)}
       </Card>
     </div>
   );
