@@ -11,6 +11,7 @@ import PrintableLaborSchedule from './labor/PrintableLaborSchedule.jsx';
 import { LOCAL_STORAGE_KEY } from '@/config/laborScheduleConfig.jsx';
 import { loadSchedule, updateSlotInSchedule } from '@/lib/laborScheduleUtils.js';
 import { startOfWeek, format } from 'date-fns';
+import AdminModeToggle from './AdminModeToggle.jsx'; // adjust path if needed
 
 const WeeklyLaborScheduleHeader = ({ onSave, onPrint }) => (
   <Card className="glassmorphic-card no-print card-hover-glow">
@@ -139,6 +140,11 @@ const WeeklyLaborSchedule = () => {
       className="space-y-8"
     >
       <WeeklyLaborScheduleHeader onSave={saveScheduleToLocalStorage} onPrint={handlePrint} />
+
+      <div className="flex justify-end">
+  <AdminModeToggle />
+</div>
+      
       <div className="printable-content printable-labor-schedule">
         {(!forecastData || forecastData.length === 0) ? (
           <NoForecastDataMessage />
