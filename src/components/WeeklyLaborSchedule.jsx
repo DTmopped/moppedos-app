@@ -11,7 +11,6 @@ import PrintableLaborSchedule from './labor/PrintableLaborSchedule.jsx';
 import { LOCAL_STORAGE_KEY } from '@/config/laborScheduleConfig.jsx';
 import { loadSchedule, updateSlotInSchedule } from '@/lib/laborScheduleUtils.js';
 
-
 const WeeklyLaborScheduleHeader = ({ onSave, onPrint }) => (
   <Card className="glassmorphic-card no-print card-hover-glow">
     <CardHeader className="pb-4">
@@ -53,7 +52,6 @@ const NoForecastDataMessage = () => (
   </Card>
 );
 
-
 const WeeklyLaborSchedule = () => {
   const { forecastData } = useData();
   const [scheduleData, setScheduleData] = useState({});
@@ -68,11 +66,10 @@ const WeeklyLaborSchedule = () => {
     setIsLoading(false);
   }, [forecastData]);
 
-
   const handleUpdateSchedule = (date, roleName, shift, slotIndex, field, value) => {
     setScheduleData(prev => updateSlotInSchedule(prev, date, roleName, shift, slotIndex, field, value));
   };
-  
+
   const saveScheduleToLocalStorage = () => {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(scheduleData));
     toast({
@@ -84,11 +81,11 @@ const WeeklyLaborSchedule = () => {
 
   const handlePrint = () => {
     const currentDate = new Date();
-    const dayOfWeek = currentDate.getDay(); 
+    const dayOfWeek = currentDate.getDay();
     const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
     const weekStart = new Date(new Date(currentDate).setDate(currentDate.getDate() + diffToMonday));
     const weekEnd = new Date(new Date(weekStart).setDate(weekStart.getDate() + 6));
-    
+
     const formattedPrintDate = `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
     setPrintDate(formattedPrintDate);
 
@@ -105,7 +102,7 @@ const WeeklyLaborSchedule = () => {
     iframe.style.top = '-9999px';
 
     document.body.appendChild(iframe);
-    
+
     const doc = iframe.contentWindow.document;
     doc.open();
     doc.write(`
@@ -122,7 +119,7 @@ const WeeklyLaborSchedule = () => {
     doc.close();
 
     iframe.contentWindow.focus();
-    
+
     setTimeout(() => {
       iframe.contentWindow.print();
       document.body.removeChild(iframe);
@@ -149,19 +146,25 @@ const WeeklyLaborSchedule = () => {
       <WeeklyLaborScheduleHeader onSave={saveScheduleToLocalStorage} onPrint={handlePrint} />
 
       <div className="printable-content printable-labor-schedule">
-        {(!forecastData || forecastData.length === 0) && (
-          <NoForecastDataMessage />
-        )}
+        {(!forecastData || forecastData.length === 0) && <NoForecastDataMessage />}
 
         {sortedDates.length > 0 ? sortedDates.map(date => (
-           <EditableDailyScheduleTable 
-             key={date} 
-             day={date} 
-             dailyScheduleData={scheduleData[date] || []}
-             onUpdate={handleUpdateSchedule}
-           />
+          <EditableWeeklyScheduleTable
+            key={date}
+            day={date}
+            dailyScheduleData={scheduleData[date] || []}
+            onUpdate={handleUpdateSchedule}
+          />
         )) : (
-          !isLoading && <Card className="glassmorphic-card no-print"><CardContent className="pt-6"><p className="text-center text-muted-foreground py-10">No schedule data to display. Try parsing forecast data.</p></CardContent></Card>
+          !isLoading && (
+            <Card className="glassmorphic-card no-print">
+              <CardContent className="pt-6">
+                <p className="text-center text-muted-foreground py-10">
+                  No schedule data to display. Try parsing forecast data.
+                </p>
+              </CardContent>
+            </Card>
+          )
         )}
       </div>
     </motion.div>
