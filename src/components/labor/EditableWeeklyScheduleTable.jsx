@@ -2,11 +2,11 @@ import React, { useContext } from 'react';
 import { addDays, format, isValid, parse } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { ROLES, SHIFT_TIMES } from '@/config/laborScheduleConfig.jsx';
-import { DataContext } from '@/contexts/DataContext';
+import { useData } from '@/contexts/DataContext';
 
 const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdate }) => {
-  const { isAdminMode } = useContext(DataContext);
-
+  const { isAdminMode } = useData();
+  
   const weekDates = Array.from({ length: 7 }, (_, i) => {
     const date = addDays(weekStartDate, i);
     return isValid(date) ? date : null;
