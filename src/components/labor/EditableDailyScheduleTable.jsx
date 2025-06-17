@@ -5,8 +5,14 @@ import { ROLES, SHIFT_TIMES } from '@/config/laborScheduleConfig.jsx';
 
 const shifts = ['AM', 'PM', 'SWING'];
 
-const EditableDailyScheduleTable = ({ weekStartDate, scheduleData, onScheduleChange }) => {
+const EditableDailyScheduleTable = ({
+  weekStartDate = new Date(),
+  scheduleData = {},
+  onScheduleChange = () => {}
+}) => {
   const weekDates = Array.from({ length: 7 }, (_, i) => addDays(weekStartDate, i));
+
+  console.log("📅 weekStartDate:", weekStartDate?.toString());
 
   const getAllRoles = () => {
     const roleSet = new Set();
@@ -23,7 +29,7 @@ const EditableDailyScheduleTable = ({ weekStartDate, scheduleData, onScheduleCha
 
     return employees.map((emp) => (
       <div
-        key={emp.id}
+        key={emp.id || `${role}-${shift}-${dayKey}`}
         className={cn(
           "rounded-md p-2 mb-1 text-xs shadow-sm border border-slate-400/30",
           roleConfig?.colorClass || "bg-slate-700 text-white"
@@ -47,22 +53,22 @@ const EditableDailyScheduleTable = ({ weekStartDate, scheduleData, onScheduleCha
           <tr className="bg-slate-800 text-white">
             <th className="p-2 text-left w-[180px]">Role / Shift</th>
             {weekDates.map((date, idx) => {
-  try {
-    const parsed = new Date(date);
-    return (
-      <th key={idx} className="p-2 text-center w-[140px]">
-        {format(parsed, 'EEE MM/dd')}
-      </th>
-    );
-  } catch (err) {
-    console.error("Invalid date in weekDates:", date);
-    return (
-      <th key={idx} className="p-2 text-center text-red-500">
-        Invalid Date
-      </th>
-    );
-  }
-})}
+              try {
+                const parsed = new Date(date);
+                return (
+                  <th key={idx} className="p-2 text-center w-[140px]">
+                    {format(parsed, 'EEE MM/dd')}
+                  </th>
+                );
+              } catch (err) {
+                console.error("❌ Invalid date in weekDates:", date);
+                return (
+                  <th key={idx} className="p-2 text-center text-red-500">
+                    Invalid
+                  </th>
+                );
+              }
+            })}
           </tr>
         </thead>
         <tbody>
