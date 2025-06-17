@@ -6,7 +6,7 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card.jsx';
 import { Printer, Info, Users, Save } from 'lucide-react';
 import { useToast } from './ui/use-toast.jsx';
-import EditableDailyScheduleTable from './labor/EditableDailyScheduleTable.jsx';
+import EditableWeeklyScheduleTable from './labor/EditableWeeklyScheduleTable.jsx';
 import PrintableLaborSchedule from './labor/PrintableLaborSchedule.jsx';
 import { LOCAL_STORAGE_KEY } from '@/config/laborScheduleConfig.jsx';
 import { loadSchedule, updateSlotInSchedule } from '@/lib/laborScheduleUtils.js';
