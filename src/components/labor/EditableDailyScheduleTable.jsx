@@ -46,11 +46,23 @@ const EditableDailyScheduleTable = ({ weekStartDate, scheduleData, onScheduleCha
         <thead>
           <tr className="bg-slate-800 text-white">
             <th className="p-2 text-left w-[180px]">Role / Shift</th>
-            {weekDates.map((date) => (
-              <th key={date.toISOString()} className="p-2 text-center w-[140px]">
-                {format(date, 'EEE MM/dd')}
-              </th>
-            ))}
+            {weekDates.map((date, idx) => {
+  try {
+    const parsed = new Date(date);
+    return (
+      <th key={idx} className="p-2 text-center w-[140px]">
+        {format(parsed, 'EEE MM/dd')}
+      </th>
+    );
+  } catch (err) {
+    console.error("Invalid date in weekDates:", date);
+    return (
+      <th key={idx} className="p-2 text-center text-red-500">
+        Invalid Date
+      </th>
+    );
+  }
+})}
           </tr>
         </thead>
         <tbody>
