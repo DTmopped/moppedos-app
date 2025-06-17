@@ -13,27 +13,32 @@ const parseTimeStringToDate = (timeStr) => {
   return isValid(date) ? date : null;
 };
 
+// 🧠 Grouped & ordered roles with dynamic shifts
+const orderedRoles = [
+  // Kitchen
+  'Meat Portioner',
+  'Side Portioner',
+  'Food Gopher',
+  // FOH
+  'Cashier',
+  'Bartender',
+  // SWING
+  'Kitchen Swing',
+  'Cashier Swing',
+  // Lead
+  'Shift Lead'
+];
+
+const getShiftsForRole = (roleName) => {
+  const role = ROLES.find(r => r.name === roleName);
+  return role?.shifts || [];
+};
+
 const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdate }) => {
   const weekDates = Array.from({ length: 7 }, (_, i) => {
     const date = addDays(weekStartDate, i);
     return isValid(date) ? date : null;
   });
-
-  // Define desired role order:
-  const orderedRoles = [
-    // Kitchen (AM/PM)
-    { name: 'Meat Portioner', shifts: ['AM', 'PM'] },
-    { name: 'Side Portioner', shifts: ['AM', 'PM'] },
-    { name: 'Food Gopher', shifts: ['AM', 'PM'] },
-    // FOH (AM/PM)
-    { name: 'Cashier', shifts: ['AM', 'PM'] },
-    { name: 'Bartender', shifts: ['PM'] },
-    // SWING (Kitchen + Cashier)
-    { name: 'Kitchen Swing', shifts: ['SWING'] },
-    { name: 'Cashier Swing', shifts: ['SWING'] },
-    // Lead last
-    { name: 'Shift Lead', shifts: ['SWING'] },
-  ];
 
   const renderShiftCell = (day, shift, role) => {
     const dateKey = format(day, 'yyyy-MM-dd');
@@ -80,8 +85,8 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
           </tr>
         </thead>
         <tbody>
-          {orderedRoles.flatMap(({ name, shifts }) =>
-            shifts.map(shift => renderRoleRow(name, shift))
+          {orderedRoles.flatMap(role =>
+            getShiftsForRole(role).map(shift => renderRoleRow(role, shift))
           )}
         </tbody>
       </table>
