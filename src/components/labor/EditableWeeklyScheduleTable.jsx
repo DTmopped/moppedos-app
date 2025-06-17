@@ -13,58 +13,41 @@ const parseTimeStringToDate = (timeStr) => {
   return isValid(date) ? date : null;
 };
 
-const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData, onScheduleChange }) => {
-  const safeWeekStart = isValid(new Date(weekStartDate)) ? new Date(weekStartDate) : startOfWeek(new Date(), { weekStartsOn: 1 });
-  const weekDates = Array.from({ length: 7 }, (_, i) => addDays(safeWeekStart, i));
+const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdate }) => {
+  const weekDates = Array.from({ length: 7 }, (_, i) => {
+    const date = addDays(weekStartDate, i);
+    return isValid(date) ? date : null;
+  });
 
   const kitchenRoles = ['Meat Portioner', 'Side Portioner', 'Food Gopher'];
   const fohRoles = ['Cashier', 'Bartender'];
+  const swingRoles = ['Kitchen Swing', 'Cashier Swing', 'Shift Lead'];
 
-  const getAllRoles = () => {
-    const amRoles = [];
-    const pmRoles = [];
-    const swingRoles = [];
-
-    ROLES.forEach(role => {
-      role.shifts.forEach(shift => {
-        const roleEntry = { name: role.name, shift, abbreviation: role.abbreviation, colorClass: role.colorClass };
-        if (shift === 'SWING') {
-          swingRoles.push(roleEntry);
-        } else if (shift === 'AM') {
-          if (kitchenRoles.includes(role.name)) amRoles.push(roleEntry);
-          else if (fohRoles.includes(role.name)) amRoles.push(roleEntry);
-        } else if (shift === 'PM') {
-          if (kitchenRoles.includes(role.name)) pmRoles.push(roleEntry);
-          else if (fohRoles.includes(role.name)) pmRoles.push(roleEntry);
-        }
-      });
-    });
-
-    return [...amRoles, ...pmRoles, ...swingRoles];
-  };
-
-  const renderShiftBlock = (dayKey, shift, role) => {
-    const employees = scheduleData?.[dayKey]?.[shift]?.[role] || [];
-    const roleConfig = ROLES.find(r => r.name === role);
-
-    return employees.map((emp) => (
-      <div
-        key={emp.id}
-        className={cn(
-          "rounded-md p-2 mb-1 text-xs shadow-sm border border-slate-400/30",
-          roleConfig?.colorClass || "bg-slate-700 text-white"
-        )}
-      >
-        <div className="font-semibold truncate">{emp.name || "Unassigned"}</div>
-        <div className="text-slate-600 dark:text-slate-300 text-xs">
-          {emp.start || SHIFT_TIMES[shift]?.start || "—"} – {emp.end || SHIFT_TIMES[shift]?.end || "—"}
-        </div>
-        <div className="text-[10px] italic text-slate-500">
-          {roleConfig?.abbreviation || role}
-        </div>
+  const renderShiftCell = (day, shift, role) => {
+    const data = scheduleData?.[format(day, 'yyyy-MM-dd')]?.[shift]?.[role] || [];
+    return (
+      <div className="min-h-[64px] border rounded p-2 bg-white dark:bg-slate-900">
+        {data.map((entry, idx) => (
+          <div key={idx} className="text-xs text-slate-600">
+            {entry.name || 'Unassigned'} ({entry.start}–{entry.end})
+          </div>
+        ))}
       </div>
-    ));
+    );
   };
+
+  const renderRoleRow = (role, shift) => (
+    <tr key={`${role}-${shift}`} className="border-t border-slate-300">
+      <td className="p-2 font-medium text-slate-700 dark:text-slate-200 whitespace-nowrap">
+        {role} ({shift})
+      </td>
+      {weekDates.map((date, idx) => (
+        <td key={idx} className="p-2 align-top">
+          {date ? renderShiftCell(date, shift, role) : <div className="text-red-500">Invalid Date</div>}
+        </td>
+      ))}
+    </tr>
+  );
 
   return (
     <div className="overflow-x-auto mt-6">
@@ -72,51 +55,18 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData, onScheduleCh
         <thead>
           <tr className="bg-slate-800 text-white">
             <th className="p-2 text-left w-[180px]">Role / Shift</th>
-            {weekDates.map((date, idx) => {
-              try {
-                const parsed = new Date(date);
-                return (
-                  <th key={idx} className="p-2 text-center w-[140px]">
-                    {format(parsed, 'EEE MM/dd')}
-                  </th>
-                );
-              } catch (err) {
-                console.error("Invalid date in weekDates:", date);
-                return (
-                  <th key={idx} className="p-2 text-center text-red-500">
-                    Invalid Date
-                  </th>
-                );
-              }
-            })}
+            {weekDates.map((date, idx) => (
+              <th key={idx} className="p-2 text-center w-[140px]">
+                {date ? format(date, 'EEE MM/dd') : <span className="text-red-500">Invalid Date</span>}
+              </th>
+            ))}
           </tr>
         </thead>
         <tbody>
-          {getAllRoles().map(({ name: role, shift, abbreviation, colorClass }) => {
-            const isAMGroupEnd = shift === 'AM' && role === 'Cashier';
-            const isPMGroupEnd = shift === 'PM' && role === 'Bartender';
-
-            return (
-              <React.Fragment key={`${role}-${shift}`}>
-                <tr className="border-t border-slate-300">
-                  <td className="p-2 font-medium text-slate-700 dark:text-slate-200 whitespace-nowrap">
-                    {role} ({shift})
-                  </td>
-                  {weekDates.map((date, idx) => {
-                    const dayKey = format(date, 'yyyy-MM-dd');
-                    return (
-                      <td key={idx} className="p-2 align-top bg-slate-100 dark:bg-slate-800 min-h-[100px]">
-                        {renderShiftBlock(dayKey, shift, role)}
-                      </td>
-                    );
-                  })}
-                </tr>
-                {(isAMGroupEnd || isPMGroupEnd) && (
-                  <tr><td colSpan={8} className="h-4" /></tr>
-                )}
-              </React.Fragment>
-            );
-          })}
+          {[...kitchenRoles, ...fohRoles].flatMap(role => (
+            ['AM', 'PM'].map(shift => renderRoleRow(role, shift))
+          ))}
+          {swingRoles.map(role => renderRoleRow(role, 'SWING'))}
         </tbody>
       </table>
     </div>
