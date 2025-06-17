@@ -1,6 +1,7 @@
 import React from 'react';
 
 export const SPEND_PER_GUEST = 15;
+
 export const SHIFT_SPLIT = { AM: 0.5, PM: 0.4, SWING: 0.1 };
 
 export const SHIFT_TIMES = {
@@ -17,7 +18,8 @@ export const ROLES = [
   { name: "Cashier", abbreviation: "CSH", ratio: 75, shifts: ["AM", "PM"], minCount: 1, colorClass: "bg-green-200 text-green-800 dark:bg-green-700 dark:text-green-100 print:bg-green-100" },
   { name: "Cashier Swing", abbreviation: "CSS", ratio: 75, shifts: ["SWING"], minCount: 1, colorClass: "bg-teal-200 text-teal-800 dark:bg-teal-700 dark:text-teal-100 print:bg-teal-100" },
   { name: "Shift Lead", abbreviation: "SL", ratio: 150, shifts: ["SWING"], minCount: 1, colorClass: "bg-blue-200 text-blue-800 dark:bg-blue-700 dark:text-blue-100 print:bg-blue-100" },
-  { name: "Bartender", abbreviation: "BAR", ratio: 150, shifts: ["AM", "PM"], minCount: 1, colorClass: "bg-indigo-200 text-indigo-800 dark:bg-indigo-700 dark:text-indigo-100 print:bg-indigo-100" },
+  { name: "Bartender", abbreviation: "BAR", ratio: 150, shifts: ["AM", "PM"], minCount: 1, colorClass: "bg-indigo-200 text-indigo-800 dark:bg-indigo-700 dark:text-indigo-100 print:bg-indigo-100" }
+]; // ✅ <-- this bracket was missing
 
 export const SHIFT_BG_CLASSES = {
   AM: "bg-amber-100 text-amber-800 dark:bg-amber-800 dark:text-amber-100 print:bg-amber-100",
