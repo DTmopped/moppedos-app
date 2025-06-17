@@ -10,6 +10,7 @@ import EditableWeeklyScheduleTable from './labor/EditableWeeklyScheduleTable.jsx
 import PrintableLaborSchedule from './labor/PrintableLaborSchedule.jsx';
 import { LOCAL_STORAGE_KEY } from '@/config/laborScheduleConfig.jsx';
 import { loadSchedule, updateSlotInSchedule } from '@/lib/laborScheduleUtils.js';
+import { startOfWeek, format } from 'date-fns';
 
 const WeeklyLaborScheduleHeader = ({ onSave, onPrint }) => (
   <Card className="glassmorphic-card no-print card-hover-glow">
@@ -55,6 +56,7 @@ const NoForecastDataMessage = () => (
 const WeeklyLaborSchedule = () => {
   const { forecastData } = useData();
   const [scheduleData, setScheduleData] = useState({});
+  const [weekStartDate, setWeekStartDate] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [printDate, setPrintDate] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -108,25 +110,18 @@ const WeeklyLaborSchedule = () => {
     doc.write(`
       <!DOCTYPE html>
       <html>
-        <head>
-          <title>Weekly Labor Schedule - Print</title>
-        </head>
-        <body>
-          ${printableComponentHtml}
-        </body>
+        <head><title>Weekly Labor Schedule - Print</title></head>
+        <body>${printableComponentHtml}</body>
       </html>
     `);
     doc.close();
 
     iframe.contentWindow.focus();
-
     setTimeout(() => {
       iframe.contentWindow.print();
       document.body.removeChild(iframe);
     }, 500);
   };
-
-  const sortedDates = Object.keys(scheduleData).sort((a, b) => new Date(a) - new Date(b));
 
   if (isLoading) {
     return (
@@ -144,27 +139,15 @@ const WeeklyLaborSchedule = () => {
       className="space-y-8"
     >
       <WeeklyLaborScheduleHeader onSave={saveScheduleToLocalStorage} onPrint={handlePrint} />
-
       <div className="printable-content printable-labor-schedule">
-        {(!forecastData || forecastData.length === 0) && <NoForecastDataMessage />}
-
-        {sortedDates.length > 0 ? sortedDates.map(date => (
+        {(!forecastData || forecastData.length === 0) ? (
+          <NoForecastDataMessage />
+        ) : (
           <EditableWeeklyScheduleTable
-            key={date}
-            day={date}
-            dailyScheduleData={scheduleData[date] || []}
+            weekStartDate={weekStartDate}
+            scheduleData={scheduleData}
             onUpdate={handleUpdateSchedule}
           />
-        )) : (
-          !isLoading && (
-            <Card className="glassmorphic-card no-print">
-              <CardContent className="pt-6">
-                <p className="text-center text-muted-foreground py-10">
-                  No schedule data to display. Try parsing forecast data.
-                </p>
-              </CardContent>
-            </Card>
-          )
         )}
       </div>
     </motion.div>
