@@ -1,12 +1,12 @@
 import React, { useContext } from 'react';
-import { addDays, format, isValid, parse } from 'date-fns';
+import { addDays, format, isValid } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { ROLES, SHIFT_TIMES } from '@/config/laborScheduleConfig.jsx';
 import { useData } from '@/contexts/DataContext';
 
 const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdate }) => {
   const { isAdminMode } = useData();
-  
+
   const weekDates = Array.from({ length: 7 }, (_, i) => {
     const date = addDays(weekStartDate, i);
     return isValid(date) ? date : null;
@@ -30,8 +30,9 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
 
   const renderShiftCell = (day, shift, role) => {
     const dateKey = format(day, 'yyyy-MM-dd');
-    const defaultTimes = SHIFT_TIMES[shift];
-    const slots = scheduleData?.[dateKey]?.[shift]?.[role] || [];
+    const slots = (scheduleData?.[dateKey] || []).filter(
+      slot => slot.role === role && slot.shift === shift
+    );
 
     return (
       <div className="min-h-[64px] border rounded p-2 bg-white dark:bg-slate-900">
@@ -39,22 +40,22 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
           <div className="text-xs text-slate-400 italic">—</div>
         )}
         {slots.map((entry, idx) => (
-          <div key={idx} className="text-xs text-slate-600 dark:text-slate-300 space-y-1">
+          <div key={`${role}-${shift}-${entry.slotIndex}`} className="text-xs text-slate-600 dark:text-slate-300 space-y-1">
             <input
               type="text"
               placeholder="Name"
-              value={entry.name || ''}
+              value={entry.employeeName || ''}
               onChange={(e) =>
-                onUpdate(dateKey, role, shift, idx, 'name', e.target.value)
+                onUpdate(dateKey, entry.role, entry.shift, entry.slotIndex, 'employeeName', e.target.value)
               }
               className="w-full border-b text-xs outline-none bg-transparent placeholder:text-slate-400"
             />
             <div className="flex space-x-1 text-xs">
               <input
                 type="text"
-                value={entry.start || defaultTimes.start}
+                value={entry.startTime || SHIFT_TIMES[entry.shift]?.start || ''}
                 onChange={(e) =>
-                  onUpdate(dateKey, role, shift, idx, 'start', e.target.value)
+                  onUpdate(dateKey, entry.role, entry.shift, entry.slotIndex, 'startTime', e.target.value)
                 }
                 readOnly={!isAdminMode}
                 className={cn(
@@ -65,9 +66,9 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
               <span>–</span>
               <input
                 type="text"
-                value={entry.end || defaultTimes.end}
+                value={entry.endTime || SHIFT_TIMES[entry.shift]?.end || ''}
                 onChange={(e) =>
-                  onUpdate(dateKey, role, shift, idx, 'end', e.target.value)
+                  onUpdate(dateKey, entry.role, entry.shift, entry.slotIndex, 'endTime', e.target.value)
                 }
                 readOnly={!isAdminMode}
                 className={cn(
