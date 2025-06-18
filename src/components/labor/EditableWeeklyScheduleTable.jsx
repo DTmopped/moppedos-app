@@ -1,9 +1,9 @@
+// EditableWeeklyScheduleTable.jsx (Updated with role persistence, delete, shift times, and fallback)
 import React from 'react';
 import { addDays, format, isValid, parse as parseTime, format as formatTime } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { ROLES, SHIFT_TIMES } from '@/config/laborScheduleConfig.jsx';
 import { useData } from '@/contexts/DataContext';
-
 
 const EditableWeeklyScheduleTable = ({
   weekStartDate,
@@ -50,9 +50,8 @@ const EditableWeeklyScheduleTable = ({
   const getShiftsForRole = (roleName) => {
     const builtIn = ROLES.find(r => r.name === roleName);
     if (builtIn) return builtIn.shifts;
-
     const custom = customRoles.find(r => r.name === roleName);
-    return custom?.shifts || [];
+    return custom?.shifts || ['AM'];
   };
 
   const formatTo12Hour = (timeStr) => {
@@ -74,8 +73,9 @@ const EditableWeeklyScheduleTable = ({
 
     return (
       <div
-        className={`mt-1 text-xs font-medium px-2 py-0.5 rounded-full
-        ${isGood ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
+        className={`mt-1 text-xs font-medium px-2 py-0.5 rounded-full ${
+          isGood ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+        }`}
       >
         Need: {forecastedSlots} / Act: {actualSlots}
       </div>
@@ -96,49 +96,40 @@ const EditableWeeklyScheduleTable = ({
     );
 
     return (
-      <div className="min-h-[64px] border rounded p-2 bg-slate-50 dark:bg-slate-800 shadow-sm hover:shadow-md transition-all">
+      <div className="min-h-[64px] border rounded p-2 bg-white dark:bg-slate-900">
         {slots.length === 0 ? (
           <div className="text-xs text-slate-400 italic">Off / No Shift</div>
         ) : (
           slots.map((entry) => (
-            <div
-              key={`${role}-${shift}-${entry.slotIndex}`}
-              className="text-xs text-slate-600 dark:text-slate-300 space-y-1"
-            >
+            <div key={`${role}-${shift}-${entry.slotIndex}`} className="space-y-1">
               <input
                 type="text"
                 placeholder="Name"
                 value={entry.employeeName || ''}
                 onChange={(e) =>
-                  onUpdate(dateKey, entry.role, entry.shift, entry.slotIndex, 'employeeName', e.target.value)
+                  onUpdate(dateKey, role, shift, entry.slotIndex, 'employeeName', e.target.value)
                 }
                 className="w-full border-b text-xs outline-none bg-transparent placeholder:text-slate-400"
               />
               <div className="flex space-x-1 text-xs">
                 <input
                   type="text"
-                  value={formatTo12Hour(entry.startTime || SHIFT_TIMES[entry.shift]?.start || '')}
+                  value={formatTo12Hour(entry.startTime || SHIFT_TIMES[shift]?.start || '')}
                   onChange={(e) =>
-                    onUpdate(dateKey, entry.role, entry.shift, entry.slotIndex, 'startTime', e.target.value)
+                    onUpdate(dateKey, role, shift, entry.slotIndex, 'startTime', e.target.value)
                   }
                   readOnly={!isAdminMode}
-                  className={cn(
-                    "w-[70px] border-b outline-none",
-                    isAdminMode ? "bg-yellow-100" : "bg-transparent"
-                  )}
+                  className={cn("w-[70px] border-b outline-none", isAdminMode ? "bg-yellow-100" : "bg-transparent")}
                 />
                 <span>–</span>
                 <input
                   type="text"
-                  value={formatTo12Hour(entry.endTime || SHIFT_TIMES[entry.shift]?.end || '')}
+                  value={formatTo12Hour(entry.endTime || SHIFT_TIMES[shift]?.end || '')}
                   onChange={(e) =>
-                    onUpdate(dateKey, entry.role, entry.shift, entry.slotIndex, 'endTime', e.target.value)
+                    onUpdate(dateKey, role, shift, entry.slotIndex, 'endTime', e.target.value)
                   }
                   readOnly={!isAdminMode}
-                  className={cn(
-                    "w-[70px] border-b outline-none",
-                    isAdminMode ? "bg-yellow-100" : "bg-transparent"
-                  )}
+                  className={cn("w-[70px] border-b outline-none", isAdminMode ? "bg-yellow-100" : "bg-transparent")}
                 />
               </div>
             </div>
@@ -163,10 +154,7 @@ const EditableWeeklyScheduleTable = ({
               {getRoleName(role)}
             </span>
             <span
-              className={`rounded-full px-2 py-0.5 text-xs font-semibold
-                ${shift === 'AM'
-                  ? 'bg-blue-200 text-blue-900'
-                  : 'bg-fuchsia-200 text-fuchsia-900'}`}
+              className={`rounded-full px-2 py-0.5 text-xs font-semibold ${shift === 'AM' ? 'bg-blue-200 text-blue-900' : 'bg-fuchsia-200 text-fuchsia-900'}`}
             >
               {shift}
             </span>
@@ -191,7 +179,7 @@ const EditableWeeklyScheduleTable = ({
   };
 
   return (
-    <div className="printable-area overflow-x-auto mt-6">
+    <div className="overflow-x-auto mt-6">
       {isAdminMode && (
         <div className="mb-4">
           {showAddRoleForm ? (
@@ -208,11 +196,7 @@ const EditableWeeklyScheduleTable = ({
                   <input
                     type="checkbox"
                     checked={newRoleShifts.includes('AM')}
-                    onChange={(e) => {
-                      setNewRoleShifts(prev =>
-                        e.target.checked ? [...prev, 'AM'] : prev.filter(s => s !== 'AM')
-                      );
-                    }}
+                    onChange={(e) => setNewRoleShifts(prev => e.target.checked ? [...prev, 'AM'] : prev.filter(s => s !== 'AM'))}
                   />
                   AM
                 </label>
@@ -220,11 +204,7 @@ const EditableWeeklyScheduleTable = ({
                   <input
                     type="checkbox"
                     checked={newRoleShifts.includes('PM')}
-                    onChange={(e) => {
-                      setNewRoleShifts(prev =>
-                        e.target.checked ? [...prev, 'PM'] : prev.filter(s => s !== 'PM')
-                      );
-                    }}
+                    onChange={(e) => setNewRoleShifts(prev => e.target.checked ? [...prev, 'PM'] : prev.filter(s => s !== 'PM'))}
                   />
                   PM
                 </label>
@@ -234,10 +214,7 @@ const EditableWeeklyScheduleTable = ({
                   className="bg-blue-600 text-white px-3 py-1 text-sm rounded"
                   onClick={() => {
                     if (newRoleName.trim()) {
-                      setCustomRoles(prev => [
-                        ...prev,
-                        { name: newRoleName.trim(), shifts: newRoleShifts }
-                      ]);
+                      setCustomRoles(prev => [...prev, { name: newRoleName.trim(), shifts: newRoleShifts }]);
                       setNewRoleName('');
                       setNewRoleShifts(['AM']);
                       setShowAddRoleForm(false);
@@ -246,12 +223,7 @@ const EditableWeeklyScheduleTable = ({
                 >
                   Add Role
                 </button>
-                <button
-                  className="text-sm text-gray-500"
-                  onClick={() => setShowAddRoleForm(false)}
-                >
-                  Cancel
-                </button>
+                <button className="text-sm text-gray-500" onClick={() => setShowAddRoleForm(false)}>Cancel</button>
               </div>
             </div>
           ) : (
@@ -276,13 +248,7 @@ const EditableWeeklyScheduleTable = ({
                   <div>{format(date, 'EEE MM/dd')}</div>
                   <div className="space-y-1">
                     {getDayStaffing(dateKey)}
-                    <div
-                      className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                        isManagerScheduled(dateKey)
-                          ? 'bg-emerald-100 text-emerald-700'
-                          : 'bg-red-100 text-red-700'
-                      }`}
-                    >
+                    <div className={`text-xs font-medium px-2 py-0.5 rounded-full ${isManagerScheduled(dateKey) ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
                       {isManagerScheduled(dateKey) ? 'Manager Scheduled' : '⚠ No Manager'}
                     </div>
                   </div>
