@@ -1,4 +1,4 @@
-// EditableWeeklyScheduleTable.jsx (Final Tweaks: remove role, restore slot fields, pin Manager)
+// EditableWeeklyScheduleTable.jsx (Bug Fixes + Final Polish)
 import React from 'react';
 import { addDays, format, isValid, parse as parseTime, format as formatTime } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -63,17 +63,11 @@ const EditableWeeklyScheduleTable = ({
   };
 
   const getDayStaffing = (dateKey) => {
-    const forecastedSlots = forecastGeneratedSchedule?.[dateKey]?.length || 0;
-    const actualSlots = (scheduleData?.[dateKey] || []).filter(
-      slot => slot.employeeName?.trim()
-    ).length;
-
-    const isGood = actualSlots >= forecastedSlots;
-
+    const forecastedSlots = (forecastGeneratedSchedule?.[dateKey] || []).length;
+    const actualSlots = (scheduleData?.[dateKey] || []).filter(slot => slot.employeeName?.trim()).length;
+    const isGood = actualSlots >= forecastedSlots && forecastedSlots > 0;
     return (
-      <div className={`mt-1 text-xs font-medium px-2 py-0.5 rounded-full ${
-        isGood ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-      }`}>
+      <div className={`mt-1 text-xs font-medium px-2 py-0.5 rounded-full ${isGood ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
         Need: {forecastedSlots} / Act: {actualSlots}
       </div>
     );
@@ -81,30 +75,17 @@ const EditableWeeklyScheduleTable = ({
 
   const isManagerScheduled = (dateKey) => {
     const daySlots = scheduleData?.[dateKey] || [];
-    return daySlots.some(
-      slot => slot.role === 'Manager' && slot.employeeName?.trim()
-    );
+    return daySlots.some(slot => slot.role === 'Manager' && slot.employeeName?.trim());
   };
 
   const renderShiftCell = (day, shift, role) => {
     const dateKey = format(day, 'yyyy-MM-dd');
-    const defaultTimes = SHIFT_TIMES[shift] || { start: '', end: '' };
-    const slots = (scheduleData?.[dateKey] || []).filter(
-      slot => slot.role === role && slot.shift === shift
-    );
-
-    if (slots.length === 0 && isAdminMode) {
-      // Generate placeholder slot so input shows
-      return (
-        <div className="min-h-[64px] border rounded p-2 bg-white dark:bg-slate-900">
-          <div className="text-xs text-slate-400 italic">Off / No Shift</div>
-        </div>
-      );
-    }
-
+    const defaultTimes = SHIFT_TIMES[shift] || { start: '08:00', end: '16:00' };
+    const slots = (scheduleData?.[dateKey] || []).filter(slot => slot.role === role && slot.shift === shift);
+    const showOffMessage = !slots.length;
     return (
       <div className="min-h-[64px] border rounded p-2 bg-white dark:bg-slate-900">
-        {slots.length === 0 ? (
+        {showOffMessage ? (
           <div className="text-xs text-slate-400 italic">Off / No Shift</div>
         ) : (
           slots.map((entry) => (
@@ -113,18 +94,14 @@ const EditableWeeklyScheduleTable = ({
                 type="text"
                 placeholder="Name"
                 value={entry.employeeName || ''}
-                onChange={(e) =>
-                  onUpdate(dateKey, role, shift, entry.slotIndex, 'employeeName', e.target.value)
-                }
+                onChange={(e) => onUpdate(dateKey, role, shift, entry.slotIndex, 'employeeName', e.target.value)}
                 className="w-full border-b text-xs outline-none bg-transparent placeholder:text-slate-400"
               />
               <div className="flex space-x-1 text-xs">
                 <input
                   type="text"
                   value={formatTo12Hour(entry.startTime || defaultTimes.start)}
-                  onChange={(e) =>
-                    onUpdate(dateKey, role, shift, entry.slotIndex, 'startTime', e.target.value)
-                  }
+                  onChange={(e) => onUpdate(dateKey, role, shift, entry.slotIndex, 'startTime', e.target.value)}
                   readOnly={!isAdminMode}
                   className={cn("w-[70px] border-b outline-none", isAdminMode ? "bg-yellow-100" : "bg-transparent")}
                 />
@@ -132,9 +109,7 @@ const EditableWeeklyScheduleTable = ({
                 <input
                   type="text"
                   value={formatTo12Hour(entry.endTime || defaultTimes.end)}
-                  onChange={(e) =>
-                    onUpdate(dateKey, role, shift, entry.slotIndex, 'endTime', e.target.value)
-                  }
+                  onChange={(e) => onUpdate(dateKey, role, shift, entry.slotIndex, 'endTime', e.target.value)}
                   readOnly={!isAdminMode}
                   className={cn("w-[70px] border-b outline-none", isAdminMode ? "bg-yellow-100" : "bg-transparent")}
                 />
@@ -160,9 +135,7 @@ const EditableWeeklyScheduleTable = ({
             >
               {getRoleName(role)}
             </span>
-            <span
-              className={`rounded-full px-2 py-0.5 text-xs font-semibold ${shift === 'AM' ? 'bg-blue-200 text-blue-900' : 'bg-fuchsia-200 text-fuchsia-900'}`}
-            >
+            <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${shift === 'AM' ? 'bg-blue-200 text-blue-900' : shift === 'PM' ? 'bg-fuchsia-200 text-fuchsia-900' : 'bg-yellow-100 text-yellow-900'}`}>
               {shift}
             </span>
             {isAdminMode && isCustom && (
@@ -170,9 +143,7 @@ const EditableWeeklyScheduleTable = ({
                 onClick={() => removeCustomRole(role)}
                 className="text-red-500 text-xs ml-1 hover:underline"
                 title="Remove Role"
-              >
-                ✕
-              </button>
+              >✕</button>
             )}
           </div>
         </td>
@@ -187,7 +158,6 @@ const EditableWeeklyScheduleTable = ({
 
   return (
     <div className="overflow-x-auto mt-6">
-      {/* Add role button */}
       {isAdminMode && (
         <div className="mb-4">
           {showAddRoleForm ? (
@@ -228,19 +198,12 @@ const EditableWeeklyScheduleTable = ({
                       setShowAddRoleForm(false);
                     }
                   }}
-                >
-                  Add Role
-                </button>
+                >Add Role</button>
                 <button className="text-sm text-gray-500" onClick={() => setShowAddRoleForm(false)}>Cancel</button>
               </div>
             </div>
           ) : (
-            <button
-              className="bg-green-600 text-white px-4 py-2 rounded text-sm shadow hover:bg-green-700"
-              onClick={() => setShowAddRoleForm(true)}
-            >
-              + Add Role
-            </button>
+            <button className="bg-green-600 text-white px-4 py-2 rounded text-sm shadow hover:bg-green-700" onClick={() => setShowAddRoleForm(true)}>+ Add Role</button>
           )}
         </div>
       )}
@@ -266,9 +229,7 @@ const EditableWeeklyScheduleTable = ({
           </tr>
         </thead>
         <tbody>
-          {orderedRoles.flatMap(role =>
-            getShiftsForRole(role).map(shift => renderRoleRow(role, shift))
-          )}
+          {orderedRoles.flatMap(role => getShiftsForRole(role).map(shift => renderRoleRow(role, shift)))}
         </tbody>
       </table>
     </div>
