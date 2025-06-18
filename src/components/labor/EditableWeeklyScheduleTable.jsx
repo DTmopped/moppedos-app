@@ -4,7 +4,12 @@ import { cn } from '@/lib/utils';
 import { ROLES, SHIFT_TIMES } from '@/config/laborScheduleConfig.jsx';
 import { useData } from '@/contexts/DataContext';
 
-const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdate }) => {
+const EditableWeeklyScheduleTable = ({
+  weekStartDate,
+  scheduleData = {},
+  onUpdate,
+  forecastGeneratedSchedule = {}
+}) => {
   const { isAdminMode } = useData();
 
   const weekDates = Array.from({ length: 7 }, (_, i) => {
@@ -35,6 +40,22 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
     } catch {
       return timeStr;
     }
+  };
+
+  const getDayStaffing = (dateKey) => {
+    const forecastedSlots = forecastGeneratedSchedule?.[dateKey]?.length || 0;
+    const actualSlots = scheduleData?.[dateKey]?.length || 0;
+
+    const isGood = actualSlots >= forecastedSlots;
+
+    return (
+      <div
+        className={`mt-1 text-xs font-medium px-2 py-0.5 rounded-full
+        ${isGood ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
+      >
+        Need: {forecastedSlots} / Act: {actualSlots}
+      </div>
+    );
   };
 
   const renderShiftCell = (day, shift, role) => {
@@ -100,8 +121,15 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
     <tr key={`${role}-${shift}`} className="border-t border-slate-300 dark:border-slate-700">
       <td className="p-2 align-top text-slate-700 dark:text-slate-200 whitespace-nowrap">
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-indigo-100 text-indigo-700 px-2 py-0.5 text-xs font-semibold">{role}</span>
-          <span className="rounded-full bg-slate-200 text-slate-700 px-2 py-0.5 text-xs uppercase">{shift}</span>
+          <span className="rounded-full bg-indigo-100 text-indigo-800 px-3 py-1 text-sm font-semibold">
+            {role}
+          </span>
+          <span
+            className={`rounded-full px-2 py-0.5 text-xs font-medium
+              ${shift === 'AM' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}
+          >
+            {shift}
+          </span>
         </div>
       </td>
       {weekDates.map((date, idx) => (
@@ -116,13 +144,17 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
     <div className="printable-area overflow-x-auto mt-6">
       <table className="table-fixed border-collapse w-full text-sm">
         <thead>
-          <tr className="bg-slate-800 text-white">
-            <th className="p-2 text-left w-[180px]">Role / Shift</th>
-            {weekDates.map((date, idx) => (
-              <th key={idx} className="p-2 text-center w-[140px]">
-                {date ? format(date, 'EEE MM/dd') : <span className="text-red-500">Invalid</span>}
-              </th>
-            ))}
+          <tr className="bg-slate-800 text-white text-base font-semibold">
+            <th className="p-4 text-left w-[180px]">Role / Shift</th>
+            {weekDates.map((date, idx) => {
+              const dateKey = format(date, 'yyyy-MM-dd');
+              return (
+                <th key={idx} className="p-4 text-center w-[140px]">
+                  <div>{format(date, 'EEE MM/dd')}</div>
+                  {getDayStaffing(dateKey)}
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody>
