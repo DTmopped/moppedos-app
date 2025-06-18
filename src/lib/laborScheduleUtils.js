@@ -8,7 +8,7 @@ const createDefaultScheduleStructure = () => {
   const today = new Date();
 
   const weekStart = new Date(today);
-  weekStart.setDate(today.getDate() - ((today.getDay() + 6) % 7)); // Monday start
+  weekStart.setDate(today.getDate() - ((today.getDay() + 6) % 7)); // Monday as start of week
 
   for (let i = 0; i < 7; i++) {
     const date = new Date(weekStart);
@@ -36,6 +36,7 @@ const createDefaultScheduleStructure = () => {
       });
     });
 
+    // Add Manager AM row manually if not already present
     defaultStructure[dateString].push({
       role: 'Manager',
       shift: 'AM',
@@ -136,3 +137,4 @@ export {
   generateInitialScheduleSlots,
   updateSlotInSchedule
 };
+
