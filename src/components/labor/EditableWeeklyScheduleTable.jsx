@@ -44,7 +44,7 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
     );
 
     return (
-      <div className="min-h-[64px] border rounded p-2 bg-white dark:bg-slate-900">
+      <div className="min-h-[64px] border rounded p-2 bg-slate-50 dark:bg-slate-800 shadow-sm hover:shadow-md transition-all">
         {slots.length === 0 ? (
           <div className="text-xs text-slate-400 italic">Off / No Shift</div>
         ) : (
@@ -98,8 +98,11 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
 
   const renderRoleRow = (role, shift) => (
     <tr key={`${role}-${shift}`} className="border-t border-slate-300 dark:border-slate-700">
-      <td className="p-2 font-medium text-slate-700 dark:text-slate-200 whitespace-nowrap">
-        {role} ({shift})
+      <td className="p-2 align-top text-slate-700 dark:text-slate-200 whitespace-nowrap">
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-indigo-100 text-indigo-700 px-2 py-0.5 text-xs font-semibold">{role}</span>
+          <span className="rounded-full bg-slate-200 text-slate-700 px-2 py-0.5 text-xs uppercase">{shift}</span>
+        </div>
       </td>
       {weekDates.map((date, idx) => (
         <td key={idx} className="p-2 align-top">
@@ -110,7 +113,7 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
   );
 
   return (
-    <div className="overflow-x-auto mt-6">
+    <div className="printable-area overflow-x-auto mt-6">
       <table className="table-fixed border-collapse w-full text-sm">
         <thead>
           <tr className="bg-slate-800 text-white">
