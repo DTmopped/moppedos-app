@@ -8,7 +8,7 @@ const createDefaultScheduleStructure = () => {
   const today = new Date();
 
   const weekStart = new Date(today);
-  weekStart.setDate(today.getDate() - ((today.getDay() + 6) % 7)); // Monday as start of week
+  weekStart.setDate(today.getDate() - ((today.getDay() + 6) % 7)); // Monday start
 
   for (let i = 0; i < 7; i++) {
     const date = new Date(weekStart);
@@ -36,7 +36,6 @@ const createDefaultScheduleStructure = () => {
       });
     });
 
-    // Add Manager AM row manually if not already present
     defaultStructure[dateString].push({
       role: 'Manager',
       shift: 'AM',
@@ -59,7 +58,7 @@ const createDefaultScheduleStructure = () => {
   return defaultStructure;
 };
 
-export const generateInitialScheduleSlots = (forecastData) => {
+const generateInitialScheduleSlots = (forecastData) => {
   if (!forecastData || forecastData.length === 0) {
     return createDefaultScheduleStructure();
   }
@@ -74,9 +73,7 @@ export const generateInitialScheduleSlots = (forecastData) => {
         const portion = SHIFT_SPLIT[shift] || 0;
         const shiftGuests = guests * portion;
         let count = Math.max(role.minCount || 1, Math.ceil(shiftGuests / role.ratio));
-        if (role.name === 'Shift Lead' && shift === 'SWING') {
-          count = 1;
-        }
+        if (role.name === 'Shift Lead' && shift === 'SWING') count = 1;
 
         const defaultTimes = SHIFT_TIMES[shift] || { start: '', end: '' };
         for (let i = 0; i < count; i++) {
@@ -123,13 +120,19 @@ export const generateInitialScheduleSlots = (forecastData) => {
   return newSchedule;
 };
 
+const updateSlotInSchedule = (currentSchedule, date, roleName, shift, slotIndex, field, value) => {
+  const daySchedule = currentSchedule[date] || [];
+  const updatedDaySchedule = daySchedule.map(slot => {
+    if (slot.role === roleName && slot.shift === shift && slot.slotIndex === slotIndex) {
+      return { ...slot, [field]: value };
+    }
+    return slot;
+  });
+  return { ...currentSchedule, [date]: updatedDaySchedule };
+};
 
 export {
-  loadSchedule,
-  updateSlotInSchedule,
+  createDefaultScheduleStructure,
   generateInitialScheduleSlots,
-  fetchForecastData,
-  calculateOptimalStaffing,
-  autoAssignEmployees,
-  calculateLaborCost
+  updateSlotInSchedule
 };
