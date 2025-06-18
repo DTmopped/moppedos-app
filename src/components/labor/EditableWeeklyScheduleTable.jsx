@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { ROLES, SHIFT_TIMES } from '@/config/laborScheduleConfig.jsx';
 import { useData } from '@/contexts/DataContext';
 
+
 const EditableWeeklyScheduleTable = ({
   weekStartDate,
   scheduleData = {},
@@ -13,9 +14,18 @@ const EditableWeeklyScheduleTable = ({
   const { isAdminMode } = useData();
 
   const [editableRoles, setEditableRoles] = React.useState({});
+  const [customRoles, setCustomRoles] = React.useState([]);
+  const [newRoleName, setNewRoleName] = React.useState('');
+  const [newRoleShifts, setNewRoleShifts] = React.useState(['AM']);
+  const [showAddRoleForm, setShowAddRoleForm] = React.useState(false);
+
   const getRoleName = (defaultName) => editableRoles[defaultName] || defaultName;
   const handleRoleNameChange = (role, newName) => {
     setEditableRoles(prev => ({ ...prev, [role]: newName }));
+  };
+
+  const removeCustomRole = (roleName) => {
+    setCustomRoles(prev => prev.filter(r => r.name !== roleName));
   };
 
   const weekDates = Array.from({ length: 7 }, (_, i) => {
@@ -23,7 +33,7 @@ const EditableWeeklyScheduleTable = ({
     return isValid(date) ? date : null;
   });
 
-  const orderedRoles = [
+  const builtInRoles = [
     'Meat Portioner',
     'Side Portioner',
     'Food Gopher',
@@ -32,12 +42,17 @@ const EditableWeeklyScheduleTable = ({
     'Kitchen Swing',
     'Cashier Swing',
     'Shift Lead',
-    'Manager' // New final row
+    'Manager'
   ];
 
+  const orderedRoles = [...builtInRoles, ...customRoles.map(r => r.name)];
+
   const getShiftsForRole = (roleName) => {
-    const role = ROLES.find(r => r.name === roleName);
-    return role?.shifts || (roleName === 'Manager' ? ['AM', 'PM'] : []);
+    const builtIn = ROLES.find(r => r.name === roleName);
+    if (builtIn) return builtIn.shifts;
+
+    const custom = customRoles.find(r => r.name === roleName);
+    return custom?.shifts || [];
   };
 
   const formatTo12Hour = (timeStr) => {
@@ -51,7 +66,9 @@ const EditableWeeklyScheduleTable = ({
 
   const getDayStaffing = (dateKey) => {
     const forecastedSlots = forecastGeneratedSchedule?.[dateKey]?.length || 0;
-    const actualSlots = scheduleData?.[dateKey]?.length || 0;
+    const actualSlots = (scheduleData?.[dateKey] || []).filter(
+      slot => slot.employeeName?.trim()
+    ).length;
 
     const isGood = actualSlots >= forecastedSlots;
 
@@ -131,38 +148,123 @@ const EditableWeeklyScheduleTable = ({
     );
   };
 
-  const renderRoleRow = (role, shift) => (
-    <tr key={`${role}-${shift}`} className="border-t border-slate-300 dark:border-slate-700">
-      <td className="p-2 align-top text-slate-700 dark:text-slate-200 whitespace-nowrap">
-        <div className="flex items-center gap-2">
-          <span
-            className="rounded-full bg-indigo-200 text-indigo-900 px-3 py-1 text-sm font-semibold cursor-pointer"
-            contentEditable={isAdminMode}
-            suppressContentEditableWarning={true}
-            onBlur={(e) => handleRoleNameChange(role, e.currentTarget.innerText.trim())}
-          >
-            {getRoleName(role)}
-          </span>
-          <span
-            className={`rounded-full px-2 py-0.5 text-xs font-semibold
-              ${shift === 'AM'
-                ? 'bg-blue-200 text-blue-900'
-                : 'bg-fuchsia-200 text-fuchsia-900'}`}
-          >
-            {shift}
-          </span>
-        </div>
-      </td>
-      {weekDates.map((date, idx) => (
-        <td key={idx} className="p-2 align-top">
-          {date ? renderShiftCell(date, shift, role) : <div className="text-red-500">Invalid</div>}
+  const renderRoleRow = (role, shift) => {
+    const isCustom = customRoles.some(r => r.name === role);
+    return (
+      <tr key={`${role}-${shift}`} className="border-t border-slate-300 dark:border-slate-700">
+        <td className="p-2 align-top text-slate-700 dark:text-slate-200 whitespace-nowrap">
+          <div className="flex items-center gap-2">
+            <span
+              className="rounded-full bg-indigo-200 text-indigo-900 px-3 py-1 text-sm font-semibold cursor-pointer"
+              contentEditable={isAdminMode}
+              suppressContentEditableWarning={true}
+              onBlur={(e) => handleRoleNameChange(role, e.currentTarget.innerText.trim())}
+            >
+              {getRoleName(role)}
+            </span>
+            <span
+              className={`rounded-full px-2 py-0.5 text-xs font-semibold
+                ${shift === 'AM'
+                  ? 'bg-blue-200 text-blue-900'
+                  : 'bg-fuchsia-200 text-fuchsia-900'}`}
+            >
+              {shift}
+            </span>
+            {isAdminMode && isCustom && shift === getShiftsForRole(role)[0] && (
+              <button
+                onClick={() => removeCustomRole(role)}
+                className="text-red-500 text-xs ml-1 hover:underline"
+                title="Remove Role"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </td>
-      ))}
-    </tr>
-  );
+        {weekDates.map((date, idx) => (
+          <td key={idx} className="p-2 align-top">
+            {date ? renderShiftCell(date, shift, role) : <div className="text-red-500">Invalid</div>}
+          </td>
+        ))}
+      </tr>
+    );
+  };
 
   return (
     <div className="printable-area overflow-x-auto mt-6">
+      {isAdminMode && (
+        <div className="mb-4">
+          {showAddRoleForm ? (
+            <div className="bg-white border p-4 rounded shadow-sm space-y-2 max-w-md">
+              <input
+                type="text"
+                placeholder="Role name (e.g. Busser)"
+                value={newRoleName}
+                onChange={(e) => setNewRoleName(e.target.value)}
+                className="w-full border rounded px-2 py-1 text-sm"
+              />
+              <div className="flex gap-4 items-center">
+                <label className="flex gap-1 text-sm items-center">
+                  <input
+                    type="checkbox"
+                    checked={newRoleShifts.includes('AM')}
+                    onChange={(e) => {
+                      setNewRoleShifts(prev =>
+                        e.target.checked ? [...prev, 'AM'] : prev.filter(s => s !== 'AM')
+                      );
+                    }}
+                  />
+                  AM
+                </label>
+                <label className="flex gap-1 text-sm items-center">
+                  <input
+                    type="checkbox"
+                    checked={newRoleShifts.includes('PM')}
+                    onChange={(e) => {
+                      setNewRoleShifts(prev =>
+                        e.target.checked ? [...prev, 'PM'] : prev.filter(s => s !== 'PM')
+                      );
+                    }}
+                  />
+                  PM
+                </label>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  className="bg-blue-600 text-white px-3 py-1 text-sm rounded"
+                  onClick={() => {
+                    if (newRoleName.trim()) {
+                      setCustomRoles(prev => [
+                        ...prev,
+                        { name: newRoleName.trim(), shifts: newRoleShifts }
+                      ]);
+                      setNewRoleName('');
+                      setNewRoleShifts(['AM']);
+                      setShowAddRoleForm(false);
+                    }
+                  }}
+                >
+                  Add Role
+                </button>
+                <button
+                  className="text-sm text-gray-500"
+                  onClick={() => setShowAddRoleForm(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              className="bg-green-600 text-white px-4 py-2 rounded text-sm shadow hover:bg-green-700"
+              onClick={() => setShowAddRoleForm(true)}
+            >
+              + Add Role
+            </button>
+          )}
+        </div>
+      )}
+
       <table className="table-fixed border-collapse w-full text-sm">
         <thead>
           <tr className="bg-slate-800 text-white text-base font-semibold">
