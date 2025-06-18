@@ -123,16 +123,6 @@ export const generateInitialScheduleSlots = (forecastData) => {
   return newSchedule;
 };
 
-export const updateSlotInSchedule = (currentSchedule, date, roleName, shift, slotIndex, field, value) => {
-  const daySchedule = currentSchedule[date] || [];
-  const updatedDaySchedule = daySchedule.map(slot => {
-    if (slot.role === roleName && slot.shift === shift && slot.slotIndex === slotIndex) {
-      return { ...slot, [field]: value };
-    }
-    return slot;
-  });
-  return { ...currentSchedule, [date]: updatedDaySchedule };
-};
 
 export {
   loadSchedule,
