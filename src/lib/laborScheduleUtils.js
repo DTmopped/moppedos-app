@@ -133,3 +133,13 @@ export const updateSlotInSchedule = (currentSchedule, date, roleName, shift, slo
   });
   return { ...currentSchedule, [date]: updatedDaySchedule };
 };
+
+export {
+  loadSchedule,
+  updateSlotInSchedule,
+  generateInitialScheduleSlots,
+  fetchForecastData,
+  calculateOptimalStaffing,
+  autoAssignEmployees,
+  calculateLaborCost
+};
