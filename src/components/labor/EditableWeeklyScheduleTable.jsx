@@ -1,5 +1,5 @@
-import React, { useContext } from 'react';
-import { addDays, format, isValid } from 'date-fns';
+import React from 'react';
+import { addDays, format, isValid, parse as parseTime, format as formatTime } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { ROLES, SHIFT_TIMES } from '@/config/laborScheduleConfig.jsx';
 import { useData } from '@/contexts/DataContext';
@@ -28,6 +28,15 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
     return role?.shifts || [];
   };
 
+  const formatTo12Hour = (timeStr) => {
+    try {
+      const parsed = parseTime(timeStr, 'HH:mm', new Date());
+      return isValid(parsed) ? formatTime(parsed, 'h:mm a') : timeStr;
+    } catch {
+      return timeStr;
+    }
+  };
+
   const renderShiftCell = (day, shift, role) => {
     const dateKey = format(day, 'yyyy-MM-dd');
     const slots = (scheduleData?.[dateKey] || []).filter(
@@ -36,49 +45,53 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
 
     return (
       <div className="min-h-[64px] border rounded p-2 bg-white dark:bg-slate-900">
-        {slots.length === 0 && (
-          <div className="text-xs text-slate-400 italic">—</div>
-        )}
-        {slots.map((entry, idx) => (
-          <div key={`${role}-${shift}-${entry.slotIndex}`} className="text-xs text-slate-600 dark:text-slate-300 space-y-1">
-            <input
-              type="text"
-              placeholder="Name"
-              value={entry.employeeName || ''}
-              onChange={(e) =>
-                onUpdate(dateKey, entry.role, entry.shift, entry.slotIndex, 'employeeName', e.target.value)
-              }
-              className="w-full border-b text-xs outline-none bg-transparent placeholder:text-slate-400"
-            />
-            <div className="flex space-x-1 text-xs">
+        {slots.length === 0 ? (
+          <div className="text-xs text-slate-400 italic">Off / No Shift</div>
+        ) : (
+          slots.map((entry) => (
+            <div
+              key={`${role}-${shift}-${entry.slotIndex}`}
+              className="text-xs text-slate-600 dark:text-slate-300 space-y-1"
+            >
               <input
                 type="text"
-                value={entry.startTime || SHIFT_TIMES[entry.shift]?.start || ''}
+                placeholder="Name"
+                value={entry.employeeName || ''}
                 onChange={(e) =>
-                  onUpdate(dateKey, entry.role, entry.shift, entry.slotIndex, 'startTime', e.target.value)
+                  onUpdate(dateKey, entry.role, entry.shift, entry.slotIndex, 'employeeName', e.target.value)
                 }
-                readOnly={!isAdminMode}
-                className={cn(
-                  "w-[60px] border-b outline-none",
-                  isAdminMode ? "bg-yellow-100" : "bg-transparent"
-                )}
+                className="w-full border-b text-xs outline-none bg-transparent placeholder:text-slate-400"
               />
-              <span>–</span>
-              <input
-                type="text"
-                value={entry.endTime || SHIFT_TIMES[entry.shift]?.end || ''}
-                onChange={(e) =>
-                  onUpdate(dateKey, entry.role, entry.shift, entry.slotIndex, 'endTime', e.target.value)
-                }
-                readOnly={!isAdminMode}
-                className={cn(
-                  "w-[60px] border-b outline-none",
-                  isAdminMode ? "bg-yellow-100" : "bg-transparent"
-                )}
-              />
+              <div className="flex space-x-1 text-xs">
+                <input
+                  type="text"
+                  value={formatTo12Hour(entry.startTime || SHIFT_TIMES[entry.shift]?.start || '')}
+                  onChange={(e) =>
+                    onUpdate(dateKey, entry.role, entry.shift, entry.slotIndex, 'startTime', e.target.value)
+                  }
+                  readOnly={!isAdminMode}
+                  className={cn(
+                    "w-[70px] border-b outline-none",
+                    isAdminMode ? "bg-yellow-100" : "bg-transparent"
+                  )}
+                />
+                <span>–</span>
+                <input
+                  type="text"
+                  value={formatTo12Hour(entry.endTime || SHIFT_TIMES[entry.shift]?.end || '')}
+                  onChange={(e) =>
+                    onUpdate(dateKey, entry.role, entry.shift, entry.slotIndex, 'endTime', e.target.value)
+                  }
+                  readOnly={!isAdminMode}
+                  className={cn(
+                    "w-[70px] border-b outline-none",
+                    isAdminMode ? "bg-yellow-100" : "bg-transparent"
+                  )}
+                />
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     );
   };
