@@ -12,6 +12,12 @@ const EditableWeeklyScheduleTable = ({
 }) => {
   const { isAdminMode } = useData();
 
+  const [editableRoles, setEditableRoles] = React.useState({});
+  const getRoleName = (defaultName) => editableRoles[defaultName] || defaultName;
+  const handleRoleNameChange = (role, newName) => {
+    setEditableRoles(prev => ({ ...prev, [role]: newName }));
+  };
+
   const weekDates = Array.from({ length: 7 }, (_, i) => {
     const date = addDays(weekStartDate, i);
     return isValid(date) ? date : null;
@@ -25,12 +31,13 @@ const EditableWeeklyScheduleTable = ({
     'Bartender',
     'Kitchen Swing',
     'Cashier Swing',
-    'Shift Lead'
+    'Shift Lead',
+    'Manager' // New final row
   ];
 
   const getShiftsForRole = (roleName) => {
     const role = ROLES.find(r => r.name === roleName);
-    return role?.shifts || [];
+    return role?.shifts || (roleName === 'Manager' ? ['AM', 'PM'] : []);
   };
 
   const formatTo12Hour = (timeStr) => {
@@ -55,6 +62,13 @@ const EditableWeeklyScheduleTable = ({
       >
         Need: {forecastedSlots} / Act: {actualSlots}
       </div>
+    );
+  };
+
+  const isManagerScheduled = (dateKey) => {
+    const daySlots = scheduleData?.[dateKey] || [];
+    return daySlots.some(
+      slot => slot.role === 'Manager' && slot.employeeName?.trim()
     );
   };
 
@@ -121,12 +135,19 @@ const EditableWeeklyScheduleTable = ({
     <tr key={`${role}-${shift}`} className="border-t border-slate-300 dark:border-slate-700">
       <td className="p-2 align-top text-slate-700 dark:text-slate-200 whitespace-nowrap">
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-indigo-100 text-indigo-800 px-3 py-1 text-sm font-semibold">
-            {role}
+          <span
+            className="rounded-full bg-indigo-200 text-indigo-900 px-3 py-1 text-sm font-semibold cursor-pointer"
+            contentEditable={isAdminMode}
+            suppressContentEditableWarning={true}
+            onBlur={(e) => handleRoleNameChange(role, e.currentTarget.innerText.trim())}
+          >
+            {getRoleName(role)}
           </span>
           <span
-            className={`rounded-full px-2 py-0.5 text-xs font-medium
-              ${shift === 'AM' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}
+            className={`rounded-full px-2 py-0.5 text-xs font-semibold
+              ${shift === 'AM'
+                ? 'bg-blue-200 text-blue-900'
+                : 'bg-fuchsia-200 text-fuchsia-900'}`}
           >
             {shift}
           </span>
@@ -151,7 +172,18 @@ const EditableWeeklyScheduleTable = ({
               return (
                 <th key={idx} className="p-4 text-center w-[140px]">
                   <div>{format(date, 'EEE MM/dd')}</div>
-                  {getDayStaffing(dateKey)}
+                  <div className="space-y-1">
+                    {getDayStaffing(dateKey)}
+                    <div
+                      className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                        isManagerScheduled(dateKey)
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : 'bg-red-100 text-red-700'
+                      }`}
+                    >
+                      {isManagerScheduled(dateKey) ? 'Manager Scheduled' : '⚠ No Manager'}
+                    </div>
+                  </div>
                 </th>
               );
             })}
