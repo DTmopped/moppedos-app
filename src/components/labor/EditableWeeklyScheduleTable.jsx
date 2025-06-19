@@ -27,6 +27,9 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
   const [deleteRoleShifts, setDeleteRoleShifts] = React.useState([]);
 
   const getRoleName = (defaultName) => editableRoles[defaultName] || defaultName;
+  const handleRoleNameChange = (role, newName) => {
+  setEditableRoles(prev => ({ ...prev, [role]: newName }));
+};
 
   const removeCustomRoleShift = (roleName, shift) => {
     setCustomRoles(prev =>
@@ -141,9 +144,18 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
     <tr key={`${role}-${shift}`} className="border-t border-slate-300">
       <td className="p-2 align-top text-slate-700 whitespace-nowrap">
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-indigo-200 text-indigo-900 px-3 py-1 text-sm font-semibold">
-            {getRoleName(role)}
-          </span>
+          {isAdminMode ? (
+  <input
+    type="text"
+    value={getRoleName(role)}
+    onChange={(e) => handleRoleNameChange(role, e.target.value)}
+    className="rounded-full bg-indigo-200 text-indigo-900 px-2 py-1 text-sm font-semibold w-[120px] border-none outline-none"
+  />
+) : (
+  <span className="rounded-full bg-indigo-200 text-indigo-900 px-3 py-1 text-sm font-semibold">
+    {getRoleName(role)}
+  </span>
+)}
           {role !== 'Manager' && (
             <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
               shift === 'AM' ? 'bg-blue-200 text-blue-900' :
@@ -182,7 +194,7 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
             className="w-full border px-2 py-1 rounded"
           />
           <div className="flex gap-4">
-            {['AM', 'PM', 'SWING'].map(shift => (
+            {['AM', 'PM', 'SWING', 'FULL'].map(shift => (
               <label key={shift} className="flex items-center gap-1 text-sm">
                 <input
                   type="checkbox"
