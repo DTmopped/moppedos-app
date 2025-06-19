@@ -90,55 +90,57 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
 
   const renderShiftCell = (day, shift, role) => {
     const dateKey = format(day, 'yyyy-MM-dd');
-    const slots = (scheduleData?.[dateKey] || []).filter(
+    let slots = (scheduleData?.[dateKey] || []).filter(
       slot => slot.role === role && slot.shift === shift
     );
 
-    const defaultStart = DEFAULT_SHIFT_TIMES[shift]?.start || '08:00';
-    const defaultEnd = DEFAULT_SHIFT_TIMES[shift]?.end || '16:00';
-
-    if (slots.length === 0) {
-      return (
-        <div className="min-h-[64px] border rounded p-2 bg-slate-50 dark:bg-slate-800 shadow-sm hover:shadow-md transition-all">
-          <div className="text-xs text-slate-400 italic">Off / No Shift</div>
-        </div>
-      );
+    if (slots.length === 0 && role === 'Manager') {
+      slots = [{
+        role: 'Manager', shift: 'FULL', slotIndex: 0,
+        startTime: DEFAULT_SHIFT_TIMES.FULL.start,
+        endTime: DEFAULT_SHIFT_TIMES.FULL.end,
+        employeeName: ''
+      }];
     }
 
     return (
       <div className="min-h-[64px] border rounded p-2 bg-slate-50 dark:bg-slate-800 shadow-sm hover:shadow-md transition-all">
-        {slots.map((entry) => (
-          <div key={`${role}-${shift}-${entry.slotIndex}`} className="text-xs text-slate-600 dark:text-slate-300 space-y-1">
-            {isAdminMode ? (
-              <input
-                type="text"
-                placeholder="Name"
-                value={entry.employeeName || ''}
-                onChange={(e) => onUpdate(dateKey, entry.role, entry.shift, entry.slotIndex, 'employeeName', e.target.value)}
-                className="w-full border-b text-xs outline-none bg-transparent placeholder:text-slate-400"
-              />
-            ) : (
-              <div className="text-xs text-slate-500 dark:text-slate-300">{entry.employeeName || '—'}</div>
-            )}
-            <div className="flex space-x-1 text-xs">
-              <input
-                type="text"
-                value={formatTo12Hour(entry.startTime || defaultStart)}
-                onChange={(e) => onUpdate(dateKey, entry.role, entry.shift, entry.slotIndex, 'startTime', e.target.value)}
-                readOnly={!isAdminMode}
-                className={cn("w-[68px] flex-none text-center border-b outline-none", isAdminMode ? "bg-yellow-100" : "bg-transparent")}
-              />
-              <span>–</span>
-              <input
-                type="text"
-                value={formatTo12Hour(entry.endTime || defaultEnd)}
-                onChange={(e) => onUpdate(dateKey, entry.role, entry.shift, entry.slotIndex, 'endTime', e.target.value)}
-                readOnly={!isAdminMode}
-                className={cn("w-[68px] flex-none text-center border-b outline-none", isAdminMode ? "bg-yellow-100" : "bg-transparent")}
-              />
+        {slots.length === 0 ? (
+          <div className="text-xs text-slate-400 italic">Off / No Shift</div>
+        ) : (
+          slots.map((entry) => (
+            <div key={`${role}-${shift}-${entry.slotIndex}`} className="text-xs text-slate-600 dark:text-slate-300 space-y-1">
+              {isAdminMode ? (
+                <input
+                  type="text"
+                  placeholder="Name"
+                  value={entry.employeeName || ''}
+                  onChange={(e) => onUpdate(dateKey, entry.role, entry.shift, entry.slotIndex, 'employeeName', e.target.value)}
+                  className="w-full border-b text-xs outline-none bg-transparent placeholder:text-slate-400"
+                />
+              ) : (
+                <div className="text-xs text-slate-500 dark:text-slate-300">{entry.employeeName || '—'}</div>
+              )}
+              <div className="flex w-[150px] justify-between items-center space-x-1">
+                <input
+                  type="text"
+                  value={formatTo12Hour(entry.startTime)}
+                  onChange={(e) => onUpdate(dateKey, entry.role, entry.shift, entry.slotIndex, 'startTime', e.target.value)}
+                  readOnly={!isAdminMode}
+                  className={cn("w-[68px] text-center border-b outline-none", isAdminMode ? "bg-yellow-100" : "bg-transparent")}
+                />
+                <span>–</span>
+                <input
+                  type="text"
+                  value={formatTo12Hour(entry.endTime)}
+                  onChange={(e) => onUpdate(dateKey, entry.role, entry.shift, entry.slotIndex, 'endTime', e.target.value)}
+                  readOnly={!isAdminMode}
+                  className={cn("w-[68px] text-center border-b outline-none", isAdminMode ? "bg-yellow-100" : "bg-transparent")}
+                />
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     );
   };
@@ -171,6 +173,90 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
         <div className="flex gap-4 mb-4">
           <button onClick={() => setShowAddRoleForm(true)} className="bg-green-600 text-white px-4 py-2 rounded text-sm shadow hover:bg-green-700">+ Add Role</button>
           <button onClick={() => setShowDeleteRoleForm(true)} className="bg-red-600 text-white px-4 py-2 rounded text-sm shadow hover:bg-red-700">🗑 Delete Role</button>
+        </div>
+      )}
+
+      {isAdminMode && showAddRoleForm && (
+        <div className="mb-4 p-4 bg-white border rounded shadow space-y-2">
+          <input
+            type="text"
+            placeholder="Role name (e.g. Busser)"
+            value={newRoleName}
+            onChange={(e) => setNewRoleName(e.target.value)}
+            className="w-full border px-2 py-1 rounded"
+          />
+          <div className="flex gap-4">
+            {['AM', 'PM', 'SWING'].map(shift => (
+              <label key={shift} className="flex items-center gap-1 text-sm">
+                <input
+                  type="checkbox"
+                  checked={newRoleShifts.includes(shift)}
+                  onChange={(e) => {
+                    setNewRoleShifts(prev =>
+                      e.target.checked ? [...prev, shift] : prev.filter(s => s !== shift)
+                    );
+                  }}
+                />
+                {shift}
+              </label>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => {
+              if (newRoleName.trim()) {
+                setCustomRoles(prev => [...prev, { name: newRoleName.trim(), shifts: newRoleShifts }]);
+                setNewRoleName('');
+                setNewRoleShifts(['AM']);
+                setShowAddRoleForm(false);
+              }
+            }} className="bg-blue-600 text-white px-4 py-1 rounded">Add Role</button>
+            <button onClick={() => setShowAddRoleForm(false)} className="text-sm">Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {isAdminMode && showDeleteRoleForm && (
+        <div className="mb-4 p-4 bg-white border rounded shadow space-y-2">
+          <select
+            value={deleteRoleName}
+            onChange={(e) => setDeleteRoleName(e.target.value)}
+            className="w-full border px-2 py-1 rounded"
+          >
+            <option value="">Select role</option>
+            {customRoles.map(role => (
+              <option key={role.name} value={role.name}>{role.name}</option>
+            ))}
+          </select>
+          <div className="flex gap-4">
+            {['AM', 'PM', 'SWING'].map(shift => (
+              <label key={shift} className="flex items-center gap-1 text-sm">
+                <input
+                  type="checkbox"
+                  checked={deleteRoleShifts.includes(shift)}
+                  onChange={(e) => {
+                    setDeleteRoleShifts(prev =>
+                      e.target.checked ? [...prev, shift] : prev.filter(s => s !== shift)
+                    );
+                  }}
+                />
+                {shift}
+              </label>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                deleteRoleShifts.forEach(shift => removeCustomRoleShift(deleteRoleName, shift));
+                setDeleteRoleName('');
+                setDeleteRoleShifts([]);
+                setShowDeleteRoleForm(false);
+              }}
+              className="bg-red-600 text-white px-4 py-1 rounded"
+            >
+              Delete Role
+            </button>
+            <button onClick={() => setShowDeleteRoleForm(false)} className="text-sm">Cancel</button>
+          </div>
         </div>
       )}
 
