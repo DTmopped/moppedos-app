@@ -105,13 +105,17 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
         ) : (
           slots.map((entry) => (
             <div key={`${role}-${shift}-${entry.slotIndex}`} className="text-xs text-slate-600 dark:text-slate-300 space-y-1">
-              <input
-                type="text"
-                placeholder="Name"
-                value={entry.employeeName || ''}
-                onChange={(e) => onUpdate(dateKey, entry.role, entry.shift, entry.slotIndex, 'employeeName', e.target.value)}
-                className="w-full border-b text-xs outline-none bg-transparent placeholder:text-slate-400"
-              />
+              {isAdminMode ? (
+                <input
+                  type="text"
+                  placeholder="Name"
+                  value={entry.employeeName || ''}
+                  onChange={(e) => onUpdate(dateKey, entry.role, entry.shift, entry.slotIndex, 'employeeName', e.target.value)}
+                  className="w-full border-b text-xs outline-none bg-transparent placeholder:text-slate-400"
+                />
+              ) : (
+                <div className="text-xs text-slate-500 dark:text-slate-300">{entry.employeeName || '—'}</div>
+              )}
               <div className="flex space-x-1 text-xs">
                 <input
                   type="text"
@@ -167,7 +171,7 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
         </div>
       )}
 
-      {showAddRoleForm && (
+      {isAdminMode && showAddRoleForm && (
         <div className="mb-4 p-4 bg-white border rounded shadow space-y-2">
           <input
             type="text"
@@ -206,7 +210,7 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
         </div>
       )}
 
-      {showDeleteRoleForm && (
+      {isAdminMode && showDeleteRoleForm && (
         <div className="mb-4 p-4 bg-white border rounded shadow space-y-2">
           <select
             value={deleteRoleName}
