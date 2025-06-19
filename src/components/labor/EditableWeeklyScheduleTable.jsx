@@ -145,9 +145,13 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
             {getRoleName(role)}
           </span>
           {role !== 'Manager' && (
-            <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${shift === 'AM' ? 'bg-blue-200 text-blue-900' : shift === 'PM' ? 'bg-fuchsia-200 text-fuchsia-900' : 'bg-yellow-200 text-yellow-900'}`}>
+            <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+              shift === 'AM' ? 'bg-blue-200 text-blue-900' :
+              shift === 'PM' ? 'bg-fuchsia-200 text-fuchsia-900' :
+              'bg-yellow-200 text-yellow-900'
+            }`}>
               {shift}
-            </span>
+             </span>
           )}
         </div>
       </td>
