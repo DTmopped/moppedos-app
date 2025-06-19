@@ -94,16 +94,17 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
       slot => slot.role === role && slot.shift === shift
     );
 
-    if (slots.length === 0) {
-      slots = [{
-        role,
-        shift,
-        slotIndex: 0,
-        startTime: DEFAULT_SHIFT_TIMES[shift]?.start || '08:00',
-        endTime: DEFAULT_SHIFT_TIMES[shift]?.end || '16:00',
-        employeeName: ''
-      }];
-    }
+  if (slots.length === 0) {
+  console.log('Injecting fallback slot:', { role, shift }); // ✅ Add here
+  slots = [{
+    role,
+    shift,
+    slotIndex: 0,
+    startTime: DEFAULT_SHIFT_TIMES[shift]?.start || DEFAULT_SHIFT_TIMES['FULL'].start || '08:00',
+    endTime: DEFAULT_SHIFT_TIMES[shift]?.end || DEFAULT_SHIFT_TIMES['FULL'].end || '20:00',
+    employeeName: ''
+  }];
+}
 
     return (
       <div className="min-h-[64px] border rounded p-2 bg-slate-50 shadow-sm hover:shadow-md transition-all">
