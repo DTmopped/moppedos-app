@@ -94,53 +94,51 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
       slot => slot.role === role && slot.shift === shift
     );
 
-    if (slots.length === 0 && role === 'Manager') {
+    if (slots.length === 0) {
       slots = [{
-        role: 'Manager', shift: 'FULL', slotIndex: 0,
-        startTime: DEFAULT_SHIFT_TIMES.FULL.start,
-        endTime: DEFAULT_SHIFT_TIMES.FULL.end,
+        role: role,
+        shift: shift,
+        slotIndex: 0,
+        startTime: DEFAULT_SHIFT_TIMES[shift]?.start || '08:00',
+        endTime: DEFAULT_SHIFT_TIMES[shift]?.end || '16:00',
         employeeName: ''
       }];
     }
 
     return (
       <div className="min-h-[64px] border rounded p-2 bg-slate-50 dark:bg-slate-800 shadow-sm hover:shadow-md transition-all">
-        {slots.length === 0 ? (
-          <div className="text-xs text-slate-400 italic">Off / No Shift</div>
-        ) : (
-          slots.map((entry) => (
-            <div key={`${role}-${shift}-${entry.slotIndex}`} className="text-xs text-slate-600 dark:text-slate-300 space-y-1">
-              {isAdminMode ? (
-                <input
-                  type="text"
-                  placeholder="Name"
-                  value={entry.employeeName || ''}
-                  onChange={(e) => onUpdate(dateKey, entry.role, entry.shift, entry.slotIndex, 'employeeName', e.target.value)}
-                  className="w-full border-b text-xs outline-none bg-transparent placeholder:text-slate-400"
-                />
-              ) : (
-                <div className="text-xs text-slate-500 dark:text-slate-300">{entry.employeeName || '—'}</div>
-              )}
-              <div className="flex w-[150px] justify-between items-center space-x-1">
-                <input
-                  type="text"
-                  value={formatTo12Hour(entry.startTime)}
-                  onChange={(e) => onUpdate(dateKey, entry.role, entry.shift, entry.slotIndex, 'startTime', e.target.value)}
-                  readOnly={!isAdminMode}
-                  className={cn("w-[68px] text-center border-b outline-none", isAdminMode ? "bg-yellow-100" : "bg-transparent")}
-                />
-                <span>–</span>
-                <input
-                  type="text"
-                  value={formatTo12Hour(entry.endTime)}
-                  onChange={(e) => onUpdate(dateKey, entry.role, entry.shift, entry.slotIndex, 'endTime', e.target.value)}
-                  readOnly={!isAdminMode}
-                  className={cn("w-[68px] text-center border-b outline-none", isAdminMode ? "bg-yellow-100" : "bg-transparent")}
-                />
-              </div>
+        {slots.map((entry) => (
+          <div key={`${role}-${shift}-${entry.slotIndex}`} className="text-xs text-slate-600 dark:text-slate-300 space-y-1">
+            {isAdminMode ? (
+              <input
+                type="text"
+                placeholder="Name"
+                value={entry.employeeName || ''}
+                onChange={(e) => onUpdate(dateKey, entry.role, entry.shift, entry.slotIndex, 'employeeName', e.target.value)}
+                className="w-full border-b text-xs outline-none bg-transparent placeholder:text-slate-400"
+              />
+            ) : (
+              <div className="text-xs text-slate-500 dark:text-slate-300">{entry.employeeName || '—'}</div>
+            )}
+            <div className="flex w-[150px] justify-between items-center space-x-1">
+              <input
+                type="text"
+                value={formatTo12Hour(entry.startTime)}
+                onChange={(e) => onUpdate(dateKey, entry.role, entry.shift, entry.slotIndex, 'startTime', e.target.value)}
+                readOnly={!isAdminMode}
+                className={cn("w-[65px] text-center border-b outline-none text-xs", isAdminMode ? "bg-yellow-100" : "bg-transparent")}
+              />
+              <span>–</span>
+              <input
+                type="text"
+                value={formatTo12Hour(entry.endTime)}
+                onChange={(e) => onUpdate(dateKey, entry.role, entry.shift, entry.slotIndex, 'endTime', e.target.value)}
+                readOnly={!isAdminMode}
+                className={cn("w-[65px] text-center border-b outline-none text-xs", isAdminMode ? "bg-yellow-100" : "bg-transparent")}
+              />
             </div>
-          ))
-        )}
+          </div>
+        ))}
       </div>
     );
   };
