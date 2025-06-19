@@ -114,7 +114,7 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
               readOnly={!isAdminMode}
               className="w-full border-b text-xs outline-none bg-transparent placeholder:text-slate-400"
             />
-         <div className="flex items-center gap-1 w-[140px]">
+         <div className="flex items-center gap-1 w-[140px] text-nowrap">
               <input
                 type="text"
                 value={formatTo12Hour(entry.startTime)}
