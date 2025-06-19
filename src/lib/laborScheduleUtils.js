@@ -152,12 +152,34 @@ export const loadSchedule = (forecastData, storedScheduleJSON) => {
 
 export const updateSlotInSchedule = (currentSchedule, date, roleName, shift, slotIndex, field, value) => {
   const daySchedule = currentSchedule[date] || [];
-  const updatedDaySchedule = daySchedule.map(slot => {
-    if (slot.role === roleName && slot.shift === shift && slot.slotIndex === slotIndex) {
-      return { ...slot, [field]: value };
-    }
-    return slot;
-  });
+
+  const updatedDaySchedule = [...daySchedule];
+  const targetIndex = updatedDaySchedule.findIndex(
+    s => s.role === roleName && s.shift === shift && s.slotIndex === slotIndex
+  );
+
+  if (targetIndex !== -1) {
+    // ✅ Update existing slot
+    updatedDaySchedule[targetIndex] = {
+      ...updatedDaySchedule[targetIndex],
+      [field]: value,
+    };
+  } else {
+    // ✅ Insert missing slot — useful for Manager FULL fallback
+    const fallbackStart = SHIFT_TIMES[shift]?.start || SHIFT_TIMES.FULL?.start || '08:00';
+    const fallbackEnd = SHIFT_TIMES[shift]?.end || SHIFT_TIMES.FULL?.end || '20:00';
+
+    updatedDaySchedule.push({
+      role: roleName,
+      shift: shift,
+      slotIndex: slotIndex,
+      employeeName: field === 'employeeName' ? value : '',
+      startTime: field === 'startTime' ? value : fallbackStart,
+      endTime: field === 'endTime' ? value : fallbackEnd,
+      colorClass: 'bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-white', // optional
+    });
+  }
+
   return { ...currentSchedule, [date]: updatedDaySchedule };
 };
 
