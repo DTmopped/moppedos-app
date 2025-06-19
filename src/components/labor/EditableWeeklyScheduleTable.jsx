@@ -95,11 +95,11 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
 );
     
 
- if (slots.length === 0) {
-  console.log('Injecting fallback slot:', { role, shift }); 
+if (slots.length === 0) {
+  console.log('Injecting fallback slot:', { role, shift });
   slots = [{
     role,
-    shift: shift.toUpperCase(), // ✅ Force consistent matching
+    shift: shift.toUpperCase(), // ✅ Fix here
     slotIndex: 0,
     startTime: DEFAULT_SHIFT_TIMES[shift]?.start || DEFAULT_SHIFT_TIMES['FULL'].start || '08:00',
     endTime: DEFAULT_SHIFT_TIMES[shift]?.end || DEFAULT_SHIFT_TIMES['FULL'].end || '20:00',
