@@ -27,9 +27,6 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
   const [deleteRoleShifts, setDeleteRoleShifts] = React.useState([]);
 
   const getRoleName = (defaultName) => editableRoles[defaultName] || defaultName;
-  const handleRoleNameChange = (role, newName) => {
-    setEditableRoles(prev => ({ ...prev, [role]: newName }));
-  };
 
   const removeCustomRoleShift = (roleName, shift) => {
     setCustomRoles(prev =>
@@ -96,8 +93,8 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
 
     if (slots.length === 0) {
       slots = [{
-        role: role,
-        shift: shift,
+        role,
+        shift,
         slotIndex: 0,
         startTime: DEFAULT_SHIFT_TIMES[shift]?.start || '08:00',
         endTime: DEFAULT_SHIFT_TIMES[shift]?.end || '16:00',
@@ -106,27 +103,24 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
     }
 
     return (
-      <div className="min-h-[64px] border rounded p-2 bg-slate-50 dark:bg-slate-800 shadow-sm hover:shadow-md transition-all">
+      <div className="min-h-[64px] border rounded p-2 bg-slate-50 shadow-sm hover:shadow-md transition-all">
         {slots.map((entry) => (
-          <div key={`${role}-${shift}-${entry.slotIndex}`} className="text-xs text-slate-600 dark:text-slate-300 space-y-1">
-            {isAdminMode ? (
-              <input
-                type="text"
-                placeholder="Name"
-                value={entry.employeeName || ''}
-                onChange={(e) => onUpdate(dateKey, entry.role, entry.shift, entry.slotIndex, 'employeeName', e.target.value)}
-                className="w-full border-b text-xs outline-none bg-transparent placeholder:text-slate-400"
-              />
-            ) : (
-              <div className="text-xs text-slate-500 dark:text-slate-300">{entry.employeeName || '—'}</div>
-            )}
-            <div className="flex w-[150px] justify-between items-center space-x-1">
+          <div key={`${role}-${shift}-${entry.slotIndex}`} className="space-y-1">
+            <input
+              type="text"
+              placeholder="Name"
+              value={entry.employeeName || ''}
+              onChange={(e) => onUpdate(dateKey, entry.role, entry.shift, entry.slotIndex, 'employeeName', e.target.value)}
+              readOnly={!isAdminMode}
+              className="w-full border-b text-xs outline-none bg-transparent placeholder:text-slate-400"
+            />
+            <div className="flex items-center space-x-1 w-full max-w-[150px]">
               <input
                 type="text"
                 value={formatTo12Hour(entry.startTime)}
                 onChange={(e) => onUpdate(dateKey, entry.role, entry.shift, entry.slotIndex, 'startTime', e.target.value)}
                 readOnly={!isAdminMode}
-                className={cn("w-[65px] text-center border-b outline-none text-xs", isAdminMode ? "bg-yellow-100" : "bg-transparent")}
+                className="w-[64px] text-center text-xs border-b outline-none bg-transparent"
               />
               <span>–</span>
               <input
@@ -134,7 +128,7 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
                 value={formatTo12Hour(entry.endTime)}
                 onChange={(e) => onUpdate(dateKey, entry.role, entry.shift, entry.slotIndex, 'endTime', e.target.value)}
                 readOnly={!isAdminMode}
-                className={cn("w-[65px] text-center border-b outline-none text-xs", isAdminMode ? "bg-yellow-100" : "bg-transparent")}
+                className="w-[64px] text-center text-xs border-b outline-none bg-transparent"
               />
             </div>
           </div>
@@ -144,10 +138,10 @@ const EditableWeeklyScheduleTable = ({ weekStartDate, scheduleData = {}, onUpdat
   };
 
   const renderRoleRow = (role, shift) => (
-    <tr key={`${role}-${shift}`} className="border-t border-slate-300 dark:border-slate-700">
-      <td className="p-2 align-top text-slate-700 dark:text-slate-200 whitespace-nowrap">
+    <tr key={`${role}-${shift}`} className="border-t border-slate-300">
+      <td className="p-2 align-top text-slate-700 whitespace-nowrap">
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-indigo-200 text-indigo-900 px-3 py-1 text-sm font-semibold cursor-pointer">
+          <span className="rounded-full bg-indigo-200 text-indigo-900 px-3 py-1 text-sm font-semibold">
             {getRoleName(role)}
           </span>
           {role !== 'Manager' && (
