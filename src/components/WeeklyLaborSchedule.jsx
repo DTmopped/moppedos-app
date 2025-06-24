@@ -92,12 +92,9 @@ const WeeklyLaborSchedule = () => {
     const formattedPrintDate = `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
     setPrintDate(formattedPrintDate);
 
-   const printableComponentHtml = `
-  <div style="padding: 2rem; font-family: sans-serif;">
-    <h1>Test Print: ${formattedPrintDate}</h1>
-    <pre>${JSON.stringify(scheduleData, null, 2)}</pre>
-  </div>
-`;
+   const printableComponentHtml = ReactDOMServer.renderToStaticMarkup(
+  <PrintableLaborSchedule scheduleData={scheduleData} weekStartDate={weekStartDate} />
+);
 
     const iframe = document.createElement('iframe');
     iframe.style.position = 'absolute';
