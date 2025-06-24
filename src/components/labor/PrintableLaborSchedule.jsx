@@ -1,6 +1,18 @@
 import React from 'react';
 import { format, parseISO, addDays } from 'date-fns';
 
+const formatTime = (timeStr) => {
+  if (!timeStr) return 'N/A';
+  const [h, m] = timeStr.split(':').map(Number);
+  const d = new Date();
+  d.setHours(h);
+  d.setMinutes(m);
+  return d.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+};
+
 const PrintableLaborSchedule = ({ scheduleData, weekStartDate }) => {
   if (!scheduleData) return <p className="text-center p-4">Loading printable schedule...</p>;
 
@@ -56,7 +68,7 @@ const PrintableLaborSchedule = ({ scheduleData, weekStartDate }) => {
                               {slot.employeeName || <em className="text-gray-500">Unassigned</em>}
                             </td>
                             <td className="border border-gray-300 p-1 text-xs">
-                              {slot.startTime || 'N/A'} – {slot.endTime || 'N/A'}
+                              {formatTime(slot.startTime)} – {formatTime(slot.endTime)}
                             </td>
                           </tr>
                         ))
