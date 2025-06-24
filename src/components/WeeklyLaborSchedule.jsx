@@ -9,9 +9,9 @@ import { useToast } from './ui/use-toast.jsx';
 import EditableWeeklyScheduleTable from './labor/EditableWeeklyScheduleTable.jsx';
 import PrintableLaborSchedule from './labor/PrintableLaborSchedule.jsx';
 import { LOCAL_STORAGE_KEY } from '@/config/laborScheduleConfig.jsx';
-import { loadSchedule, updateSlotInSchedule } from '@/lib/laborScheduleUtils.js';
+import { loadSchedule, updateSlotInSchedule, generateInitialScheduleSlots } from '@/lib/laborScheduleUtils.js'; // ✅
 import { startOfWeek, format } from 'date-fns';
-import AdminModeToggle from './ui/AdminModeToggle.jsx'; // adjust path if needed
+import AdminModeToggle from './ui/AdminModeToggle.jsx';
 
 const WeeklyLaborScheduleHeader = ({ onSave, onPrint }) => (
   <Card className="glassmorphic-card no-print card-hover-glow">
@@ -57,6 +57,7 @@ const NoForecastDataMessage = () => (
 const WeeklyLaborSchedule = () => {
   const { forecastData } = useData();
   const [scheduleData, setScheduleData] = useState({});
+  const [forecastGeneratedSchedule, setForecastGeneratedSchedule] = useState({}); // ✅
   const [weekStartDate, setWeekStartDate] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [printDate, setPrintDate] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -64,8 +65,12 @@ const WeeklyLaborSchedule = () => {
 
   useEffect(() => {
     setIsLoading(true);
-    const initialSchedule = loadSchedule(forecastData || [], localStorage.getItem(LOCAL_STORAGE_KEY));
-    setScheduleData(initialSchedule);
+    const generatedForecast = generateInitialScheduleSlots(forecastData || []); // ✅
+    const storedSchedule = localStorage.getItem(LOCAL_STORAGE_KEY);
+    const loadedSchedule = loadSchedule(forecastData || [], storedSchedule);
+
+    setScheduleData(loadedSchedule);
+    setForecastGeneratedSchedule(generatedForecast); // ✅
     setIsLoading(false);
   }, [forecastData]);
 
@@ -92,9 +97,9 @@ const WeeklyLaborSchedule = () => {
     const formattedPrintDate = `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
     setPrintDate(formattedPrintDate);
 
-   const printableComponentHtml = ReactDOMServer.renderToStaticMarkup(
-  <PrintableLaborSchedule scheduleData={scheduleData} weekStartDate={weekStartDate} />
-);
+    const printableComponentHtml = ReactDOMServer.renderToStaticMarkup(
+      <PrintableLaborSchedule scheduleData={scheduleData} weekStartDate={weekStartDate} />
+    );
 
     const iframe = document.createElement('iframe');
     iframe.style.position = 'absolute';
@@ -142,9 +147,9 @@ const WeeklyLaborSchedule = () => {
       <WeeklyLaborScheduleHeader onSave={saveScheduleToLocalStorage} onPrint={handlePrint} />
 
       <div className="flex justify-end">
-  <AdminModeToggle />
-</div>
-      
+        <AdminModeToggle />
+      </div>
+
       <div className="printable-content printable-labor-schedule">
         {(!forecastData || forecastData.length === 0) ? (
           <NoForecastDataMessage />
@@ -153,6 +158,7 @@ const WeeklyLaborSchedule = () => {
             weekStartDate={weekStartDate}
             scheduleData={scheduleData}
             onUpdate={handleUpdateSchedule}
+            forecastGeneratedSchedule={forecastGeneratedSchedule} // ✅ passed cleanly
           />
         )}
       </div>
