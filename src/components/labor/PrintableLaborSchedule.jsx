@@ -37,7 +37,7 @@ const PrintableLaborSchedule = ({ scheduleData, weekStartDate }) => {
               Object.entries(grouped).map(([shiftType, roles]) => (
                 <div key={shiftType} className="mb-3">
                   <h3 className="text-md font-medium capitalize mb-1">{shiftType} Shift</h3>
-                  <table className="w-full border-collapse border border-gray-400 table-print-styles print-table-compact">
+                  <table className="w-full border-collapse border border-gray-400">
                     <thead>
                       <tr>
                         <th className="border border-gray-300 p-1 text-left text-xs">Role</th>
@@ -49,12 +49,14 @@ const PrintableLaborSchedule = ({ scheduleData, weekStartDate }) => {
                       {Object.entries(roles).map(([roleName, employees]) =>
                         employees.map((slot, index) => (
                           <tr key={`${roleName}-${index}`}>
-                            <td className="border border-gray-300 p-1 text-xs tabular-nums">{index === 0 ? roleName : ''}</td>
-                            <td className="border border-gray-300 p-1 text-xs tabular-nums">
+                            <td className="border border-gray-300 p-1 text-xs">
+                              {index === 0 ? roleName : ''}
+                            </td>
+                            <td className="border border-gray-300 p-1 text-xs">
                               {slot.employeeName || <em className="text-gray-500">Unassigned</em>}
                             </td>
-                            <td className="border border-gray-300 p-1 text-xs tabular-nums">
-                              {slot.startTime || 'N/A'} - {slot.endTime || 'N/A'}
+                            <td className="border border-gray-300 p-1 text-xs">
+                              {slot.startTime || 'N/A'} – {slot.endTime || 'N/A'}
                             </td>
                           </tr>
                         ))
