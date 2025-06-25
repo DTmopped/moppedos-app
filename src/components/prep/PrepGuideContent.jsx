@@ -18,7 +18,7 @@ const categorizeItem = (itemName) => {
   return "Other";
 };
 
-const PrepGuideContent = ({ dailyShiftPrepData }) => {
+const PrepGuideContent = ({ dailyShiftPrepData, onPrepTaskChange }) => {
   const [expandedDays, setExpandedDays] = useState({});
 
   if (!dailyShiftPrepData || dailyShiftPrepData.length === 0) {
@@ -114,12 +114,18 @@ const PrepGuideContent = ({ dailyShiftPrepData }) => {
                                       <td className="px-2 py-2">
                                         <input
                                           type="text"
+                                          value={item.assignedTo || ''}
+                                          onChange={(e) => onPrepTaskChange(day.date, shiftKey, item.id, 'assignedTo', e.target.value)}
                                           placeholder="Assign"
                                           className="w-full border border-slate-300 rounded px-2 py-1"
                                         />
                                       </td>
                                       <td className="px-2 py-2 text-center">
-                                        <input type="checkbox" />
+                                        <input
+                                          type="checkbox"
+                                          checked={item.completed || false}
+                                          onChange={(e) => onPrepTaskChange(day.date, shiftKey, item.id, 'completed', e.target.checked)}
+                                        />
                                       </td>
                                     </tr>
                                   ))}
