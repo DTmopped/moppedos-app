@@ -25,10 +25,8 @@ export const useDailyShiftPrepGuideLogic = () => {
         { id: uuidv4(), name: "Pulled Pork (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs", assignedTo: "", completed: false },
         { id: uuidv4(), name: "Chopped Brisket (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs", assignedTo: "", completed: false },
         { id: uuidv4(), name: "Chopped Chicken (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs", assignedTo: "", completed: false },
-
         { id: uuidv4(), name: "Buns", quantity: guestCount * 3, unit: "each", assignedTo: "", completed: false },
         { id: uuidv4(), name: "Texas Toast", quantity: guestCount, unit: "each", assignedTo: "", completed: false },
-
         {
           id: uuidv4(),
           name: "Coleslaw",
@@ -37,14 +35,12 @@ export const useDailyShiftPrepGuideLogic = () => {
           assignedTo: "",
           completed: false
         },
-
         // BBQ
         { id: uuidv4(), name: "Pulled Pork", quantity: portionToLbs(4, guestCount), unit: "lbs", assignedTo: "", completed: false },
         { id: uuidv4(), name: "Sliced Brisket", quantity: portionToLbs(4, guestCount), unit: "lbs", assignedTo: "", completed: false },
         { id: uuidv4(), name: "Half Chicken", quantity: portionToLbs(16, guestCount), unit: "lbs", assignedTo: "", completed: false },
         { id: uuidv4(), name: "St Louis Ribs", quantity: portionToLbs(16, guestCount), unit: "lbs", assignedTo: "", completed: false },
         { id: uuidv4(), name: "Beef Short Rib", quantity: portionToLbs(16, guestCount), unit: "lbs", assignedTo: "", completed: false },
-
         // Sides
         { id: uuidv4(), name: "Collard Greens", quantity: portionToLbs(4, guestCount), unit: "lbs", assignedTo: "", completed: false },
         { id: uuidv4(), name: "Mac N Cheese", quantity: portionToLbs(4, guestCount), unit: "lbs", assignedTo: "", completed: false },
@@ -52,7 +48,6 @@ export const useDailyShiftPrepGuideLogic = () => {
         { id: uuidv4(), name: "Corn Casserole", quantity: portionToLbs(4, guestCount), unit: "lbs", assignedTo: "", completed: false },
         { id: uuidv4(), name: "Corn Muffin", quantity: guestCount, unit: "each", assignedTo: "", completed: false },
         { id: uuidv4(), name: "Honey Butter", quantity: guestCount, unit: "each", assignedTo: "", completed: false },
-
         // Desserts
         { id: uuidv4(), name: "Banana Pudding", quantity: guestCount, unit: "each", assignedTo: "", completed: false },
         { id: uuidv4(), name: "Key Lime Pie", quantity: guestCount, unit: "each", assignedTo: "", completed: false },
@@ -102,7 +97,7 @@ export const useDailyShiftPrepGuideLogic = () => {
     });
 
     setDailyShiftPrepData(newData);
-  }, [forecastData?.length]); // ✅ only run if count changes
+  }, [forecastData?.length]);
 
   const handlePrepTaskChange = (date, shiftKey, itemId, field, value) => {
     setDailyShiftPrepData((prev) =>
