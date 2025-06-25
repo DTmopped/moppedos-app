@@ -15,30 +15,23 @@ export const useDailyShiftPrepGuideLogic = () => {
 
   useEffect(() => {
     if (!forecastData || forecastData.length === 0) return;
-
-  
-
-    // Auto-set printDate to the first forecasted date
-    if (!printDate) {
-      setPrintDate(forecastData[0].date);
-    }
+    if (!printDate) setPrintDate(forecastData[0].date);
 
     const latestActuals = actualData?.[actualData.length - 1];
-const latestForecast = forecastData?.[forecastData.length - 1];
-let factor = 1;
+    const latestForecast = forecastData?.[forecastData.length - 1];
+    let factor = 1;
 
-if (
-  latestActuals?.guests &&
-  latestForecast?.guests &&
-  !isNaN(latestActuals.guests) &&
-  !isNaN(latestForecast.guests) &&
-  latestForecast.guests > 0
-) {
-  factor = latestActuals.guests / latestForecast.guests;
-}
+    if (
+      latestActuals?.guests &&
+      latestForecast?.guests &&
+      !isNaN(latestActuals.guests) &&
+      !isNaN(latestForecast.guests) &&
+      latestForecast.guests > 0
+    ) {
+      factor = latestActuals.guests / latestForecast.guests;
+    }
 
-setAdjustmentFactor(factor);
-console.log("Adjustment Factor:", factor);
+    setAdjustmentFactor(factor);
 
     const portionToLbs = (oz, guests) => {
       if (!oz || !guests || isNaN(oz) || isNaN(guests)) return 0;
@@ -46,11 +39,10 @@ console.log("Adjustment Factor:", factor);
     };
 
     const newData = forecastData.map((entry) => {
-    const adjGuests = Number(entry.guests) * factor || 0;
-    const amGuests = Number(entry.amGuests) * factor || 0;
-    const pmGuests = Number(entry.pmGuests) * factor || 0;
+      const adjGuests = Number(entry.guests) * factor || 0;
+      const amGuests = Number(entry.amGuests) * factor || 0;
+      const pmGuests = Number(entry.pmGuests) * factor || 0;
 
-    
       const generateShift = (guestCount, shiftName) => {
         const totalSandwiches = guestCount * 3;
 
@@ -59,6 +51,7 @@ console.log("Adjustment Factor:", factor);
           color: shiftName === "am" ? "text-yellow-600" : "text-blue-600",
           icon: shiftName === "am" ? "🌞" : "🌙",
           prepItems: [
+            // Sammies
             { id: uuidv4(), name: "Pulled Pork (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Chopped Brisket (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Chopped Chicken (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
@@ -66,6 +59,7 @@ console.log("Adjustment Factor:", factor);
             { id: uuidv4(), name: "Buns", quantity: guestCount * 3, unit: "each" },
             { id: uuidv4(), name: "Texas Toast", quantity: guestCount, unit: "each" },
 
+            // Slaw - 2 oz per sammie + 4 oz per plate
             {
               id: uuidv4(),
               name: "Coleslaw",
@@ -73,12 +67,14 @@ console.log("Adjustment Factor:", factor);
               unit: "lbs"
             },
 
-            { id: uuidv4(), name: "Pulled Pork", quantity: portionToLbs(6, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "Brisket", quantity: portionToLbs(6, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "Half Chicken", quantity: portionToLbs(16, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "St Louis Ribs", quantity: portionToLbs(16, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "Beef Short Rib", quantity: portionToLbs(24, guestCount), unit: "lbs" },
+            // BBQ meats
+            { id: uuidv4(), name: "Pulled Pork", quantity: portionToLbs(4, guestCount), unit: "lbs" },
+            { id: uuidv4(), name: "Sliced Brisket", quantity: portionToLbs(4, guestCount), unit: "lbs" },
+            { id: uuidv4(), name: "Half Chicken", quantity: portionToLbs(16, guestCount), unit: "lbs" }, // future: toggle to "each"
+            { id: uuidv4(), name: "St Louis Ribs", quantity: portionToLbs(16, guestCount), unit: "lbs" }, // future: toggle to "each"
+            { id: uuidv4(), name: "Beef Short Rib", quantity: portionToLbs(16, guestCount), unit: "lbs" },
 
+            // Sides
             { id: uuidv4(), name: "Collard Greens", quantity: portionToLbs(4, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Mac N Cheese", quantity: portionToLbs(4, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Baked Beans", quantity: portionToLbs(4, guestCount), unit: "lbs" },
@@ -86,6 +82,7 @@ console.log("Adjustment Factor:", factor);
             { id: uuidv4(), name: "Corn Muffin", quantity: guestCount, unit: "each" },
             { id: uuidv4(), name: "Honey Butter", quantity: guestCount, unit: "each" },
 
+            // Sweets
             { id: uuidv4(), name: "Banana Pudding", quantity: guestCount, unit: "each" },
             { id: uuidv4(), name: "Key Lime Pie", quantity: guestCount, unit: "each" },
             { id: uuidv4(), name: "Hummingbird Cake", quantity: guestCount, unit: "each" },
@@ -122,4 +119,3 @@ console.log("Adjustment Factor:", factor);
     MenuEditorComponent: null,
     handleSaveMenu: () => {},
   };
-};
