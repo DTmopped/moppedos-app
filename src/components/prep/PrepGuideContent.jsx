@@ -18,8 +18,7 @@ const categorizeItem = (itemName) => {
   return "Other";
 };
 
-const PrepGuideContent = ({ dailyShiftPrepData, onPrepTaskChange }) => {
-  const [expandedDays, setExpandedDays] = useState({});
+const PrepGuideContent = ({ dailyShiftPrepData, onPrepTaskChange, expandedDays, setExpandedDays }) => {
 
   if (!dailyShiftPrepData || dailyShiftPrepData.length === 0) {
     return (
