@@ -59,7 +59,6 @@ export const useDailyShiftPrepGuideLogic = () => {
             { id: uuidv4(), name: "Buns", quantity: guestCount * 3, unit: "each" },
             { id: uuidv4(), name: "Texas Toast", quantity: guestCount, unit: "each" },
 
-            // Slaw - 2 oz per sammie + 4 oz per plate
             {
               id: uuidv4(),
               name: "Coleslaw",
@@ -67,11 +66,11 @@ export const useDailyShiftPrepGuideLogic = () => {
               unit: "lbs"
             },
 
-            // BBQ meats
+            // BBQ Meats
             { id: uuidv4(), name: "Pulled Pork", quantity: portionToLbs(4, guestCount), unit: "lbs" },
             { id: uuidv4(), name: "Sliced Brisket", quantity: portionToLbs(4, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "Half Chicken", quantity: portionToLbs(16, guestCount), unit: "lbs" }, // future: toggle to "each"
-            { id: uuidv4(), name: "St Louis Ribs", quantity: portionToLbs(16, guestCount), unit: "lbs" }, // future: toggle to "each"
+            { id: uuidv4(), name: "Half Chicken", quantity: portionToLbs(16, guestCount), unit: "lbs" }, // future toggle: each
+            { id: uuidv4(), name: "St Louis Ribs", quantity: portionToLbs(16, guestCount), unit: "lbs" }, // future toggle: each
             { id: uuidv4(), name: "Beef Short Rib", quantity: portionToLbs(16, guestCount), unit: "lbs" },
 
             // Sides
@@ -82,7 +81,7 @@ export const useDailyShiftPrepGuideLogic = () => {
             { id: uuidv4(), name: "Corn Muffin", quantity: guestCount, unit: "each" },
             { id: uuidv4(), name: "Honey Butter", quantity: guestCount, unit: "each" },
 
-            // Sweets
+            // Desserts
             { id: uuidv4(), name: "Banana Pudding", quantity: guestCount, unit: "each" },
             { id: uuidv4(), name: "Key Lime Pie", quantity: guestCount, unit: "each" },
             { id: uuidv4(), name: "Hummingbird Cake", quantity: guestCount, unit: "each" },
@@ -119,3 +118,4 @@ export const useDailyShiftPrepGuideLogic = () => {
     MenuEditorComponent: null,
     handleSaveMenu: () => {},
   };
+};
