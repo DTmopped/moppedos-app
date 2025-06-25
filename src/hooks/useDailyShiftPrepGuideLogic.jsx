@@ -51,40 +51,38 @@ export const useDailyShiftPrepGuideLogic = () => {
           color: shiftName === "am" ? "text-yellow-600" : "text-blue-600",
           icon: shiftName === "am" ? "🌞" : "🌙",
           prepItems: [
-            // Sammies
-            { id: uuidv4(), name: "Pulled Pork (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "Chopped Brisket (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "Chopped Chicken (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs" },
+            { id: uuidv4(), name: "Pulled Pork (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs", assignedTo: "", completed: false },
+            { id: uuidv4(), name: "Chopped Brisket (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs", assignedTo: "", completed: false },
+            { id: uuidv4(), name: "Chopped Chicken (Sammies)", quantity: portionToLbs(6, guestCount), unit: "lbs", assignedTo: "", completed: false },
 
-            { id: uuidv4(), name: "Buns", quantity: guestCount * 3, unit: "each" },
-            { id: uuidv4(), name: "Texas Toast", quantity: guestCount, unit: "each" },
+            { id: uuidv4(), name: "Buns", quantity: guestCount * 3, unit: "each", assignedTo: "", completed: false },
+            { id: uuidv4(), name: "Texas Toast", quantity: guestCount, unit: "each", assignedTo: "", completed: false },
 
             {
               id: uuidv4(),
               name: "Coleslaw",
               quantity: portionToLbs((2 * totalSandwiches) + (4 * guestCount), 1),
-              unit: "lbs"
+              unit: "lbs",
+              assignedTo: "",
+              completed: false
             },
 
-            // BBQ Meats
-            { id: uuidv4(), name: "Pulled Pork", quantity: portionToLbs(4, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "Sliced Brisket", quantity: portionToLbs(4, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "Half Chicken", quantity: portionToLbs(16, guestCount), unit: "lbs" }, // future toggle: each
-            { id: uuidv4(), name: "St Louis Ribs", quantity: portionToLbs(16, guestCount), unit: "lbs" }, // future toggle: each
-            { id: uuidv4(), name: "Beef Short Rib", quantity: portionToLbs(16, guestCount), unit: "lbs" },
+            { id: uuidv4(), name: "Pulled Pork", quantity: portionToLbs(4, guestCount), unit: "lbs", assignedTo: "", completed: false },
+            { id: uuidv4(), name: "Sliced Brisket", quantity: portionToLbs(4, guestCount), unit: "lbs", assignedTo: "", completed: false },
+            { id: uuidv4(), name: "Half Chicken", quantity: portionToLbs(16, guestCount), unit: "lbs", assignedTo: "", completed: false },
+            { id: uuidv4(), name: "St Louis Ribs", quantity: portionToLbs(16, guestCount), unit: "lbs", assignedTo: "", completed: false },
+            { id: uuidv4(), name: "Beef Short Rib", quantity: portionToLbs(16, guestCount), unit: "lbs", assignedTo: "", completed: false },
 
-            // Sides
-            { id: uuidv4(), name: "Collard Greens", quantity: portionToLbs(4, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "Mac N Cheese", quantity: portionToLbs(4, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "Baked Beans", quantity: portionToLbs(4, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "Corn Casserole", quantity: portionToLbs(4, guestCount), unit: "lbs" },
-            { id: uuidv4(), name: "Corn Muffin", quantity: guestCount, unit: "each" },
-            { id: uuidv4(), name: "Honey Butter", quantity: guestCount, unit: "each" },
+            { id: uuidv4(), name: "Collard Greens", quantity: portionToLbs(4, guestCount), unit: "lbs", assignedTo: "", completed: false },
+            { id: uuidv4(), name: "Mac N Cheese", quantity: portionToLbs(4, guestCount), unit: "lbs", assignedTo: "", completed: false },
+            { id: uuidv4(), name: "Baked Beans", quantity: portionToLbs(4, guestCount), unit: "lbs", assignedTo: "", completed: false },
+            { id: uuidv4(), name: "Corn Casserole", quantity: portionToLbs(4, guestCount), unit: "lbs", assignedTo: "", completed: false },
+            { id: uuidv4(), name: "Corn Muffin", quantity: guestCount, unit: "each", assignedTo: "", completed: false },
+            { id: uuidv4(), name: "Honey Butter", quantity: guestCount, unit: "each", assignedTo: "", completed: false },
 
-            // Desserts
-            { id: uuidv4(), name: "Banana Pudding", quantity: guestCount, unit: "each" },
-            { id: uuidv4(), name: "Key Lime Pie", quantity: guestCount, unit: "each" },
-            { id: uuidv4(), name: "Hummingbird Cake", quantity: guestCount, unit: "each" },
+            { id: uuidv4(), name: "Banana Pudding", quantity: guestCount, unit: "each", assignedTo: "", completed: false },
+            { id: uuidv4(), name: "Key Lime Pie", quantity: guestCount, unit: "each", assignedTo: "", completed: false },
+            { id: uuidv4(), name: "Hummingbird Cake", quantity: guestCount, unit: "each", assignedTo: "", completed: false },
           ]
         };
       };
@@ -104,13 +102,34 @@ export const useDailyShiftPrepGuideLogic = () => {
     setDailyShiftPrepData(newData);
   }, [forecastData, actualData, amSplit, printDate]);
 
+  const handlePrepTaskChange = (date, shiftKey, itemId, field, value) => {
+    setDailyShiftPrepData(prev =>
+      prev.map(day =>
+        day.date === date
+          ? {
+              ...day,
+              shifts: {
+                ...day.shifts,
+                [shiftKey]: {
+                  ...day.shifts[shiftKey],
+                  prepItems: day.shifts[shiftKey].prepItems.map(item =>
+                    item.id === itemId ? { ...item, [field]: value } : item
+                  )
+                }
+              }
+            }
+          : day
+      )
+    );
+  };
+
   return {
     forecastData,
     adjustmentFactor,
     dailyShiftPrepData,
     printDate,
     setPrintDate,
-    handlePrepTaskChange: () => {},
+    handlePrepTaskChange,
     manageMenuOpen: false,
     setManageMenuOpen: () => {},
     menuLoading: false,
