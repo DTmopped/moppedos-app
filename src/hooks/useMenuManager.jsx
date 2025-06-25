@@ -14,9 +14,9 @@ const initialMenuData = {
     { name: "Chopped Chicken Sandwich", perGuestOz: 6, unit: "oz" }
   ],
   BBQ: [
-    { name: "Pulled Pork", perGuestOz: 4, unit: "oz" },       // ¼ lb
-    { name: "Brisket", perGuestOz: 4, unit: "oz" },           // ¼ lb
-    { name: "Bone-In Beef Short Rib", perGuestOz: 16, unit: "oz" }, // 1 lb
+    { name: "Pulled Pork", perGuestOz: 4, unit: "oz" },
+    { name: "Brisket", perGuestOz: 4, unit: "oz" },
+    { name: "Bone-In Beef Short Rib", perGuestOz: 16, unit: "oz" },
     { name: "Half Chicken", each: 1, unit: "each" },
     { name: "St. Louis Ribs (1/2 rack)", each: 1, unit: "each" }
   ],
@@ -39,18 +39,17 @@ const initialMenuData = {
     { name: "Key Lime Pie", each: 1, unit: "each" }
   ]
 };
+
 export const useMenuManager = (localStorageKey) => {
   const [menu, setMenu] = useState(() => {
-    const savedMenu = localStorage.getItem(localStorageKey);
-    return savedMenu ? JSON.parse(savedMenu) : initialMenuData;
+    const saved = localStorage.getItem(localStorageKey);
+    return saved ? JSON.parse(saved) : initialMenuData;
   });
 
   const [editorsVisibility, setEditorsVisibility] = useState(() => {
-    const initial = {};
-    Object.keys(initialMenuData).forEach(section => {
-      initial[section] = true;
-    });
-    return initial;
+    const init = {};
+    Object.keys(initialMenuData).forEach(k => { init[k] = true; });
+    return init;
   });
 
   const [newItemForms, setNewItemForms] = useState({});
@@ -75,35 +74,30 @@ export const useMenuManager = (localStorageKey) => {
 
   const addMenuItem = (section) => {
     const { name, value, unit } = newItemForms[section];
-    if (!name || !value) {
-      alert("Item name and portion value are required.");
-      return;
-    }
-    const numValue = parseFloat(value);
-    if (isNaN(numValue) || numValue <= 0) {
-      alert("Portion value must be a positive number.");
-      return;
-    }
+    if (!name || !value) return alert("Name and portion required.");
+    const num = parseFloat(value);
+    if (isNaN(num) || num <= 0) return alert("Portion must be a positive number.");
 
-    setMenu(prevMenu => {
-      const updatedSectionItems = prevMenu[section].filter(i => i.name.toLowerCase() !== name.toLowerCase());
-      const newItem = unit === "oz" ? { name, perGuestOz: numValue, unit } : { name, each: numValue, unit };
+    setMenu(prev => {
+      const filtered = prev[section].filter(i => i.name.toLowerCase() !== name.toLowerCase());
+      const item = unit === "oz" ? { name, perGuestOz: num, unit } : { name, each: num, unit };
       return {
-        ...prevMenu,
-        [section]: [...updatedSectionItems, newItem].sort((a, b) => a.name.localeCompare(b.name))
+        ...prev,
+        [section]: [...filtered, item].sort((a, b) => a.name.localeCompare(b.name))
       };
     });
+
     setNewItemForms(prev => ({ ...prev, [section]: { name: '', value: '', unit: 'oz' } }));
   };
 
-  const removeMenuItem = (section, itemName) => {
-    setMenu(prevMenu => ({
-      ...prevMenu,
-      [section]: prevMenu[section].filter(item => item.name !== itemName)
+  const removeMenuItem = (section, name) => {
+    setMenu(prev => ({
+      ...prev,
+      [section]: prev[section].filter(item => item.name !== name)
     }));
   };
 
-  const MenuEditorComponent = ({ sectionTitleColor = "from-purple-400 to-indigo-500" }) => (
+  const MenuEditorComponentRaw = ({ sectionTitleColor = "from-purple-400 to-indigo-500" }) => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 px-2 sm:px-4">
       {Object.keys(menu).map(section => (
         <Card key={section} className="shadow-lg bg-slate-800/70 border-slate-700 backdrop-blur-sm">
@@ -117,33 +111,18 @@ export const useMenuManager = (localStorageKey) => {
           </CardHeader>
           {editorsVisibility[section] && (
             <CardContent>
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mb-4 p-3 border border-slate-700 rounded-md bg-slate-800 space-y-2"
-              >
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mb-4 p-3 border border-slate-700 rounded-md bg-slate-800 space-y-2">
                 <h4 className="text-sm font-semibold text-slate-200">Add/Update Item in {section}</h4>
                 <Input placeholder="Item Name" value={newItemForms[section]?.name || ''} onChange={(e) => handleNewItemChange(section, 'name', e.target.value)} className="bg-slate-700 border-slate-600 text-slate-200 placeholder-slate-500" />
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div className="flex flex-col">
                     <Label className="text-xs text-slate-400 mb-1">Portion</Label>
-                    <Input
-                      type="number"
-                      placeholder="e.g. 4"
-                      value={newItemForms[section]?.value || ''}
-                      onChange={(e) => handleNewItemChange(section, 'value', e.target.value)}
-                      className="bg-slate-700 border-slate-600 text-slate-200 placeholder-slate-500"
-                    />
+                    <Input type="number" placeholder="e.g. 4" value={newItemForms[section]?.value || ''} onChange={(e) => handleNewItemChange(section, 'value', e.target.value)} className="bg-slate-700 border-slate-600 text-slate-200 placeholder-slate-500" />
                   </div>
                   <div className="flex flex-col">
                     <Label className="text-xs text-slate-400 mb-1">Unit</Label>
                     <div className="flex items-center space-x-1">
-                      <Select
-                        value={newItemForms[section]?.unit || 'oz'}
-                        onValueChange={(val) => handleNewItemChange(section, 'unit', val)}
-                      >
+                      <Select value={newItemForms[section]?.unit || 'oz'} onValueChange={(val) => handleNewItemChange(section, 'unit', val)}>
                         <SelectTrigger className="bg-slate-700 border-slate-600 text-slate-200 w-[80px]">
                           <SelectValue placeholder="Unit" />
                         </SelectTrigger>
@@ -156,39 +135,21 @@ export const useMenuManager = (localStorageKey) => {
                     </div>
                   </div>
                 </div>
-
-                <Button
-                  onClick={() => addMenuItem(section)}
-                  size="sm"
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white mt-3"
-                >
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Add/Update
+                <Button onClick={() => addMenuItem(section)} size="sm" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white mt-3">
+                  <PlusCircle className="mr-2 h-4 w-4" /> Add/Update
                 </Button>
-
                 <div className="mt-4 space-y-1">
                   <h5 className="text-xs font-medium text-slate-300">Current Items:</h5>
-                  {menu[section].length === 0 ? (
-                    <p className="text-xs text-slate-500">No items.</p>
-                  ) : (
-                    <ul className="text-xs text-slate-400 max-h-40 overflow-y-auto pr-1">
-                      {menu[section].map((item) => (
-                        <li key={item.name} className="flex justify-between items-center py-0.5">
-                          <span>
-                            {item.name} ({item.perGuestOz ? `${item.perGuestOz}oz` : `${item.each} each`})
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeMenuItem(section, item.name)}
-                            className="h-5 w-5 text-red-500 hover:text-red-400"
-                          >
-                            <XCircle size={12} />
-                          </Button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                  <ul className="text-xs text-slate-400 max-h-40 overflow-y-auto pr-1">
+                    {menu[section].map((item) => (
+                      <li key={item.name} className="flex justify-between items-center py-0.5">
+                        <span>{item.name} ({item.perGuestOz ? `${item.perGuestOz}oz` : `${item.each} each`})</span>
+                        <Button variant="ghost" size="icon" onClick={() => removeMenuItem(section, item.name)} className="h-5 w-5 text-red-500 hover:text-red-400">
+                          <XCircle size={12} />
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </motion.div>
             </CardContent>
@@ -198,5 +159,21 @@ export const useMenuManager = (localStorageKey) => {
     </div>
   );
 
-  return { menu, MenuEditorComponent };
+  const MemoizedMenuEditor = React.memo(MenuEditorComponentRaw);
+
+  return {
+    menu,
+    MenuEditorComponent: (props) => (
+      <MemoizedMenuEditor
+        {...props}
+        menu={menu}
+        editorsVisibility={editorsVisibility}
+        newItemForms={newItemForms}
+        toggleEditor={toggleEditor}
+        handleNewItemChange={handleNewItemChange}
+        addMenuItem={addMenuItem}
+        removeMenuItem={removeMenuItem}
+      />
+    )
+  };
 };
