@@ -9,11 +9,12 @@ import { useMenuManager } from "@/hooks/useMenuManager.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import { Edit3 } from "lucide-react";
 
-const DailyShiftPrepGuide = () => {
-  const {
-    dailyShiftPrepData,
-    adjustmentFactor,
-  } = useDailyShiftPrepGuideLogic();
+<PrepGuideContent
+  dailyShiftPrepData={dailyShiftPrepData}
+  expandedDays={expandedDays}
+  setExpandedDays={setExpandedDays}
+  onPrepTaskChange={handlePrepTaskChange} // ✅ this line fixes the flicker
+/>
 
   const [expandedDays, setExpandedDays] = useState({});
   const { toast } = useToast();
