@@ -145,5 +145,5 @@ const PrepGuideContent = ({ dailyShiftPrepData, onPrepTaskChange, expandedDays, 
     </div>
   );
 };
-
-export default PrepGuideContent;
+const MemoizedPrepGuideContent = React.memo(PrepGuideContent);
+export default MemoizedPrepGuideContent;
