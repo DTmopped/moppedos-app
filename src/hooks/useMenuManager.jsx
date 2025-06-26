@@ -204,19 +204,17 @@ export const useMenuManager = (localStorageKey) => {
     }));
   };
 
-  return {
-    menu,
-    MenuEditorComponent: (props) => (
-      <MenuEditorComponentRaw
-        {...props}
-        menu={menu}
-        editorsVisibility={editorsVisibility}
-        newItemForms={newItemForms}
-        toggleEditor={toggleEditor}
-        handleNewItemChange={handleNewItemChange}
-        addMenuItem={addMenuItem}
-        removeMenuItem={removeMenuItem}
-      />
-    )
-  };
+ const memoizedProps = {
+  menu,
+  editorsVisibility,
+  newItemForms,
+  toggleEditor,
+  handleNewItemChange,
+  addMenuItem,
+  removeMenuItem
+};
+
+return {
+  menu,
+  MenuEditorComponent: () => <MenuEditorComponentRaw {...memoizedProps} />
 };
