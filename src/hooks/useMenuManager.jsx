@@ -52,20 +52,23 @@ export const useMenuManager = (localStorageKey) => {
     return init;
   });
 
-  const [newItemForms, setNewItemForms] = useState({});
+  const [newItemForms, setNewItemForms] = useState(() => {
+    const forms = {};
+    Object.keys(initialMenuData).forEach(section => {
+      forms[section] = { name: '', value: '', unit: 'oz' };
+    });
+    return forms;
+  });
 
- useEffect(() => {
-  const timeout = setTimeout(() => {
-    localStorage.setItem(localStorageKey, JSON.stringify(menu));
-  }, 300); // throttle by 300ms
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      localStorage.setItem(localStorageKey, JSON.stringify(menu));
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [menu, localStorageKey]);
 
-  return () => clearTimeout(timeout); // cancel if menu changes quickly
-}, [menu, localStorageKey]);
   const toggleEditor = (section) => {
     setEditorsVisibility(prev => ({ ...prev, [section]: !prev[section] }));
-    if (!newItemForms[section]) {
-      setNewItemForms(prev => ({ ...prev, [section]: { name: '', value: '', unit: 'oz' } }));
-    }
   };
 
   const handleNewItemChange = (section, field, value) => {
@@ -180,3 +183,4 @@ export const useMenuManager = (localStorageKey) => {
     )
   };
 };
+
