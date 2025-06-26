@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
@@ -106,7 +106,7 @@ export const useMenuManager = (localStorageKey) => {
     }));
   };
 
-  const MenuEditorComponentRaw = ({ sectionTitleColor = "from-purple-400 to-indigo-500" }) => (
+  const MenuEditorComponent = ({ sectionTitleColor = "from-purple-400 to-indigo-500" }) => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 px-2 sm:px-4">
       {Object.keys(menu).map(section => (
         <Card key={section} className="shadow-lg bg-slate-800/70 border-slate-700 backdrop-blur-sm">
@@ -166,14 +166,11 @@ export const useMenuManager = (localStorageKey) => {
         </Card>
       ))}
     </div>
-  ), [menu, editorsVisibility, newItemForms]);
-
-  const MemoizedMenuEditor = React.memo(MenuEditorComponentRaw);
+  );
 
   return {
     menu,
-    MenuEditorComponent: MemoizedMenuEditor
+    MenuEditorComponent
   };
 };
-
 
