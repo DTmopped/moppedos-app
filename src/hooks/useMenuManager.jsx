@@ -218,3 +218,4 @@ return {
   menu,
   MenuEditorComponent: () => <MenuEditorComponentRaw {...memoizedProps} />
 };
+}
