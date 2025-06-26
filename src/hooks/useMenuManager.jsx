@@ -13,6 +13,9 @@ import {
 } from '@/components/ui/select.jsx';
 import { PlusCircle, XCircle, Edit3 } from 'lucide-react';
 
+// ----------------------------------------
+// 🔧 Initial Data
+// ----------------------------------------
 const initialMenuData = {
   Sandwiches: [
     { name: "Pulled Pork Sandwich", perGuestOz: 6, unit: "oz" },
@@ -46,8 +49,81 @@ const initialMenuData = {
   ]
 };
 
-const MenuEditorComponentRaw = React.memo(
-  ({ sectionTitleColor = "from-purple-400 to-indigo-500", menu, editorsVisibility, newItemForms, toggleEditor, handleNewItemChange, addMenuItem, removeMenuItem }) => (
+// ----------------------------------------
+// 🧠 Hook
+// ----------------------------------------
+export const useMenuManager = (localStorageKey) => {
+  const [menu, setMenu] = useState(() => {
+    const saved = localStorage.getItem(localStorageKey);
+    return saved ? JSON.parse(saved) : initialMenuData;
+  });
+
+  const [editorsVisibility, setEditorsVisibility] = useState(() => {
+    const init = {};
+    Object.keys(initialMenuData).forEach(k => { init[k] = true; });
+    return init;
+  });
+
+  const [newItemForms, setNewItemForms] = useState(() => {
+    const forms = {};
+    Object.keys(initialMenuData).forEach(section => {
+      forms[section] = { name: '', value: '', unit: 'oz' };
+    });
+    return forms;
+  });
+
+  const saveTimeout = useRef(null);
+
+  useEffect(() => {
+    if (saveTimeout.current) clearTimeout(saveTimeout.current);
+    saveTimeout.current = setTimeout(() => {
+      localStorage.setItem(localStorageKey, JSON.stringify(menu));
+    }, 300);
+    return () => clearTimeout(saveTimeout.current);
+  }, [menu, localStorageKey]);
+
+  const toggleEditor = (section) => {
+    setEditorsVisibility(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  const handleNewItemChange = (section, field, value) => {
+    setNewItemForms(prev => ({
+      ...prev,
+      [section]: { ...prev[section], [field]: value }
+    }));
+  };
+
+  const addMenuItem = (section) => {
+    const { name, value, unit } = newItemForms[section];
+    if (!name || !value) return alert("Name and portion required.");
+    const num = parseFloat(value);
+    if (isNaN(num) || num <= 0) return alert("Portion must be a positive number.");
+
+    setMenu(prev => {
+      const filtered = prev[section].filter(i => i.name.toLowerCase() !== name.toLowerCase());
+      const item = unit === "oz" ? { name, perGuestOz: num, unit } : { name, each: num, unit };
+      return {
+        ...prev,
+        [section]: [...filtered, item].sort((a, b) => a.name.localeCompare(b.name))
+      };
+    });
+
+    setNewItemForms(prev => ({ ...prev, [section]: { name: '', value: '', unit: 'oz' } }));
+  };
+
+  const removeMenuItem = (section, name) => {
+    setMenu(prev => ({
+      ...prev,
+      [section]: prev[section].filter(item => item.name !== name)
+    }));
+  };
+
+  // ----------------------------------------
+  // 🧩 Component
+  // ----------------------------------------
+  const MenuEditorComponentRaw = ({
+    sectionTitleColor = "from-purple-400 to-indigo-500"
+  }) => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 px-2 sm:px-4">
       {Object.keys(menu).map(section => (
         <Card key={section} className="shadow-lg bg-slate-800/70 border-slate-700 backdrop-blur-sm">
@@ -135,88 +211,13 @@ const MenuEditorComponentRaw = React.memo(
         </Card>
       ))}
     </div>
-  )
-);
+  );
 
-export const useMenuManager = (localStorageKey) => {
-  const [menu, setMenu] = useState(() => {
-    const saved = localStorage.getItem(localStorageKey);
-    return saved ? JSON.parse(saved) : initialMenuData;
-  });
-
-  const [editorsVisibility, setEditorsVisibility] = useState(() => {
-    const init = {};
-    Object.keys(initialMenuData).forEach(k => { init[k] = true; });
-    return init;
-  });
-
-  const [newItemForms, setNewItemForms] = useState(() => {
-    const forms = {};
-    Object.keys(initialMenuData).forEach(section => {
-      forms[section] = { name: '', value: '', unit: 'oz' };
-    });
-    return forms;
-  });
-
-  const saveTimeout = useRef(null);
-
-  useEffect(() => {
-    if (saveTimeout.current) clearTimeout(saveTimeout.current);
-    saveTimeout.current = setTimeout(() => {
-      localStorage.setItem(localStorageKey, JSON.stringify(menu));
-    }, 300);
-    return () => clearTimeout(saveTimeout.current);
-  }, [menu, localStorageKey]);
-
-  const toggleEditor = (section) => {
-    setEditorsVisibility(prev => ({ ...prev, [section]: !prev[section] }));
-  };
-
-  const handleNewItemChange = (section, field, value) => {
-    setNewItemForms(prev => ({
-      ...prev,
-      [section]: { ...prev[section], [field]: value }
-    }));
-  };
-
-  const addMenuItem = (section) => {
-    const { name, value, unit } = newItemForms[section];
-    if (!name || !value) return alert("Name and portion required.");
-    const num = parseFloat(value);
-    if (isNaN(num) || num <= 0) return alert("Portion must be a positive number.");
-
-    setMenu(prev => {
-      const filtered = prev[section].filter(i => i.name.toLowerCase() !== name.toLowerCase());
-      const item = unit === "oz" ? { name, perGuestOz: num, unit } : { name, each: num, unit };
-      return {
-        ...prev,
-        [section]: [...filtered, item].sort((a, b) => a.name.localeCompare(b.name))
-      };
-    });
-
-    setNewItemForms(prev => ({ ...prev, [section]: { name: '', value: '', unit: 'oz' } }));
-  };
-
-  const removeMenuItem = (section, name) => {
-    setMenu(prev => ({
-      ...prev,
-      [section]: prev[section].filter(item => item.name !== name)
-    }));
-  };
-
-  const memoizedProps = {
-    menu,
-    editorsVisibility,
-    newItemForms,
-    toggleEditor,
-    handleNewItemChange,
-    addMenuItem,
-    removeMenuItem
-  };
+  // ✅ Properly Memoized Once
+  const MemoizedMenuEditor = React.memo(MenuEditorComponentRaw);
 
   return {
     menu,
-    MenuEditorComponent: () => <MenuEditorComponentRaw {...memoizedProps} />
+    MenuEditorComponent: MemoizedMenuEditor
   };
 };
-
