@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
@@ -60,11 +60,14 @@ export const useMenuManager = (localStorageKey) => {
     return forms;
   });
 
+  const saveTimeout = useRef(null);
+
   useEffect(() => {
-    const timeout = setTimeout(() => {
+    if (saveTimeout.current) clearTimeout(saveTimeout.current);
+    saveTimeout.current = setTimeout(() => {
       localStorage.setItem(localStorageKey, JSON.stringify(menu));
     }, 300);
-    return () => clearTimeout(timeout);
+    return () => clearTimeout(saveTimeout.current);
   }, [menu, localStorageKey]);
 
   const toggleEditor = (section) => {
@@ -103,7 +106,7 @@ export const useMenuManager = (localStorageKey) => {
     }));
   };
 
-  const MenuEditorComponentRaw = ({ sectionTitleColor = "from-purple-400 to-indigo-500" }) => (
+  const MenuEditorComponentRaw = useMemo(() => ({ sectionTitleColor = "from-purple-400 to-indigo-500" }) => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 px-2 sm:px-4">
       {Object.keys(menu).map(section => (
         <Card key={section} className="shadow-lg bg-slate-800/70 border-slate-700 backdrop-blur-sm">
@@ -117,7 +120,7 @@ export const useMenuManager = (localStorageKey) => {
           </CardHeader>
           {editorsVisibility[section] && (
             <CardContent>
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mb-4 p-3 border border-slate-700 rounded-md bg-slate-800 space-y-2">
+              <div className="mb-4 p-3 border border-slate-700 rounded-md bg-slate-800 space-y-2">
                 <h4 className="text-sm font-semibold text-slate-200">Add/Update Item in {section}</h4>
                 <Input placeholder="Item Name" value={newItemForms[section]?.name || ''} onChange={(e) => handleNewItemChange(section, 'name', e.target.value)} className="bg-slate-700 border-slate-600 text-slate-200 placeholder-slate-500" />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -157,30 +160,20 @@ export const useMenuManager = (localStorageKey) => {
                     ))}
                   </ul>
                 </div>
-              </motion.div>
+              </div>
             </CardContent>
           )}
         </Card>
       ))}
     </div>
-  );
+  ), [menu, editorsVisibility, newItemForms]);
 
   const MemoizedMenuEditor = React.memo(MenuEditorComponentRaw);
 
   return {
     menu,
-    MenuEditorComponent: (props) => (
-      <MemoizedMenuEditor
-        {...props}
-        menu={menu}
-        editorsVisibility={editorsVisibility}
-        newItemForms={newItemForms}
-        toggleEditor={toggleEditor}
-        handleNewItemChange={handleNewItemChange}
-        addMenuItem={addMenuItem}
-        removeMenuItem={removeMenuItem}
-      />
-    )
+    MenuEditorComponent: MemoizedMenuEditor
   };
 };
+
 
