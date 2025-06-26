@@ -61,9 +61,13 @@ const PrintableDailyShiftPrepGuide = ({ dailyShiftPrepData, printDate }) => {
               font-size: 8pt;
               font-style: italic;
             }
+            .page-break {
+              page-break-before: always;
+            }
           }
         `}
       </style>
+
       <div className="text-center font-bold text-base mb-1">
         Mopped OS – Daily Shift Prep Guide
       </div>
@@ -72,13 +76,17 @@ const PrintableDailyShiftPrepGuide = ({ dailyShiftPrepData, printDate }) => {
       </div>
 
       {dailyShiftPrepData.map((day, index) => (
-        <div key={index}>
+        <div key={index} className={index > 0 ? 'page-break' : ''}>
           <div className="day-header">
             {new Date(day.date).toLocaleDateString('en-US', {
-              weekday: 'long', month: 'long', day: 'numeric'
+              weekday: 'long',
+              month: 'long',
+              day: 'numeric'
             })}
           </div>
-          <div className="day-sub">Guests: {day.guests} | AM: {day.amGuests} | PM: {day.pmGuests}</div>
+          <div className="day-sub">
+            Guests: {day.guests} | AM: {day.amGuests} | PM: {day.pmGuests}
+          </div>
 
           {['am', 'pm'].map((shiftKey) => {
             const shift = day.shifts[shiftKey];
@@ -104,7 +112,11 @@ const PrintableDailyShiftPrepGuide = ({ dailyShiftPrepData, printDate }) => {
                         <td>{item.quantity}</td>
                         <td>{item.unit}</td>
                         <td>{item.assignedTo || ''}</td>
-                        <td><span className="checkbox-box">{item.completed ? 'X' : '\u00A0'}</span></td>
+                        <td>
+                          <span className="checkbox-box">
+                            {item.completed ? 'X' : '\u00A0'}
+                          </span>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
