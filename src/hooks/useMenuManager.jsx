@@ -106,7 +106,7 @@ export const useMenuManager = (localStorageKey) => {
     }));
   };
 
-  const MenuEditorComponentRaw = useMemo(() => ({ sectionTitleColor = "from-purple-400 to-indigo-500" }) => (
+  const MenuEditorComponentRaw = ({ sectionTitleColor = "from-purple-400 to-indigo-500" }) => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 px-2 sm:px-4">
       {Object.keys(menu).map(section => (
         <Card key={section} className="shadow-lg bg-slate-800/70 border-slate-700 backdrop-blur-sm">
