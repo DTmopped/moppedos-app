@@ -54,10 +54,13 @@ export const useMenuManager = (localStorageKey) => {
 
   const [newItemForms, setNewItemForms] = useState({});
 
-  useEffect(() => {
+ useEffect(() => {
+  const timeout = setTimeout(() => {
     localStorage.setItem(localStorageKey, JSON.stringify(menu));
-  }, [menu, localStorageKey]);
+  }, 300); // throttle by 300ms
 
+  return () => clearTimeout(timeout); // cancel if menu changes quickly
+}, [menu, localStorageKey]);
   const toggleEditor = (section) => {
     setEditorsVisibility(prev => ({ ...prev, [section]: !prev[section] }));
     if (!newItemForms[section]) {
