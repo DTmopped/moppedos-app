@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { Info } from "lucide-react";
 import { cn } from "@/lib/utils";
+import MenuEditorComponent from "./MenuEditorComponent.jsx";
 
+// Auto-categorize items by name
 const categorizeItem = (itemName) => {
   const name = itemName.toLowerCase();
   if (name.includes("sammies") || name.includes("sandwich")) return "Sammies";
@@ -18,8 +20,24 @@ const categorizeItem = (itemName) => {
   return "Other";
 };
 
-const PrepGuideContent = ({ dailyShiftPrepData, onPrepTaskChange, expandedDays, setExpandedDays }) => {
+// TEMP: dummy data for editor
+const dummyMenu = {
+  Sandwiches: [
+    { name: "Chopped Brisket Sandwich", perGuestOz: 6 },
+    { name: "Pulled Pork Sandwich", perGuestOz: 6 }
+  ],
+  Sides: [
+    { name: "Mac & Cheese", perGuestOz: 4 },
+    { name: "Collard Greens", perGuestOz: 4 }
+  ]
+};
 
+const removeMenuItem = (section, name) => {
+  console.log(`Remove ${name} from ${section}`);
+  // Hook into Supabase or state logic later
+};
+
+const PrepGuideContent = ({ dailyShiftPrepData, onPrepTaskChange, expandedDays, setExpandedDays }) => {
   if (!dailyShiftPrepData || dailyShiftPrepData.length === 0) {
     return (
       <div className="text-center text-sm text-muted-foreground mt-10">
@@ -39,6 +57,12 @@ const PrepGuideContent = ({ dailyShiftPrepData, onPrepTaskChange, expandedDays, 
 
   return (
     <div className="space-y-6">
+      {/* Menu Editor UI */}
+      <div className="my-6">
+        <MenuEditorComponent menu={dummyMenu} removeMenuItem={removeMenuItem} />
+      </div>
+
+      {/* Shift Prep Cards */}
       {dailyShiftPrepData.map((day, idx) => {
         const isExpanded = expandedDays[day.date] || false;
 
@@ -145,5 +169,6 @@ const PrepGuideContent = ({ dailyShiftPrepData, onPrepTaskChange, expandedDays, 
     </div>
   );
 };
+
 const MemoizedPrepGuideContent = React.memo(PrepGuideContent);
 export default MemoizedPrepGuideContent;
