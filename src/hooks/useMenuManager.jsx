@@ -125,14 +125,13 @@ export const useMenuManager = (localStorageKey) => {
   // 🧩 Component
   // ----------------------------------------
   const MenuEditorComponent = ({ sectionTitleColor = "from-purple-400 to-indigo-500" }) => {
-  const sortedMenu = useMemo(() => {
+ const sortedMenu = useMemo(() => {
   const sorted = {};
   Object.keys(menu).forEach(section => {
     sorted[section] = [...(menu[section] || [])].sort((a, b) => a.name.localeCompare(b.name));
   });
   return sorted;
-}, [JSON.stringify(menu)]);
-
+}, [menu]);
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 px-2 sm:px-4">
       {Object.keys(sortedMenu).map(section => (
