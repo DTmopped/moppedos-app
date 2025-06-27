@@ -94,22 +94,25 @@ export const useMenuManager = (localStorageKey) => {
   };
 
   const addMenuItem = (section) => {
-    const { name, value, unit } = newItemForms[section];
-    if (!name || !value) return alert("Name and portion required.");
-    const num = parseFloat(value);
-    if (isNaN(num) || num <= 0) return alert("Portion must be a positive number.");
+  const { name, value, unit } = newItemForms[section];
+  if (!name || !value) return alert("Name and portion required.");
+  const num = parseFloat(value);
+  if (isNaN(num) || num <= 0) return alert("Portion must be a positive number.");
 
-    setMenu(prev => {
-      const updatedItems = [...prev[section]].filter(i => i.name.toLowerCase() !== name.toLowerCase());
-      const newItem = unit === "oz" ? { name, perGuestOz: num, unit } : { name, each: num, unit };
-      return {
-        ...prev,
-        [section]: [...updatedItems, newItem]
-      };
-    });
+  const newItem = unit === "oz"
+    ? { name, perGuestOz: num, unit, each: undefined }
+    : { name, each: num, unit, perGuestOz: undefined };
 
-    setNewItemForms(prev => ({ ...prev, [section]: { name: '', value: '', unit: 'oz' } }));
-  };
+  setMenu(prev => {
+    const updatedItems = [...prev[section]].filter(i => i.name.toLowerCase() !== name.toLowerCase());
+    return {
+      ...prev,
+      [section]: [...updatedItems, newItem]
+    };
+  });
+
+  setNewItemForms(prev => ({ ...prev, [section]: { name: '', value: '', unit: 'oz' } }));
+};
 
   const removeMenuItem = (section, name) => {
     setMenu(prev => ({
@@ -123,12 +126,12 @@ export const useMenuManager = (localStorageKey) => {
   // ----------------------------------------
   const MenuEditorComponent = ({ sectionTitleColor = "from-purple-400 to-indigo-500" }) => {
   const sortedMenu = useMemo(() => {
-    const sorted = {};
-    Object.keys(menu).forEach(section => {
-      sorted[section] = [...menu[section]].sort((a, b) => a.name.localeCompare(b.name));
-    });
-    return sorted;
-  }, [menu]);
+  const sorted = {};
+  Object.keys(menu).forEach(section => {
+    sorted[section] = [...(menu[section] || [])].sort((a, b) => a.name.localeCompare(b.name));
+  });
+  return sorted;
+}, [JSON.stringify(menu)]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 px-2 sm:px-4">
