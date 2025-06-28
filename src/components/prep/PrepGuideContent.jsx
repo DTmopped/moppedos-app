@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { Info } from "lucide-react";
 import { cn } from "@/lib/utils";
-import MenuEditorComponent from "./MenuEditorComponent.jsx";
+import { useMenuManager } from "@/hooks/useMenuManager.jsx";
+
+const { MenuEditorComponent } = useMenuManager("menu-data");
 
 // Auto-categorize items by name
 const categorizeItem = (itemName) => {
