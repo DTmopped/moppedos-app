@@ -20,9 +20,15 @@ const categorizeItem = (itemName) => {
   return "Other";
 };
 
-const PrepGuideContent = ({ dailyShiftPrepData, onPrepTaskChange, expandedDays, setExpandedDays }) => {
+const PrepGuideContent = ({
+  dailyShiftPrepData,
+  onPrepTaskChange,
+  expandedDays,
+  setExpandedDays,
+  showEditor,
+  setShowEditor
+}) => {
   const { MenuEditorComponent } = useMenuManager("menu-data");
-  const [showEditor, setShowEditor] = useState(false);
 
   if (!dailyShiftPrepData || dailyShiftPrepData.length === 0) {
     return (
@@ -43,16 +49,6 @@ const PrepGuideContent = ({ dailyShiftPrepData, onPrepTaskChange, expandedDays, 
 
   return (
     <div className="space-y-6">
-      {/* Menu Editor Toggle */}
-      <div className="flex justify-end mb-4">
-        <button
-          onClick={() => setShowEditor(prev => !prev)}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-        >
-          {showEditor ? "Hide Menu Editor" : "Manage Menu"}
-        </button>
-      </div>
-
       {/* Conditionally Rendered Menu Editor UI */}
       {showEditor && (
         <div className="my-6">
