@@ -20,23 +20,6 @@ const categorizeItem = (itemName) => {
   return "Other";
 };
 
-// TEMP: dummy data for editor
-const dummyMenu = {
-  Sandwiches: [
-    { name: "Chopped Brisket Sandwich", perGuestOz: 6 },
-    { name: "Pulled Pork Sandwich", perGuestOz: 6 }
-  ],
-  Sides: [
-    { name: "Mac & Cheese", perGuestOz: 4 },
-    { name: "Collard Greens", perGuestOz: 4 }
-  ]
-};
-
-const removeMenuItem = (section, name) => {
-  console.log(`Remove ${name} from ${section}`);
-  // Hook into Supabase or state logic later
-};
-
 const PrepGuideContent = ({ dailyShiftPrepData, onPrepTaskChange, expandedDays, setExpandedDays }) => {
   const { MenuEditorComponent } = useMenuManager("menu-data");
   const [showEditor, setShowEditor] = useState(false);
@@ -73,7 +56,7 @@ const PrepGuideContent = ({ dailyShiftPrepData, onPrepTaskChange, expandedDays, 
       {/* Conditionally Rendered Menu Editor UI */}
       {showEditor && (
         <div className="my-6">
-          <MenuEditorComponent menu={dummyMenu} removeMenuItem={removeMenuItem} />
+          <MenuEditorComponent />
         </div>
       )}
 
