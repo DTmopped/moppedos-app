@@ -3,8 +3,6 @@ import { Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMenuManager } from "@/hooks/useMenuManager.jsx";
 
-const { MenuEditorComponent } = useMenuManager("menu-data");
-
 // Auto-categorize items by name
 const categorizeItem = (itemName) => {
   const name = itemName.toLowerCase();
@@ -40,6 +38,8 @@ const removeMenuItem = (section, name) => {
 };
 
 const PrepGuideContent = ({ dailyShiftPrepData, onPrepTaskChange, expandedDays, setExpandedDays }) => {
+  const { MenuEditorComponent } = useMenuManager("menu-data");
+
   if (!dailyShiftPrepData || dailyShiftPrepData.length === 0) {
     return (
       <div className="text-center text-sm text-muted-foreground mt-10">
