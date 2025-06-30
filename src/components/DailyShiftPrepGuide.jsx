@@ -6,6 +6,7 @@ import PrintableDailyShiftPrepGuide from "./prep/PrintableDailyShiftPrepGuide.js
 import { useToast } from "./ui/use-toast.jsx";
 import PrepGuideContent from "./prep/PrepGuideContent.jsx";
 import { useMenuManager } from "@/hooks/useMenuManager.jsx";
+import MenuEditorComponent from "@/components/prep/MenuEditorComponent.jsx"; // ✅ Fixed import
 import { Button } from "@/components/ui/button.jsx";
 import { Edit3 } from "lucide-react";
 
@@ -19,12 +20,9 @@ const DailyShiftPrepGuide = () => {
   const [expandedDays, setExpandedDays] = useState({});
   const { toast } = useToast();
   const [manageMenuOpen, setManageMenuOpen] = useState(false);
+  const { menu } = useMenuManager("dailyPrepMenu"); // ✅ Removed MenuEditorComponent destructure
 
-  const { menu, MenuEditorComponent } = useMenuManager("dailyPrepMenu");
-
-  const selectedDay = Array.isArray(dailyShiftPrepData)
-    ? dailyShiftPrepData.find((d) => expandedDays[d.date])
-    : null;
+  const selectedDay = dailyShiftPrepData.find((d) => expandedDays[d.date]);
 
   const handleInitiatePrint = async () => {
     try {
@@ -47,11 +45,6 @@ const DailyShiftPrepGuide = () => {
       });
     }
   };
-
-  // ✅ Prevent crashing on first render if data is undefined
-  if (!Array.isArray(dailyShiftPrepData)) {
-    return <div className="text-white">Loading prep data...</div>;
-  }
 
   return (
     <motion.div
