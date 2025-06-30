@@ -13,7 +13,7 @@ if (isDev) {
 const configHorizonsViteErrorHandler = `
 const observer = new MutationObserver((mutations) => {
 	for (const mutation of mutations) {
-		for (const addedNode of mutation.addedNodes) {
+		for (const addedNode of mutation.addedNode) { // Changed from addedNode to addedNodes
 			if (
 				addedNode.nodeType === Node.ELEMENT_NODE &&
 				(
@@ -204,15 +204,20 @@ export default defineConfig({
 		allowedHosts: true,
 	},
 	resolve: {
-  extensions: ['.jsx', '.js', '.tsx', '.ts', '.json'],
- alias: {
-  '@': path.resolve(__dirname, './src'),
-  components: path.resolve(__dirname, './src/components'),
-  config: path.resolve(__dirname, './src/config'),
-  hooks: path.resolve(__dirname, './src/hooks'),
-  contexts: path.resolve(__dirname, './src/contexts'),
-},
-},
+        extensions: ['.jsx', '.js', '.tsx', '.ts', '.json'],
+        alias: {
+            '@': path.resolve(__dirname, './src'),
+            components: path.resolve(__dirname, './src/components'),
+            config: path.resolve(__dirname, './src/config'),
+            hooks: path.resolve(__dirname, './src/hooks'),
+            contexts: path.resolve(__dirname, './src/contexts'),
+        },
+    },
+    // Add this optimizeDeps section
+    optimizeDeps: {
+        include: ['react', 'react-dom'],
+        exclude: ['@radix-ui/react-dialog'] // Exclude Radix UI to prevent pre-bundling conflicts
+    },
 	build: {
 		rollupOptions: {
 			external: [
