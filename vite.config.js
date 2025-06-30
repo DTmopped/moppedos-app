@@ -13,7 +13,7 @@ if (isDev) {
 const configHorizonsViteErrorHandler = `
 const observer = new MutationObserver((mutations) => {
 	for (const mutation of mutations) {
-		for (const addedNode of mutation.addedNode) { // Changed from addedNode to addedNodes
+		for (const addedNode of mutation.addedNodes) { // Corrected: addedNodes
 			if (
 				addedNode.nodeType === Node.ELEMENT_NODE &&
 				(
@@ -212,11 +212,14 @@ export default defineConfig({
             hooks: path.resolve(__dirname, './src/hooks'),
             contexts: path.resolve(__dirname, './src/contexts'),
         },
+        // Add dedupe for React and React-DOM
+        dedupe: ['react', 'react-dom'],
     },
-    // Add this optimizeDeps section
     optimizeDeps: {
-        include: ['react', 'react-dom'],
-        exclude: ['@radix-ui/react-dialog'] // Exclude Radix UI to prevent pre-bundling conflicts
+        // Include react-dom/client as well
+        include: ['react', 'react-dom', 'react-dom/client'],
+        // Exclude Radix UI to prevent pre-bundling conflicts
+        exclude: ['@radix-ui/react-dialog']
     },
 	build: {
 		rollupOptions: {
