@@ -27,10 +27,9 @@ const MenuEditorComponent = ({
   const sortedMenu = useMemo(() => {
     const sorted = {};
     Object.keys(menu).forEach(section => {
-      sorted[section] = [...(menu[section] || [])].sort((a, b) =>
-        a.name.localeCompare(b.name)
-      );
-    });
+  const items = Array.isArray(menu[section]) ? menu[section] : [];
+  sorted[section] = [...items].sort((a, b) => a.name.localeCompare(b.name));
+});
     return sorted;
   }, [menu]);
 
