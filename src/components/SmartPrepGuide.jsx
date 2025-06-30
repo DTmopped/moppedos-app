@@ -4,25 +4,24 @@ import { motion } from 'framer-motion';
 import FullWeeklyPrepGuideHeader from '@/components/prep/FullWeeklyPrepGuideHeader.jsx';
 import PrepGuideContent from '@/components/prep/PrepGuideContent.jsx';
 import PrintableSmartPrepGuide from '@/components/prep/PrintableSmartPrepGuide.jsx';
-import { PREP_GUIDE_ICON_COLORS } from '@/config/prepGuideConfig.jsxxx';
+import { PREP_GUIDE_ICON_COLORS } from '@/config/prepGuideConfig'; // <-- FIXED
 import { useSmartPrepGuideLogic } from '@/hooks/useSmartPrepGuideLogic.jsx';
 
 const SmartPrepGuide = () => {
   const {
     forecastData,
     menu,
-    MenuEditorComponent,
     menuLoading,
     adjustmentFactor,
     prepTextBySection,
-  } = useSmartPrepGuideLogic('fullPrepGuideMenu');
+  } = useSmartPrepGuideLogic('fullPrepGuideMenu'); // <-- CLEANED
 
   const [manageMenuOpen, setManageMenuOpen] = useState(false);
   const [printDate, setPrintDate] = useState(new Date());
 
   const handlePrint = () => {
     setPrintDate(new Date());
-    
+
     const printableComponentHtml = ReactDOMServer.renderToStaticMarkup(
       <PrintableSmartPrepGuide 
         prepTextBySection={prepTextBySection} 
@@ -40,7 +39,7 @@ const SmartPrepGuide = () => {
     iframe.style.top = '-9999px';
 
     document.body.appendChild(iframe);
-    
+
     const doc = iframe.contentWindow.document;
     doc.open();
     doc.write(`
@@ -57,7 +56,7 @@ const SmartPrepGuide = () => {
     doc.close();
 
     iframe.contentWindow.focus();
-    
+
     setTimeout(() => {
       iframe.contentWindow.print();
       document.body.removeChild(iframe);
@@ -77,7 +76,6 @@ const SmartPrepGuide = () => {
         adjustmentFactor={adjustmentFactor}
         onManageMenuOpen={setManageMenuOpen}
         onPrint={handlePrint}
-        MenuEditorComponent={MenuEditorComponent}
         manageMenuOpen={manageMenuOpen}
         setManageMenuOpen={setManageMenuOpen}
       />
