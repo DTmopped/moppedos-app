@@ -13,15 +13,32 @@ import {
 import { Printer, Edit3, ShoppingBasket } from 'lucide-react';
 import { PREP_GUIDE_ICON_COLORS } from '@/config/prepGuideConfig.jsx';
 
+// Import the useMenuManager hook
+import { useMenuManager } from '@/hooks/useMenuManager.jsx'; // Adjust this path if your hook is elsewhere
+
+// Import the new MenuEditorComponent
+import MenuEditorComponent from '@/components/prep/MenuEditorComponent.jsx'; // Adjust this path based on where you saved it
+
 const FullWeeklyPrepGuideHeader = ({
   adjustmentFactor,
   onManageMenuOpen,
   onPrint,
-  MenuEditorComponent,
+  // MenuEditorComponent is no longer passed as a prop, so remove it from here
   manageMenuOpen,
   setManageMenuOpen
 }) => {
   const titleColor = PREP_GUIDE_ICON_COLORS.fullWeekly;
+
+  // Call the useMenuManager hook to get the necessary state and functions
+  const {
+    menu, // Pass 'menu' to MenuEditorComponent for sortedMenu calculation
+    editorsVisibility,
+    toggleEditor,
+    newItemForms,
+    handleNewItemChange,
+    addMenuItem,
+    removeMenuItem
+  } = useMenuManager('fullWeeklyPrepGuideMenu'); // Use the correct localStorageKey for your app
 
   return (
     <Card className="glassmorphic-card no-print card-hover-glow">
@@ -56,7 +73,17 @@ const FullWeeklyPrepGuideHeader = ({
                   <DialogTitle className={`gradient-text ${titleColor}`}>Manage Full Prep Menu</DialogTitle>
                 </DialogHeader>
                 <div className="py-4 max-h-[70vh] overflow-y-auto">
-                  <MenuEditorComponent sectionTitleColor={titleColor} />
+                  {/* Render MenuEditorComponent directly and pass all required props */}
+                  <MenuEditorComponent
+                    sectionTitleColor={titleColor}
+                    menu={menu} // Pass the 'menu' state from the hook
+                    editorsVisibility={editorsVisibility}
+                    toggleEditor={toggleEditor}
+                    newItemForms={newItemForms}
+                    handleNewItemChange={handleNewItemChange}
+                    addMenuItem={addMenuItem}
+                    removeMenuItem={removeMenuItem}
+                  />
                 </div>
                 <DialogFooter>
                   <DialogClose asChild>
