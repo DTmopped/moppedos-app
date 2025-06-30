@@ -13,15 +13,18 @@ const DailyShiftPrepGuide = () => {
   const {
     dailyShiftPrepData,
     adjustmentFactor,
-    handlePrepTaskChange, // 🧠 make sure this is returned from your hook
+    handlePrepTaskChange,
   } = useDailyShiftPrepGuideLogic();
 
   const [expandedDays, setExpandedDays] = useState({});
   const { toast } = useToast();
   const [manageMenuOpen, setManageMenuOpen] = useState(false);
+
   const { menu, MenuEditorComponent } = useMenuManager("dailyPrepMenu");
 
-  const selectedDay = dailyShiftPrepData.find((d) => expandedDays[d.date]);
+  const selectedDay = Array.isArray(dailyShiftPrepData)
+    ? dailyShiftPrepData.find((d) => expandedDays[d.date])
+    : null;
 
   const handleInitiatePrint = async () => {
     try {
@@ -44,6 +47,11 @@ const DailyShiftPrepGuide = () => {
       });
     }
   };
+
+  // ✅ Prevent crashing on first render if data is undefined
+  if (!Array.isArray(dailyShiftPrepData)) {
+    return <div className="text-white">Loading prep data...</div>;
+  }
 
   return (
     <motion.div
@@ -85,7 +93,7 @@ const DailyShiftPrepGuide = () => {
         dailyShiftPrepData={dailyShiftPrepData}
         expandedDays={expandedDays}
         setExpandedDays={setExpandedDays}
-        onPrepTaskChange={handlePrepTaskChange} // ✅ Required for typing to persist
+        onPrepTaskChange={handlePrepTaskChange}
       />
     </motion.div>
   );
