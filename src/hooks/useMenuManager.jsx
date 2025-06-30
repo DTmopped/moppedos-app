@@ -1,34 +1,35 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 // ----------------------------------------
-// 🔧 Initial Data
+// 🔧 Default & Initial Menu Data
 // ----------------------------------------
 const defaultMenuData = {
-  Sandwiches: [],
-  BBQ: [],
-  Bread: [],
-  Sides: [],
-  Desserts: []
+  "BBQ Meats": [],
+  "Sammies": [],
+  "Breads": [],
+  "Sides": [],
+  "Desserts": [],
+  "Other": []
 };
 
 const initialMenuData = {
-  Sandwiches: [
+  "Sammies": [
     { name: "Pulled Pork Sandwich", perGuestOz: 6, unit: "oz" },
     { name: "Chopped Brisket Sandwich", perGuestOz: 6, unit: "oz" },
     { name: "Chopped Chicken Sandwich", perGuestOz: 6, unit: "oz" }
   ],
-  BBQ: [
+  "BBQ Meats": [
     { name: "Pulled Pork", perGuestOz: 4, unit: "oz" },
     { name: "Brisket", perGuestOz: 4, unit: "oz" },
     { name: "Bone-In Beef Short Rib", perGuestOz: 16, unit: "oz" },
     { name: "Half Chicken", each: 1, unit: "each" },
     { name: "St. Louis Ribs (1/2 rack)", each: 1, unit: "each" }
   ],
-  Bread: [
+  "Breads": [
     { name: "Buns", each: 1, unit: "each" },
     { name: "Texas Toast", each: 1, unit: "each" }
   ],
-  Sides: [
+  "Sides": [
     { name: "Baked Beans", perGuestOz: 4, unit: "oz" },
     { name: "Mac ’n’ Cheese", perGuestOz: 4, unit: "oz" },
     { name: "Collard Greens", perGuestOz: 4, unit: "oz" },
@@ -37,11 +38,12 @@ const initialMenuData = {
     { name: "Corn Muffin", each: 1, unit: "each" },
     { name: "Honey Butter", each: 1, unit: "each" }
   ],
-  Desserts: [
+  "Desserts": [
     { name: "Banana Pudding", each: 1, unit: "each" },
     { name: "Hummingbird Cake", each: 1, unit: "each" },
     { name: "Key Lime Pie", each: 1, unit: "each" }
-  ]
+  ],
+  "Other": []
 };
 
 // ----------------------------------------
