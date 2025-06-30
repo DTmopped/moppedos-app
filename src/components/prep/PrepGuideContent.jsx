@@ -6,7 +6,7 @@ import { useMenuManager } from "@/hooks/useMenuManager.jsx";
 // 🧠 Categorize items by name
 const categorizeItem = (itemName) => {
   const name = itemName.toLowerCase();
-  if (name.includes("sammies") || name.includes("sandwich")) return "Sammies";
+ if (name.includes("sammies") || name.includes("sandwich")) return "Sandwiches";
   if (name.includes("bun") || name.includes("texas toast")) return "Breads";
   if (
     ["pulled pork", "brisket", "half chicken", "st louis ribs", "beef short rib"].some(m => name === m)
