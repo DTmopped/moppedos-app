@@ -1,9 +1,16 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-// No need to import UI components here anymore, as MenuEditorComponent is separate
+import React, { useState, useEffect, useRef } from 'react';
 
 // ----------------------------------------
 // 🔧 Initial Data
 // ----------------------------------------
+const defaultMenuData = {
+  Sandwiches: [],
+  BBQ: [],
+  Bread: [],
+  Sides: [],
+  Desserts: []
+};
+
 const initialMenuData = {
   Sandwiches: [
     { name: "Pulled Pork Sandwich", perGuestOz: 6, unit: "oz" },
@@ -42,8 +49,19 @@ const initialMenuData = {
 // ----------------------------------------
 export const useMenuManager = (localStorageKey) => {
   const [menu, setMenu] = useState(() => {
-    const saved = localStorage.getItem(localStorageKey);
-    return saved ? JSON.parse(saved) : initialMenuData;
+    try {
+      const saved = localStorage.getItem(localStorageKey);
+      const parsed = saved ? JSON.parse(saved) : initialMenuData;
+
+      // Ensure all sections exist even if localStorage was incomplete
+      return {
+        ...defaultMenuData,
+        ...parsed,
+      };
+    } catch (err) {
+      console.error("Invalid menu data in localStorage:", err);
+      return initialMenuData;
+    }
   });
 
   const [editorsVisibility, setEditorsVisibility] = useState(() => {
@@ -82,43 +100,40 @@ export const useMenuManager = (localStorageKey) => {
   };
 
   const addMenuItem = (section) => {
-  const { name, value, unit } = newItemForms[section];
-  if (!name || !value) return alert("Name and portion required.");
-  const num = parseFloat(value);
-  if (isNaN(num) || num <= 0) return alert("Portion must be a positive number.");
+    const { name, value, unit } = newItemForms[section];
+    if (!name || !value) return alert("Name and portion required.");
+    const num = parseFloat(value);
+    if (isNaN(num) || num <= 0) return alert("Portion must be a positive number.");
 
-  const newItem = unit === "oz"
-    ? { name, perGuestOz: num, unit, each: undefined }
-    : { name, each: num, unit, perGuestOz: undefined };
+    const newItem = unit === "oz"
+      ? { name, perGuestOz: num, unit, each: undefined }
+      : { name, each: num, unit, perGuestOz: undefined };
 
-  setMenu(prev => {
-    const updatedItems = [...prev[section]].filter(i => i.name.toLowerCase() !== name.toLowerCase());
-    return {
-      ...prev,
-      [section]: [...updatedItems, newItem]
-    };
-  });
+    setMenu(prev => {
+      const updatedItems = [...(prev[section] || [])].filter(i => i.name.toLowerCase() !== name.toLowerCase());
+      return {
+        ...prev,
+        [section]: [...updatedItems, newItem]
+      };
+    });
 
-  setNewItemForms(prev => ({ ...prev, [section]: { name: '', value: '', unit: 'oz' } }));
-};
+    setNewItemForms(prev => ({ ...prev, [section]: { name: '', value: '', unit: 'oz' } }));
+  };
 
   const removeMenuItem = (section, name) => {
     setMenu(prev => ({
       ...prev,
-      [section]: prev[section].filter(item => item.name !== name)
+      [section]: (prev[section] || []).filter(item => item.name !== name)
     }));
   };
 
-  // ----------------------------------------
-  // 🧩 Return all necessary state and functions
-  // ----------------------------------------
   return {
-    menu, // Menu data itself
-    editorsVisibility, // State for showing/hiding editors
-    toggleEditor, // Function to toggle editor visibility
-    newItemForms, // State for new item forms
-    handleNewItemChange, // Function to handle new item form changes
-    addMenuItem, // Function to add a new menu item
-    removeMenuItem // Function to remove a menu item
+    menu,
+    editorsVisibility,
+    toggleEditor,
+    newItemForms,
+    handleNewItemChange,
+    addMenuItem,
+    removeMenuItem
   };
 };
