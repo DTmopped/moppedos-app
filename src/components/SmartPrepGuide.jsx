@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import FullWeeklyPrepGuideHeader from '@/components/prep/FullWeeklyPrepGuideHeader.jsx';
 import PrepGuideContent from '@/components/prep/PrepGuideContent.jsx';
 import PrintableSmartPrepGuide from '@/components/prep/PrintableSmartPrepGuide.jsx';
-import { PREP_GUIDE_ICON_COLORS } from '@/config/prepGuideConfig'; // <-- FIXED
+import { PREP_GUIDE_ICON_COLORS } from '@/config/prepGuideConfig'; // ✅ fixed .js to no extension
 import { useSmartPrepGuideLogic } from '@/hooks/useSmartPrepGuideLogic.jsx';
 
 const SmartPrepGuide = () => {
@@ -14,7 +14,7 @@ const SmartPrepGuide = () => {
     menuLoading,
     adjustmentFactor,
     prepTextBySection,
-  } = useSmartPrepGuideLogic('fullPrepGuideMenu'); // <-- CLEANED
+  } = useSmartPrepGuideLogic('fullPrepGuideMenu'); // ✅
 
   const [manageMenuOpen, setManageMenuOpen] = useState(false);
   const [printDate, setPrintDate] = useState(new Date());
