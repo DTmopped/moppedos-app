@@ -45,7 +45,14 @@ const PrepGuideContent = ({
     }));
   };
 
-  const categoryOrder = ["BBQ Meats", "Sammies", "Breads", "Sides", "Desserts", "Other"];
+ const categoryOrder = [
+  "BBQ Meats",
+  "Sandwiches",   // ← was "Sammies"
+  "Breads",
+  "Sides",
+  "Desserts",
+  "Other"
+];
 
   return (
     <div className="space-y-6">
@@ -100,8 +107,8 @@ const PrepGuideContent = ({
                       </h5>
 
                       {categoryOrder.map((category) => {
-                        const items = categorized[category];
-                        if (!items || items.length === 0) return null;
+                       const items = categorized[category] || [];
+                       if (items.length === 0) return null;
 
                         return (
                           <div key={category} className="mb-6">
