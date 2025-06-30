@@ -191,11 +191,12 @@ logger.error = (msg, options) => {
 
 export default defineConfig({
 	customLogger: logger,
-	plugins: [
-		...(isDev ? [inlineEditPlugin(), editModeDevPlugin()] : []),
-		react(),
-		addTransformIndexHtml
-	],
+	 plugins: [
+        // Temporarily comment out these custom plugins
+        // ...(isDev ? [inlineEditPlugin(), editModeDevPlugin()] : []),
+        react(),
+        addTransformIndexHtml
+    ],
 	server: {
 		cors: true,
 		headers: {
