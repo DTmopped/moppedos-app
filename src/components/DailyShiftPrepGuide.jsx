@@ -76,11 +76,14 @@ const DailyShiftPrepGuide = () => {
         </div>
       </div>
 
-      {manageMenuOpen && (
-        <div className="border border-slate-700 rounded-lg shadow-lg p-4 bg-slate-800/60">
-          <MenuEditorComponent sectionTitleColor="from-green-400 to-lime-500" />
-        </div>
-      )}
+     {manageMenuOpen && (
+  <div className="border border-slate-700 rounded-lg shadow-lg p-4 bg-slate-800/60">
+    <MenuEditorComponent
+      menu={menu} // ✅ pass the actual menu data
+      sectionTitleColor="from-green-400 to-lime-500"
+    />
+  </div>
+)}
 
       <PrepGuideContent
         dailyShiftPrepData={dailyShiftPrepData}
