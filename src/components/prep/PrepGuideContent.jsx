@@ -3,7 +3,7 @@ import { Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMenuManager } from "@/hooks/useMenuManager.jsx";
 
-// Auto-categorize items by name
+// 🧠 Categorize items by name
 const categorizeItem = (itemName) => {
   const name = itemName.toLowerCase();
   if (name.includes("sammies") || name.includes("sandwich")) return "Sammies";
@@ -49,14 +49,14 @@ const PrepGuideContent = ({
 
   return (
     <div className="space-y-6">
-      {/* Conditionally Rendered Menu Editor UI */}
+      {/* 🔧 Menu Editor Panel */}
       {showEditor && (
         <div className="my-6">
           <MenuEditorComponent />
         </div>
       )}
 
-      {/* Shift Prep Cards */}
+      {/* 🔁 Day-by-Day Prep Cards */}
       {dailyShiftPrepData.map((day, idx) => {
         const isExpanded = expandedDays[day.date] || false;
 
@@ -75,7 +75,7 @@ const PrepGuideContent = ({
                   })}
                 </h4>
                 <p className="text-sm text-muted-foreground">
-                  Guests: {day.guests.toLocaleString()} &middot; AM: {day.amGuests.toLocaleString()} / PM: {day.pmGuests.toLocaleString()}
+                  Guests: {day.guests?.toLocaleString?.() || 0} &middot; AM: {day.amGuests?.toLocaleString?.() || 0} / PM: {day.pmGuests?.toLocaleString?.() || 0}
                 </p>
               </div>
             </button>
@@ -84,11 +84,11 @@ const PrepGuideContent = ({
               <div className="px-4 py-4 space-y-8">
                 {["am", "pm"].map((shiftKey) => {
                   const shift = day.shifts?.[shiftKey];
-                  if (!shift) return null;
+                  if (!shift || !shift.prepItems) return null;
 
                   const categorized = {};
-                  shift.prepItems.forEach((item) => {
-                    const category = categorizeItem(item.name);
+                  (shift.prepItems || []).forEach((item) => {
+                    const category = categorizeItem(item.name || "");
                     if (!categorized[category]) categorized[category] = [];
                     categorized[category].push(item);
                   });
@@ -96,7 +96,7 @@ const PrepGuideContent = ({
                   return (
                     <div key={shiftKey}>
                       <h5 className="text-lg font-semibold text-gray-800 mb-2">
-                        {shift.icon} {shift.name.toUpperCase()} SHIFT
+                        {shift.icon} {shift.name?.toUpperCase() || shiftKey.toUpperCase()} SHIFT
                       </h5>
 
                       {categoryOrder.map((category) => {
@@ -120,9 +120,9 @@ const PrepGuideContent = ({
                                   </tr>
                                 </thead>
                                 <tbody>
-                                  {items.map((item, index) => (
+                                  {(items || []).map((item, index) => (
                                     <tr
-                                      key={item.id}
+                                      key={item.id || `${item.name}-${index}`}
                                       className={index % 2 === 0 ? "bg-white" : "bg-slate-50"}
                                     >
                                       <td className="px-4 py-2">{item.name}</td>
