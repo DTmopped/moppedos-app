@@ -6,7 +6,7 @@ import { useMenuManager } from "@/hooks/useMenuManager.jsx";
 // 🧠 Categorize items by name
 const categorizeItem = (itemName) => {
   const name = itemName.toLowerCase();
- if (name.includes("sammies") || name.includes("sandwich")) return "Sandwiches";
+  if (name.includes("sammies") || name.includes("sandwich")) return "Sandwiches";
   if (name.includes("bun") || name.includes("texas toast")) return "Breads";
   if (
     ["pulled pork", "brisket", "half chicken", "st louis ribs", "beef short rib"].some(m => name === m)
@@ -45,25 +45,23 @@ const PrepGuideContent = ({
     }));
   };
 
- const categoryOrder = [
-  "BBQ Meats",
-  "Sandwiches",   // ← was "Sammies"
-  "Breads",
-  "Sides",
-  "Desserts",
-  "Other"
-];
+  const categoryOrder = [
+    "BBQ Meats",
+    "Sandwiches",
+    "Breads",
+    "Sides",
+    "Desserts",
+    "Other"
+  ];
 
   return (
     <div className="space-y-6">
-      {/* 🔧 Menu Editor Panel */}
       {showEditor && (
         <div className="my-6">
           <MenuEditorComponent />
         </div>
       )}
 
-      {/* 🔁 Day-by-Day Prep Cards */}
       {dailyShiftPrepData.map((day, idx) => {
         const isExpanded = expandedDays[day.date] || false;
 
@@ -94,7 +92,7 @@ const PrepGuideContent = ({
                   if (!shift || !shift.prepItems) return null;
 
                   const categorized = {};
-                  (shift.prepItems || []).forEach((item) => {
+                  shift.prepItems.forEach((item) => {
                     const category = categorizeItem(item.name || "");
                     if (!categorized[category]) categorized[category] = [];
                     categorized[category].push(item);
@@ -107,8 +105,8 @@ const PrepGuideContent = ({
                       </h5>
 
                       {categoryOrder.map((category) => {
-                       const items = categorized[category] || [];
-                       if (items.length === 0) return null;
+                        const items = categorized[category] || [];
+                        if (items.length === 0) return null;
 
                         return (
                           <div key={category} className="mb-6">
@@ -127,7 +125,7 @@ const PrepGuideContent = ({
                                   </tr>
                                 </thead>
                                 <tbody>
-                                  {(items || []).map((item, index) => (
+                                  {items.map((item, index) => (
                                     <tr
                                       key={item.id || `${item.name}-${index}`}
                                       className={index % 2 === 0 ? "bg-white" : "bg-slate-50"}
