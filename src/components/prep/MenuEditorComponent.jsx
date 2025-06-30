@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 
-// Commented out UI component imports
+// Commented out UI component imports (keep them commented out for this test)
 // import { Button } from '@/components/ui/button.jsx';
 // import { Input } from '@/components/ui/input.jsx';
 // import { Label } from '@/components/ui/label';
@@ -16,8 +16,8 @@ import React, { useMemo } from 'react';
 
 
 const MenuEditorComponent = ({
-  sectionTitleColor = "from-purple-400 to-indigo-500", // This prop is still used for styling, but won't apply to basic HTML
-  menu,
+  sectionTitleColor = "from-purple-400 to-indigo-500",
+  menu, // This prop is needed for sortedMenu
   editorsVisibility,
   toggleEditor,
   newItemForms,
@@ -25,6 +25,17 @@ const MenuEditorComponent = ({
   addMenuItem,
   removeMenuItem
 }) => {
+  // Add a check for 'menu' here
+  if (!menu) {
+    console.error("Menu data is undefined or null in MenuEditorComponent!");
+    return (
+      <div style={{ padding: '20px', border: '1px solid orange', color: 'white', background: 'darkred' }}>
+        <h2>Error: Menu Data Missing!</h2>
+        <p>Please check the data being passed to MenuEditorComponent.</p>
+      </div>
+    );
+  }
+
   const sortedMenu = useMemo(() => {
     const sorted = {};
     Object.keys(menu).forEach(section => {
