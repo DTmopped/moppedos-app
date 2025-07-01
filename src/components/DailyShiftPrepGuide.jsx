@@ -1,32 +1,25 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { useDailyShiftPrepGuideLogic } from "@/hooks/useDailyShiftPrepGuideLogic.jsx";
+import { useToast } from "./ui/use-toast.jsx";
 import { triggerPrint } from "./prep/PrintUtils.jsx";
 import PrintableDailyShiftPrepGuide from "./prep/PrintableDailyShiftPrepGuide.jsx";
-import { useToast } from "./ui/use-toast.jsx";
 import PrepGuideContent from "./prep/PrepGuideContent.jsx";
 import { useMenuManager } from "@/hooks/useMenuManager.jsx";
-import MenuEditorComponent from "@/components/prep/MenuEditorComponent.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import { Edit3 } from "lucide-react";
+import MenuEditorSection from "./prep/MenuEditorSection.jsx";
 
 const DailyShiftPrepGuide = () => {
-  const {
-    dailyShiftPrepData,
-    adjustmentFactor,
-    handlePrepTaskChange,
-  } = useDailyShiftPrepGuideLogic();
-
-  const [expandedDays, setExpandedDays] = useState({});
+  const { dailyShiftPrepData, handlePrepTaskChange } = useDailyShiftPrepGuideLogic();
   const { toast } = useToast();
+  const [expandedDays, setExpandedDays] = useState({});
   const [manageMenuOpen, setManageMenuOpen] = useState(false);
   const { menu, setMenu } = useMenuManager("dailyPrepMenu");
 
-  // 🧠 Menu editor state
-  const [editorsVisibility, setEditorsVisibility] = useState({});
   const [newItemForms, setNewItemForms] = useState({});
+  const [editorsVisibility, setEditorsVisibility] = useState({});
 
-  // Toggle section editor open/close
   const toggleEditor = (section) => {
     setEditorsVisibility((prev) => ({
       ...prev,
@@ -34,7 +27,6 @@ const DailyShiftPrepGuide = () => {
     }));
   };
 
-  // Handle input changes for new menu item
   const handleNewItemChange = (section, field, value) => {
     setNewItemForms((prev) => ({
       ...prev,
@@ -45,16 +37,9 @@ const DailyShiftPrepGuide = () => {
     }));
   };
 
-  // Add or update a menu item
   const addMenuItem = (section) => {
     const item = newItemForms[section];
     if (!item?.name) return;
-
-    const newMenu = { ...menu };
-    const sectionItems = newMenu[section] || [];
-
-    // Check if item exists by name
-    const existingIndex = sectionItems.findIndex((i) => i.name === item.name);
 
     const newItem = {
       name: item.name,
@@ -63,16 +48,18 @@ const DailyShiftPrepGuide = () => {
       unit: item.unit,
     };
 
-    if (existingIndex !== -1) {
-      sectionItems[existingIndex] = newItem;
+    const updatedSectionItems = [...(menu[section] || [])];
+    const index = updatedSectionItems.findIndex((i) => i.name === item.name);
+
+    if (index !== -1) {
+      updatedSectionItems[index] = newItem;
     } else {
-      sectionItems.push(newItem);
+      updatedSectionItems.push(newItem);
     }
 
-    newMenu[section] = sectionItems;
-    setMenu(newMenu);
+    const updatedMenu = { ...menu, [section]: updatedSectionItems };
+    setMenu(updatedMenu);
 
-    // Clear form
     setNewItemForms((prev) => ({
       ...prev,
       [section]: { name: "", value: "", unit: "oz" },
@@ -85,11 +72,12 @@ const DailyShiftPrepGuide = () => {
     });
   };
 
-  // Remove a menu item
   const removeMenuItem = (section, itemName) => {
-    const newMenu = { ...menu };
-    newMenu[section] = (newMenu[section] || []).filter((i) => i.name !== itemName);
-    setMenu(newMenu);
+    const updatedMenu = {
+      ...menu,
+      [section]: (menu[section] || []).filter((i) => i.name !== itemName),
+    };
+    setMenu(updatedMenu);
 
     toast({
       title: "Item removed",
@@ -97,8 +85,6 @@ const DailyShiftPrepGuide = () => {
       variant: "destructive",
     });
   };
-
-  const selectedDay = dailyShiftPrepData.find((d) => expandedDays[d.date]);
 
   const handleInitiatePrint = async () => {
     try {
@@ -122,6 +108,8 @@ const DailyShiftPrepGuide = () => {
     }
   };
 
+  const allSections = Object.keys(menu);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -130,9 +118,7 @@ const DailyShiftPrepGuide = () => {
       className="space-y-8"
     >
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-slate-200">
-          Daily Shift Prep Guide
-        </h1>
+        <h1 className="text-2xl font-bold text-slate-200">Daily Shift Prep Guide</h1>
         <div className="flex gap-3">
           <Button
             variant="outline"
@@ -142,7 +128,6 @@ const DailyShiftPrepGuide = () => {
             <Edit3 size={16} className="mr-2" />
             {manageMenuOpen ? "Close Menu Editor" : "Manage Menu"}
           </Button>
-
           <Button
             onClick={handleInitiatePrint}
             className="bg-green-600 hover:bg-green-700 text-white"
@@ -153,17 +138,20 @@ const DailyShiftPrepGuide = () => {
       </div>
 
       {manageMenuOpen && (
-        <div className="border border-slate-700 rounded-lg shadow-lg p-4 bg-slate-800/60">
-          <MenuEditorComponent
-            menu={menu}
-            editorsVisibility={editorsVisibility}
-            toggleEditor={toggleEditor}
-            newItemForms={newItemForms}
-            handleNewItemChange={handleNewItemChange}
-            addMenuItem={addMenuItem}
-            removeMenuItem={removeMenuItem}
-            sectionTitleColor="from-green-400 to-lime-500"
-          />
+        <div className="border border-slate-700 rounded-lg shadow-lg p-4 bg-slate-800/60 space-y-6">
+          {allSections.map((section) => (
+            <MenuEditorSection
+              key={section}
+              section={section}
+              items={menu[section]}
+              editorOpen={editorsVisibility[section]}
+              toggleEditor={toggleEditor}
+              newItemForm={newItemForms[section] || { name: "", value: "", unit: "oz" }}
+              handleNewItemChange={handleNewItemChange}
+              addMenuItem={addMenuItem}
+              removeMenuItem={removeMenuItem}
+            />
+          ))}
         </div>
       )}
 
