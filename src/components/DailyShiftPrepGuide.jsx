@@ -6,7 +6,7 @@ import PrintableDailyShiftPrepGuide from "./prep/PrintableDailyShiftPrepGuide.js
 import { useToast } from "./ui/use-toast.jsx";
 import PrepGuideContent from "./prep/PrepGuideContent.jsx";
 import { useMenuManager } from "@/hooks/useMenuManager.jsx";
-import MenuEditorComponent from "@/components/prep/MenuEditorComponent.jsx"; // ✅ Fixed import
+import MenuEditorComponent from "@/components/prep/MenuEditorComponent.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import { Edit3 } from "lucide-react";
 
@@ -20,7 +20,83 @@ const DailyShiftPrepGuide = () => {
   const [expandedDays, setExpandedDays] = useState({});
   const { toast } = useToast();
   const [manageMenuOpen, setManageMenuOpen] = useState(false);
-  const { menu } = useMenuManager("dailyPrepMenu"); // ✅ Removed MenuEditorComponent destructure
+  const { menu, setMenu } = useMenuManager("dailyPrepMenu");
+
+  // 🧠 Menu editor state
+  const [editorsVisibility, setEditorsVisibility] = useState({});
+  const [newItemForms, setNewItemForms] = useState({});
+
+  // Toggle section editor open/close
+  const toggleEditor = (section) => {
+    setEditorsVisibility((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
+
+  // Handle input changes for new menu item
+  const handleNewItemChange = (section, field, value) => {
+    setNewItemForms((prev) => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        [field]: value,
+      },
+    }));
+  };
+
+  // Add or update a menu item
+  const addMenuItem = (section) => {
+    const item = newItemForms[section];
+    if (!item?.name) return;
+
+    const newMenu = { ...menu };
+    const sectionItems = newMenu[section] || [];
+
+    // Check if item exists by name
+    const existingIndex = sectionItems.findIndex((i) => i.name === item.name);
+
+    const newItem = {
+      name: item.name,
+      perGuestOz: item.unit === "oz" ? parseFloat(item.value || 0) : null,
+      each: item.unit === "each" ? parseFloat(item.value || 0) : null,
+      unit: item.unit,
+    };
+
+    if (existingIndex !== -1) {
+      sectionItems[existingIndex] = newItem;
+    } else {
+      sectionItems.push(newItem);
+    }
+
+    newMenu[section] = sectionItems;
+    setMenu(newMenu);
+
+    // Clear form
+    setNewItemForms((prev) => ({
+      ...prev,
+      [section]: { name: "", value: "", unit: "oz" },
+    }));
+
+    toast({
+      title: "Item added or updated!",
+      description: `${newItem.name} in ${section}`,
+      variant: "success",
+    });
+  };
+
+  // Remove a menu item
+  const removeMenuItem = (section, itemName) => {
+    const newMenu = { ...menu };
+    newMenu[section] = (newMenu[section] || []).filter((i) => i.name !== itemName);
+    setMenu(newMenu);
+
+    toast({
+      title: "Item removed",
+      description: `${itemName} from ${section}`,
+      variant: "destructive",
+    });
+  };
 
   const selectedDay = dailyShiftPrepData.find((d) => expandedDays[d.date]);
 
@@ -76,14 +152,20 @@ const DailyShiftPrepGuide = () => {
         </div>
       </div>
 
-     {manageMenuOpen && (
-  <div className="border border-slate-700 rounded-lg shadow-lg p-4 bg-slate-800/60">
-    <MenuEditorComponent
-      menu={menu} // ✅ pass the actual menu data
-      sectionTitleColor="from-green-400 to-lime-500"
-    />
-  </div>
-)}
+      {manageMenuOpen && (
+        <div className="border border-slate-700 rounded-lg shadow-lg p-4 bg-slate-800/60">
+          <MenuEditorComponent
+            menu={menu}
+            editorsVisibility={editorsVisibility}
+            toggleEditor={toggleEditor}
+            newItemForms={newItemForms}
+            handleNewItemChange={handleNewItemChange}
+            addMenuItem={addMenuItem}
+            removeMenuItem={removeMenuItem}
+            sectionTitleColor="from-green-400 to-lime-500"
+          />
+        </div>
+      )}
 
       <PrepGuideContent
         dailyShiftPrepData={dailyShiftPrepData}
