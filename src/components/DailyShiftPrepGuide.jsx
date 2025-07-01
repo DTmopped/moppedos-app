@@ -10,6 +10,23 @@ import MenuEditorComponent from "@/components/prep/MenuEditorComponent.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import { Edit3 } from "lucide-react";
 
+// Section normalization mapping
+const SECTION_ALIASES = {
+  sammies: "Sandwiches",
+  sandwich: "Sandwiches",
+  sandwiches: "Sandwiches",
+  bbqmeats: "BBQ",
+  bbq: "BBQ",
+  breads: "Breads",
+  bread: "Breads",
+};
+
+const normalizeSectionKey = (key) => {
+  if (!key) return "";
+  const safeKey = key.trim().toLowerCase().replace(/\s+/g, "");
+  return SECTION_ALIASES[safeKey] || key;
+};
+
 const DailyShiftPrepGuide = () => {
   const {
     dailyShiftPrepData,
@@ -22,11 +39,10 @@ const DailyShiftPrepGuide = () => {
   const [manageMenuOpen, setManageMenuOpen] = useState(false);
   const { menu, setMenu } = useMenuManager("dailyPrepMenu");
 
-  // 🧠 Menu editor state
+  // Menu editor state
   const [editorsVisibility, setEditorsVisibility] = useState({});
   const [newItemForms, setNewItemForms] = useState({});
 
-  // Toggle section editor open/close
   const toggleEditor = (section) => {
     setEditorsVisibility((prev) => ({
       ...prev,
@@ -34,7 +50,6 @@ const DailyShiftPrepGuide = () => {
     }));
   };
 
-  // Handle input changes for new menu item
   const handleNewItemChange = (section, field, value) => {
     setNewItemForms((prev) => ({
       ...prev,
@@ -45,15 +60,14 @@ const DailyShiftPrepGuide = () => {
     }));
   };
 
-  // Add or update a menu item
   const addMenuItem = (section) => {
     const item = newItemForms[section];
     if (!item?.name) return;
 
+    const normalizedSection = normalizeSectionKey(section);
     const newMenu = { ...menu };
-    const sectionItems = newMenu[section] || [];
+    const sectionItems = newMenu[normalizedSection] || [];
 
-    // Check if item exists by name
     const existingIndex = sectionItems.findIndex((i) => i.name === item.name);
 
     const newItem = {
@@ -69,10 +83,9 @@ const DailyShiftPrepGuide = () => {
       sectionItems.push(newItem);
     }
 
-    newMenu[section] = sectionItems;
+    newMenu[normalizedSection] = sectionItems;
     setMenu(newMenu);
 
-    // Clear form
     setNewItemForms((prev) => ({
       ...prev,
       [section]: { name: "", value: "", unit: "oz" },
@@ -80,20 +93,22 @@ const DailyShiftPrepGuide = () => {
 
     toast({
       title: "Item added or updated!",
-      description: `${newItem.name} in ${section}`,
+      description: `${newItem.name} in ${normalizedSection}`,
       variant: "success",
     });
   };
 
-  // Remove a menu item
   const removeMenuItem = (section, itemName) => {
+    const normalizedSection = normalizeSectionKey(section);
     const newMenu = { ...menu };
-    newMenu[section] = (newMenu[section] || []).filter((i) => i.name !== itemName);
+    newMenu[normalizedSection] = (newMenu[normalizedSection] || []).filter(
+      (i) => i.name !== itemName
+    );
     setMenu(newMenu);
 
     toast({
       title: "Item removed",
-      description: `${itemName} from ${section}`,
+      description: `${itemName} from ${normalizedSection}`,
       variant: "destructive",
     });
   };
@@ -121,6 +136,14 @@ const DailyShiftPrepGuide = () => {
       });
     }
   };
+
+  // Normalize menu before passing to child component
+  const normalizedMenu = Object.entries(menu).reduce((acc, [key, items]) => {
+    const normalizedKey = normalizeSectionKey(key);
+    if (!acc[normalizedKey]) acc[normalizedKey] = [];
+    acc[normalizedKey] = [...acc[normalizedKey], ...items];
+    return acc;
+  }, {});
 
   return (
     <motion.div
@@ -155,7 +178,7 @@ const DailyShiftPrepGuide = () => {
       {manageMenuOpen && (
         <div className="border border-slate-700 rounded-lg shadow-lg p-4 bg-slate-800/60">
           <MenuEditorComponent
-            menu={menu}
+            menu={normalizedMenu}
             editorsVisibility={editorsVisibility}
             toggleEditor={toggleEditor}
             newItemForms={newItemForms}
