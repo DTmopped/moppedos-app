@@ -10,7 +10,13 @@ const MenuEditorComponent = ({
   removeMenuItem,
   sectionTitleColor = "from-indigo-400 to-purple-500",
 }) => {
-  const sections = Object.keys(menu || {});
+  const sections = [
+    "Sandwiches",
+    "BBQ",
+    "Breads",
+    "Sides",
+    "Desserts",
+  ];
 
   const unitOptions = [
     { label: "oz", value: "oz" },
@@ -86,12 +92,16 @@ const MenuEditorComponent = ({
             <p className="text-slate-300 text-sm mb-1">Current Items:</p>
             <ul className="text-white text-sm space-y-1">
               {(menu[section] || []).map((item) => (
-                <li key={item.name} className="flex justify-between items-center">
+                <li
+                  key={item.name}
+                  className="flex justify-between items-center"
+                >
                   <span>
                     {item.name}{" "}
                     {item.unit === "oz" && `(${item.perGuestOz} oz)`}
                     {item.unit === "each" && `(${item.each} each)`}
-                    {item.unit === "lb" && `(${item.each || item.perGuestOz} lb)`}
+                    {item.unit === "lb" &&
+                      `(${item.each || item.perGuestOz} lb)`}
                   </span>
                   <button
                     onClick={() => removeMenuItem(section, item.name)}
