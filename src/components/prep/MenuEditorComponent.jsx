@@ -10,7 +10,9 @@ const MenuEditorComponent = ({
   removeMenuItem,
   sectionTitleColor = "from-indigo-400 to-purple-500",
 }) => {
-  const sectionLabels = {
+  const knownSections = ["BBQ", "Sandwiches", "Breads", "Sides", "Desserts"];
+
+  const displayNameMap = {
     BBQ: "BBQ Meats",
     Sandwiches: "Sammies",
     Breads: "Breads",
@@ -18,7 +20,7 @@ const MenuEditorComponent = ({
     Desserts: "Desserts",
   };
 
-  const sections = Object.keys(sectionLabels);
+  const sections = knownSections.filter((section) => menu[section]);
 
   const unitOptions = [
     { label: "oz", value: "oz" },
@@ -35,7 +37,7 @@ const MenuEditorComponent = ({
         >
           <div className="flex justify-between items-center mb-2">
             <h2 className="text-lg font-semibold capitalize text-white">
-              {sectionLabels[section]}
+              {displayNameMap[section] || section}
             </h2>
             <button
               onClick={() => toggleEditor(section)}
@@ -94,12 +96,16 @@ const MenuEditorComponent = ({
             <p className="text-slate-300 text-sm mb-1">Current Items:</p>
             <ul className="text-white text-sm space-y-1">
               {(menu[section] || []).map((item) => (
-                <li key={item.name} className="flex justify-between items-center">
+                <li
+                  key={item.name}
+                  className="flex justify-between items-center"
+                >
                   <span>
                     {item.name}{" "}
                     {item.unit === "oz" && `(${item.perGuestOz} oz)`}
                     {item.unit === "each" && `(${item.each} each)`}
-                    {item.unit === "lb" && `(${item.each || item.perGuestOz} lb)`}
+                    {item.unit === "lb" &&
+                      `(${item.each || item.perGuestOz} lb)`}
                   </span>
                   <button
                     onClick={() => removeMenuItem(section, item.name)}
