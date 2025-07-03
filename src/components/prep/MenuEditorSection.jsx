@@ -103,12 +103,12 @@ const MenuEditorSection = ({
                       ? `${item.value} lb`
                       : "?"}
                   </span>
-                  <button
-                    onClick={() => removeMenuItem(section, item.name)}
-                    className="text-red-400 hover:text-red-600 text-xs ml-2"
-                  >
-                    [remove]
-                  </button>
+                 <button
+                   onClick={() => removeMenuItem(section, item.name)}
+                   className="ml-2 text-xs font-bold text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded shadow-sm transition"
+                 >
+                   Remove
+                 </button>
                 </li>
               ))}
             </ul>
