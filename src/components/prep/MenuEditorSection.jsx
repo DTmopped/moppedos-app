@@ -6,6 +6,9 @@ const MenuEditorComponent = ({ data, setData }) => {
   const [newItemSize, setNewItemSize] = useState("");
   const [newItemUnit, setNewItemUnit] = useState("oz");
 
+  // 🛡️ Guard to avoid null crash
+  if (!data || typeof data !== "object") return null;
+
   const handleEditClick = (section) => {
     setEditingSection(section === editingSection ? null : section);
     setNewItemName("");
@@ -45,7 +48,9 @@ const MenuEditorComponent = ({ data, setData }) => {
       {Object.keys(data).map((section) => (
         <div key={section} className="bg-gray-800 rounded-md p-4">
           <div className="flex justify-between items-center mb-2">
-            <h3 className="text-lg font-semibold text-white">{section.replaceAll(" B B Q", " BBQ")}</h3>
+            <h3 className="text-lg font-semibold text-white">
+              {section.replaceAll(" B B Q", " BBQ")}
+            </h3>
             <button
               onClick={() => handleEditClick(section)}
               className="text-sm px-2 py-1 bg-white text-gray-800 rounded shadow"
