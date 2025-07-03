@@ -116,7 +116,7 @@ const DailyShiftPrepGuide = () => {
       className="space-y-8"
     >
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-slate-200">Daily Shift Prep Guide</h1>
+        <h1 className="text-2xl font-extrabold text-white tracking-tight">Daily Shift Prep Guide</h1>
         <div className="flex gap-3">
           <Button
             variant="outline"
