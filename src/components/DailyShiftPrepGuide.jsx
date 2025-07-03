@@ -5,7 +5,7 @@ import { useToast } from "./ui/use-toast.jsx";
 import { triggerPrint } from "./prep/PrintUtils.jsx";
 import PrintableDailyShiftPrepGuide from "./prep/PrintableDailyShiftPrepGuide.jsx";
 import PrepGuideContent from "./prep/PrepGuideContent.jsx";
-import { useMenuManager } from "@/hooks/useMenuManager.jsx";
+import useMenuManager from "@/hooks/useMenuManager";
 import { Button } from "@/components/ui/button.jsx";
 import { Edit3 } from "lucide-react";
 import MenuEditorSection from "./prep/MenuEditorSection.jsx";
