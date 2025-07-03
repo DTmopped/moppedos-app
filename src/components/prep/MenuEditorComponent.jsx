@@ -33,26 +33,26 @@ const MenuEditorComponent = ({
       {sections.map((section) => (
         <div
           key={section}
-          className="bg-slate-800 border border-slate-600 rounded-md p-4"
+          className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-2xl p-6 shadow-md transition-transform hover:scale-[1.01]"
         >
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="text-lg font-semibold capitalize text-white">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold tracking-tight text-white">
               {displayNameMap[section] || section}
             </h2>
             <button
               onClick={() => toggleEditor(section)}
-              className="text-xs border border-slate-500 rounded px-2 py-1 hover:bg-slate-600 text-white"
+              className="text-xs font-medium border border-slate-500 rounded px-3 py-1 text-white hover:bg-slate-700 transition"
             >
               {editorsVisibility[section] ? "Close Editor" : "Edit Items"}
             </button>
           </div>
 
           {editorsVisibility[section] && (
-            <div className="bg-slate-700 rounded p-3 space-y-2 mb-3">
+            <div className="bg-slate-700/60 rounded-lg p-4 space-y-3 border border-slate-600 mb-4">
               <input
                 type="text"
                 placeholder="Item Name"
-                className="w-full p-2 rounded bg-slate-800 text-white"
+                className="w-full p-2 rounded-md bg-slate-800 text-white border border-slate-600 focus:ring-2 focus:ring-purple-500 focus:outline-none"
                 value={newItemForms[section]?.name || ""}
                 onChange={(e) =>
                   handleNewItemChange(section, "name", e.target.value)
@@ -62,14 +62,14 @@ const MenuEditorComponent = ({
                 <input
                   type="number"
                   placeholder="e.g. 4"
-                  className="w-2/5 p-2 rounded bg-slate-800 text-white"
+                  className="w-2/5 p-2 rounded-md bg-slate-800 text-white border border-slate-600 focus:ring-2 focus:ring-purple-500"
                   value={newItemForms[section]?.value || ""}
                   onChange={(e) =>
                     handleNewItemChange(section, "value", e.target.value)
                   }
                 />
                 <select
-                  className="w-1/3 p-2 rounded bg-slate-800 text-white"
+                  className="w-1/3 p-2 rounded-md bg-slate-800 text-white border border-slate-600 focus:ring-2 focus:ring-purple-500"
                   value={newItemForms[section]?.unit || "oz"}
                   onChange={(e) =>
                     handleNewItemChange(section, "unit", e.target.value)
@@ -84,21 +84,21 @@ const MenuEditorComponent = ({
                 <span className="text-white text-sm">per guest</span>
               </div>
               <button
-                className="w-full bg-purple-700 text-white py-2 rounded hover:bg-purple-800"
+                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-2 rounded-md font-semibold shadow hover:from-purple-700 hover:to-indigo-700 transition"
                 onClick={() => addMenuItem(section)}
               >
-                Add/Update
+                Add / Update Item
               </button>
             </div>
           )}
 
-          <div className="mt-2">
-            <p className="text-slate-300 text-sm mb-1">Current Items:</p>
-            <ul className="text-white text-sm space-y-1">
+          <div>
+            <p className="text-slate-300 text-sm mb-2">Current Items:</p>
+            <ul className="text-white text-sm divide-y divide-slate-700">
               {(menu[section] || []).map((item) => (
                 <li
                   key={item.name}
-                  className="flex justify-between items-center"
+                  className="flex justify-between items-center py-1"
                 >
                   <span>
                     {item.name}{" "}
@@ -109,9 +109,9 @@ const MenuEditorComponent = ({
                   </span>
                   <button
                     onClick={() => removeMenuItem(section, item.name)}
-                    className="text-red-400 text-xs ml-2"
+                    className="text-red-500 hover:text-red-400 text-xs font-medium transition"
                   >
-                    [X]
+                    ✕
                   </button>
                 </li>
               ))}
