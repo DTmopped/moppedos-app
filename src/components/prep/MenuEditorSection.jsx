@@ -11,7 +11,14 @@ const MenuEditorSection = ({
   removeMenuItem,
 }) => {
   const sortedItems = [...items].sort((a, b) => a.name.localeCompare(b.name));
-  const displayName = section.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase());
+
+  // Clean section name: convert camelCase or "B B Q" to "BBQ"
+  const displayName = section
+    .replace(/\s+/g, "")      // Remove extra spaces (like "B B Q")
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (str) => str.toUpperCase())
+    .replace(/\bB B Q\b/gi, "BBQ") // Force correct 'BBQ' formatting
+    .trim();
 
   return (
     <div className="border border-slate-600 p-4 rounded-lg bg-slate-700/60 mb-6">
@@ -41,7 +48,7 @@ const MenuEditorSection = ({
               placeholder="Item Name"
               value={newItemForm?.name || ""}
               onChange={(e) => handleNewItemChange(section, "name", e.target.value)}
-              className="w-full p-2 mb-2 bg-slate-800 text-slate-100 border border-slate-600 rounded shadow-sm placeholder-slate-400"
+              className="w-full p-2 mb-2 bg-slate-800 text-slate-100 border border-slate-600 rounded placeholder-slate-400"
             />
 
             <div className="grid grid-cols-2 gap-4">
@@ -78,13 +85,16 @@ const MenuEditorSection = ({
             </button>
           </div>
 
-          <div>
-            <h5 className="text-sm font-semibold text-slate-200 mb-2">Current Items:</h5>
-            <ul className="space-y-1 max-h-40 overflow-y-auto text-sm text-slate-300">
+          <div className="bg-slate-800/40 p-3 rounded shadow-inner">
+            <h5 className="text-sm font-semibold text-slate-100 mb-2 underline">Current Items:</h5>
+            <ul className="space-y-2 max-h-48 overflow-y-auto text-sm">
               {sortedItems.map((item) => (
-                <li key={item.name} className="flex justify-between items-center">
+                <li
+                  key={item.name}
+                  className="flex justify-between items-center px-2 py-1 bg-slate-700/40 border border-slate-600 rounded text-slate-100"
+                >
                   <span>
-                    {item.name} –{" "}
+                    <strong>{item.name}</strong> –{" "}
                     {item.perGuestOz
                       ? `${item.perGuestOz} oz`
                       : item.each
