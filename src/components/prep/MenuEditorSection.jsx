@@ -1,13 +1,5 @@
 import React from "react";
 
-const displayNameMap = {
-  BBQ: "BBQ Meats",
-  Sandwiches: "Sammies",
-  Breads: "Breads",
-  Sides: "Sides",
-  Desserts: "Desserts",
-};
-
 const MenuEditorSection = ({
   section,
   items,
@@ -19,28 +11,29 @@ const MenuEditorSection = ({
   removeMenuItem,
 }) => {
   const sortedItems = [...items].sort((a, b) => a.name.localeCompare(b.name));
-  const displayName = displayNameMap[section] || section;
+  const displayName = section.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase());
 
   return (
-    <div className="border border-gray-700 p-4 rounded-lg bg-slate-800/50 mb-6">
+    <div className="border border-slate-600 p-4 rounded-lg bg-slate-700/60 mb-6">
       <div className="flex justify-between items-center mb-3">
-        <h3 className="text-lg font-semibold text-white">{displayName}</h3>
+        <h3 className="text-lg font-semibold text-slate-100">{displayName}</h3>
         <button
           onClick={() => toggleEditor(section)}
-          className="text-sm border border-gray-500 text-gray-300 px-2 py-1 hover:bg-slate-700"
+          className="text-xs border border-slate-500 text-slate-200 px-2 py-1 hover:bg-slate-600 rounded"
         >
           {editorOpen ? "Close Editor" : "Edit Items"}
         </button>
       </div>
 
       {editorOpen && (
-        <div className="space-y-4">
-          <div>
-            <div className="bg-yellow-300 text-yellow-900 text-xs px-3 py-1 rounded mb-4 inline-block">
-              Editing: {displayName}
+        <div className="space-y-4 text-slate-100">
+          <div className="bg-slate-800/50 p-4 rounded-md shadow-sm">
+            <div className="flex items-center gap-2 text-yellow-900 bg-yellow-300 px-2 py-1 text-xs font-semibold rounded w-fit mb-3 shadow">
+              <span>⚙️</span>
+              <span>Editing: {displayName}</span>
             </div>
 
-            <h4 className="text-sm text-gray-300 mb-1">
+            <h4 className="text-sm font-medium text-slate-200 mb-1">
               Add or Update Item in <span className="font-bold">{displayName}</span>
             </h4>
 
@@ -48,27 +41,27 @@ const MenuEditorSection = ({
               placeholder="Item Name"
               value={newItemForm?.name || ""}
               onChange={(e) => handleNewItemChange(section, "name", e.target.value)}
-              className="w-full p-2 mb-2 bg-slate-700 text-white border border-gray-600 rounded"
+              className="w-full p-2 mb-2 bg-slate-800 text-slate-100 border border-slate-600 rounded shadow-sm placeholder-slate-400"
             />
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Portion Size</label>
+                <label className="block text-sm text-slate-300 mb-1">Portion Size</label>
                 <input
                   type="number"
                   placeholder="e.g. 4"
                   value={newItemForm?.value || ""}
                   onChange={(e) => handleNewItemChange(section, "value", e.target.value)}
-                  className="w-full p-2 bg-slate-700 text-white border border-gray-600 rounded"
+                  className="w-full p-2 bg-slate-800 text-slate-100 border border-slate-600 rounded placeholder-slate-400"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Unit</label>
+                <label className="block text-sm text-slate-300 mb-1">Unit</label>
                 <select
                   value={newItemForm?.unit || "oz"}
                   onChange={(e) => handleNewItemChange(section, "unit", e.target.value)}
-                  className="w-full p-2 bg-slate-700 text-white border border-gray-600 rounded"
+                  className="w-full p-2 bg-slate-800 text-slate-100 border border-slate-600 rounded"
                 >
                   <option value="oz">oz</option>
                   <option value="each">each</option>
@@ -79,40 +72,36 @@ const MenuEditorSection = ({
 
             <button
               onClick={() => addMenuItem(section)}
-              className="mt-3 w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded"
+              className="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded font-medium shadow-sm"
             >
               Save Item
             </button>
           </div>
 
           <div>
-            <h5 className="text-sm font-semibold text-gray-300 mb-2">Current Items:</h5>
-            {sortedItems.length === 0 ? (
-              <p className="text-sm text-gray-500 italic">No items in this section yet.</p>
-            ) : (
-              <ul className="space-y-1 max-h-40 overflow-y-auto text-sm text-gray-300">
-                {sortedItems.map((item) => (
-                  <li key={item.name} className="flex justify-between items-center">
-                    <span>
-                      {item.name} –{" "}
-                      {item.perGuestOz
-                        ? `${item.perGuestOz} oz`
-                        : item.each
-                        ? `${item.each} each`
-                        : item.unit === "lb"
-                        ? `${item.value} lb`
-                        : "?"}
-                    </span>
-                    <button
-                      onClick={() => removeMenuItem(section, item.name)}
-                      className="text-red-400 hover:text-red-600 text-xs"
-                    >
-                      [remove]
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <h5 className="text-sm font-semibold text-slate-200 mb-2">Current Items:</h5>
+            <ul className="space-y-1 max-h-40 overflow-y-auto text-sm text-slate-300">
+              {sortedItems.map((item) => (
+                <li key={item.name} className="flex justify-between items-center">
+                  <span>
+                    {item.name} –{" "}
+                    {item.perGuestOz
+                      ? `${item.perGuestOz} oz`
+                      : item.each
+                      ? `${item.each} each`
+                      : item.unit === "lb"
+                      ? `${item.value} lb`
+                      : "?"}
+                  </span>
+                  <button
+                    onClick={() => removeMenuItem(section, item.name)}
+                    className="text-red-400 hover:text-red-600 text-xs ml-2"
+                  >
+                    [remove]
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       )}
