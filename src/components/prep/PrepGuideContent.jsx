@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Info } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useMenuManager } from "@/hooks/useMenuManager.jsx";
+import useMenuManager from "@/hooks/useMenuManager";
 
 // 🧠 Categorize items by name
 const categorizeItem = (itemName) => {
