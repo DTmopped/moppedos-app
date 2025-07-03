@@ -18,13 +18,10 @@ const DailyShiftPrepGuide = () => {
   const { menu, setMenu } = useMenuManager("dailyPrepMenu");
 
   const [newItemForms, setNewItemForms] = useState({});
-  const [editorsVisibility, setEditorsVisibility] = useState({});
+  const [editingSection, setEditingSection] = useState(null);
 
   const toggleEditor = (section) => {
-    setEditorsVisibility((prev) => ({
-      ...prev,
-      [section]: !prev[section],
-    }));
+    setEditingSection((prev) => (prev === section ? null : section));
   };
 
   const handleNewItemChange = (section, field, value) => {
@@ -45,6 +42,7 @@ const DailyShiftPrepGuide = () => {
       name: item.name,
       perGuestOz: item.unit === "oz" ? parseFloat(item.value || 0) : null,
       each: item.unit === "each" ? parseFloat(item.value || 0) : null,
+      value: item.unit === "lb" ? parseFloat(item.value || 0) : null,
       unit: item.unit,
     };
 
@@ -144,7 +142,7 @@ const DailyShiftPrepGuide = () => {
               key={section}
               section={section}
               items={menu[section]}
-              editorOpen={editorsVisibility[section]}
+              editorOpen={editingSection === section}
               toggleEditor={toggleEditor}
               newItemForm={newItemForms[section] || { name: "", value: "", unit: "oz" }}
               handleNewItemChange={handleNewItemChange}
