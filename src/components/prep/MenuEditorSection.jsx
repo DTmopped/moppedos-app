@@ -1,13 +1,10 @@
-import React, { useState } from "react";
+mport React, { useState } from "react";
 
 const MenuEditorComponent = ({ data, setData }) => {
   const [editingSection, setEditingSection] = useState(null);
   const [newItemName, setNewItemName] = useState("");
   const [newItemSize, setNewItemSize] = useState("");
   const [newItemUnit, setNewItemUnit] = useState("oz");
-
-  // 🛡️ Guard to avoid null crash
-  if (!data || typeof data !== "object") return null;
 
   const handleEditClick = (section) => {
     setEditingSection(section === editingSection ? null : section);
