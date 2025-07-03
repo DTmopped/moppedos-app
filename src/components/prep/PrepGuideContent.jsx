@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import useMenuManager from "@/hooks/useMenuManager";
+import MenuEditorComponent from "@/components/prep/MenuEditorComponent"; // ✅ Correct placement
 
 // 🧠 Categorize items by name
 const categorizeItem = (itemName) => {
@@ -28,7 +29,7 @@ const PrepGuideContent = ({
   showEditor,
   setShowEditor
 }) => {
-  const { MenuEditorComponent } = useMenuManager("menu-data");
+  const { MenuEditorComponent: ManagedEditor } = useMenuManager("menu-data"); // Optional if using wrapped logic
 
   if (!dailyShiftPrepData || dailyShiftPrepData.length === 0) {
     return (
@@ -58,7 +59,7 @@ const PrepGuideContent = ({
     <div className="space-y-6">
       {showEditor && (
         <div className="my-6">
-          <MenuEditorComponent />
+          <MenuEditorComponent /> {/* 👈 Or use <ManagedEditor /> if needed */}
         </div>
       )}
 
