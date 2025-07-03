@@ -1,18 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from "react";
 
-// ----------------------------------------
-// 🔧 Default & Initial Menu Data
-// ----------------------------------------
+const canonicalCategories = [
+  "BBQ Meats",
+  "Sammies",
+  "Breads",
+  "Sides",
+  "Desserts",
+  "Other"
+];
+
 const defaultMenuData = {
-  "BBQ Meats": [],
-  "Sammies": [],
-  "Breads": [],
-  "Sides": [],
-  "Desserts": [],
-  "Other": []
-};
-
-const initialMenuData = {
   "Sammies": [
     { name: "Pulled Pork Sandwich", perGuestOz: 6, unit: "oz" },
     { name: "Chopped Brisket Sandwich", perGuestOz: 6, unit: "oz" },
@@ -46,96 +43,64 @@ const initialMenuData = {
   "Other": []
 };
 
-// ----------------------------------------
-// 🧠 Hook
-// ----------------------------------------
-export const useMenuManager = (localStorageKey) => {
-  const [menu, setMenu] = useState(() => {
-    try {
-      const saved = localStorage.getItem(localStorageKey);
-      const parsed = saved ? JSON.parse(saved) : initialMenuData;
-
-      // Ensure all sections exist even if localStorage was incomplete
-      return {
-        ...defaultMenuData,
-        ...parsed,
-      };
-    } catch (err) {
-      console.error("Invalid menu data in localStorage:", err);
-      return initialMenuData;
-    }
-  });
-
-  const [editorsVisibility, setEditorsVisibility] = useState(() => {
-    const init = {};
-    Object.keys(initialMenuData).forEach(k => { init[k] = true; });
-    return init;
-  });
-
-  const [newItemForms, setNewItemForms] = useState(() => {
-    const forms = {};
-    Object.keys(initialMenuData).forEach(section => {
-      forms[section] = { name: '', value: '', unit: 'oz' };
-    });
-    return forms;
-  });
-
-  const saveTimeout = useRef(null);
+const useMenuManager = () => {
+  const localStorageKey = "menuItems";
+  const [menu, setMenu] = useState(defaultMenuData);
 
   useEffect(() => {
-    if (saveTimeout.current) clearTimeout(saveTimeout.current);
-    saveTimeout.current = setTimeout(() => {
-      localStorage.setItem(localStorageKey, JSON.stringify(menu));
-    }, 300);
-    return () => clearTimeout(saveTimeout.current);
-  }, [menu, localStorageKey]);
+    const saved = localStorage.getItem(localStorageKey);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
 
-  const toggleEditor = (section) => {
-    setEditorsVisibility(prev => ({ ...prev, [section]: !prev[section] }));
-  };
+        // Filter to only canonical categories and sanitize items
+        const cleaned = canonicalCategories.reduce((acc, category) => {
+          const items = parsed[category];
+          if (Array.isArray(items)) {
+            acc[category] = items;
+          } else {
+            acc[category] = defaultMenuData[category] || [];
+          }
+          return acc;
+        }, {});
 
-  const handleNewItemChange = (section, field, value) => {
-    setNewItemForms(prev => ({
-      ...prev,
-      [section]: { ...prev[section], [field]: value }
-    }));
-  };
+        setMenu(cleaned);
+      } catch (err) {
+        console.error("Failed to parse saved menu data:", err);
+        setMenu(defaultMenuData);
+      }
+    }
+  }, []);
 
-  const addMenuItem = (section) => {
-    const { name, value, unit } = newItemForms[section];
-    if (!name || !value) return alert("Name and portion required.");
-    const num = parseFloat(value);
-    if (isNaN(num) || num <= 0) return alert("Portion must be a positive number.");
+  useEffect(() => {
+    localStorage.setItem(localStorageKey, JSON.stringify(menu));
+  }, [menu]);
 
-    const newItem = unit === "oz"
-      ? { name, perGuestOz: num, unit, each: undefined }
-      : { name, each: num, unit, perGuestOz: undefined };
-
+  const addOrUpdateItem = (section, item) => {
     setMenu(prev => {
-      const updatedItems = [...(prev[section] || [])].filter(i => i.name.toLowerCase() !== name.toLowerCase());
+      const existingItems = prev[section] || [];
+      const filtered = existingItems.filter(i => i.name !== item.name);
       return {
         ...prev,
-        [section]: [...updatedItems, newItem]
+        [section]: [...filtered, item]
       };
     });
-
-    setNewItemForms(prev => ({ ...prev, [section]: { name: '', value: '', unit: 'oz' } }));
   };
 
-  const removeMenuItem = (section, name) => {
-    setMenu(prev => ({
-      ...prev,
-      [section]: (prev[section] || []).filter(item => item.name !== name)
-    }));
+  const removeItem = (section, itemName) => {
+    setMenu(prev => {
+      const updated = prev[section].filter(item => item.name !== itemName);
+      return { ...prev, [section]: updated };
+    });
   };
 
   return {
     menu,
-    editorsVisibility,
-    toggleEditor,
-    newItemForms,
-    handleNewItemChange,
-    addMenuItem,
-    removeMenuItem
+    setMenu,
+    addOrUpdateItem,
+    removeItem,
+    canonicalCategories
   };
 };
+
+export default useMenuManager;
