@@ -32,15 +32,15 @@ const MenuEditorComponent = ({
       {sections.map((section) => (
         <div
           key={section}
-          className="bg-slate-50 border border-slate-200 rounded-2xl shadow-md p-6"
+          className="bg-slate-50 border border-slate-300 rounded-xl shadow-lg p-6"
         >
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-slate-800 tracking-tight">
+            <h2 className="text-lg font-semibold text-slate-900">
               {displayNameMap[section] || section}
             </h2>
             <button
               onClick={() => toggleEditor(section)}
-              className="text-sm font-medium text-blue-600 hover:text-blue-700 transition"
+              className="text-xs font-medium text-blue-600 hover:underline"
             >
               {editorsVisibility[section] ? "Close Editor" : "Edit Items"}
             </button>
@@ -48,11 +48,11 @@ const MenuEditorComponent = ({
 
           {editorsVisibility[section] && (
             <div className="space-y-4 mb-6">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <input
                   type="text"
                   placeholder="Item Name"
-                  className="border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-800 focus:ring-2 focus:ring-blue-500"
                   value={newItemForms[section]?.name || ""}
                   onChange={(e) =>
                     handleNewItemChange(section, "name", e.target.value)
@@ -61,14 +61,14 @@ const MenuEditorComponent = ({
                 <input
                   type="number"
                   placeholder="e.g. 4"
-                  className="border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-800 focus:ring-2 focus:ring-blue-500"
                   value={newItemForms[section]?.value || ""}
                   onChange={(e) =>
                     handleNewItemChange(section, "value", e.target.value)
                   }
                 />
                 <select
-                  className="border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-800 focus:ring-2 focus:ring-blue-500"
                   value={newItemForms[section]?.unit || "oz"}
                   onChange={(e) =>
                     handleNewItemChange(section, "unit", e.target.value)
@@ -83,7 +83,7 @@ const MenuEditorComponent = ({
               </div>
 
               <button
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md text-sm font-semibold transition"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md text-sm font-medium transition"
                 onClick={() => addMenuItem(section)}
               >
                 Save Item
@@ -92,12 +92,14 @@ const MenuEditorComponent = ({
           )}
 
           <div>
-            <p className="text-sm text-slate-500 mb-2">Current Items:</p>
+            <p className="text-sm text-slate-600 mb-2 font-medium">
+              Current Items:
+            </p>
             <ul className="text-sm divide-y divide-slate-200">
               {(menu[section] || []).map((item) => (
                 <li
                   key={item.name}
-                  className="flex justify-between items-center py-2"
+                  className="flex justify-between items-center py-1 hover:bg-slate-100 px-2 rounded"
                 >
                   <span className="text-slate-800">
                     {item.name}{" "}
