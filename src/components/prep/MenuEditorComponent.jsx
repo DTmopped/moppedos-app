@@ -92,7 +92,7 @@ const MenuEditorComponent = ({
           )}
 
           <div>
-            <p className="text-sm text-slate-600 mb-2 font-medium">
+           <p className="text-red-600 font-bold text-lg">TESTING STYLE CHANGE</p>
               Current Items:
             </p>
             <ul className="text-sm divide-y divide-slate-200">
