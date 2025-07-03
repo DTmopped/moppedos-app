@@ -1,5 +1,13 @@
 import React from "react";
 
+const displayNameMap = {
+  BBQ: "BBQ Meats",
+  Sandwiches: "Sammies",
+  Breads: "Breads",
+  Sides: "Sides",
+  Desserts: "Desserts",
+};
+
 const MenuEditorSection = ({
   section,
   items,
@@ -11,11 +19,12 @@ const MenuEditorSection = ({
   removeMenuItem,
 }) => {
   const sortedItems = [...items].sort((a, b) => a.name.localeCompare(b.name));
+  const displayName = displayNameMap[section] || section;
 
   return (
     <div className="border border-gray-700 p-4 rounded-lg bg-slate-800/50 mb-6">
       <div className="flex justify-between items-center mb-3">
-        <h3 className="text-lg font-semibold text-white">{section}</h3>
+        <h3 className="text-lg font-semibold text-white">{displayName}</h3>
         <button
           onClick={() => toggleEditor(section)}
           className="text-sm border border-gray-500 text-gray-300 px-2 py-1 hover:bg-slate-700"
@@ -27,8 +36,12 @@ const MenuEditorSection = ({
       {editorOpen && (
         <div className="space-y-4">
           <div>
+            <div className="bg-yellow-300 text-yellow-900 text-xs px-3 py-1 rounded mb-4 inline-block">
+              Editing: {displayName}
+            </div>
+
             <h4 className="text-sm text-gray-300 mb-1">
-              Add or Update Item in <span className="font-bold">{section}</span>
+              Add or Update Item in <span className="font-bold">{displayName}</span>
             </h4>
 
             <input
@@ -74,28 +87,32 @@ const MenuEditorSection = ({
 
           <div>
             <h5 className="text-sm font-semibold text-gray-300 mb-2">Current Items:</h5>
-            <ul className="space-y-1 max-h-40 overflow-y-auto text-sm text-gray-300">
-              {sortedItems.map((item) => (
-                <li key={item.name} className="flex justify-between items-center">
-                  <span>
-                    {item.name} –{" "}
-                    {item.perGuestOz
-                      ? `${item.perGuestOz} oz`
-                      : item.each
-                      ? `${item.each} each`
-                      : item.unit === "lb"
-                      ? `${item.value} lb`
-                      : "?"}
-                  </span>
-                  <button
-                    onClick={() => removeMenuItem(section, item.name)}
-                    className="text-red-400 hover:text-red-600 text-xs"
-                  >
-                    [remove]
-                  </button>
-                </li>
-              ))}
-            </ul>
+            {sortedItems.length === 0 ? (
+              <p className="text-sm text-gray-500 italic">No items in this section yet.</p>
+            ) : (
+              <ul className="space-y-1 max-h-40 overflow-y-auto text-sm text-gray-300">
+                {sortedItems.map((item) => (
+                  <li key={item.name} className="flex justify-between items-center">
+                    <span>
+                      {item.name} –{" "}
+                      {item.perGuestOz
+                        ? `${item.perGuestOz} oz`
+                        : item.each
+                        ? `${item.each} each`
+                        : item.unit === "lb"
+                        ? `${item.value} lb`
+                        : "?"}
+                    </span>
+                    <button
+                      onClick={() => removeMenuItem(section, item.name)}
+                      className="text-red-400 hover:text-red-600 text-xs"
+                    >
+                      [remove]
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       )}
