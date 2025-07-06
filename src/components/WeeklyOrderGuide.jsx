@@ -2,16 +2,15 @@ import React, { useState, useEffect, useCallback } from 'react';
 import ReactDOMServer from 'react-dom/server';
 import { useData } from '@/contexts/DataContext';
 import { Button } from '@/components/ui/button.jsx';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Printer, ShoppingBasket, Package, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import PrintableOrderGuide from './orderguide/PrintableOrderGuide.jsx';
-import OrderGuideCategoryComponent from './orderguide/OrderGuideCategory.jsx'; // Renamed to avoid conflict
+import OrderGuideCategoryComponent from './orderguide/OrderGuideCategory.jsx';
 
 const WeeklyOrderGuide = () => {
   const { forecastData, posData } = useData();
   const [guideData, setGuideData] = useState(null);
+  const [manualAdditions, setManualAdditions] = useState({});
   const [printDate, setPrintDate] = useState(new Date());
 
   const ozPerLb = 16;
@@ -24,9 +23,9 @@ const WeeklyOrderGuide = () => {
 
   const generateOrderGuide = useCallback(() => {
     const guests = calculateWeeklyGuests();
-    const bbqGuests = guests * 0.5; // Assuming 50% of guests order BBQ items needing pickles/cups
-    const pickleJars = Math.ceil((bbqGuests * 3) / 50); // 3 pickles per guest, 50 pickles per jar
-    const toGoCups = Math.ceil(bbqGuests * 3); // Assuming 3 cups for relevant items
+    const bbqGuests = guests * 0.5;
+    const pickleJars = Math.ceil((bbqGuests * 3) / 50);
+    const toGoCups = Math.ceil(bbqGuests * 3);
 
     const totalSandwiches =
       (posData["Pulled Pork Sandwich"] || 0) +
@@ -75,44 +74,68 @@ const WeeklyOrderGuide = () => {
       ]
     };
 
-    // Calculate actuals and variance for each item
+    // Add manual items into their respective categories
+    Object.entries(manualAdditions).forEach(([category, items]) => {
+      if (!guide[category]) guide[category] = [];
+      guide[category] = [...guide[category], ...items];
+    });
+
+    // Finalize actuals/variance
     Object.keys(guide).forEach(category => {
       guide[category].forEach(item => {
-        item.actual = item.posDataValue !== undefined ? item.posDataValue : (typeof item.forecast === 'number' ? 0 : "-");
-        if (typeof item.forecast === 'number' && typeof item.actual === 'number') {
-          item.variance = (item.actual - item.forecast).toFixed(1);
-        } else {
-          item.variance = "-";
-        }
+        item.actual = item.posDataValue !== undefined
+          ? item.posDataValue
+          : typeof item.forecast === 'number' ? 0 : "-";
+        item.variance =
+          typeof item.forecast === 'number' && typeof item.actual === 'number'
+            ? (item.actual - item.forecast).toFixed(1)
+            : "-";
       });
     });
-    
+
     return guide;
-  }, [calculateWeeklyGuests, posData]);
+  }, [calculateWeeklyGuests, posData, manualAdditions]);
 
   useEffect(() => {
     setGuideData(generateOrderGuide());
     setPrintDate(new Date());
   }, [generateOrderGuide]);
 
+  const handleAddItem = (category) => {
+    const name = prompt("Enter item name:");
+    const forecast = parseFloat(prompt("Enter forecasted amount:"));
+    const unit = prompt("Enter unit (e.g. lbs, each):");
+
+    if (!name || isNaN(forecast) || !unit) return;
+
+    const newItem = {
+      name,
+      forecast,
+      unit,
+      actual: 0,
+      variance: (-forecast).toFixed(1)
+    };
+
+    setManualAdditions(prev => ({
+      ...prev,
+      [category]: [...(prev[category] || []), newItem]
+    }));
+  };
+
   const handlePrint = () => {
     const currentPrintDate = new Date();
     setPrintDate(currentPrintDate);
-
     const printableComponentHtml = ReactDOMServer.renderToStaticMarkup(
       <PrintableOrderGuide guideData={guideData} printDate={currentPrintDate} />
     );
-
     const iframe = document.createElement('iframe');
     iframe.style.position = 'absolute';
     iframe.style.width = '0';
     iframe.style.height = '0';
     iframe.style.border = '0';
-    iframe.style.left = '-9999px'; 
+    iframe.style.left = '-9999px';
     iframe.style.top = '-9999px';
-
     document.body.appendChild(iframe);
-    
     const doc = iframe.contentWindow.document;
     doc.open();
     doc.write(`
@@ -128,29 +151,21 @@ const WeeklyOrderGuide = () => {
       </html>
     `);
     doc.close();
-    
-    // Wait for styles to load
     iframe.onload = () => {
-        iframe.contentWindow.focus();
-        setTimeout(() => {
-          iframe.contentWindow.print();
-          document.body.removeChild(iframe);
-        }, 500); // Delay ensures print dialog appears after content rendering
+      iframe.contentWindow.focus();
+      setTimeout(() => {
+        iframe.contentWindow.print();
+        document.body.removeChild(iframe);
+      }, 500);
     };
-     // Fallback if onload doesn't fire (e.g. for about:blank)
     if (iframe.contentWindow.document.readyState === "complete") {
-        iframe.onload();
+      iframe.onload();
     }
-
   };
 
-  if (!guideData) {
-    return <div className="text-center p-8">Loading order guide data...</div>;
-  }
-  
   const categoryIcons = {
     Meats: ShoppingBasket,
-    Bread: Package, // Using Package for variety
+    Bread: Package,
     Sides: ShoppingBasket,
     Sweets: Package,
     Condiments: ShoppingBasket,
@@ -158,11 +173,11 @@ const WeeklyOrderGuide = () => {
   };
 
   const getStatusClass = (forecast, actual) => {
-    if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0) return 'bg-opacity-10 dark:bg-opacity-20'; // Default/neutral if no valid numbers
+    if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0) return 'bg-opacity-10 dark:bg-opacity-20';
     const variance = ((actual - forecast) / forecast) * 100;
-    if (Math.abs(variance) <= 10) return 'bg-green-500/10 dark:bg-green-500/20 text-green-700 dark:text-green-400'; // Good
-    if (variance > 10 && variance <= 30) return 'bg-yellow-500/10 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400'; // Warning
-    return 'bg-red-500/10 dark:bg-red-500/20 text-red-700 dark:text-red-400'; // Danger
+    if (Math.abs(variance) <= 10) return 'bg-green-500/10 dark:bg-green-500/20 text-green-700 dark:text-green-400';
+    if (variance > 10 && variance <= 30) return 'bg-yellow-500/10 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400';
+    return 'bg-red-500/10 dark:bg-red-500/20 text-red-700 dark:text-red-400';
   };
 
   const getStatusIcon = (forecast, actual) => {
@@ -170,10 +185,13 @@ const WeeklyOrderGuide = () => {
     const variance = ((actual - forecast) / forecast) * 100;
     if (Math.abs(variance) <= 10) return <CheckCircle2 className="h-4 w-4 text-green-500" />;
     if (variance > 10 && variance <= 30) return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
-    if (variance > 30) return <TrendingUp className="h-4 w-4 text-red-500" />; // Over actual
-    return <TrendingDown className="h-4 w-4 text-red-500" />; // Under actual
+    if (variance > 30) return <TrendingUp className="h-4 w-4 text-red-500" />;
+    return <TrendingDown className="h-4 w-4 text-red-500" />;
   };
 
+  if (!guideData) {
+    return <div className="text-center p-8">Loading order guide data...</div>;
+  }
 
   return (
     <div className="p-4 md:p-6">
@@ -192,24 +210,34 @@ const WeeklyOrderGuide = () => {
           <Printer size={20} className="mr-2" /> Print Order Guide
         </Button>
       </div>
-      
+
       <AnimatePresence>
         <div className="space-y-6">
           {Object.entries(guideData).map(([category, items]) => (
-            <OrderGuideCategoryComponent
-              key={category} 
-              categoryTitle={category} 
-              items={items.map(item => [
-                item.name,
-                item.forecast,
-                item.unit,
-                item.actual,
-                item.variance
-              ])} 
-              getStatusClass={getStatusClass}
-              getStatusIcon={getStatusIcon} 
-              icon={categoryIcons[category] || ShoppingBasket}
-            />
+            <div key={category}>
+              <div className="flex justify-between items-center mb-2">
+                <h2 className="text-xl font-bold text-slate-800 dark:text-white">{category}</h2>
+                <button
+                  onClick={() => handleAddItem(category)}
+                  className="text-sm text-blue-600 hover:underline no-print"
+                >
+                  + Add Item
+                </button>
+              </div>
+              <OrderGuideCategoryComponent
+                categoryTitle={category}
+                items={items.map(item => [
+                  item.name,
+                  item.forecast,
+                  item.unit,
+                  item.actual,
+                  item.variance
+                ])}
+                getStatusClass={getStatusClass}
+                getStatusIcon={getStatusIcon}
+                icon={categoryIcons[category] || ShoppingBasket}
+              />
+            </div>
           ))}
         </div>
       </AnimatePresence>
