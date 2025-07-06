@@ -28,39 +28,39 @@ const WeeklyOrderGuide = () => {
   }, [forecastData]);
 
   const generateOrderGuide = useCallback(() => {
-    const guests = calculateWeeklyGuests();
-    const bbqGuests = guests * 0.5;
-    const pickleJars = Math.ceil((bbqGuests * 3) / 50);
-    const toGoCups = Math.ceil(bbqGuests * 3);
-    const totalSandwiches =
-      (posData["Pulled Pork Sandwich"] || 0) +
-      (posData["Chopped Brisket Sandwich"] || 0) +
-      (posData["Chopped Chicken Sandwich"] || 0);
+  const guests = calculateWeeklyGuests();
+  const bbqGuests = guests * 0.5;
+  const pickleJars = Math.ceil((bbqGuests * 3) / 50);
+  const toGoCups = Math.ceil(bbqGuests * 3);
+  const totalSandwiches =
+    (posData["Pulled Pork Sandwich"] || 0) +
+    (posData["Chopped Brisket Sandwich"] || 0) +
+    (posData["Chopped Chicken Sandwich"] || 0);
 
-    const guide = {
-      Meats: [], Bread: [], Sides: [], Sweets: [], Condiments: [], PaperGoods: []
-      // Omitted for brevity, insert your items as needed
-    };
+  const guide = {
+    Meats: [], Bread: [], Sides: [], Sweets: [], Condiments: [], PaperGoods: []
+  };
 
-    Object.entries(manualAdditions).forEach(([category, items]) => {
-      if (!guide[category]) guide[category] = [];
-      guide[category] = [...guide[category], ...items];
+  Object.entries(manualAdditions).forEach(([category, items]) => {
+    if (!guide[category]) guide[category] = [];
+    guide[category] = [...guide[category], ...items];
+  });
+
+  Object.keys(guide).forEach(category => {
+    guide[category].forEach(item => {
+      item.actual = item.posDataValue !== undefined
+        ? item.posDataValue
+        : typeof item.forecast === 'number' ? 0 : "-";
+      item.variance =
+        typeof item.forecast === 'number' && typeof item.actual === 'number'
+          ? (item.actual - item.forecast).toFixed(1)
+          : "-";
     });
+  });
 
-    Object.keys(guide).forEach(category => {
-      guide[category].forEach(item => {
-        item.actual = item.posDataValue !== undefined
-          ? item.posDataValue
-          : typeof item.forecast === 'number' ? 0 : "-";
-        item.variance =
-          typeof item.forecast === 'number' && typeof item.actual === 'number'
-            ? (item.actual - item.forecast).toFixed(1)
-            : "-";
-      });
-    });
-
-    return guide;
-  }, [calculateWeeklyGuests, posData, manualAdditions]);
+  // 🔥 This was missing:
+  setGuideData(guide);
+}, [calculateWeeklyGuests, posData, manualAdditions]);
 
   useEffect(() => {
     setGuideData(generateOrderGuide());
