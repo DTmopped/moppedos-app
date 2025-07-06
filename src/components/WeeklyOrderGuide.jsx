@@ -9,6 +9,10 @@ import PrintableOrderGuide from './orderguide/PrintableOrderGuide.jsx';
 import OrderGuideCategoryComponent from './orderguide/OrderGuideCategory.jsx';
 
 const WeeklyOrderGuide = () => {
+  const handlePrint = () => {
+  window.print();
+};
+  
   const { forecastData, posData } = useData();
   const [guideData, setGuideData] = useState(null);
   const [manualAdditions, setManualAdditions] = useState({});
