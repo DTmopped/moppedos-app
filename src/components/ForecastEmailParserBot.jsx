@@ -136,10 +136,10 @@ const ForecastEmailParserBot = () => {
     error, setError, 
     validateInputs, extractBaseDate 
   } = useEmailParserForm(
-    "Subject: Terminal 4 Weekly Passenger Forecast – May 13 to May 19\nDate: 2025-05-13\nTotal Forecast: 110,000 passengers\nBreakdown by day:\n- Monday: 15000\n- Tuesday: 16000\n- Wednesday: 15500\n- Thursday: 17000\n- Friday: 19500\n- Saturday: 18000\n- Sunday: 9000",
-    "8.0",
-    "15"
-  );
+  "",    // <- start with blank email input
+  "8.0", // <- default capture rate
+  "40"   // <- your updated spend per guest
+);
   
   const [forecastDataUI, setForecastDataUI] = useState([]);
   const { addForecastEntry } = useData();
