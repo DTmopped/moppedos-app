@@ -101,26 +101,33 @@ const WeeklyOrderGuide = () => {
     setPrintDate(new Date());
   }, [generateOrderGuide]);
 
-  const handleAddItem = (category) => {
-    const name = prompt("Enter item name:");
-    const forecast = parseFloat(prompt("Enter forecasted amount:"));
-    const unit = prompt("Enter unit (e.g. lbs, each):");
+ const handleAddItem = (category) => {
+  const name = prompt(`📦 You're adding a new item to the **${category}** category.\n\nEnter the item name:`)?.trim();
+  if (!name) return;
 
-    if (!name || isNaN(forecast) || !unit) return;
+  const forecastInput = prompt(`📊 How much are you forecasting for "${name}"?\n(Use numbers only, e.g. 15.5)`);
+  const forecast = parseFloat(forecastInput);
+  if (isNaN(forecast)) {
+    alert("⚠️ Forecasted amount must be a valid number.");
+    return;
+  }
 
-    const newItem = {
-      name,
-      forecast,
-      unit,
-      actual: 0,
-      variance: (-forecast).toFixed(1)
-    };
+  const unit = prompt(`📐 What unit is used for "${name}"?\n(e.g. lbs, each, slices, jars)`)?.trim();
+  if (!unit) return;
 
-    setManualAdditions(prev => ({
-      ...prev,
-      [category]: [...(prev[category] || []), newItem]
-    }));
+  const newItem = {
+    name,
+    forecast,
+    unit,
+    actual: 0,
+    variance: (-forecast).toFixed(1)
   };
+
+  setManualAdditions(prev => ({
+    ...prev,
+    [category]: [...(prev[category] || []), newItem]
+  }));
+};
 
   const handlePrint = () => {
     const currentPrintDate = new Date();
