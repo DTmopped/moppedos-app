@@ -71,7 +71,7 @@ const WeeklyOrderGuide = () => {
     const forecast = parseFloat(forecastInput);
     if (isNaN(forecast)) return alert("Must enter a number.");
 
-    const unit = prompt(`What unit is used for "${name}"? (e.g. lbs, each)`)? .trim();
+    const unit = prompt(`What unit is used for "${name}"? (e.g. lbs, each)`)?.trim();
     if (!unit) return;
 
     const newItem = {
