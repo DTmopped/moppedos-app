@@ -2,7 +2,12 @@ import React, { useState } from 'react';
 import { parseWeeklyForecastEmail } from '@/lib/emailParser';
 import { useData } from '@/contexts/DataContext';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent
+} from '@/components/ui/card';
 
 const WeeklyForecastParser = () => {
   const { setForecastData } = useData();
@@ -38,24 +43,20 @@ const WeeklyForecastParser = () => {
         <Button onClick={handleParse}>Parse Forecast</Button>
 
         {parsingStatus === 'success' && (
-          <>
-            <p className="text-green-600">Forecast parsed successfully ✅</p>
-            <div className="mt-4 space-y-2">
+          <div className="mt-4">
+            <p className="text-green-600 font-medium">Forecast parsed successfully ✅</p>
+            <ul className="mt-2 space-y-1 text-sm text-gray-700">
               {parsedResults.map((item, index) => (
-                <div
-                  key={index}
-                  className="bg-gray-100 border border-gray-300 rounded p-2 text-sm font-mono"
-                >
-                  <strong>{item.day}</strong> ({item.date}) —{' '}
-                  <span className="text-blue-700">{item.guests.toLocaleString()}</span> guests
-                </div>
+                <li key={index}>
+                  {item.day} {item.date} — {item.guests.toLocaleString()} guests
+                </li>
               ))}
-            </div>
-          </>
+            </ul>
+          </div>
         )}
 
         {parsingStatus === 'error' && (
-          <p className="text-red-600">Failed to parse forecast ❌</p>
+          <p className="text-red-600 mt-4">❌ Failed to parse forecast. Check formatting.</p>
         )}
       </CardContent>
     </Card>
