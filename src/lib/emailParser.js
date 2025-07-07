@@ -3,25 +3,34 @@ export function parseWeeklyForecastEmail(text) {
   const forecast = [];
 
   for (let line of lines) {
-    // Match pattern: Day MM/DD/YYYY – X guests (supports various dash types)
+    // Debug the line
+    console.log("Parsing line:", line);
+
     const match = line.match(
-      /^(\w{3}) (\d{2})\/(\d{2})\/(\d{4})\s+[-–—]\s+([\d,]+)\s+guests$/i
+      /^(\w{3}) (\d{2}\/\d{2}\/\d{4})\s+–\s+([\d,]+)\s+guests$/i
     );
 
-    if (match) {
-      console.log("Parsed match:", match); // 🐛 Debug: Log each successful match
+    console.log("Parsed match:", match);
 
-      const [_, day, month, dayNum, year, guestCount] = match;
-      const date = `${month}/${dayNum}/${year}`;
+    if (match) {
+      const [ , day, date, guestCount ] = match;
+      const cleanedGuestCount = guestCount?.replace(/,/g, "");
+
+      if (!cleanedGuestCount || isNaN(cleanedGuestCount)) {
+        console.warn("Invalid guest count in line:", line);
+        continue;
+      }
+
       forecast.push({
         day,
         date,
-        guests: parseInt(guestCount.replace(/,/g, ""), 10),
+        guests: parseInt(cleanedGuestCount, 10),
       });
     } else {
-      console.warn("No match for line:", line); // 🐛 Debug: Warn if a line doesn’t match
+      console.warn("No match for line:", line);
     }
   }
 
+  console.log("Final forecast array:", forecast);
   return forecast;
 }
