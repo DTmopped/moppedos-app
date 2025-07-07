@@ -8,14 +8,17 @@ const WeeklyForecastParser = () => {
   const { setForecastData } = useData();
   const [emailText, setEmailText] = useState('');
   const [parsingStatus, setParsingStatus] = useState(null);
+  const [parsedResults, setParsedResults] = useState([]);
 
   const handleParse = () => {
     const result = parseWeeklyForecastEmail(emailText);
     if (result && result.length) {
       setForecastData(result);
+      setParsedResults(result);
       setParsingStatus('success');
     } else {
       setParsingStatus('error');
+      setParsedResults([]);
     }
   };
 
@@ -33,8 +36,27 @@ const WeeklyForecastParser = () => {
           onChange={(e) => setEmailText(e.target.value)}
         />
         <Button onClick={handleParse}>Parse Forecast</Button>
-        {parsingStatus === 'success' && <p className="text-green-600">Forecast parsed successfully ✅</p>}
-        {parsingStatus === 'error' && <p className="text-red-600">Failed to parse forecast ❌</p>}
+
+        {parsingStatus === 'success' && (
+          <>
+            <p className="text-green-600">Forecast parsed successfully ✅</p>
+            <div className="mt-4 space-y-2">
+              {parsedResults.map((item, index) => (
+                <div
+                  key={index}
+                  className="bg-gray-100 border border-gray-300 rounded p-2 text-sm font-mono"
+                >
+                  <strong>{item.day}</strong> ({item.date}) —{' '}
+                  <span className="text-blue-700">{item.guests.toLocaleString()}</span> guests
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {parsingStatus === 'error' && (
+          <p className="text-red-600">Failed to parse forecast ❌</p>
+        )}
       </CardContent>
     </Card>
   );
