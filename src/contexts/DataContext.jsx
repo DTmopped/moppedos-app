@@ -155,15 +155,16 @@ export const DataProvider = ({ children }) => {
   }, []);
 
   const value = {
-    forecastData,
-    actualData,
-    posData,
-    addForecastEntry,
-    addActualEntry,
-    setPosData,
-    isAdminMode,       // 🟢 exposed in context
-    toggleAdminMode    // 🟢 exposed in context
-  };
+  forecastData,
+  actualData,
+  posData,
+  addForecastEntry,
+  addActualEntry,
+  setForecastData,   // 👈 ADD THIS LINE
+  setPosData,
+  isAdminMode,
+  toggleAdminMode
+};
 
   return (
     <DataContext.Provider value={value}>
