@@ -62,14 +62,23 @@ const WeeklyForecastParser = () => {
         return;
       }
 
+      const captureDecimal = parseFloat(captureRate);
+      const spendPerGuestFloat = parseFloat(spendPerGuest);
+      const amSplitDecimal = parseFloat(amSplit);
+      const pmSplitDecimal = 1 - amSplitDecimal;
+
+      const foodPct = parseFloat(foodCostGoal);
+      const bevPct = parseFloat(bevCostGoal);
+      const laborPct = parseFloat(laborCostGoal);
+
       const result = data.map((item, idx) => {
         const date = new Date(startDate);
         date.setDate(date.getDate() + idx);
 
-        const guests = Math.round(item.pax * captureRate);
-        const amGuests = Math.round(guests * amSplit);
+        const guests = Math.round(item.pax * captureDecimal);
+        const amGuests = Math.round(guests * amSplitDecimal);
         const pmGuests = guests - amGuests;
-        const sales = guests * spendPerGuest;
+        const sales = guests * spendPerGuestFloat;
 
         return {
           day: item.day,
@@ -79,9 +88,9 @@ const WeeklyForecastParser = () => {
           amGuests,
           pmGuests,
           sales,
-          food: sales * foodCostGoal,
-          bev: sales * bevCostGoal,
-          labor: sales * laborCostGoal,
+          food: sales * foodPct,
+          bev: sales * bevPct,
+          labor: sales * laborPct,
         };
       });
 
