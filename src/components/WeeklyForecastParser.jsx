@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "compo
 import { Calculator } from "lucide-react";
 import ForecastInputArea from "components/forecast/ForecastInputArea.jsx";
 import ForecastResultsTable from "components/forecast/ForecastResultsTable.jsx";
+import AdminPanel from "components/forecast/AdminPanel.jsx";
 
 const WeeklyForecastParser = () => {
   const [inputText, setInputText] = useState("");
@@ -121,6 +122,8 @@ const WeeklyForecastParser = () => {
       transition={{ duration: 0.5 }}
       className="space-y-6"
     >
+      <AdminPanel />
+      
       <Card className="glassmorphic-card border border-slate-700">
         <CardHeader className="pb-4">
           <div className="flex items-center space-x-3">
