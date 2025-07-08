@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
+import AdminModeToggle from "./AdminModeToggle";
 
 const AdminPanel = () => {
   const [adminMode, setAdminMode] = useState(false);
@@ -44,9 +44,8 @@ const AdminPanel = () => {
 
   if (!adminMode) {
     return (
-      <div className="flex items-center space-x-2 mb-6">
-        <Switch id="adminMode" checked={adminMode} onCheckedChange={toggleAdminMode} />
-        <Label htmlFor="adminMode">Admin Mode</Label>
+      <div className="mb-6">
+        <AdminModeToggle />
       </div>
     );
   }
@@ -57,10 +56,7 @@ const AdminPanel = () => {
         <CardTitle>Admin Mode Settings</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex items-center space-x-2">
-          <Switch id="adminMode" checked={adminMode} onCheckedChange={toggleAdminMode} />
-          <Label htmlFor="adminMode">Admin Mode</Label>
-        </div>
+        <AdminModeToggle />
 
         {Object.entries(settings).map(([key, value]) => (
           <div key={key} className="space-y-1">
