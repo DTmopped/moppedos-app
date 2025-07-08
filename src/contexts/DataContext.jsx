@@ -26,14 +26,20 @@ export const DataProvider = ({ children }) => {
     });
   };
 
-  const [adminSettings, setAdminSettings] = useState({
-    captureRate: parseFloat(localStorage.getItem("captureRate")) || 0.08,
-    spendPerGuest: parseFloat(localStorage.getItem("spendPerGuest")) || 40,
-    amSplit: parseFloat(localStorage.getItem("amSplit")) || 0.6,
-    foodCostGoal: parseFloat(localStorage.getItem("foodCostGoal")) || 0.3,
-    bevCostGoal: parseFloat(localStorage.getItem("bevCostGoal")) || 0.2,
-    laborCostGoal: parseFloat(localStorage.getItem("laborCostGoal")) || 0.14,
-  });
+ const safeParse = (key, fallback) => {
+  const raw = localStorage.getItem(key);
+  const parsed = parseFloat(raw);
+  return isNaN(parsed) ? fallback : parsed;
+};
+
+const [adminSettings, setAdminSettings] = useState({
+  captureRate: safeParse("captureRate", 0.08),
+  spendPerGuest: safeParse("spendPerGuest", 40),
+  amSplit: safeParse("amSplit", 0.6),
+  foodCostGoal: safeParse("foodCostGoal", 0.3),
+  bevCostGoal: safeParse("bevCostGoal", 0.2),
+  laborCostGoal: safeParse("laborCostGoal", 0.14),
+});
 
   const updateAdminSetting = (key, value) => {
     let numericValue = parseFloat(value);
