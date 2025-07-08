@@ -1,5 +1,4 @@
 import React from "react";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { TrendingUp } from "lucide-react";
@@ -12,14 +11,29 @@ const ForecastInputArea = ({ inputText, setInputText, generateForecast }) => {
         <Label htmlFor="weeklyInput" className="text-sm font-medium text-slate-300">
           Weekly Passenger Data
         </Label>
-        <Textarea
+
+        {/* DEBUG: Native <textarea> to rule out custom component issues */}
+        <textarea
           id="weeklyInput"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           placeholder={`Example:\nDate: YYYY-MM-DD (for Monday)\nMonday: 15000\nTuesday: 16000\n...`}
-          className="bg-slate-800 text-slate-200 border border-slate-600 placeholder-slate-500 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 z-10"
+          style={{
+            width: "100%",
+            minHeight: "180px",
+            backgroundColor: "#1e293b",  // tailwind bg-slate-800
+            color: "#cbd5e1",            // tailwind text-slate-200
+            padding: "12px",
+            fontFamily: "monospace",
+            fontSize: "14px",
+            border: "1px solid #475569", // tailwind border-slate-600
+            borderRadius: "6px",
+            zIndex: 999,
+            resize: "vertical",
+          }}
         />
       </div>
+
       <motion.div whileTap={{ scale: 0.98 }}>
         <Button
           onClick={generateForecast}
