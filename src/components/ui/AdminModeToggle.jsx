@@ -1,22 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useData } from '@/contexts/DataContext'; // ✅ Use shared context
 
 const AdminModeToggle = () => {
-  const [isAdminMode, setIsAdminMode] = useState(false);
-
-  useEffect(() => {
-    const stored = localStorage.getItem("adminMode") === "true";
-    setIsAdminMode(stored);
-  }, []);
-
-  const toggle = () => {
-    const updated = !isAdminMode;
-    setIsAdminMode(updated);
-    localStorage.setItem("adminMode", updated.toString());
-  };
+  const { isAdminMode, toggleAdminMode } = useData(); // ✅ Pull from context
 
   return (
     <button
-      onClick={toggle}
+      onClick={toggleAdminMode}
       className={`px-4 py-2 rounded font-semibold transition-colors text-sm ${
         isAdminMode
           ? 'bg-yellow-500 text-black hover:bg-yellow-600'
