@@ -16,11 +16,11 @@ const ForecastInputArea = ({ inputText, setInputText, generateForecast }) => {
           id="weeklyInput"
           value={inputText}
           onChange={(e) => {
-            console.log("📝 onChange fired:", e.target.value); // Debug log
-            setInputText(e.target.value);
+            const newText = e.target.value;
+            setInputText(newText);
           }}
           placeholder={`Example:\nDate: YYYY-MM-DD (for Monday)\nMonday: 15000\nTuesday: 16000\n...`}
-          className="min-h-[180px] text-sm font-mono bg-slate-800 border border-slate-600 text-slate-300 focus:border-pink-500 transition-all duration-300 placeholder-slate-500"
+          className="min-h-[180px] text-sm font-mono bg-slate-800 text-slate-200 border border-slate-600 placeholder-slate-500 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 relative z-10"
         />
       </div>
       <motion.div whileTap={{ scale: 0.98 }}>
