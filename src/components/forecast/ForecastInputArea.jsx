@@ -15,12 +15,9 @@ const ForecastInputArea = ({ inputText, setInputText, generateForecast }) => {
         <Textarea
           id="weeklyInput"
           value={inputText}
-          onChange={(e) => {
-            const newText = e.target.value;
-            setInputText(newText);
-          }}
+          onChange={(e) => setInputText(e.target.value)}
           placeholder={`Example:\nDate: YYYY-MM-DD (for Monday)\nMonday: 15000\nTuesday: 16000\n...`}
-          className="min-h-[180px] text-sm font-mono bg-slate-800 text-slate-200 border border-slate-600 placeholder-slate-500 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 relative z-10"
+          className="bg-slate-800 text-slate-200 border border-slate-600 placeholder-slate-500 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 z-10"
         />
       </div>
       <motion.div whileTap={{ scale: 0.98 }}>
