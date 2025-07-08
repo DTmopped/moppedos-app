@@ -117,12 +117,7 @@ const WeeklyForecastParser = () => {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="space-y-6"
-    >
+   <div className="space-y-6">
       <div className="flex justify-end">
         <AdminModeToggle />
       </div>
@@ -162,7 +157,7 @@ const WeeklyForecastParser = () => {
       {forecastDataUI.length > 0 && (
         <ForecastResultsTable forecastDataUI={forecastDataUI} />
       )}
-    </motion.div>
+    </div>
   );
 };
 
