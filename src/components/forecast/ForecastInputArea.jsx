@@ -8,11 +8,14 @@ const ForecastInputArea = ({ inputText, setInputText, generateForecast }) => {
   return (
     <>
       <div className="space-y-2 mb-6">
-        <Label htmlFor="weeklyInput" className="text-sm font-medium text-slate-300">
+        <Label
+          htmlFor="weeklyInput"
+          className="text-sm font-medium text-slate-300"
+        >
           Weekly Passenger Data
         </Label>
 
-        {/* DEBUG: Native <textarea> to rule out custom component issues */}
+        {/* ✅ FIXED: Added position: relative so zIndex works */}
         <textarea
           id="weeklyInput"
           value={inputText}
@@ -21,14 +24,15 @@ const ForecastInputArea = ({ inputText, setInputText, generateForecast }) => {
           style={{
             width: "100%",
             minHeight: "180px",
-            backgroundColor: "#1e293b",  // tailwind bg-slate-800
-            color: "#cbd5e1",            // tailwind text-slate-200
+            backgroundColor: "#1e293b", // tailwind bg-slate-800
+            color: "#cbd5e1",           // tailwind text-slate-200
             padding: "12px",
             fontFamily: "monospace",
             fontSize: "14px",
             border: "1px solid #475569", // tailwind border-slate-600
             borderRadius: "6px",
             zIndex: 999,
+            position: "relative",        // ✅ ESSENTIAL for zIndex to work
             resize: "vertical",
           }}
         />
