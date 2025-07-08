@@ -11,7 +11,9 @@ import { useData } from "@/contexts/DataContext";
 
 const WeeklyForecastParser = () => {
   const { isAdminMode, adminSettings } = useData();
-  const [inputText, setInputText] = useState("");
+  const [inputText, setInputText] = useState(() => {
+    return localStorage.getItem("weeklyInputText") || "";
+  });
   const [forecastDataUI, setForecastDataUI] = useState([]);
   const [error, setError] = useState("");
 
@@ -23,6 +25,10 @@ const WeeklyForecastParser = () => {
     bevCostGoal,
     laborCostGoal
   } = adminSettings;
+
+  useEffect(() => {
+    localStorage.setItem("weeklyInputText", inputText);
+  }, [inputText]);
 
   const generateForecast = () => {
     setError("");
@@ -117,7 +123,7 @@ const WeeklyForecastParser = () => {
   };
 
   return (
-   <div className="space-y-6">
+    <div className="space-y-6">
       <div className="flex justify-end">
         <AdminModeToggle />
       </div>
@@ -162,3 +168,4 @@ const WeeklyForecastParser = () => {
 };
 
 export default WeeklyForecastParser;
+
