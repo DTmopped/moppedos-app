@@ -1,7 +1,7 @@
 import React from "react";
-import { Textarea } from "components/ui/textarea.jsx";
-import { Label } from "components/ui/label.jsx";
-import { Button } from "components/ui/button.jsx";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -15,10 +15,12 @@ const ForecastInputArea = ({ inputText, setInputText, generateForecast }) => {
         <Textarea
           id="weeklyInput"
           value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
+          onChange={(e) => {
+            const newText = e.target.value;
+            setInputText(newText);
+          }}
           placeholder={`Example:\nDate: YYYY-MM-DD (for Monday)\nMonday: 15000\nTuesday: 16000\n...`}
           className="min-h-[180px] text-sm font-mono bg-slate-800 border border-slate-600 text-slate-300 focus:border-pink-500 transition-all duration-300 placeholder-slate-500"
-          aria-label="Weekly Passenger Data"
         />
       </div>
       <motion.div whileTap={{ scale: 0.98 }}>
