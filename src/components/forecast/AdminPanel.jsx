@@ -2,10 +2,11 @@ import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import AdminModeToggle from '@/components/ui/AdminModeToggle.jsx';
+import { useData } from "@/contexts/DataContext"; // ✅ Global admin toggle
 
 const AdminPanel = () => {
-  const [adminMode, setAdminMode] = useState(false);
+  const { isAdminMode } = useData(); // ✅ Pull from global context
+
   const [settings, setSettings] = useState({
     captureRate: 0.08,
     spendPerGuest: 40,
@@ -16,7 +17,6 @@ const AdminPanel = () => {
   });
 
   useEffect(() => {
-    const storedMode = localStorage.getItem("adminMode") === "true";
     const storedSettings = {
       captureRate: parseFloat(localStorage.getItem("captureRate")) || 0.08,
       spendPerGuest: parseFloat(localStorage.getItem("spendPerGuest")) || 40,
@@ -25,7 +25,6 @@ const AdminPanel = () => {
       bevCostGoal: parseFloat(localStorage.getItem("bevCostGoal")) || 0.2,
       laborCostGoal: parseFloat(localStorage.getItem("laborCostGoal")) || 0.14,
     };
-    setAdminMode(storedMode);
     setSettings(storedSettings);
   }, []);
 
@@ -36,19 +35,7 @@ const AdminPanel = () => {
     localStorage.setItem(key, parsed.toString());
   };
 
-  const toggleAdminMode = () => {
-    const updated = !adminMode;
-    setAdminMode(updated);
-    localStorage.setItem("adminMode", updated.toString());
-  };
-
-  if (!adminMode) {
-    return (
-      <div className="mb-6">
-        <AdminModeToggle />
-      </div>
-    );
-  }
+  if (!isAdminMode) return null;
 
   return (
     <Card className="border border-slate-700 bg-slate-900 text-slate-100 mb-6">
@@ -56,8 +43,6 @@ const AdminPanel = () => {
         <CardTitle>Admin Mode Settings</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <AdminModeToggle />
-
         {Object.entries(settings).map(([key, value]) => (
           <div key={key} className="space-y-1">
             <Label htmlFor={key} className="capitalize">{key}</Label>
