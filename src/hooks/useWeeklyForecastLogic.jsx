@@ -101,9 +101,9 @@ export const useWeeklyForecastLogic = () => {
     DAY_ORDER.forEach((dayName, index) => {
       if (parsedDayData[dayName] !== undefined) {
         const pax = parsedDayData[dayName];
-        const guests = pax * (captureRate / 100);
+        const guests = Math.round(pax * (captureRate / 100));
         const amGuests = Math.round(guests * (amSplit / 100));
-        const pmGuests = Math.round(guests - amGuests);
+        const pmGuests = guests - amGuests;
         const sales = guests * spendPerGuest;
         const food = sales * foodPct;
         const bev = sales * bevPct;
