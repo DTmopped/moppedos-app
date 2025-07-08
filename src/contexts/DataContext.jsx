@@ -4,9 +4,9 @@ const DataContext = createContext();
 export const useData = () => useContext(DataContext);
 
 // Sample initial data
-const initialForecastData = [/* your data stays unchanged */];
-const initialActualData = [/* your data stays unchanged */];
-const initialPosData = { /* your data stays unchanged */ };
+const initialForecastData = []; // Leave as-is or populate with seed data
+const initialActualData = [];
+const initialPosData = {};
 
 export const DataProvider = ({ children }) => {
   const [forecastData, setForecastData] = useState(initialForecastData);
@@ -36,9 +36,16 @@ export const DataProvider = ({ children }) => {
   });
 
   const updateAdminSetting = (key, value) => {
+    let numericValue = parseFloat(value);
+
+    // Normalize % fields
+    if (['captureRate', 'amSplit', 'foodCostGoal', 'bevCostGoal', 'laborCostGoal'].includes(key)) {
+      if (numericValue > 1) numericValue = numericValue / 100;
+    }
+
     setAdminSettings(prev => {
-      const updated = { ...prev, [key]: value };
-      localStorage.setItem(key, value.toString());
+      const updated = { ...prev, [key]: numericValue };
+      localStorage.setItem(key, numericValue.toString());
       return updated;
     });
   };
