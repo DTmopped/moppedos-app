@@ -1,23 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Button } from "components/ui/button.jsx";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "components/ui/card.jsx";
 import { Calculator } from "lucide-react";
-import ForecastInputArea from "@/components/forecast/ForecastInputArea";
-import ForecastResultsTable from "@/components/forecast/ForecastResultsTable";
-import AdminPanel from "@/components/forecast/AdminPanel";
+import ForecastInputArea from "components/forecast/ForecastInputArea.jsx";
+import ForecastResultsTable from "components/forecast/ForecastResultsTable.jsx";
+import AdminPanel from "components/forecast/AdminPanel.jsx";
 import AdminModeToggle from "@/components/ui/AdminModeToggle";
 import { useData } from "@/contexts/DataContext";
 
 const WeeklyForecastParser = () => {
   const { isAdminMode, adminSettings } = useData();
-  const [inputText, setInputText] = useState(() => localStorage.getItem("weeklyInputText") || "");
+  const [inputText, setInputText] = useState(() => {
+    return localStorage.getItem("weeklyInputText") || "";
+  });
   const [forecastDataUI, setForecastDataUI] = useState([]);
   const [error, setError] = useState("");
 
@@ -27,21 +23,16 @@ const WeeklyForecastParser = () => {
     amSplit: rawAmSplit,
     foodCostGoal,
     bevCostGoal,
-    laborCostGoal,
+    laborCostGoal
   } = adminSettings;
 
   const captureRate = Math.min(Math.max(parseFloat(rawCaptureRate), 0), 1);
   const spendPerGuest = Math.max(parseFloat(rawSpendPerGuest), 0);
   const amSplit = Math.min(Math.max(parseFloat(rawAmSplit), 0), 1);
-  const pmSplit = 1 - amSplit;
 
   useEffect(() => {
     localStorage.setItem("weeklyInputText", inputText);
   }, [inputText]);
-
-  useEffect(() => {
-    if (inputText.trim()) generateForecast(); // auto-refresh on admin change
-  }, [captureRate, spendPerGuest, amSplit]);
 
   const generateForecast = () => {
     setError("");
@@ -55,13 +46,17 @@ const WeeklyForecastParser = () => {
       for (let line of lines) {
         if (/^Date:/i.test(line)) {
           const match = line.match(/\d{4}-\d{2}-\d{2}/);
-          if (match) startDate = new Date(match[0]);
+          if (match) {
+            startDate = new Date(match[0]);
+          }
         } else {
           const parts = line.split(":");
           if (parts.length === 2) {
             const day = parts[0].trim();
             const pax = parseInt(parts[1].replace(/,/g, ""), 10);
-            if (!isNaN(pax)) data.push({ day, pax });
+            if (!isNaN(pax)) {
+              data.push({ day, pax });
+            }
           }
         }
       }
@@ -71,14 +66,23 @@ const WeeklyForecastParser = () => {
         return;
       }
 
+      const captureDecimal = parseFloat(captureRate);
+      const spendPerGuestFloat = parseFloat(spendPerGuest);
+      const amSplitDecimal = parseFloat(amSplit);
+      const pmSplitDecimal = 1 - amSplitDecimal;
+
+      const foodPct = parseFloat(foodCostGoal);
+      const bevPct = parseFloat(bevCostGoal);
+      const laborPct = parseFloat(laborCostGoal);
+
       const result = data.map((item, idx) => {
         const date = new Date(startDate);
         date.setDate(date.getDate() + idx);
 
-        const guests = Math.round(item.pax * captureRate);
-        const amGuests = Math.round(guests * amSplit);
+        const guests = Math.round(item.pax * captureDecimal);
+        const amGuests = Math.round(guests * amSplitDecimal);
         const pmGuests = guests - amGuests;
-        const sales = guests * spendPerGuest;
+        const sales = guests * spendPerGuestFloat;
 
         return {
           day: item.day,
@@ -88,9 +92,9 @@ const WeeklyForecastParser = () => {
           amGuests,
           pmGuests,
           sales,
-          food: sales * foodCostGoal,
-          bev: sales * bevCostGoal,
-          labor: sales * laborCostGoal,
+          food: sales * foodPct,
+          bev: sales * bevPct,
+          labor: sales * laborPct,
         };
       });
 
@@ -139,15 +143,6 @@ const WeeklyForecastParser = () => {
 
       {isAdminMode && <AdminPanel />}
 
-      <div className="bg-slate-800 text-white p-4 rounded-md shadow border border-slate-600">
-        <p className="text-sm font-semibold">Current Forecast Settings</p>
-        <div className="flex flex-wrap gap-4 mt-1 text-sm text-slate-200">
-          <span>Capture Rate: {(captureRate * 100).toFixed(1)}%</span>
-          <span>Spend per Guest: ${spendPerGuest.toFixed(2)}</span>
-          <span>AM Split: {(amSplit * 100).toFixed(1)}%</span>
-        </div>
-      </div>
-
       <Card className="border border-slate-700 pointer-events-auto opacity-100">
         <CardHeader className="pb-4">
           <div className="flex items-center space-x-3">
@@ -164,7 +159,16 @@ const WeeklyForecastParser = () => {
             </div>
           </div>
         </CardHeader>
+
         <CardContent className="pointer-events-auto opacity-100">
+          {/* Forecast Settings Box */}
+          <div className="mb-4 text-sm text-slate-300 bg-slate-800 px-4 py-3 rounded-md border border-slate-700 shadow-inner">
+            <strong>Current Forecast Settings</strong><br />
+            Capture Rate: <span className="font-medium">{(captureRate * 100).toFixed(1)}%</span> &nbsp;&nbsp;
+            Spend per Guest: <span className="font-medium">${spendPerGuest.toFixed(0)}</span> &nbsp;&nbsp;
+            AM Split: <span className="font-medium">{(amSplit * 100).toFixed(0)}%</span>
+          </div>
+
           <ForecastInputArea
             inputText={inputText}
             setInputText={setInputText}
