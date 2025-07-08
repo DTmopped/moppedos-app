@@ -2,11 +2,10 @@ import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useData } from "@/contexts/DataContext";
-import { debounce } from "lodash"; // ✅ make sure lodash is installed
+import { useData } from "@/contexts/DataContext"; // ✅ Global admin toggle
 
 const AdminPanel = () => {
-  const { isAdminMode } = useData();
+  const { isAdminMode } = useData(); // ✅ Pull from global context
 
   const [settings, setSettings] = useState({
     captureRate: 0.08,
@@ -16,6 +15,9 @@ const AdminPanel = () => {
     bevCostGoal: 0.2,
     laborCostGoal: 0.14,
   });
+
+  // 🧠 Store timers to debounce localStorage writes
+  const debounceTimers = {};
 
   useEffect(() => {
     const storedSettings = {
@@ -29,16 +31,16 @@ const AdminPanel = () => {
     setSettings(storedSettings);
   }, []);
 
-  // ✅ Debounced localStorage save
-  const debouncedSave = debounce((key, parsed) => {
-    localStorage.setItem(key, parsed.toString());
-  }, 300);
-
   const handleSettingChange = (key, value) => {
     const parsed = parseFloat(value);
     const updated = { ...settings, [key]: isNaN(parsed) ? 0 : parsed };
     setSettings(updated);
-    debouncedSave(key, parsed);
+
+    // ✅ Debounce localStorage writes
+    clearTimeout(debounceTimers[key]);
+    debounceTimers[key] = setTimeout(() => {
+      localStorage.setItem(key, parsed.toString());
+    }, 300);
   };
 
   if (!isAdminMode) return null;
