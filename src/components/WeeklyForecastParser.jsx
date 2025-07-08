@@ -6,10 +6,11 @@ import { Calculator } from "lucide-react";
 import ForecastInputArea from "components/forecast/ForecastInputArea.jsx";
 import ForecastResultsTable from "components/forecast/ForecastResultsTable.jsx";
 import AdminPanel from "components/forecast/AdminPanel.jsx";
-import { useData } from "@/contexts/DataContext"; // ✅ Import context for admin mode
+import AdminModeToggle from "@/components/ui/AdminModeToggle"; // ✅ Add this
+import { useData } from "@/contexts/DataContext";
 
 const WeeklyForecastParser = () => {
-  const { isAdminMode } = useData(); // ✅ Read admin mode
+  const { isAdminMode } = useData(); // ✅ Admin toggle state
   const [inputText, setInputText] = useState("");
   const [forecastDataUI, setForecastDataUI] = useState([]);
   const [error, setError] = useState("");
@@ -122,7 +123,12 @@ const WeeklyForecastParser = () => {
       transition={{ duration: 0.5 }}
       className="space-y-6"
     >
-      {isAdminMode && <AdminPanel />} {/* ✅ Only show panel if admin mode is ON */}
+      {/* ✅ Admin Toggle + Panel */}
+      <div className="flex justify-end">
+        <AdminModeToggle />
+      </div>
+
+      {isAdminMode && <AdminPanel />}
 
       <Card className="glassmorphic-card border border-slate-700">
         <CardHeader className="pb-4">
