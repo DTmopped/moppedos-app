@@ -18,13 +18,17 @@ const WeeklyForecastParser = () => {
   const [error, setError] = useState("");
 
   const {
-    captureRate,
-    spendPerGuest,
-    amSplit,
-    foodCostGoal,
-    bevCostGoal,
-    laborCostGoal
-  } = adminSettings;
+  captureRate: rawCaptureRate,
+  spendPerGuest: rawSpendPerGuest,
+  amSplit: rawAmSplit,
+  foodCostGoal,
+  bevCostGoal,
+  laborCostGoal
+} = adminSettings;
+
+const captureRate = Math.min(Math.max(parseFloat(rawCaptureRate), 0), 1); // 0–1
+const spendPerGuest = Math.max(parseFloat(rawSpendPerGuest), 0);
+const amSplit = Math.min(Math.max(parseFloat(rawAmSplit), 0), 1); // 0–1
 
   useEffect(() => {
     localStorage.setItem("weeklyInputText", inputText);
