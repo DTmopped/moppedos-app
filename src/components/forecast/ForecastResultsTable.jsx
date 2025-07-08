@@ -55,7 +55,7 @@ const ForecastResultsTable = ({ forecastDataUI }) => {
                 <td className="px-3 py-2 text-right text-yellow-300">
                   {row.isTotal
                     ? `${totalAm.toLocaleString()} / ${totalPm.toLocaleString()}`
-                    : `${row.amGuests?.toLocaleString() || 0} / ${row.pmGuests?.toLocaleString() || 0}`}
+                    : `${Math.abs(row.amGuests ?? 0).toLocaleString()} / ${Math.abs(row.pmGuests ?? 0).toLocaleString()}`}
                 </td>
                 <td className="px-3 py-2 text-right text-green-400">
                   ${row.sales?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || "—"}
