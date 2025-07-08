@@ -2,7 +2,6 @@ import React, { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Button } from "components/ui/button.jsx";
 import { Input } from "components/ui/input.jsx";
-import { Textarea } from "components/ui/textarea.jsx";
 import { Label } from "components/ui/label.jsx";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "components/ui/card.jsx";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "components/ui/table.jsx";
@@ -10,7 +9,6 @@ import { PlaneTakeoff, TrendingUp, Info, CheckCircle } from "lucide-react";
 import { useData } from "../contexts/DataContext.jsx";
 import { useToast } from "./ui/use-toast.jsx";
 import { getDayFromDate, DAY_ORDER, COST_PERCENTAGES } from "@/lib/dateUtils.js";
-
 
 const parseTerminalTrafficInput = (trafficInputString) => {
   const lines = trafficInputString.trim().split("\n");
@@ -79,7 +77,6 @@ const calculateTerminalForecastMetrics = (daysData, capture, spend, baseDate, ad
   return { processedData, entriesAddedToContext, baseDate };
 };
 
-
 const TerminalForecast = () => {
   const [trafficInput, setTrafficInput] = useState("Weekly Throughput: 100000\nDate: 2025-05-12\nMonday: 14000\nTuesday: 15000\nWednesday: 16000\nThursday: 13000\nFriday: 17000\nSaturday: 15000\nSunday: 10000");
   const [captureRate, setCaptureRate] = useState("7.5");
@@ -126,7 +123,6 @@ const TerminalForecast = () => {
     setError("Base date line not found. Please include a line like 'Date: YYYY-MM-DD' (e.g., Date: 2025-05-12).");
     return null;
   }, [trafficInput]);
-
 
   const generateTerminalForecast = useCallback(() => {
     setError("");
@@ -185,7 +181,7 @@ const TerminalForecast = () => {
             <div>
               <CardTitle className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-indigo-500">Weekly Terminal Forecast</CardTitle>
               <CardDescription className="text-slate-400">
-                Input terminal traffic, capture rate, and average spend to generate a weekly forecast. Ensure a 'Date: YYYY-MM-DD' line for the start of the week (Monday) is included in the email data.
+                Input terminal traffic, capture rate, and average spend to generate a weekly forecast.
               </CardDescription>
             </div>
           </div>
@@ -199,9 +195,6 @@ const TerminalForecast = () => {
                 type="number"
                 value={captureRate}
                 onChange={(e) => setCaptureRate(e.target.value)}
-                placeholder="e.g., 7.5"
-                step="0.1"
-                className="bg-slate-700 border-slate-600 text-slate-200 focus:border-sky-500 transition-all duration-300"
               />
             </div>
             <div className="space-y-2">
@@ -211,82 +204,33 @@ const TerminalForecast = () => {
                 type="number"
                 value={avgSpend}
                 onChange={(e) => setAvgSpend(e.target.value)}
-                placeholder="e.g., 15"
-                step="0.5"
-                className="bg-slate-700 border-slate-600 text-slate-200 focus:border-sky-500 transition-all duration-300"
               />
             </div>
           </div>
+
           <div className="space-y-2 mb-6">
             <Label htmlFor="trafficInput" className="text-sm font-medium text-slate-300">Weekly Terminal Email Data</Label>
-            <Textarea
+            <textarea
               id="trafficInput"
               value={trafficInput}
-              onChange={(e) => setTrafficInput(e.target.value)}
-              placeholder="Include 'Date: YYYY-MM-DD' for Monday.&#10;Weekly Throughput: 100000&#10;Date: 2025-05-12&#10;Monday: 14000&#10;Tuesday: 15000&#10;..."
-              className="min-h-[180px] text-sm font-mono bg-slate-700 border-slate-600 text-slate-200 focus:border-sky-500 transition-all duration-300 placeholder-slate-500"
+              onChange={(e) => {
+                console.log("🧪 Typing:", e.target.value);
+                setTrafficInput(e.target.value);
+              }}
+              placeholder={`Date: 2025-05-12\nMonday: 14000\nTuesday: 15000\n...`}
+              className="w-full min-h-[180px] text-sm font-mono bg-slate-700 border border-slate-600 text-slate-200 px-3 py-2 placeholder-slate-500"
             />
           </div>
+
           <motion.div whileTap={{ scale: 0.98 }}>
-            <Button onClick={generateTerminalForecast} className="w-full bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-semibold py-3 text-base shadow-md hover:shadow-lg transition-all duration-300">
+            <Button onClick={generateTerminalForecast}>
               <TrendingUp className="mr-2 h-4 w-4" /> Generate Forecast & Save
             </Button>
           </motion.div>
+
           {error && <p className="mt-4 text-sm text-red-400 bg-red-900/30 p-3 rounded-md border border-red-700 flex items-start"><Info size={18} className="mr-2 mt-0.5 text-red-400 flex-shrink-0" /> {error}</p>}
         </CardContent>
       </Card>
-
-      {forecastDataUI.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3 }}
-        >
-          <Card className="shadow-lg bg-slate-800/70 border-slate-700 backdrop-blur-sm mt-6">
-            <CardHeader>
-              <CardTitle className="text-xl text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-indigo-500">Forecast Results</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto rounded-md border border-slate-700 shadow-inner">
-                <Table>
-                  <TableHeader className="bg-slate-700/50">
-                    <TableRow className="border-slate-600">
-                      <TableHead className="min-w-[100px] text-slate-300">Day</TableHead>
-                      <TableHead className="min-w-[100px] text-slate-300">Date</TableHead>
-                      <TableHead className="text-right min-w-[100px] text-slate-300">Traffic</TableHead>
-                      <TableHead className="text-right min-w-[100px] text-slate-300">Guests</TableHead>
-                      <TableHead className="text-right min-w-[100px] text-slate-300">Sales ($)</TableHead>
-                      <TableHead className="text-right min-w-[100px] text-slate-300">Food (30%)</TableHead>
-                      <TableHead className="text-right min-w-[100px] text-slate-300">Bev (20%)</TableHead>
-                      <TableHead className="text-right min-w-[100px] text-slate-300">Labor (14%)</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {forecastDataUI.map((row, index) => (
-                      <motion.tr
-                        key={row.day + index}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: index * 0.05 }}
-                        className={`border-b border-slate-700 hover:bg-slate-700/60 transition-colors ${row.isTotal ? "bg-slate-700/70 font-semibold border-t-2 border-sky-500/50" : "last:border-b-0"}`}
-                      >
-                        <TableCell className={`font-medium ${row.isTotal ? "text-sky-400" : "text-slate-200"}`}>{row.day}</TableCell>
-                        <TableCell className="text-slate-300">{row.date || ''}</TableCell>
-                        <TableCell className="text-right text-slate-300">{row.pax.toLocaleString()}</TableCell>
-                        <TableCell className="text-right text-slate-300">{row.guests.toFixed(0)}</TableCell>
-                        <TableCell className="text-right text-green-400">{row.sales.toFixed(2)}</TableCell>
-                        <TableCell className="text-right text-orange-400">{row.food.toFixed(2)}</TableCell>
-                        <TableCell className="text-right text-blue-400">{row.bev.toFixed(2)}</TableCell>
-                        <TableCell className="text-right text-purple-400">{row.labor.toFixed(2)}</TableCell>
-                      </motion.tr>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
     </motion.div>
   );
 };
