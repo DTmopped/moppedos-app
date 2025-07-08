@@ -6,23 +6,23 @@ import { Calculator } from "lucide-react";
 import ForecastInputArea from "components/forecast/ForecastInputArea.jsx";
 import ForecastResultsTable from "components/forecast/ForecastResultsTable.jsx";
 import AdminPanel from "components/forecast/AdminPanel.jsx";
-import AdminModeToggle from "@/components/ui/AdminModeToggle"; // ✅ Add this
+import AdminModeToggle from "@/components/ui/AdminModeToggle";
 import { useData } from "@/contexts/DataContext";
 
 const WeeklyForecastParser = () => {
-  const { isAdminMode } = useData(); // ✅ Admin toggle state
+  const { isAdminMode, adminSettings } = useData();
   const [inputText, setInputText] = useState("");
   const [forecastDataUI, setForecastDataUI] = useState([]);
   const [error, setError] = useState("");
 
-  // Admin mode settings from localStorage
-  const captureRate = Number(localStorage.getItem("captureRate")) || 0.08;
-  const spendPerGuest = Number(localStorage.getItem("spendPerGuest")) || 40;
-  const amSplit = Number(localStorage.getItem("amSplit")) || 0.6;
-
-  useEffect(() => {
-    console.log("🧪 inputText updated:", inputText);
-  }, [inputText]);
+  const {
+    captureRate,
+    spendPerGuest,
+    amSplit,
+    foodCostGoal,
+    bevCostGoal,
+    laborCostGoal
+  } = adminSettings;
 
   const generateForecast = () => {
     setError("");
@@ -52,7 +52,7 @@ const WeeklyForecastParser = () => {
       }
 
       if (!startDate || data.length === 0) {
-        setError("Invalid input format. Make sure you include 'Date: YYYY-MM-DD' and valid day entries like 'Monday: 62340'.");
+        setError("Invalid input format. Use 'Date: YYYY-MM-DD' followed by 'Monday: 12345'.");
         return;
       }
 
@@ -73,9 +73,9 @@ const WeeklyForecastParser = () => {
           amGuests,
           pmGuests,
           sales,
-          food: sales * (Number(localStorage.getItem("foodCostGoal")) || 0.3),
-          bev: sales * (Number(localStorage.getItem("bevCostGoal")) || 0.2),
-          labor: sales * (Number(localStorage.getItem("laborCostGoal")) || 0.14),
+          food: sales * foodCostGoal,
+          bev: sales * bevCostGoal,
+          labor: sales * laborCostGoal,
         };
       });
 
@@ -112,7 +112,7 @@ const WeeklyForecastParser = () => {
       setForecastDataUI(result);
     } catch (e) {
       console.error("Parsing error:", e);
-      setError("An error occurred while parsing the data. Check your format and try again.");
+      setError("An error occurred while parsing. Check the format and try again.");
     }
   };
 
@@ -123,7 +123,6 @@ const WeeklyForecastParser = () => {
       transition={{ duration: 0.5 }}
       className="space-y-6"
     >
-      {/* ✅ Admin Toggle + Panel */}
       <div className="flex justify-end">
         <AdminModeToggle />
       </div>
