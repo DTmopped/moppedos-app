@@ -4,12 +4,14 @@ import { useToast } from '../components/ui/use-toast.jsx';
 import { getDayFromDate, extractBaseDateFromWeeklyInput, DAY_ORDER } from "@/lib/dateUtils.js";
 import { CheckCircle } from "lucide-react";
 
+// Retrieve cost goal %s from localStorage or use defaults
 const getCostPercentages = () => ({
   food: Number(localStorage.getItem("foodCostGoal") || 0.3),
   bev: Number(localStorage.getItem("bevCostGoal") || 0.2),
   labor: Number(localStorage.getItem("laborCostGoal") || 0.14)
 });
 
+// Parse weekly forecast textarea
 const parseWeeklyPassengerInput = (inputText) => {
   const dayRegex = /(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday):\s*([0-9,]+)/gi;
   let match;
@@ -27,11 +29,28 @@ const parseWeeklyPassengerInput = (inputText) => {
   return { results, foundData };
 };
 
+// 🔥 Get next Monday's date string in YYYY-MM-DD format
+const getNextMonday = () => {
+  const today = new Date();
+  const nextMonday = new Date(today);
+  const day = today.getDay();
+  const diff = (day === 0 ? 1 : 8 - day); // if Sunday (0), add 1 day; else, days until next Monday
+  nextMonday.setDate(today.getDate() + diff);
+  const yyyy = nextMonday.getFullYear();
+  const mm = String(nextMonday.getMonth() + 1).padStart(2, '0');
+  const dd = String(nextMonday.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
 export const useWeeklyForecastLogic = () => {
-  const [inputText, setInputText] = useState(() =>
-    localStorage.getItem("weeklyForecastInput") ||
-    "Date: 06-23-2025\nMonday: 15000\nTuesday: 16000\nWednesday: 15500\nThursday: 17000\nFriday: 19500\nSaturday: 18000\nSunday: 9000"
-  );
+  const [inputText, setInputText] = useState(() => {
+    const saved = localStorage.getItem("weeklyForecastInput");
+    if (saved) return saved;
+
+    const baseDate = getNextMonday();
+    return `Date: ${baseDate}\nMonday: \nTuesday: \nWednesday: \nThursday: \nFriday: \nSaturday: \nSunday: `;
+  });
+
   const [forecastDataUI, setForecastDataUI] = useState([]);
   const [error, setError] = useState("");
   const { addForecastEntry } = useData();
@@ -50,6 +69,7 @@ export const useWeeklyForecastLogic = () => {
     localStorage.getItem("adminMode") === "true"
   );
 
+  // Persist admin settings
   useEffect(() => {
     localStorage.setItem("captureRate", captureRate);
   }, [captureRate]);
@@ -108,7 +128,6 @@ export const useWeeklyForecastLogic = () => {
         const food = sales * foodPct;
         const bev = sales * bevPct;
         const labor = sales * laborPct;
-
         const forecastDate = getDayFromDate(baseDateStr, index);
 
         processedData.push({
