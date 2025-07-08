@@ -18,21 +18,28 @@ const WeeklyForecastParser = () => {
   const [error, setError] = useState("");
 
   const {
-  captureRate: rawCaptureRate,
-  spendPerGuest: rawSpendPerGuest,
-  amSplit: rawAmSplit,
-  foodCostGoal,
-  bevCostGoal,
-  laborCostGoal
-} = adminSettings;
+    captureRate: rawCaptureRate,
+    spendPerGuest: rawSpendPerGuest,
+    amSplit: rawAmSplit,
+    foodCostGoal,
+    bevCostGoal,
+    laborCostGoal,
+  } = adminSettings;
 
-const captureRate = Math.min(Math.max(parseFloat(rawCaptureRate), 0), 1); // 0–1
-const spendPerGuest = Math.max(parseFloat(rawSpendPerGuest), 0);
-const amSplit = Math.min(Math.max(parseFloat(rawAmSplit), 0), 1); // 0–1
+  const captureRate = Math.min(Math.max(parseFloat(rawCaptureRate), 0), 1); // 0–1
+  const spendPerGuest = Math.max(parseFloat(rawSpendPerGuest), 0);
+  const amSplit = Math.min(Math.max(parseFloat(rawAmSplit), 0), 1); // 0–1
 
   useEffect(() => {
     localStorage.setItem("weeklyInputText", inputText);
   }, [inputText]);
+
+  useEffect(() => {
+    if (forecastDataUI.length > 0) {
+      generateForecast(); // optional: auto-refresh forecast on admin change
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adminSettings]);
 
   const generateForecast = () => {
     setError("");
@@ -143,7 +150,17 @@ const amSplit = Math.min(Math.max(parseFloat(rawAmSplit), 0), 1); // 0–1
 
       {isAdminMode && <AdminPanel />}
 
-     <Card className="border border-slate-700 pointer-events-auto opacity-100">
+      {/* Always-on settings display */}
+      <div className="bg-slate-800 text-slate-100 p-4 rounded-md shadow-md">
+        <div className="text-sm font-medium mb-2 text-pink-400">Current Forecast Settings</div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
+          <div>Capture Rate: {(captureRate * 100).toFixed(1)}%</div>
+          <div>Spend per Guest: ${spendPerGuest.toFixed(2)}</div>
+          <div>AM Split: {(amSplit * 100).toFixed(1)}%</div>
+        </div>
+      </div>
+
+      <Card className="border border-slate-700 pointer-events-auto opacity-100">
         <CardHeader className="pb-4">
           <div className="flex items-center space-x-3">
             <div className="p-3 rounded-full bg-gradient-to-tr from-pink-500 to-rose-600 shadow-lg">
