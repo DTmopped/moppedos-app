@@ -16,6 +16,10 @@ const WeeklyForecastParser = () => {
   const spendPerGuest = Number(localStorage.getItem("spendPerGuest")) || 40;
   const amSplit = Number(localStorage.getItem("amSplit")) || 0.6; // 60/40 AM/PM
 
+  useEffect(() => {
+  console.log("🧪 inputText updated:", inputText);
+}, [inputText]);
+
   const generateForecast = () => {
     setError("");
     setForecastDataUI([]);
