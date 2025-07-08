@@ -8,12 +8,12 @@ const ForecastInputArea = ({ inputText, setInputText, generateForecast }) => {
   return (
     <>
       <div className="space-y-2 mb-6">
-        <Label
-          htmlFor="weeklyInput"
-          className="text-sm font-medium text-slate-300"
-        >
-          Weekly Passenger Data
-        </Label>
+        <h3
+  htmlFor="weeklyInput"
+  className="text-sm font-semibold text-slate-200 tracking-wide px-1 mb-1"
+>
+  Weekly Passenger Data
+</h3>
 
         {/* ✅ FIXED: Added position: relative so zIndex works */}
        <textarea
