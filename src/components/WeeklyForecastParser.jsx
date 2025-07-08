@@ -130,7 +130,7 @@ const WeeklyForecastParser = () => {
 
       {isAdminMode && <AdminPanel />}
 
-      <Card className="border border-slate-700">
+     <Card className="border border-slate-700 pointer-events-auto opacity-100">
         <CardHeader className="pb-4">
           <div className="flex items-center space-x-3">
             <div className="p-3 rounded-full bg-gradient-to-tr from-pink-500 to-rose-600 shadow-lg">
@@ -146,7 +146,7 @@ const WeeklyForecastParser = () => {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pointer-events-auto opacity-100">
           <ForecastInputArea
             inputText={inputText}
             setInputText={setInputText}
