@@ -16,8 +16,8 @@ const ForecastInputArea = ({ inputText, setInputText, generateForecast }) => {
           id="weeklyInput"
           value={inputText}
           onChange={(e) => {
-            const newText = e.target.value;
-            setInputText(newText);
+            console.log("📝 onChange fired:", e.target.value); // Debug log
+            setInputText(e.target.value);
           }}
           placeholder={`Example:\nDate: YYYY-MM-DD (for Monday)\nMonday: 15000\nTuesday: 16000\n...`}
           className="min-h-[180px] text-sm font-mono bg-slate-800 border border-slate-600 text-slate-300 focus:border-pink-500 transition-all duration-300 placeholder-slate-500"
