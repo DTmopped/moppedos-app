@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "components/ui/button.jsx";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "components/ui/card.jsx";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "components/ui/card.jsx";
 import { Calculator } from "lucide-react";
 import ForecastInputArea from "components/forecast/ForecastInputArea.jsx";
 import ForecastResultsTable from "components/forecast/ForecastResultsTable.jsx";
@@ -23,7 +29,7 @@ const WeeklyForecastParser = () => {
     amSplit: rawAmSplit,
     foodCostGoal,
     bevCostGoal,
-    laborCostGoal
+    laborCostGoal,
   } = adminSettings;
 
   const captureRate = Math.min(Math.max(parseFloat(rawCaptureRate), 0), 1);
@@ -144,7 +150,7 @@ const WeeklyForecastParser = () => {
       {isAdminMode && <AdminPanel />}
 
       <Card className="border border-slate-700 pointer-events-auto opacity-100">
-        <CardHeader className="pb-4">
+        <CardHeader className="pb-4 space-y-4">
           <div className="flex items-center space-x-3">
             <div className="p-3 rounded-full bg-gradient-to-tr from-pink-500 to-rose-600 shadow-lg">
               <Calculator className="h-8 w-8 text-white" />
@@ -158,17 +164,18 @@ const WeeklyForecastParser = () => {
               </CardDescription>
             </div>
           </div>
+
+          <div className="bg-slate-800 text-slate-100 rounded-md px-4 py-2 mt-2 text-sm font-medium">
+            Current Forecast Settings: {" "}
+            <span className="ml-2">
+              Capture Rate: {(captureRate * 100).toFixed(1)}% &nbsp;|&nbsp;
+              Spend per Guest: ${spendPerGuest.toFixed(0)} &nbsp;|&nbsp;
+              AM Split: {(amSplit * 100).toFixed(0)}%
+            </span>
+          </div>
         </CardHeader>
 
         <CardContent className="pointer-events-auto opacity-100">
-          {/* Forecast Settings Box */}
-          <div className="mb-4 text-sm text-slate-300 bg-slate-800 px-4 py-3 rounded-md border border-slate-700 shadow-inner">
-            <strong>Current Forecast Settings</strong><br />
-            Capture Rate: <span className="font-medium">{(captureRate * 100).toFixed(1)}%</span> &nbsp;&nbsp;
-            Spend per Guest: <span className="font-medium">${spendPerGuest.toFixed(0)}</span> &nbsp;&nbsp;
-            AM Split: <span className="font-medium">{(amSplit * 100).toFixed(0)}%</span>
-          </div>
-
           <ForecastInputArea
             inputText={inputText}
             setInputText={setInputText}
