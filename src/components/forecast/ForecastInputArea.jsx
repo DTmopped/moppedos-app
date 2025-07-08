@@ -16,26 +16,26 @@ const ForecastInputArea = ({ inputText, setInputText, generateForecast }) => {
         </Label>
 
         {/* ✅ FIXED: Added position: relative so zIndex works */}
-        <textarea
-          id="weeklyInput"
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          placeholder={`Example:\nDate: YYYY-MM-DD (for Monday)\nMonday: 15000\nTuesday: 16000\n...`}
-          style={{
-            width: "100%",
-            minHeight: "180px",
-            backgroundColor: "#1e293b", // tailwind bg-slate-800
-            color: "#cbd5e1",           // tailwind text-slate-200
-            padding: "12px",
-            fontFamily: "monospace",
-            fontSize: "14px",
-            border: "1px solid #475569", // tailwind border-slate-600
-            borderRadius: "6px",
-            zIndex: 999,
-            position: "relative",        // ✅ ESSENTIAL for zIndex to work
-            resize: "vertical",
-          }}
-        />
+       <textarea
+  id="weeklyInput"
+  value={inputText}
+  onChange={(e) => setInputText(e.target.value)}
+  placeholder={`Example:\nDate: YYYY-MM-DD (for Monday)\nMonday: 15000\nTuesday: 16000\n...`}
+  style={{
+    width: "100%",
+    minHeight: "180px",
+    backgroundColor: "#1e293b",  // tailwind bg-slate-800
+    color: "#cbd5e1",            // tailwind text-slate-200
+    padding: "12px",
+    fontFamily: "monospace",
+    fontSize: "14px",
+    border: "1px solid #475569", // tailwind border-slate-600
+    borderRadius: "6px",
+    zIndex: 1,                   // lower zIndex, just in case
+    resize: "vertical",
+    pointerEvents: "auto",       // ✅ ensure input is allowed
+  }}
+/>
       </div>
 
       <motion.div whileTap={{ scale: 0.98 }}>
