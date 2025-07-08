@@ -6,8 +6,10 @@ import { Calculator } from "lucide-react";
 import ForecastInputArea from "components/forecast/ForecastInputArea.jsx";
 import ForecastResultsTable from "components/forecast/ForecastResultsTable.jsx";
 import AdminPanel from "components/forecast/AdminPanel.jsx";
+import { useData } from "@/contexts/DataContext"; // ✅ Import context for admin mode
 
 const WeeklyForecastParser = () => {
+  const { isAdminMode } = useData(); // ✅ Read admin mode
   const [inputText, setInputText] = useState("");
   const [forecastDataUI, setForecastDataUI] = useState([]);
   const [error, setError] = useState("");
@@ -15,11 +17,11 @@ const WeeklyForecastParser = () => {
   // Admin mode settings from localStorage
   const captureRate = Number(localStorage.getItem("captureRate")) || 0.08;
   const spendPerGuest = Number(localStorage.getItem("spendPerGuest")) || 40;
-  const amSplit = Number(localStorage.getItem("amSplit")) || 0.6; // 60/40 AM/PM
+  const amSplit = Number(localStorage.getItem("amSplit")) || 0.6;
 
   useEffect(() => {
-  console.log("🧪 inputText updated:", inputText);
-}, [inputText]);
+    console.log("🧪 inputText updated:", inputText);
+  }, [inputText]);
 
   const generateForecast = () => {
     setError("");
@@ -53,7 +55,6 @@ const WeeklyForecastParser = () => {
         return;
       }
 
-      const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
       const result = data.map((item, idx) => {
         const date = new Date(startDate);
         date.setDate(date.getDate() + idx);
@@ -77,7 +78,6 @@ const WeeklyForecastParser = () => {
         };
       });
 
-      // Add total row
       const totals = result.reduce(
         (acc, row) => {
           acc.pax += row.pax;
@@ -122,8 +122,8 @@ const WeeklyForecastParser = () => {
       transition={{ duration: 0.5 }}
       className="space-y-6"
     >
-      <AdminPanel />
-      
+      {isAdminMode && <AdminPanel />} {/* ✅ Only show panel if admin mode is ON */}
+
       <Card className="glassmorphic-card border border-slate-700">
         <CardHeader className="pb-4">
           <div className="flex items-center space-x-3">
@@ -131,7 +131,9 @@ const WeeklyForecastParser = () => {
               <Calculator className="h-8 w-8 text-white" />
             </div>
             <div>
-              <CardTitle className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-600">Weekly Forecast Parser</CardTitle>
+              <CardTitle className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-600">
+                Weekly Forecast Parser
+              </CardTitle>
               <CardDescription className="text-muted-foreground">
                 Paste weekly throughput to generate sales and labor projections.
               </CardDescription>
@@ -144,7 +146,11 @@ const WeeklyForecastParser = () => {
             setInputText={setInputText}
             generateForecast={generateForecast}
           />
-          {error && <p className="text-sm text-red-500 bg-red-50 p-3 rounded-md border border-red-200 mt-4">{error}</p>}
+          {error && (
+            <p className="text-sm text-red-500 bg-red-50 p-3 rounded-md border border-red-200 mt-4">
+              {error}
+            </p>
+          )}
         </CardContent>
       </Card>
 
