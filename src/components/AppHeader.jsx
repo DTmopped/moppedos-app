@@ -3,7 +3,6 @@ import { NavLink } from 'react-router-dom';
 import { Zap } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Button } from '@/components/ui/button';
-import AdminModeToggle from '@/components/ui/AdminModeToggle'; // ✅ new import
 
 const AppHeader = ({ views }) => {
   const navigationViews = views ? views.filter(view => view.showInNav) : [];
@@ -19,37 +18,31 @@ const AppHeader = ({ views }) => {
             </h1>
           </div>
 
-          <div className="flex items-center space-x-4">
-            {/* your nav buttons */}
-            <nav className="hidden md:flex items-center space-x-1">
-              {navigationViews.map((view) => (
-                <Button
-                  key={view.id}
-                  variant="ghost"
-                  asChild
-                  className="text-sm font-semibold rounded-lg px-3 py-2 transition-all"
+          <nav className="hidden md:flex items-center space-x-1">
+            {navigationViews.map((view) => (
+              <Button
+                key={view.id}
+                variant="ghost"
+                asChild
+                className="text-sm font-semibold rounded-lg px-3 py-2 transition-all"
+              >
+                <NavLink
+                  to={view.path}
+                  className={({ isActive }) =>
+                    cn(
+                      "flex items-center px-3 py-2 rounded-md transition-colors duration-150",
+                      isActive
+                        ? "bg-indigo-600/20 text-white shadow-inner"
+                        : "text-slate-300 hover:text-white hover:bg-slate-700/40"
+                    )
+                  }
                 >
-                  <NavLink
-                    to={view.path}
-                    className={({ isActive }) =>
-                      cn(
-                        "flex items-center px-3 py-2 rounded-md transition-colors duration-150",
-                        isActive
-                          ? "bg-indigo-600/20 text-white shadow-inner"
-                          : "text-slate-300 hover:text-white hover:bg-slate-700/40"
-                      )
-                    }
-                  >
-                    {view.icon && React.cloneElement(view.icon, { size: 16, className: "mr-2" })}
-                    {view.label}
-                  </NavLink>
-                </Button>
-              ))}
-            </nav>
-
-            {/* ✅ Admin toggle goes here */}
-            <AdminModeToggle />
-          </div>
+                  {view.icon && React.cloneElement(view.icon, { size: 16, className: "mr-2" })}
+                  {view.label}
+                </NavLink>
+              </Button>
+            ))}
+          </nav>
         </div>
       </div>
     </header>
