@@ -2,10 +2,11 @@ import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useData } from "@/contexts/DataContext"; // ✅ Global admin toggle
+import { useData } from "@/contexts/DataContext";
+import { debounce } from "lodash"; // ✅ make sure lodash is installed
 
 const AdminPanel = () => {
-  const { isAdminMode } = useData(); // ✅ Pull from global context
+  const { isAdminMode } = useData();
 
   const [settings, setSettings] = useState({
     captureRate: 0.08,
@@ -28,11 +29,16 @@ const AdminPanel = () => {
     setSettings(storedSettings);
   }, []);
 
+  // ✅ Debounced localStorage save
+  const debouncedSave = debounce((key, parsed) => {
+    localStorage.setItem(key, parsed.toString());
+  }, 300);
+
   const handleSettingChange = (key, value) => {
     const parsed = parseFloat(value);
     const updated = { ...settings, [key]: isNaN(parsed) ? 0 : parsed };
     setSettings(updated);
-    localStorage.setItem(key, parsed.toString());
+    debouncedSave(key, parsed);
   };
 
   if (!isAdminMode) return null;
