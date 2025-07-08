@@ -7,9 +7,16 @@ import { CheckCircle } from "lucide-react";
 // Retrieve cost goal %s from localStorage or use defaults
 const getCostPercentages = () => ({
   food: Number(localStorage.getItem("foodCostGoal") || 0.3),
-  bev: Number(localStorage.getItem("bevCostGoal") || 0.2),
-  labor: Number(localStorage.getItem("laborCostGoal") || 0.14)
+  bev: Number(localStorage.getItem("bevCostGoal") || 0.22),
+  labor: Number(localStorage.getItem("laborCostGoal") || 0.12)
 });
+
+// Parse percentage safely
+const getPercentFromLocalStorage = (key, fallback) => {
+  const raw = localStorage.getItem(key);
+  const parsed = parseFloat(raw);
+  return isNaN(parsed) ? fallback : parsed;
+};
 
 // Parse weekly forecast textarea
 const parseWeeklyPassengerInput = (inputText) => {
@@ -29,12 +36,12 @@ const parseWeeklyPassengerInput = (inputText) => {
   return { results, foundData };
 };
 
-// 🔥 Get next Monday's date string in YYYY-MM-DD format
+// Get next Monday's date string in YYYY-MM-DD format
 const getNextMonday = () => {
   const today = new Date();
   const nextMonday = new Date(today);
   const day = today.getDay();
-  const diff = (day === 0 ? 1 : 8 - day); // if Sunday (0), add 1 day; else, days until next Monday
+  const diff = (day === 0 ? 1 : 8 - day); // if Sunday, add 1 day; else, days until next Monday
   nextMonday.setDate(today.getDate() + diff);
   const yyyy = nextMonday.getFullYear();
   const mm = String(nextMonday.getMonth() + 1).padStart(2, '0');
@@ -56,35 +63,16 @@ export const useWeeklyForecastLogic = () => {
   const { addForecastEntry } = useData();
   const { toast } = useToast();
 
-  const [captureRate, setCaptureRate] = useState(() =>
-    Number(localStorage.getItem("captureRate") || 8)
-  );
-  const [spendPerGuest, setSpendPerGuest] = useState(() =>
-    Number(localStorage.getItem("spendPerGuest") || 40)
-  );
-  const [amSplit, setAmSplit] = useState(() =>
-    Number(localStorage.getItem("amSplit") || 60)
-  );
-  const [adminMode, setAdminMode] = useState(() =>
-    localStorage.getItem("adminMode") === "true"
-  );
+  const [captureRate, setCaptureRate] = useState(() => getPercentFromLocalStorage("captureRate", 8));
+  const [spendPerGuest, setSpendPerGuest] = useState(() => getPercentFromLocalStorage("spendPerGuest", 40));
+  const [amSplit, setAmSplit] = useState(() => getPercentFromLocalStorage("amSplit", 60));
+  const [adminMode, setAdminMode] = useState(() => localStorage.getItem("adminMode") === "true");
 
-  // Persist admin settings
-  useEffect(() => {
-    localStorage.setItem("captureRate", captureRate);
-  }, [captureRate]);
-
-  useEffect(() => {
-    localStorage.setItem("spendPerGuest", spendPerGuest);
-  }, [spendPerGuest]);
-
-  useEffect(() => {
-    localStorage.setItem("amSplit", amSplit);
-  }, [amSplit]);
-
-  useEffect(() => {
-    localStorage.setItem("adminMode", adminMode);
-  }, [adminMode]);
+  // Persist settings
+  useEffect(() => { localStorage.setItem("captureRate", captureRate); }, [captureRate]);
+  useEffect(() => { localStorage.setItem("spendPerGuest", spendPerGuest); }, [spendPerGuest]);
+  useEffect(() => { localStorage.setItem("amSplit", amSplit); }, [amSplit]);
+  useEffect(() => { localStorage.setItem("adminMode", adminMode); }, [adminMode]);
 
   const toggleAdminMode = () => {
     setAdminMode(prev => {
