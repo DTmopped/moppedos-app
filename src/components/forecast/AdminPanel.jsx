@@ -9,16 +9,21 @@ const AdminPanel = () => {
 
   if (!isAdminMode) return null;
 
-  const getStep = (key) =>
-    ["captureRate", "amSplit"].includes(key) ? 0.01 : 0.1;
+  const percentKeys = [
+    "captureRate",
+    "amSplit",
+    "foodCostGoal",
+    "bevCostGoal",
+    "laborCostGoal"
+  ];
 
-  const getMin = (key) =>
-    ["captureRate", "amSplit", "foodCostGoal", "bevCostGoal", "laborCostGoal"].includes(key)
-      ? 0
-      : undefined;
+  const dollarKeys = ["spendPerGuest"];
 
-  const getMax = (key) =>
-    ["captureRate", "amSplit"].includes(key) ? 1 : undefined;
+  const formatLabel = (key) =>
+    key
+      .replace(/([A-Z])/g, " $1")
+      .replace(/^./, (str) => str.toUpperCase())
+      .replace("Per Guest", "per Guest");
 
   return (
     <Card className="border border-slate-700 bg-slate-900 text-slate-100 mb-6">
@@ -26,26 +31,35 @@ const AdminPanel = () => {
         <CardTitle>Admin Mode Settings</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {Object.entries(adminSettings).map(([key, value]) => (
-          <div key={key} className="space-y-1">
-            <Label htmlFor={key} className="capitalize">
-              {key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}
-            </Label>
-            <Input
-              id={key}
-              type="number"
-              value={value}
-              step={getStep(key)}
-              min={getMin(key)}
-              max={getMax(key)}
-              onChange={(e) => {
-                const parsed = parseFloat(e.target.value || "0");
-                updateAdminSetting(key, isNaN(parsed) ? 0 : parsed);
-              }}
-              className="bg-slate-800 border-slate-600 text-slate-100"
-            />
-          </div>
-        ))}
+        {Object.entries(adminSettings).map(([key, rawValue]) => {
+          const isPercent = percentKeys.includes(key);
+          const isDollar = dollarKeys.includes(key);
+          const displayValue = isPercent ? Math.round(rawValue * 100) : Math.round(rawValue);
+
+          const handleChange = (e) => {
+            const input = e.target.value;
+            const parsed = parseFloat(input);
+            if (isNaN(parsed)) return;
+            const value = isPercent ? parsed / 100 : parsed;
+            updateAdminSetting(key, value);
+          };
+
+          return (
+            <div key={key} className="space-y-1">
+              <Label htmlFor={key}>{formatLabel(key)}</Label>
+              <Input
+                id={key}
+                type="number"
+                value={displayValue}
+                step={1}
+                min={0}
+                max={isPercent ? 100 : undefined}
+                onChange={handleChange}
+                className="bg-slate-800 border-slate-600 text-slate-100"
+              />
+            </div>
+          );
+        })}
       </CardContent>
     </Card>
   );
