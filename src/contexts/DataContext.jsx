@@ -1,17 +1,27 @@
-import React, { createContext, useState, useContext, useCallback } from 'react';
+import React, { createContext, useState, useContext, useCallback, useEffect } from 'react';
 
 const DataContext = createContext();
 export const useData = () => useContext(DataContext);
 
 // Sample initial data
-const initialForecastData = []; // Leave as-is or populate with seed data
+const initialForecastData = [];
 const initialActualData = [];
 const initialPosData = {};
 
 export const DataProvider = ({ children }) => {
-  const [forecastData, setForecastData] = useState(initialForecastData);
+  // ✅ Hydrate forecastData from localStorage
+  const [forecastData, setForecastData] = useState(() => {
+    const stored = localStorage.getItem("weeklyForecastResults");
+    return stored ? JSON.parse(stored).filter(row => !row.isTotal) : initialForecastData;
+  });
+
   const [actualData, setActualData] = useState(initialActualData);
   const [posData, setPosData] = useState(initialPosData);
+
+  // Optional: persist forecastData to localStorage on change
+  useEffect(() => {
+    localStorage.setItem("weeklyForecastResults", JSON.stringify(forecastData));
+  }, [forecastData]);
 
   const [isAdminMode, setIsAdminMode] = useState(() => {
     const stored = localStorage.getItem('adminMode');
@@ -26,20 +36,20 @@ export const DataProvider = ({ children }) => {
     });
   };
 
- const safeParse = (key, fallback) => {
-  const raw = localStorage.getItem(key);
-  const parsed = parseFloat(raw);
-  return isNaN(parsed) ? fallback : parsed;
-};
+  const safeParse = (key, fallback) => {
+    const raw = localStorage.getItem(key);
+    const parsed = parseFloat(raw);
+    return isNaN(parsed) ? fallback : parsed;
+  };
 
-const [adminSettings, setAdminSettings] = useState({
-  captureRate: safeParse("captureRate", 0.08),
-  spendPerGuest: safeParse("spendPerGuest", 40),
-  amSplit: safeParse("amSplit", 0.6),
-  foodCostGoal: safeParse("foodCostGoal", 0.3),
-  bevCostGoal: safeParse("bevCostGoal", 0.2),
-  laborCostGoal: safeParse("laborCostGoal", 0.14),
-});
+  const [adminSettings, setAdminSettings] = useState({
+    captureRate: safeParse("captureRate", 0.08),
+    spendPerGuest: safeParse("spendPerGuest", 40),
+    amSplit: safeParse("amSplit", 0.6),
+    foodCostGoal: safeParse("foodCostGoal", 0.3),
+    bevCostGoal: safeParse("bevCostGoal", 0.2),
+    laborCostGoal: safeParse("laborCostGoal", 0.14),
+  });
 
   const updateAdminSetting = (key, value) => {
     let numericValue = parseFloat(value);
