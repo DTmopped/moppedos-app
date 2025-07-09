@@ -13,8 +13,8 @@ const CustomProxyTest = () => {
   const [status, setStatus] = useState(null); // 'success', 'error', 'warning', null
   const [showInstructions, setShowInstructions] = useState(true);
 
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   const handleTestClick = async () => {
     if (!proxyUrlInput.trim()) {
