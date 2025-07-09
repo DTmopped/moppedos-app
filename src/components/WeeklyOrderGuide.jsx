@@ -62,10 +62,10 @@ const WeeklyOrderGuide = () => {
   setGuideData(guide);
 }, [calculateWeeklyGuests, posData, manualAdditions]);
 
-  useEffect(() => {
-    setGuideData(generateOrderGuide());
-    setPrintDate(new Date());
-  }, [generateOrderGuide]);
+ useEffect(() => {
+  generateOrderGuide();
+  setPrintDate(new Date());
+}, [generateOrderGuide]);
 
   const handleAddItem = (category) => {
     const name = prompt(`Add item to "${category}"\nEnter item name:`)?.trim();
