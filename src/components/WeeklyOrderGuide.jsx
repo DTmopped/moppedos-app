@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import ReactDOMServer from 'react-dom/server';
 import { useData } from '@/contexts/DataContext';
@@ -10,9 +9,9 @@ import OrderGuideCategoryComponent from './orderguide/OrderGuideCategory.jsx';
 
 const WeeklyOrderGuide = () => {
   const handlePrint = () => {
-  window.print();
-};
-  
+    window.print();
+  };
+
   const { forecastData, posData } = useData();
   const [guideData, setGuideData] = useState(null);
   const [manualAdditions, setManualAdditions] = useState({});
@@ -28,44 +27,60 @@ const WeeklyOrderGuide = () => {
   }, [forecastData]);
 
   const generateOrderGuide = useCallback(() => {
-  const guests = calculateWeeklyGuests();
-  const bbqGuests = guests * 0.5;
-  const pickleJars = Math.ceil((bbqGuests * 3) / 50);
-  const toGoCups = Math.ceil(bbqGuests * 3);
-  const totalSandwiches =
-    (posData["Pulled Pork Sandwich"] || 0) +
-    (posData["Chopped Brisket Sandwich"] || 0) +
-    (posData["Chopped Chicken Sandwich"] || 0);
+    console.log("✅ Running generateOrderGuide");
 
-  const guide = {
-    Meats: [], Bread: [], Sides: [], Sweets: [], Condiments: [], PaperGoods: []
-  };
+    console.log("📊 forecastData:", forecastData);
+    console.log("📈 posData:", posData);
 
-  Object.entries(manualAdditions).forEach(([category, items]) => {
-    if (!guide[category]) guide[category] = [];
-    guide[category] = [...guide[category], ...items];
-  });
+    const guests = calculateWeeklyGuests();
+    const bbqGuests = guests * 0.5;
+    const pickleJars = Math.ceil((bbqGuests * 3) / 50);
+    const toGoCups = Math.ceil(bbqGuests * 3);
+    const totalSandwiches =
+      (posData["Pulled Pork Sandwich"] || 0) +
+      (posData["Chopped Brisket Sandwich"] || 0) +
+      (posData["Chopped Chicken Sandwich"] || 0);
 
-  Object.keys(guide).forEach(category => {
-    guide[category].forEach(item => {
-      item.actual = item.posDataValue !== undefined
-        ? item.posDataValue
-        : typeof item.forecast === 'number' ? 0 : "-";
-      item.variance =
-        typeof item.forecast === 'number' && typeof item.actual === 'number'
-          ? (item.actual - item.forecast).toFixed(1)
-          : "-";
+    console.log("👥 guests:", guests);
+    console.log("🔥 bbqGuests:", bbqGuests);
+    console.log("🥒 pickleJars:", pickleJars);
+    console.log("🥤 toGoCups:", toGoCups);
+    console.log("🥪 totalSandwiches:", totalSandwiches);
+
+    const guide = {
+      Meats: [],
+      Bread: [],
+      Sides: [],
+      Sweets: [],
+      Condiments: [],
+      PaperGoods: []
+    };
+
+    Object.entries(manualAdditions).forEach(([category, items]) => {
+      if (!guide[category]) guide[category] = [];
+      guide[category] = [...guide[category], ...items];
     });
-  });
 
-  // 🔥 This was missing:
-  setGuideData(guide);
-}, [calculateWeeklyGuests, posData, manualAdditions]);
+    Object.keys(guide).forEach(category => {
+      guide[category].forEach(item => {
+        item.actual = item.posDataValue !== undefined
+          ? item.posDataValue
+          : typeof item.forecast === 'number' ? 0 : "-";
+        item.variance =
+          typeof item.forecast === 'number' && typeof item.actual === 'number'
+            ? (item.actual - item.forecast).toFixed(1)
+            : "-";
+      });
+    });
 
- useEffect(() => {
-  generateOrderGuide();
-  setPrintDate(new Date());
-}, [generateOrderGuide]);
+    console.log("📦 guide before setting:", guide);
+    setGuideData(guide);
+  }, [calculateWeeklyGuests, posData, manualAdditions]);
+
+  useEffect(() => {
+    generateOrderGuide();
+    setPrintDate(new Date());
+  }, [generateOrderGuide]);
 
   const handleAddItem = (category) => {
     const name = prompt(`Add item to "${category}"\nEnter item name:`)?.trim();
@@ -100,7 +115,14 @@ const WeeklyOrderGuide = () => {
     }));
   };
 
-  const categoryIcons = { Meats: ShoppingBasket, Bread: Package, Sides: ShoppingBasket, Sweets: Package, Condiments: ShoppingBasket, PaperGoods: Package };
+  const categoryIcons = {
+    Meats: ShoppingBasket,
+    Bread: Package,
+    Sides: ShoppingBasket,
+    Sweets: Package,
+    Condiments: ShoppingBasket,
+    PaperGoods: Package
+  };
 
   const getStatusClass = (forecast, actual) => {
     if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0) return 'bg-opacity-10 dark:bg-opacity-20';
