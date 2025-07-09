@@ -26,7 +26,7 @@ const FvaDashboard = () => {
   useEffect(() => { localStorage.setItem("laborCostGoal", laborTarget); }, [laborTarget]);
 
   const today = new Date().toISOString().split("T")[0];
-  const currentMonth = "2025-05"; // adjust to dynamic later
+ const currentMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
 
   const combinedData = forecastData.map(forecast => {
     const actual = actualData.find(a => a.date === forecast.date);
