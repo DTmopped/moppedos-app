@@ -136,6 +136,7 @@ const WeeklyForecastParser = () => {
 
       setForecastDataUI(result);
       setForecastData(result.filter(row => !row.isTotal)); // ✅ sync with dashboard
+      localStorage.setItem("weeklyForecastResults", JSON.stringify(result));
 
     } catch (e) {
       console.error("Parsing error:", e);
