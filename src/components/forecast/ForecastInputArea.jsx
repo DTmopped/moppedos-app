@@ -8,9 +8,7 @@ const ForecastInputArea = ({ inputText, setInputText, generateForecast }) => {
   return (
     <>
       <div className="space-y-2 mb-6">
-        <h3
-  className="text-sm font-semibold text-slate-700 tracking-wide px-1 mb-1"
->
+        <h3 className="text-sm font-semibold text-slate-700 tracking-wide px-1 mt-6 pt-3 border-t border-slate-200">
   Weekly Passenger Data
 </h3>
 
