@@ -11,8 +11,8 @@ const CorsProxyTest = () => {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState(null); // 'success', 'error', null
 
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   const handleTestClick = async () => {
     setLoading(true);
