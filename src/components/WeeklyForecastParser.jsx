@@ -90,18 +90,20 @@ const WeeklyForecastParser = () => {
         const pmGuests = guests - amGuests;
         const sales = guests * spendPerGuestFloat;
 
-        return {
-          day: item.day,
-          date: date.toISOString().split("T")[0],
-          pax: item.pax,
-          guests,
-          amGuests,
-          pmGuests,
-          sales,
-          food: sales * foodPct,
-          bev: sales * bevPct,
-          labor: sales * laborPct,
+       return {
+         day: item.day,
+         date: date.toISOString().split("T")[0],
+         pax: item.pax,
+         guests,
+         amGuests,
+         pmGuests,
+         sales,
+         forecastSales: sales, // <- 🔥 Add this line
+         food: sales * foodPct,
+         bev: sales * bevPct,
+         labor: sales * laborPct,
         };
+        
       });
 
       const totals = result.reduce(
