@@ -16,7 +16,7 @@ import AdminModeToggle from "@/components/ui/AdminModeToggle";
 import { useData } from "@/contexts/DataContext";
 
 const WeeklyForecastParser = () => {
-  const { isAdminMode, adminSettings } = useData();
+  const { isAdminMode, adminSettings, setForecastData } = useData(); // ✅ added setForecastData
   const [inputText, setInputText] = useState(() => {
     return localStorage.getItem("weeklyInputText") || "";
   });
@@ -135,6 +135,8 @@ const WeeklyForecastParser = () => {
       });
 
       setForecastDataUI(result);
+      setForecastData(result.filter(row => !row.isTotal)); // ✅ sync with dashboard
+
     } catch (e) {
       console.error("Parsing error:", e);
       setError("An error occurred while parsing. Check the format and try again.");
