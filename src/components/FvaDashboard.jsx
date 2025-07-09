@@ -29,25 +29,42 @@ const FvaDashboard = () => {
  const currentMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
 
   const combinedData = forecastData.map(forecast => {
-    const actual = actualData.find(a => a.date === forecast.date);
-    if (actual) {
-      const foodPct = actual.actualSales > 0 ? actual.foodCost / actual.actualSales : 0;
-      const bevPct = actual.actualSales > 0 ? actual.beverageCost / actual.actualSales : 0;
-      const laborPct = actual.actualSales > 0 ? actual.laborCost / actual.actualSales : 0;
-      return { ...forecast, ...actual, foodPct, bevPct, laborPct, hasActuals: true };
-    }
+  const actual = actualData.find(a => a.date === forecast.date);
+  if (actual) {
+    const actualSales = actual.actual_total || 0;
+    const foodCost = actual.food_cost || 0;
+    const beverageCost = actual.bev_cost || 0;
+    const laborCost = actual.labor_cost || 0;
+
+    const foodPct = actualSales > 0 ? foodCost / actualSales : 0;
+    const bevPct = actualSales > 0 ? beverageCost / actualSales : 0;
+    const laborPct = actualSales > 0 ? laborCost / actualSales : 0;
+
     return {
       ...forecast,
-      actualSales: 0,
-      foodCost: 0,
-      beverageCost: 0,
-      laborCost: 0,
-      foodPct: 0,
-      bevPct: 0,
-      laborPct: 0,
-      hasActuals: false
+      actualSales,
+      foodCost,
+      beverageCost,
+      laborCost,
+      foodPct,
+      bevPct,
+      laborPct,
+      hasActuals: true
     };
-  });
+  }
+
+  return {
+    ...forecast,
+    actualSales: 0,
+    foodCost: 0,
+    beverageCost: 0,
+    laborCost: 0,
+    foodPct: 0,
+    bevPct: 0,
+    laborPct: 0,
+    hasActuals: false
+  };
+});
 
   const mtdData = combinedData.filter(d => d.date.startsWith(currentMonth) && d.date <= today);
   const eomData = combinedData.filter(d => d.date.startsWith(currentMonth));
