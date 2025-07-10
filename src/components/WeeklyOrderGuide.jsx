@@ -7,147 +7,105 @@ import { motion, AnimatePresence } from 'framer-motion';
 import PrintableOrderGuide from './orderguide/PrintableOrderGuide.jsx';
 import OrderGuideCategoryComponent from './orderguide/OrderGuideCategory.jsx';
 
-const WeeklyOrderGuide = () => {
-  const handlePrint = () => {
-    window.print();
-  };
-
-  const { forecastData, posData } = useData();
-  const [guideData, setGuideData] = useState(null);
-  const [manualAdditions, setManualAdditions] = useState({});
-  const [adminMode, setAdminMode] = useState(false);
-  const [printDate, setPrintDate] = useState(new Date());
+const generateOrderGuide = useCallback(() => {
+  if (!forecastData || forecastData.length === 0) return;
 
   const ozPerLb = 16;
-  const sandwichOz = 6;
-  const sandwichLb = sandwichOz / ozPerLb;
-  const spendPerGuest = 15;
+  const portionToLbs = (oz, guests) => ((guests * oz) / ozPerLb);
 
-  const calculateWeeklyGuests = useCallback(() => {
-    if (!forecastData || forecastData.length === 0) return 0;
-    return forecastData.reduce((sum, day) => sum + ((day.forecastSales || 0) / spendPerGuest), 0);
-  }, [forecastData]);
+  const latestForecast = forecastData[forecastData.length - 1];
+  const latestActual = actualData?.[actualData.length - 1];
+  const forecastGuests = forecastData.reduce((sum, day) => sum + (day.guests || 0), 0);
+  const actualGuests = latestActual?.guests || 0;
+  const adjustmentFactor = (forecastGuests && actualGuests) ? (actualGuests / forecastGuests) : 1;
 
-  const generateOrderGuide = useCallback(() => {
-    const guests = calculateWeeklyGuests();
-    const bbqGuests = guests * 0.5;
-    const pos = posData || {};
-    const getSandwichLbs = (count) => (count || 0) * sandwichLb;
+  const adjustedGuests = Math.round(forecastGuests * adjustmentFactor);
+  const sandwichGuests = Math.round(adjustedGuests * 0.5);
+  const plateGuests = adjustedGuests - sandwichGuests;
+  const totalSidePortions = plateGuests * 3;
+  const sideItems = ['Coleslaw', 'Collard Greens', 'Mac N Cheese', 'Baked Beans', 'Corn Casserole'];
+  const sidePortionLbs = portionToLbs(4, totalSidePortions / sideItems.length);
 
-    const brisketLbs = (pos['Brisket'] || 0) + getSandwichLbs(pos['Chopped Brisket Sandwich']);
-    const porkLbs = (pos['Pulled Pork'] || 0) + getSandwichLbs(pos['Pulled Pork Sandwich']);
-    const chickenLbs = (pos['Half Chicken'] || 0) + getSandwichLbs(pos['Chopped Chicken Sandwich']);
+  const guide = {
+    Meats: [
+      { name: 'Brisket', forecast: Math.ceil(portionToLbs(4, plateGuests) + portionToLbs(6, sandwichGuests / 3)), unit: 'lbs' },
+      { name: 'Pulled Pork', forecast: Math.ceil(portionToLbs(4, plateGuests) + portionToLbs(6, sandwichGuests / 3)), unit: 'lbs' },
+      { name: 'Chicken', forecast: Math.ceil(portionToLbs(4, plateGuests) + portionToLbs(6, sandwichGuests / 3)), unit: 'lbs' },
+      { name: 'St. Louis Ribs', forecast: Math.ceil(portionToLbs(16, plateGuests)), unit: 'lbs' },
+      { name: 'Bone-in Short Rib', forecast: Math.ceil(portionToLbs(16, plateGuests)), unit: 'lbs' }
+    ],
+    Bread: [
+      { name: 'Buns', forecast: sandwichGuests, unit: 'each' },
+      { name: 'Texas Toast', forecast: plateGuests, unit: 'each' }
+    ],
+    Sides: [
+      ...sideItems.map(item => ({
+        name: item,
+        forecast: Math.ceil(sidePortionLbs),
+        unit: 'lbs'
+      })),
+      { name: 'Corn Muffin', forecast: plateGuests, unit: 'each' },
+      { name: 'Honey Butter', forecast: plateGuests, unit: 'each' }
+    ],
+    Sweets: [
+      { name: 'Banana Pudding', forecast: plateGuests, unit: 'each' },
+      { name: 'Key Lime Pie', forecast: plateGuests, unit: 'each' },
+      { name: 'Hummingbird Cake', forecast: plateGuests, unit: 'each' }
+    ],
+    Condiments: [
+      { name: 'House Pickles (32oz)', forecast: Math.ceil((plateGuests * 3) / 50), unit: 'jars' },
+      { name: 'Mop Glaze', forecast: 0, unit: 'oz' },
+      { name: 'BBQ 1', forecast: 0, unit: 'oz' },
+      { name: 'BBQ 2', forecast: 0, unit: 'oz' },
+      { name: 'BBQ 3', forecast: 0, unit: 'oz' },
+      { name: 'Hot Sauce 1', forecast: 0, unit: 'oz' },
+      { name: 'Hot Sauce 2', forecast: 0, unit: 'oz' },
+      { name: 'Hot Sauce 3', forecast: 0, unit: 'oz' }
+    ],
+    PaperGoods: [
+      { name: 'To-Go Cups', forecast: adjustedGuests * 3, unit: 'each' },
+      { name: '1 oz Soufflé Cup', forecast: 0, unit: 'each' },
+      { name: 'Cutlery Kit', forecast: adjustedGuests, unit: 'each' },
+      { name: 'To-Go Bag Small', forecast: 0, unit: 'each' },
+      { name: 'To-Go Bag Large', forecast: 0, unit: 'each' },
+      { name: 'Moist Towelettes', forecast: adjustedGuests, unit: 'each' }
+    ],
+    CleaningSupplies: [
+      { name: 'Trash Bags', forecast: 0, unit: 'case' },
+      { name: 'Gloves - S', forecast: 0, unit: 'case' },
+      { name: 'Gloves - M', forecast: 0, unit: 'case' },
+      { name: 'Gloves - L', forecast: 0, unit: 'case' },
+      { name: 'Gloves - XL', forecast: 0, unit: 'case' },
+      { name: 'Dish Soap', forecast: 0, unit: 'gal' },
+      { name: 'Dish Sanitizer', forecast: 0, unit: 'gal' },
+      { name: 'C-Folds', forecast: 0, unit: 'case' },
+      { name: 'Sanitizing Wipes', forecast: 0, unit: 'case' },
+      { name: 'Green Scrubbies', forecast: 0, unit: 'pack' },
+      { name: 'Metal Scrubbies', forecast: 0, unit: 'pack' },
+      { name: 'Broom', forecast: 0, unit: 'each' }
+    ]
+  };
 
-    const buns = Math.ceil((pos['Chopped Brisket Sandwich'] || 0) + (pos['Pulled Pork Sandwich'] || 0) + (pos['Chopped Chicken Sandwich'] || 0));
-    const texasToast = Math.ceil(bbqGuests);
-    const pickleJars = Math.ceil((bbqGuests * 3) / 50);
-    const toGoCups = Math.ceil(bbqGuests * 3);
+  // Manual additions (admin mode)
+  Object.entries(manualAdditions).forEach(([category, items]) => {
+    if (!guide[category]) guide[category] = [];
+    guide[category].push(...items);
+  });
 
-    const sideItems = [
-      { name: 'Coleslaw', unit: 'lbs' },
-      { name: 'Collard Greens', unit: 'lbs' },
-      { name: 'Mac N Cheese', unit: 'lbs' },
-      { name: 'Baked Beans', unit: 'lbs' },
-      { name: 'Corn Casserole', unit: 'lbs' },
-      { name: 'Corn Muffin', unit: 'each' },
-      { name: 'Honey Butter', unit: 'each' }
-    ];
-
-    const sweetItems = [
-      { name: 'Banana Pudding', unit: 'each' },
-      { name: 'Key Lime Pie', unit: 'each' },
-      { name: 'Hummingbird Cake', unit: 'each' }
-    ];
-
-    const condimentItems = [
-      { name: 'House Pickles (32oz)', forecast: pickleJars, unit: 'jars' },
-      { name: 'Mop Glaze', unit: 'oz' },
-      { name: 'BBQ 1', unit: 'oz' },
-      { name: 'BBQ 2', unit: 'oz' },
-      { name: 'BBQ 3', unit: 'oz' },
-      { name: 'Hot Sauce 1', unit: 'oz' },
-      { name: 'Hot Sauce 2', unit: 'oz' },
-      { name: 'Hot Sauce 3', unit: 'oz' }
-    ];
-
-    const paperGoodsItems = [
-      { name: 'To-Go Cups', forecast: toGoCups, unit: 'each' },
-      { name: '1 oz Soufflé Cup', unit: 'each' },
-      { name: 'Cutlery Kit', unit: 'each' },
-      { name: 'To-Go Bag Small', unit: 'each' },
-      { name: 'To-Go Bag Large', unit: 'each' },
-      { name: 'Moist Towelettes', unit: 'each' }
-    ];
-
-    const cleaningItems = [
-      { name: 'Trash Bags', unit: 'case' },
-      { name: 'Gloves - S', unit: 'case' },
-      { name: 'Gloves - M', unit: 'case' },
-      { name: 'Gloves - L', unit: 'case' },
-      { name: 'Gloves - XL', unit: 'case' },
-      { name: 'Dish Soap', unit: 'gal' },
-      { name: 'Dish Sanitizer', unit: 'gal' },
-      { name: 'C-Folds', unit: 'case' },
-      { name: 'Sanitizing Wipes', unit: 'case' },
-      { name: 'Green Scrubbies', unit: 'pack' },
-      { name: 'Metal Scrubbies', unit: 'pack' },
-      { name: 'Broom', unit: 'each' }
-    ];
-
-    const guide = {
-      Meats: [
-        { name: 'Brisket', forecast: Math.ceil(brisketLbs), unit: 'lbs', actual: brisketLbs },
-        { name: 'Pulled Pork', forecast: Math.ceil(porkLbs), unit: 'lbs', actual: porkLbs },
-        { name: 'Chicken', forecast: Math.ceil(chickenLbs), unit: 'lbs', actual: chickenLbs },
-        { name: 'St. Louis Ribs', forecast: 0, unit: 'lbs', actual: pos['St. Louis Ribs'] || 0 },
-        { name: 'Bone-in Short Rib', forecast: 0, unit: 'lbs', actual: pos['Bone-in Short Rib'] || 0 }
-      ],
-      Bread: [
-        { name: 'Buns', forecast: buns, unit: 'each', actual: 0 },
-        { name: 'Texas Toast', forecast: texasToast, unit: 'each', actual: 0 }
-      ],
-      Sides: sideItems.map(({ name, unit }) => {
-        const actual = pos[name] || 0;
-        return { name, forecast: actual > 0 ? Math.ceil(actual) : 100, unit, actual };
-      }),
-      Sweets: sweetItems.map(({ name, unit }) => {
-        const actual = pos[name] || 0;
-        return { name, forecast: actual > 0 ? Math.ceil(actual) : 100, unit, actual };
-      }),
-      Condiments: condimentItems.map(({ name, forecast = 0, unit }) => {
-        const actual = pos[name] || 0;
-        return { name, forecast, unit, actual };
-      }),
-      PaperGoods: paperGoodsItems.map(({ name, forecast = 0, unit }) => {
-        const actual = pos[name] || 0;
-        return { name, forecast, unit, actual };
-      }),
-      CleaningSupplies: cleaningItems.map(({ name, unit }) => {
-        const actual = pos[name] || 0;
-        return { name, forecast: 0, unit, actual };
-      })
-    };
-
-    Object.entries(manualAdditions).forEach(([category, items]) => {
-      if (!guide[category]) guide[category] = [];
-      guide[category].push(...items);
+  // Add variance if actualData exists
+  Object.keys(guide).forEach(category => {
+    guide[category].forEach(item => {
+      const actual = 0; // Placeholder if you want to later bind to posData
+      item.actual = actual;
+      item.variance = (typeof item.forecast === 'number' && typeof actual === 'number')
+        ? (actual - item.forecast).toFixed(1)
+        : '-';
     });
+  });
 
-    Object.keys(guide).forEach(category => {
-      guide[category].forEach(item => {
-        item.variance = (typeof item.forecast === 'number' && typeof item.actual === 'number')
-          ? (item.actual - item.forecast).toFixed(1)
-          : '-';
-      });
-    });
-
-    setGuideData(guide);
-    setPrintDate(new Date());
-  }, [calculateWeeklyGuests, posData, manualAdditions]);
-
-  useEffect(() => {
-    generateOrderGuide();
-  }, [generateOrderGuide]);
+  setGuideData(guide);
+  setPrintDate(new Date());
+}, [forecastData, actualData, manualAdditions]);
 
   const handleAddItem = (category) => {
     const name = prompt(`Add item to "${category}"\nEnter item name:`)?.trim();
