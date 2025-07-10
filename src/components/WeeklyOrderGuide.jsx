@@ -219,6 +219,5 @@ setPrintDate(new Date());
       </AnimatePresence>
     </div>
   );
-};
 
 export default WeeklyOrderGuide;
