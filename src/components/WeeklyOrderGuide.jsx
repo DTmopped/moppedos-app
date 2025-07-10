@@ -179,7 +179,9 @@ const WeeklyOrderGuide = () => {
     return <TrendingDown className="h-4 w-4 text-red-500" />;
   };
 
-  if (!guideData) return <div className="text-center p-8">Loading order guide data...</div>;
+if (!guideData || typeof guideData !== 'object') {
+  return <div className="text-center p-8">Loading order guide data...</div>;
+}
 
   return (
     <div className="p-4 md:p-6">
