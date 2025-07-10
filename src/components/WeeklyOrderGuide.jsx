@@ -104,7 +104,7 @@ const generateOrderGuide = useCallback(() => {
   });
 
   setGuideData(guide);
-  setPrintDate(new Date());
+setPrintDate(new Date());
 }, [forecastData, actualData, manualAdditions]);
 
   const handleAddItem = (category) => {
