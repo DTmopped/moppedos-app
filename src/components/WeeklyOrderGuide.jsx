@@ -19,6 +19,8 @@ const WeeklyOrderGuide = () => {
   const [printDate, setPrintDate] = useState(new Date());
 
   const ozPerLb = 16;
+  const sandwichOz = 6;
+  const sandwichLb = sandwichOz / ozPerLb;
   const spendPerGuest = 15;
 
   const calculateWeeklyGuests = useCallback(() => {
@@ -27,59 +29,58 @@ const WeeklyOrderGuide = () => {
   }, [forecastData]);
 
   const generateOrderGuide = useCallback(() => {
-    console.log("✅ Running generateOrderGuide");
-
-    console.log("📊 forecastData:", forecastData);
-    console.log("📈 posData:", posData);
-
     const guests = calculateWeeklyGuests();
     const bbqGuests = guests * 0.5;
     const pickleJars = Math.ceil((bbqGuests * 3) / 50);
     const toGoCups = Math.ceil(bbqGuests * 3);
-    const totalSandwiches =
-      (posData["Pulled Pork Sandwich"] || 0) +
-      (posData["Chopped Brisket Sandwich"] || 0) +
-      (posData["Chopped Chicken Sandwich"] || 0);
 
-    console.log("👥 guests:", guests);
-    console.log("🔥 bbqGuests:", bbqGuests);
-    console.log("🥒 pickleJars:", pickleJars);
-    console.log("🥤 toGoCups:", toGoCups);
-    console.log("🥪 totalSandwiches:", totalSandwiches);
+    const pos = posData || {};
+
+    const getSandwichLbs = (count) => (count || 0) * sandwichLb;
+
+    const brisketLbs = (pos["Brisket"] || 0) + getSandwichLbs(pos["Chopped Brisket Sandwich"]);
+    const porkLbs = (pos["Pulled Pork"] || 0) + getSandwichLbs(pos["Pulled Pork Sandwich"]);
+    const chickenLbs = (pos["Half Chicken"] || 0) + getSandwichLbs(pos["Chopped Chicken Sandwich"]);
 
     const guide = {
-      Meats: [],
+      Meats: [
+        { name: "Brisket", forecast: Math.ceil(brisketLbs), unit: "lbs", actual: brisketLbs, variance: "-" },
+        { name: "Pulled Pork", forecast: Math.ceil(porkLbs), unit: "lbs", actual: porkLbs, variance: "-" },
+        { name: "Chicken", forecast: Math.ceil(chickenLbs), unit: "lbs", actual: chickenLbs, variance: "-" },
+        { name: "St. Louis Ribs", forecast: 0, unit: "lbs", actual: pos["St. Louis Ribs"] || 0, variance: "-" },
+        { name: "Bone-in Short Rib", forecast: 0, unit: "lbs", actual: pos["Bone-in Short Rib"] || 0, variance: "-" }
+      ],
       Bread: [],
       Sides: [],
       Sweets: [],
-      Condiments: [],
-      PaperGoods: []
+      Condiments: [
+        { name: "House Pickles (32oz)", forecast: pickleJars, unit: "jars", actual: 0, variance: "-" }
+      ],
+      PaperGoods: [
+        { name: "To-Go Cups", forecast: toGoCups, unit: "each", actual: 0, variance: "-" }
+      ]
     };
 
     Object.entries(manualAdditions).forEach(([category, items]) => {
       if (!guide[category]) guide[category] = [];
-      guide[category] = [...guide[category], ...items];
+      guide[category].push(...items);
     });
 
     Object.keys(guide).forEach(category => {
       guide[category].forEach(item => {
-        item.actual = item.posDataValue !== undefined
-          ? item.posDataValue
-          : typeof item.forecast === 'number' ? 0 : "-";
-        item.variance =
-          typeof item.forecast === 'number' && typeof item.actual === 'number'
-            ? (item.actual - item.forecast).toFixed(1)
-            : "-";
+        item.actual = item.actual ?? (item.posDataValue ?? 0);
+        item.variance = (typeof item.forecast === 'number' && typeof item.actual === 'number')
+          ? (item.actual - item.forecast).toFixed(1)
+          : "-";
       });
     });
 
-    console.log("📦 guide before setting:", guide);
     setGuideData(guide);
+    setPrintDate(new Date());
   }, [calculateWeeklyGuests, posData, manualAdditions]);
 
   useEffect(() => {
     generateOrderGuide();
-    setPrintDate(new Date());
   }, [generateOrderGuide]);
 
   const handleAddItem = (category) => {
