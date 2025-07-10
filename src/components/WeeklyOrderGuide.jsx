@@ -31,11 +31,6 @@ const WeeklyOrderGuide = () => {
   const generateOrderGuide = useCallback(() => {
     const guests = calculateWeeklyGuests();
     const bbqGuests = guests * 0.5;
-    const pickleJars = Math.ceil((bbqGuests * 3) / 50);
-    const toGoCups = Math.ceil(bbqGuests * 3);
-    const buns = Math.ceil(((posData?.['Chopped Brisket Sandwich'] || 0) + (posData?.['Pulled Pork Sandwich'] || 0) + (posData?.['Chopped Chicken Sandwich'] || 0)));
-    const texasToast = Math.ceil(bbqGuests);
-
     const pos = posData || {};
     const getSandwichLbs = (count) => (count || 0) * sandwichLb;
 
@@ -43,64 +38,94 @@ const WeeklyOrderGuide = () => {
     const porkLbs = (pos['Pulled Pork'] || 0) + getSandwichLbs(pos['Pulled Pork Sandwich']);
     const chickenLbs = (pos['Half Chicken'] || 0) + getSandwichLbs(pos['Chopped Chicken Sandwich']);
 
+    const buns = Math.ceil((pos['Chopped Brisket Sandwich'] || 0) + (pos['Pulled Pork Sandwich'] || 0) + (pos['Chopped Chicken Sandwich'] || 0));
+    const texasToast = Math.ceil(bbqGuests);
+    const pickleJars = Math.ceil((bbqGuests * 3) / 50);
+    const toGoCups = Math.ceil(bbqGuests * 3);
+
+    const sideItems = [
+      { name: 'Coleslaw', unit: 'lbs' },
+      { name: 'Collard Greens', unit: 'lbs' },
+      { name: 'Mac N Cheese', unit: 'lbs' },
+      { name: 'Baked Beans', unit: 'lbs' },
+      { name: 'Corn Casserole', unit: 'lbs' },
+      { name: 'Corn Muffin', unit: 'each' },
+      { name: 'Honey Butter', unit: 'each' }
+    ];
+
+    const sweetItems = [
+      { name: 'Banana Pudding', unit: 'each' },
+      { name: 'Key Lime Pie', unit: 'each' },
+      { name: 'Hummingbird Cake', unit: 'each' }
+    ];
+
+    const condimentItems = [
+      { name: 'House Pickles (32oz)', forecast: pickleJars, unit: 'jars' },
+      { name: 'Mop Glaze', unit: 'oz' },
+      { name: 'BBQ 1', unit: 'oz' },
+      { name: 'BBQ 2', unit: 'oz' },
+      { name: 'BBQ 3', unit: 'oz' },
+      { name: 'Hot Sauce 1', unit: 'oz' },
+      { name: 'Hot Sauce 2', unit: 'oz' },
+      { name: 'Hot Sauce 3', unit: 'oz' }
+    ];
+
+    const paperGoodsItems = [
+      { name: 'To-Go Cups', forecast: toGoCups, unit: 'each' },
+      { name: '1 oz Soufflé Cup', unit: 'each' },
+      { name: 'Cutlery Kit', unit: 'each' },
+      { name: 'To-Go Bag Small', unit: 'each' },
+      { name: 'To-Go Bag Large', unit: 'each' },
+      { name: 'Moist Towelettes', unit: 'each' }
+    ];
+
+    const cleaningItems = [
+      { name: 'Trash Bags', unit: 'case' },
+      { name: 'Gloves - S', unit: 'case' },
+      { name: 'Gloves - M', unit: 'case' },
+      { name: 'Gloves - L', unit: 'case' },
+      { name: 'Gloves - XL', unit: 'case' },
+      { name: 'Dish Soap', unit: 'gal' },
+      { name: 'Dish Sanitizer', unit: 'gal' },
+      { name: 'C-Folds', unit: 'case' },
+      { name: 'Sanitizing Wipes', unit: 'case' },
+      { name: 'Green Scrubbies', unit: 'pack' },
+      { name: 'Metal Scrubbies', unit: 'pack' },
+      { name: 'Broom', unit: 'each' }
+    ];
+
     const guide = {
       Meats: [
-        { name: 'Brisket', forecast: Math.ceil(brisketLbs), unit: 'lbs', actual: brisketLbs, variance: '-' },
-        { name: 'Pulled Pork', forecast: Math.ceil(porkLbs), unit: 'lbs', actual: porkLbs, variance: '-' },
-        { name: 'Chicken', forecast: Math.ceil(chickenLbs), unit: 'lbs', actual: chickenLbs, variance: '-' },
-        { name: 'St. Louis Ribs', forecast: 0, unit: 'lbs', actual: pos['St. Louis Ribs'] || 0, variance: '-' },
-        { name: 'Bone-in Short Rib', forecast: 0, unit: 'lbs', actual: pos['Bone-in Short Rib'] || 0, variance: '-' }
+        { name: 'Brisket', forecast: Math.ceil(brisketLbs), unit: 'lbs', actual: brisketLbs },
+        { name: 'Pulled Pork', forecast: Math.ceil(porkLbs), unit: 'lbs', actual: porkLbs },
+        { name: 'Chicken', forecast: Math.ceil(chickenLbs), unit: 'lbs', actual: chickenLbs },
+        { name: 'St. Louis Ribs', forecast: 0, unit: 'lbs', actual: pos['St. Louis Ribs'] || 0 },
+        { name: 'Bone-in Short Rib', forecast: 0, unit: 'lbs', actual: pos['Bone-in Short Rib'] || 0 }
       ],
       Bread: [
-        { name: 'Buns', forecast: buns, unit: 'each', actual: 0, variance: '-' },
-        { name: 'Texas Toast', forecast: texasToast, unit: 'each', actual: 0, variance: '-' }
+        { name: 'Buns', forecast: buns, unit: 'each', actual: 0 },
+        { name: 'Texas Toast', forecast: texasToast, unit: 'each', actual: 0 }
       ],
-      Sides: [
-        { name: 'Coleslaw', forecast: 343.8, unit: 'lbs' },
-        { name: 'Collard Greens', forecast: 137.5, unit: 'lbs' },
-        { name: 'Mac N Cheese', forecast: 137.5, unit: 'lbs' },
-        { name: 'Baked Beans', forecast: 137.5, unit: 'lbs' },
-        { name: 'Corn Casserole', forecast: 137.5, unit: 'lbs' },
-        { name: 'Corn Muffin', forecast: 550, unit: 'each' },
-        { name: 'Honey Butter', forecast: 550, unit: 'each' }
-      ],
-      Sweets: [
-        { name: 'Banana Pudding', forecast: 550, unit: 'each' },
-        { name: 'Key Lime Pie', forecast: 550, unit: 'each' },
-        { name: 'Hummingbird Cake', forecast: 550, unit: 'each' }
-      ],
-      Condiments: [
-        { name: 'House Pickles (32oz)', forecast: pickleJars, unit: 'jars' },
-        { name: 'Mop Glaze', forecast: 0, unit: 'oz' },
-        { name: 'BBQ 1', forecast: 0, unit: 'oz' },
-        { name: 'BBQ 2', forecast: 0, unit: 'oz' },
-        { name: 'BBQ 3', forecast: 0, unit: 'oz' },
-        { name: 'Hot Sauce 1', forecast: 0, unit: 'oz' },
-        { name: 'Hot Sauce 2', forecast: 0, unit: 'oz' },
-        { name: 'Hot Sauce 3', forecast: 0, unit: 'oz' }
-      ],
-      PaperGoods: [
-        { name: 'To-Go Cups', forecast: toGoCups, unit: 'each' },
-        { name: '1 oz Soufflé Cup', forecast: 0, unit: 'each' },
-        { name: 'Cutlery Kit', forecast: 0, unit: 'each' },
-        { name: 'To-Go Bag Small', forecast: 0, unit: 'each' },
-        { name: 'To-Go Bag Large', forecast: 0, unit: 'each' },
-        { name: 'Moist Towelettes', forecast: 0, unit: 'each' }
-      ],
-      CleaningSupplies: [
-        { name: 'Trash Bags', forecast: 0, unit: 'case' },
-        { name: 'Gloves - S', forecast: 0, unit: 'case' },
-        { name: 'Gloves - M', forecast: 0, unit: 'case' },
-        { name: 'Gloves - L', forecast: 0, unit: 'case' },
-        { name: 'Gloves - XL', forecast: 0, unit: 'case' },
-        { name: 'Dish Soap', forecast: 0, unit: 'gal' },
-        { name: 'Dish Sanitizer', forecast: 0, unit: 'gal' },
-        { name: 'C-Folds', forecast: 0, unit: 'case' },
-        { name: 'Sanitizing Wipes', forecast: 0, unit: 'case' },
-        { name: 'Green Scrubbies', forecast: 0, unit: 'pack' },
-        { name: 'Metal Scrubbies', forecast: 0, unit: 'pack' },
-        { name: 'Broom', forecast: 0, unit: 'each' }
-      ]
+      Sides: sideItems.map(({ name, unit }) => {
+        const actual = pos[name] || 0;
+        return { name, forecast: actual > 0 ? Math.ceil(actual) : 100, unit, actual };
+      }),
+      Sweets: sweetItems.map(({ name, unit }) => {
+        const actual = pos[name] || 0;
+        return { name, forecast: actual > 0 ? Math.ceil(actual) : 100, unit, actual };
+      }),
+      Condiments: condimentItems.map(({ name, forecast = 0, unit }) => {
+        const actual = pos[name] || 0;
+        return { name, forecast, unit, actual };
+      }),
+      PaperGoods: paperGoodsItems.map(({ name, forecast = 0, unit }) => {
+        const actual = pos[name] || 0;
+        return { name, forecast, unit, actual };
+      }),
+      CleaningSupplies: cleaningItems.map(({ name, unit }) => {
+        const actual = pos[name] || 0;
+        return { name, forecast: 0, unit, actual };
+      })
     };
 
     Object.entries(manualAdditions).forEach(([category, items]) => {
@@ -110,7 +135,6 @@ const WeeklyOrderGuide = () => {
 
     Object.keys(guide).forEach(category => {
       guide[category].forEach(item => {
-        item.actual = item.actual ?? (item.posDataValue ?? 0);
         item.variance = (typeof item.forecast === 'number' && typeof item.actual === 'number')
           ? (item.actual - item.forecast).toFixed(1)
           : '-';
