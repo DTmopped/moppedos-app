@@ -183,37 +183,41 @@ const WeeklyOrderGuide = () => {
       </div>
 
       <AnimatePresence>
-        <div className="space-y-6">
-          {Object.entries(safeGuideData).map(([category, items]) => (
-            <div key={category}>
-              <div className="flex justify-between items-center mb-2">
-                <h2 className="text-xl font-bold text-slate-800 dark:text-white">{category}</h2>
-                {adminMode && (
-                  <button
-                    onClick={() => handleAddItem(category)}
-                    className="text-sm text-blue-600 hover:underline no-print"
-                  >
-                    + Add Item
-                  </button>
-                )}
-              </div>
-              <OrderGuideCategoryComponent
-                categoryTitle={category}
-                items={items.map(item => [
-                  item.name,
-                  item.forecast,
-                  item.unit,
-                  item.actual,
-                  item.variance,
-                  item.isManual || false,
-                ])}
-                getStatusClass={getStatusClass}
-                getStatusIcon={getStatusIcon}
-              />
-            </div>
-          ))}
+  <div className="space-y-6">
+    {safeGuideData && typeof safeGuideData === 'object' && Object.keys(safeGuideData).length > 0 ? (
+      Object.entries(safeGuideData).map(([category, items]) => (
+        <div key={category}>
+          <div className="flex justify-between items-center mb-2">
+            <h2 className="text-xl font-bold text-slate-800 dark:text-white">{category}</h2>
+            {adminMode && (
+              <button
+                onClick={() => handleAddItem(category)}
+                className="text-sm text-blue-600 hover:underline no-print"
+              >
+                + Add Item
+              </button>
+            )}
+          </div>
+          <OrderGuideCategoryComponent
+            categoryTitle={category}
+            items={items.map(item => [
+              item.name,
+              item.forecast,
+              item.unit,
+              item.actual,
+              item.variance,
+              item.isManual || false,
+            ])}
+            getStatusClass={getStatusClass}
+            getStatusIcon={getStatusIcon}
+          />
         </div>
-      </AnimatePresence>
+      ))
+    ) : (
+      <div className="text-center text-slate-500">No order guide data available.</div>
+    )}
+  </div>
+</AnimatePresence>
     </div>
   );
 };
