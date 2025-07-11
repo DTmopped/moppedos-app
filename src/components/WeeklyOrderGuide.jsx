@@ -2,22 +2,20 @@ import React, { useState, useEffect, useCallback } from 'react';
 import ReactDOMServer from 'react-dom/server';
 import { useData } from '@/contexts/DataContext';
 import { Button } from '@/components/ui/button.jsx';
-import { Printer, ShoppingBasket, Package, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, HelpCircle } from 'lucide-react';
+import {
+  Printer, ShoppingBasket, Package,
+  TrendingUp, TrendingDown, AlertTriangle,
+  CheckCircle2, HelpCircle
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import PrintableOrderGuide from './orderguide/PrintableOrderGuide.jsx';
 import OrderGuideCategoryComponent from './orderguide/OrderGuideCategory.jsx';
 
 const WeeklyOrderGuide = () => {
   const {
-    forecastData,
-    actualData,
-    guideData,
-    setGuideData,
-    setPrintDate,
-    adminMode,
-    setAdminMode,
-    manualAdditions,
-    setManualAdditions,
+    forecastData, actualData, guideData, setGuideData,
+    setPrintDate, adminMode, setAdminMode,
+    manualAdditions, setManualAdditions
   } = useData();
 
   const safeGuideData = typeof guideData === 'object' && guideData !== null ? guideData : {};
@@ -47,21 +45,25 @@ const WeeklyOrderGuide = () => {
         { name: 'Pulled Pork', forecast: Math.ceil(portionToLbs(4, plateGuests) + portionToLbs(6, sandwichGuests / 3)), unit: 'lbs' },
         { name: 'Chicken', forecast: Math.ceil(portionToLbs(4, plateGuests) + portionToLbs(6, sandwichGuests / 3)), unit: 'lbs' },
         { name: 'St. Louis Ribs', forecast: Math.ceil(portionToLbs(16, plateGuests)), unit: 'lbs' },
-        { name: 'Bone-in Short Rib', forecast: Math.ceil(portionToLbs(16, plateGuests)), unit: 'lbs' },
+        { name: 'Bone-in Short Rib', forecast: Math.ceil(portionToLbs(16, plateGuests)), unit: 'lbs' }
       ],
       Bread: [
         { name: 'Buns', forecast: sandwichGuests, unit: 'each' },
-        { name: 'Texas Toast', forecast: plateGuests, unit: 'each' },
+        { name: 'Texas Toast', forecast: plateGuests, unit: 'each' }
       ],
       Sides: [
-        ...sideItemsLbs.map(item => ({ name: item, forecast: Math.ceil(sidePortionLbs), unit: 'lbs' })),
+        ...sideItemsLbs.map(item => ({
+          name: item,
+          forecast: Math.ceil(sidePortionLbs),
+          unit: 'lbs'
+        })),
         { name: 'Corn Muffin', forecast: plateGuests, unit: 'each' },
-        { name: 'Honey Butter', forecast: plateGuests, unit: 'each' },
+        { name: 'Honey Butter', forecast: plateGuests, unit: 'each' }
       ],
       Sweets: [
         { name: 'Banana Pudding', forecast: plateGuests, unit: 'each' },
         { name: 'Key Lime Pie', forecast: plateGuests, unit: 'each' },
-        { name: 'Hummingbird Cake', forecast: plateGuests, unit: 'each' },
+        { name: 'Hummingbird Cake', forecast: plateGuests, unit: 'each' }
       ],
       Condiments: [
         { name: 'House Pickles (32oz)', forecast: Math.ceil((plateGuests * 3) / 50), unit: 'jars' },
@@ -71,7 +73,7 @@ const WeeklyOrderGuide = () => {
         { name: 'BBQ 3', forecast: 0, unit: 'oz' },
         { name: 'Hot Sauce 1', forecast: 0, unit: 'oz' },
         { name: 'Hot Sauce 2', forecast: 0, unit: 'oz' },
-        { name: 'Hot Sauce 3', forecast: 0, unit: 'oz' },
+        { name: 'Hot Sauce 3', forecast: 0, unit: 'oz' }
       ],
       PaperGoods: [
         { name: 'To-Go Cups', forecast: adjustedGuests * 3, unit: 'each' },
@@ -79,7 +81,7 @@ const WeeklyOrderGuide = () => {
         { name: 'Cutlery Kit', forecast: adjustedGuests, unit: 'each' },
         { name: 'To-Go Bag Small', forecast: 0, unit: 'each' },
         { name: 'To-Go Bag Large', forecast: 0, unit: 'each' },
-        { name: 'Moist Towelettes', forecast: adjustedGuests, unit: 'each' },
+        { name: 'Moist Towelettes', forecast: adjustedGuests, unit: 'each' }
       ],
       CleaningSupplies: [
         { name: 'Trash Bags', forecast: 0, unit: 'case' },
@@ -93,14 +95,17 @@ const WeeklyOrderGuide = () => {
         { name: 'Sanitizing Wipes', forecast: 0, unit: 'case' },
         { name: 'Green Scrubbies', forecast: 0, unit: 'pack' },
         { name: 'Metal Scrubbies', forecast: 0, unit: 'pack' },
-        { name: 'Broom', forecast: 0, unit: 'each' },
-      ],
+        { name: 'Broom', forecast: 0, unit: 'each' }
+      ]
     };
 
-    Object.entries(manualAdditions).forEach(([category, items]) => {
-      if (!guide[category]) guide[category] = [];
-      guide[category].push(...items);
-    });
+    // ✅ SAFELY ADD MANUAL ITEMS
+    if (manualAdditions && typeof manualAdditions === 'object') {
+      Object.entries(manualAdditions).forEach(([category, items]) => {
+        if (!guide[category]) guide[category] = [];
+        guide[category].push(...items);
+      });
+    }
 
     Object.keys(guide).forEach(category => {
       guide[category].forEach(item => {
@@ -118,7 +123,9 @@ const WeeklyOrderGuide = () => {
   }, [generateOrderGuide]);
 
   const handlePrint = () => {
-    const printable = ReactDOMServer.renderToStaticMarkup(<PrintableOrderGuide data={safeGuideData} />);
+    const printable = ReactDOMServer.renderToStaticMarkup(
+      <PrintableOrderGuide data={guideData} />
+    );
     const printWindow = window.open('', '_blank');
     printWindow.document.write(printable);
     printWindow.document.close();
@@ -133,16 +140,31 @@ const WeeklyOrderGuide = () => {
     const unit = prompt(`What unit for "${name}"? (e.g. lbs, each)`);
     if (!unit) return;
     const newItem = { name, forecast, unit, actual: 0, variance: (-forecast).toFixed(1), isManual: true };
-    setManualAdditions(prev => ({ ...prev, [category]: [...(prev[category] || []), newItem] }));
+    setManualAdditions(prev => ({
+      ...prev,
+      [category]: [...(prev[category] || []), newItem]
+    }));
   };
 
   const handleDeleteItem = (category, name) => {
-    setManualAdditions(prev => ({ ...prev, [category]: prev[category].filter(item => item.name !== name) }));
+    setManualAdditions(prev => ({
+      ...prev,
+      [category]: prev[category].filter(item => item.name !== name)
+    }));
+  };
+
+  const categoryIcons = {
+    Meats: ShoppingBasket,
+    Bread: Package,
+    Sides: ShoppingBasket,
+    Sweets: Package,
+    Condiments: ShoppingBasket,
+    PaperGoods: Package,
+    CleaningSupplies: Package
   };
 
   const getStatusClass = (forecast, actual) => {
-    if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0)
-      return 'bg-opacity-10 dark:bg-opacity-20';
+    if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0) return 'bg-opacity-10 dark:bg-opacity-20';
     const variance = ((actual - forecast) / forecast) * 100;
     if (Math.abs(variance) <= 10) return 'bg-green-500/10 dark:bg-green-500/20 text-green-700 dark:text-green-400';
     if (variance <= 30) return 'bg-yellow-500/10 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400';
@@ -153,13 +175,16 @@ const WeeklyOrderGuide = () => {
     if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0)
       return <HelpCircle className="h-4 w-4 text-slate-500" />;
     const variance = ((actual - forecast) / forecast) * 100;
-    if (Math.abs(variance) <= 10) return <CheckCircle2 className="h-4 w-4 text-green-500" />;
-    if (variance <= 30) return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+    if (Math.abs(variance) <= 10)
+      return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+    if (variance <= 30)
+      return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
     return <TrendingUp className="h-4 w-4 text-red-500" />;
   };
 
-  if (!safeGuideData || typeof safeGuideData !== 'object') {
-    return <div className="text-center p-8">Loading order guide data...</div>;
+  // ⏳ LOADING GUARD
+  if (!guideData || typeof guideData !== 'object' || Object.keys(guideData).length === 0) {
+    return <div className="text-center p-8">Generating order guide...</div>;
   }
 
   return (
@@ -183,41 +208,37 @@ const WeeklyOrderGuide = () => {
       </div>
 
       <AnimatePresence>
-  <div className="space-y-6">
-    {safeGuideData && typeof safeGuideData === 'object' && Object.keys(safeGuideData).length > 0 ? (
-      Object.entries(safeGuideData).map(([category, items]) => (
-        <div key={category}>
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="text-xl font-bold text-slate-800 dark:text-white">{category}</h2>
-            {adminMode && (
-              <button
-                onClick={() => handleAddItem(category)}
-                className="text-sm text-blue-600 hover:underline no-print"
-              >
-                + Add Item
-              </button>
-            )}
-          </div>
-          <OrderGuideCategoryComponent
-            categoryTitle={category}
-            items={items.map(item => [
-              item.name,
-              item.forecast,
-              item.unit,
-              item.actual,
-              item.variance,
-              item.isManual || false,
-            ])}
-            getStatusClass={getStatusClass}
-            getStatusIcon={getStatusIcon}
-          />
+        <div className="space-y-6">
+          {Object.entries(safeGuideData).map(([category, items]) => (
+            <div key={category}>
+              <div className="flex justify-between items-center mb-2">
+                <h2 className="text-xl font-bold text-slate-800 dark:text-white">{category}</h2>
+                {adminMode && (
+                  <button
+                    onClick={() => handleAddItem(category)}
+                    className="text-sm text-blue-600 hover:underline no-print"
+                  >
+                    + Add Item
+                  </button>
+                )}
+              </div>
+              <OrderGuideCategoryComponent
+                categoryTitle={category}
+                items={items.map(item => [
+                  item.name,
+                  item.forecast,
+                  item.unit,
+                  item.actual,
+                  item.variance,
+                  item.isManual || false,
+                ])}
+                getStatusClass={getStatusClass}
+                getStatusIcon={getStatusIcon}
+              />
+            </div>
+          ))}
         </div>
-      ))
-    ) : (
-      <div className="text-center text-slate-500">No order guide data available.</div>
-    )}
-  </div>
-</AnimatePresence>
+      </AnimatePresence>
     </div>
   );
 };
