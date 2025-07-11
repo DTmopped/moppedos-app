@@ -176,7 +176,7 @@ const WeeklyOrderGuide = () => {
 
       <AnimatePresence>
         <div className="space-y-6">
-          {guideData && typeof guideData === 'object' && Object.entries(guideData).map(([category, items]) => {
+          {(guideData && typeof guideData === 'object' ? Object.entries(guideData) : []).map(([category, items]) => {
   return (
     <div key={category}>
       <div className="flex justify-between items-center mb-2">
