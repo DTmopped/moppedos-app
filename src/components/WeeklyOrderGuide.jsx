@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import ReactDOMServer from 'react-dom/server';
 import { useData } from '@/contexts/DataContext';
 import { Button } from '@/components/ui/button.jsx';
 import { Printer, ShoppingBasket, Package, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, HelpCircle } from 'lucide-react';
@@ -41,11 +42,7 @@ const WeeklyOrderGuide = () => {
         { name: 'Texas Toast', forecast: plateGuests, unit: 'each' }
       ],
       Sides: [
-        ...sideItemsLbs.map(item => ({
-          name: item,
-          forecast: Math.ceil(sidePortionLbs),
-          unit: 'lbs'
-        })),
+        ...sideItemsLbs.map(item => ({ name: item, forecast: Math.ceil(sidePortionLbs), unit: 'lbs' })),
         { name: 'Corn Muffin', forecast: plateGuests, unit: 'each' },
         { name: 'Honey Butter', forecast: plateGuests, unit: 'each' }
       ],
@@ -95,11 +92,8 @@ const WeeklyOrderGuide = () => {
 
     Object.keys(guide).forEach(category => {
       guide[category].forEach(item => {
-        const actual = 0;
-        item.actual = actual;
-        item.variance = (typeof item.forecast === 'number' && typeof actual === 'number')
-          ? (actual - item.forecast).toFixed(1)
-          : '-';
+        item.actual = 0;
+        item.variance = (typeof item.forecast === 'number') ? (-item.forecast).toFixed(1) : '-';
       });
     });
 
@@ -122,34 +116,16 @@ const WeeklyOrderGuide = () => {
   const handleAddItem = (category) => {
     const name = prompt(`Add item to "${category}"\nEnter item name:`)?.trim();
     if (!name) return;
-
-    const forecastInput = prompt(`Enter forecasted amount for "${name}":`);
-    const forecast = parseFloat(forecastInput);
-    if (isNaN(forecast)) return alert('Must enter a number.');
-
-    const unit = prompt(`What unit is used for "${name}"? (e.g. lbs, each)`);
+    const forecast = parseFloat(prompt(`Enter forecasted amount for "${name}":`));
+    if (isNaN(forecast)) return;
+    const unit = prompt(`What unit for "${name}"? (e.g. lbs, each)`);
     if (!unit) return;
-
-    const newItem = {
-      name,
-      forecast,
-      unit,
-      actual: 0,
-      variance: (-forecast).toFixed(1),
-      isManual: true
-    };
-
-    setManualAdditions(prev => ({
-      ...prev,
-      [category]: [...(prev[category] || []), newItem]
-    }));
+    const newItem = { name, forecast, unit, actual: 0, variance: (-forecast).toFixed(1), isManual: true };
+    setManualAdditions(prev => ({ ...prev, [category]: [...(prev[category] || []), newItem] }));
   };
 
   const handleDeleteItem = (category, name) => {
-    setManualAdditions(prev => ({
-      ...prev,
-      [category]: prev[category].filter(item => item.name !== name)
-    }));
+    setManualAdditions(prev => ({ ...prev, [category]: prev[category].filter(item => item.name !== name) }));
   };
 
   const categoryIcons = {
@@ -166,7 +142,7 @@ const WeeklyOrderGuide = () => {
     if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0) return 'bg-opacity-10 dark:bg-opacity-20';
     const variance = ((actual - forecast) / forecast) * 100;
     if (Math.abs(variance) <= 10) return 'bg-green-500/10 dark:bg-green-500/20 text-green-700 dark:text-green-400';
-    if (variance > 10 && variance <= 30) return 'bg-yellow-500/10 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400';
+    if (variance <= 30) return 'bg-yellow-500/10 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400';
     return 'bg-red-500/10 dark:bg-red-500/20 text-red-700 dark:text-red-400';
   };
 
@@ -174,14 +150,13 @@ const WeeklyOrderGuide = () => {
     if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0) return <HelpCircle className="h-4 w-4 text-slate-500" />;
     const variance = ((actual - forecast) / forecast) * 100;
     if (Math.abs(variance) <= 10) return <CheckCircle2 className="h-4 w-4 text-green-500" />;
-    if (variance > 10 && variance <= 30) return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
-    if (variance > 30) return <TrendingUp className="h-4 w-4 text-red-500" />;
-    return <TrendingDown className="h-4 w-4 text-red-500" />;
+    if (variance <= 30) return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+    return <TrendingUp className="h-4 w-4 text-red-500" />;
   };
 
-if (!guideData || typeof guideData !== 'object') {
-  return <div className="text-center p-8">Loading order guide data...</div>;
-}
+  if (!guideData || typeof guideData !== 'object') {
+    return <div className="text-center p-8">Loading order guide data...</div>;
+  }
 
   return (
     <div className="p-4 md:p-6">
@@ -213,14 +188,7 @@ if (!guideData || typeof guideData !== 'object') {
               </div>
               <OrderGuideCategoryComponent
                 categoryTitle={category}
-                items={items.map(item => [
-                  item.name,
-                  item.forecast,
-                  item.unit,
-                  item.actual,
-                  item.variance,
-                  item.isManual || false
-                ])}
+                items={items.map(item => [item.name, item.forecast, item.unit, item.actual, item.variance, item.isManual || false])}
                 getStatusClass={getStatusClass}
                 getStatusIcon={getStatusIcon}
                 icon={categoryIcons[category] || ShoppingBasket}
