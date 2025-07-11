@@ -176,27 +176,36 @@ const WeeklyOrderGuide = () => {
 
       <AnimatePresence>
         <div className="space-y-6">
-          {guideData && typeof guideData === 'object' && Object.entries(guideData).map(([ca
-            <div key={category}>
-              <div className="flex justify-between items-center mb-2">
-                <h2 className="text-xl font-bold text-slate-800 dark:text-white">{category}</h2>
-                {adminMode && (
-                  <button onClick={() => handleAddItem(category)} className="text-sm text-blue-600 hover:underline no-print">
-                    + Add Item
-                  </button>
-                )}
-              </div>
-              <OrderGuideCategoryComponent
-                categoryTitle={category}
-                items={items.map(item => [item.name, item.forecast, item.unit, item.actual, item.variance, item.isManual || false])}
-                getStatusClass={getStatusClass}
-                getStatusIcon={getStatusIcon}
-                icon={categoryIcons[category] || ShoppingBasket}
-                onDeleteItem={handleDeleteItem}
-                adminMode={adminMode}
-              />
-            </div>
-          ))}
+          {guideData && typeof guideData === 'object' && Object.entries(guideData).map(([category, items]) => {
+  return (
+    <div key={category}>
+      <div className="flex justify-between items-center mb-2">
+        <h2 className="text-xl font-bold text-slate-800 dark:text-white">{category}</h2>
+        {adminMode && (
+          <button onClick={() => handleAddItem(category)} className="text-sm text-blue-600 hover:underline no-print">
+            + Add Item
+          </button>
+        )}
+      </div>
+      <OrderGuideCategoryComponent
+        categoryTitle={category}
+        items={items.map(item => [
+          item.name,
+          item.forecast,
+          item.unit,
+          item.actual,
+          item.variance,
+          item.isManual || false
+        ])}
+        getStatusClass={getStatusClass}
+        getStatusIcon={getStatusIcon}
+        icon={categoryIcons[category] || ShoppingBasket}
+        onDeleteItem={handleDeleteItem}
+        adminMode={adminMode}
+      />
+    </div>
+  );
+})}
         </div>
       </AnimatePresence>
     </div>
