@@ -9,7 +9,7 @@ import OrderGuideCategoryComponent from './orderguide/OrderGuideCategory.jsx';
 
 const WeeklyOrderGuide = () => {
   const { forecastData, actualData, guideData, setGuideData, setPrintDate, adminMode, setAdminMode, manualAdditions, setManualAdditions } = useData();
-
+  const safeGuideData = typeof guideData === 'object' && guideData !== null ? guideData : {};
   const generateOrderGuide = useCallback(() => {
     if (!forecastData || forecastData.length === 0) return;
 
@@ -176,7 +176,7 @@ const WeeklyOrderGuide = () => {
 
       <AnimatePresence>
   <div className="space-y-6">
-    {(guideData && typeof guideData === 'object' ? Object.entries(guideData) : []).map(([category, items]) => {
+    {Object.entries(safeGuideData).map(([category, items]) => {
       return (
         <div key={category}>
           <div className="flex justify-between items-center mb-2">
