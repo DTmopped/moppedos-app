@@ -223,18 +223,18 @@ const WeeklyOrderGuide = () => {
                 )}
               </div>
               <OrderGuideCategoryComponent
-                categoryTitle={category}
-                items={items.map(item => [
-                  item.name,
-                  item.forecast,
-                  item.unit,
-                  item.actual,
-                  item.variance,
-                  item.isManual || false,
-                ])}
-                getStatusClass={getStatusClass}
-                getStatusIcon={getStatusIcon}
-              />
+  categoryTitle={category}
+  items={(items || []).map(item => [
+    item.name,
+    item.forecast,
+    item.unit,
+    item.actual,
+    item.variance,
+    item.isManual || false,
+  ])}
+  getStatusClass={getStatusClass}
+  getStatusIcon={getStatusIcon}
+/>
             </div>
           ))}
         </div>
