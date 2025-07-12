@@ -226,13 +226,12 @@ const getStatusIcon = (item) => {
               </div>
              <OrderGuideCategoryComponent
   categoryTitle={category}
-  items={(items || []).map(item => ({
-    name: item.name,
-    forecast: item.forecast,
-    unit: item.unit,
-    actual: item.actual,
-    variance: item.variance,
-    isManual: item.isManual || false,
+  items={items.map(([name, forecast, unit, actual, variance]) => ({
+    name,
+    forecast,
+    unit,
+    actual,
+    variance,
   }))}
   getStatusClass={getStatusClass}
   getStatusIcon={getStatusIcon}
