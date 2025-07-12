@@ -163,24 +163,26 @@ const WeeklyOrderGuide = () => {
     CleaningSupplies: Package
   };
 
-  const getStatusClass = (forecast, actual) => {
-    if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0) return 'bg-opacity-10 dark:bg-opacity-20';
-    const variance = ((actual - forecast) / forecast) * 100;
-    if (Math.abs(variance) <= 10) return 'bg-green-500/10 dark:bg-green-500/20 text-green-700 dark:text-green-400';
-    if (variance <= 30) return 'bg-yellow-500/10 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400';
-    return 'bg-red-500/10 dark:bg-red-500/20 text-red-700 dark:text-red-400';
-  };
+  const getStatusClass = (item) => {
+  const { forecast, actual } = item;
+  if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0) return 'bg-opacity-10 dark:bg-opacity-20';
+  const variance = ((actual - forecast) / forecast) * 100;
+  if (Math.abs(variance) <= 10) return 'bg-green-500/10 dark:bg-green-500/20 text-green-700 dark:text-green-400';
+  if (variance <= 30) return 'bg-yellow-500/10 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400';
+  return 'bg-red-500/10 dark:bg-red-500/20 text-red-700 dark:text-red-400';
+};
 
-  const getStatusIcon = (forecast, actual) => {
-    if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0)
-      return <HelpCircle className="h-4 w-4 text-slate-500" />;
-    const variance = ((actual - forecast) / forecast) * 100;
-    if (Math.abs(variance) <= 10)
-      return <CheckCircle2 className="h-4 w-4 text-green-500" />;
-    if (variance <= 30)
-      return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
-    return <TrendingUp className="h-4 w-4 text-red-500" />;
-  };
+const getStatusIcon = (item) => {
+  const { forecast, actual } = item;
+  if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0)
+    return <HelpCircle className="h-4 w-4 text-slate-500" />;
+  const variance = ((actual - forecast) / forecast) * 100;
+  if (Math.abs(variance) <= 10)
+    return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+  if (variance <= 30)
+    return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+  return <TrendingUp className="h-4 w-4 text-red-500" />;
+};
 
   // ⏳ LOADING GUARD
   if (!guideData || typeof guideData !== 'object' || Object.keys(guideData).length === 0) {
