@@ -222,16 +222,16 @@ const WeeklyOrderGuide = () => {
                   </button>
                 )}
               </div>
-              <OrderGuideCategoryComponent
+             <OrderGuideCategoryComponent
   categoryTitle={category}
-  items={(items || []).map(item => [
-    item.name,
-    item.forecast,
-    item.unit,
-    item.actual,
-    item.variance,
-    item.isManual || false,
-  ])}
+  items={(items || []).map(item => ({
+    name: item.name,
+    forecast: item.forecast,
+    unit: item.unit,
+    actual: item.actual,
+    variance: item.variance,
+    isManual: item.isManual || false,
+  }))}
   getStatusClass={getStatusClass}
   getStatusIcon={getStatusIcon}
 />
