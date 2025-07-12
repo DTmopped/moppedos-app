@@ -4,8 +4,7 @@ import { useData } from '@/contexts/DataContext';
 import { Button } from '@/components/ui/button.jsx';
 import {
   Printer, ShoppingBasket, Package,
-  TrendingUp, TrendingDown, AlertTriangle,
-  CheckCircle2, HelpCircle
+  TrendingUp, AlertTriangle, CheckCircle2, HelpCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import PrintableOrderGuide from './orderguide/PrintableOrderGuide.jsx';
@@ -99,7 +98,6 @@ const WeeklyOrderGuide = () => {
       ]
     };
 
-    // ✅ SAFELY ADD MANUAL ITEMS
     if (manualAdditions && typeof manualAdditions === 'object') {
       Object.entries(manualAdditions).forEach(([category, items]) => {
         if (!guide[category]) guide[category] = [];
@@ -146,45 +144,27 @@ const WeeklyOrderGuide = () => {
     }));
   };
 
-  const handleDeleteItem = (category, name) => {
-    setManualAdditions(prev => ({
-      ...prev,
-      [category]: prev[category].filter(item => item.name !== name)
-    }));
-  };
-
-  const categoryIcons = {
-    Meats: ShoppingBasket,
-    Bread: Package,
-    Sides: ShoppingBasket,
-    Sweets: Package,
-    Condiments: ShoppingBasket,
-    PaperGoods: Package,
-    CleaningSupplies: Package
-  };
-
   const getStatusClass = (item) => {
-  const { forecast, actual } = item;
-  if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0) return 'bg-opacity-10 dark:bg-opacity-20';
-  const variance = ((actual - forecast) / forecast) * 100;
-  if (Math.abs(variance) <= 10) return 'bg-green-500/10 dark:bg-green-500/20 text-green-700 dark:text-green-400';
-  if (variance <= 30) return 'bg-yellow-500/10 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400';
-  return 'bg-red-500/10 dark:bg-red-500/20 text-red-700 dark:text-red-400';
-};
+    const { forecast, actual } = item;
+    if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0) return 'bg-opacity-10 dark:bg-opacity-20';
+    const variance = ((actual - forecast) / forecast) * 100;
+    if (Math.abs(variance) <= 10) return 'bg-green-500/10 dark:bg-green-500/20 text-green-700 dark:text-green-400';
+    if (variance <= 30) return 'bg-yellow-500/10 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400';
+    return 'bg-red-500/10 dark:bg-red-500/20 text-red-700 dark:text-red-400';
+  };
 
-const getStatusIcon = (item) => {
-  const { forecast, actual } = item;
-  if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0)
-    return <HelpCircle className="h-4 w-4 text-slate-500" />;
-  const variance = ((actual - forecast) / forecast) * 100;
-  if (Math.abs(variance) <= 10)
-    return <CheckCircle2 className="h-4 w-4 text-green-500" />;
-  if (variance <= 30)
-    return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
-  return <TrendingUp className="h-4 w-4 text-red-500" />;
-};
+  const getStatusIcon = (item) => {
+    const { forecast, actual } = item;
+    if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0)
+      return <HelpCircle className="h-4 w-4 text-slate-500" />;
+    const variance = ((actual - forecast) / forecast) * 100;
+    if (Math.abs(variance) <= 10)
+      return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+    if (variance <= 30)
+      return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+    return <TrendingUp className="h-4 w-4 text-red-500" />;
+  };
 
-  // ⏳ LOADING GUARD
   if (!guideData || typeof guideData !== 'object' || Object.keys(guideData).length === 0) {
     return <div className="text-center p-8">Generating order guide...</div>;
   }
@@ -224,18 +204,12 @@ const getStatusIcon = (item) => {
                   </button>
                 )}
               </div>
-             <OrderGuideCategoryComponent
-  categoryTitle={category}
-  items={items.map(([name, forecast, unit, actual, variance]) => ({
-    name,
-    forecast,
-    unit,
-    actual,
-    variance,
-  }))}
-  getStatusClass={getStatusClass}
-  getStatusIcon={getStatusIcon}
-/>
+              <OrderGuideCategoryComponent
+                categoryTitle={category}
+                items={items}
+                getStatusClass={getStatusClass}
+                getStatusIcon={getStatusIcon}
+              />
             </div>
           ))}
         </div>
