@@ -215,12 +215,12 @@ const WeeklyOrderGuide = () => {
           </button>
         )}
       </div>
-      <OrderGuideCategoryComponent
-        categoryTitle={category}
-        items={items}
-        getStatusClass={getStatusClass}
-        getStatusIcon={getStatusIcon}
-      />
+     <OrderGuideCategory
+  categoryTitle={category}
+  items={items}
+  getStatusClass={getStatusClass}
+  getStatusIcon={getStatusIcon}
+/>
     </div>
   );
 })}
