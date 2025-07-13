@@ -9,11 +9,11 @@ import {
 } from "@/components/ui/table.jsx";
 import { cn } from "@/lib/utils";
 
-const OrderGuideCategory = ({ ... }) => {
+const OrderGuideCategoryComponent = ({
   categoryTitle,
   items,
-  getStatusClass,
-  getStatusIcon
+  getStatusClass = () => '',
+  getStatusIcon = () => null
 }) => {
   const isValidArray = Array.isArray(items);
 
