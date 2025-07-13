@@ -18,18 +18,18 @@ const OrderGuideCategoryComponent = ({ categoryTitle, items, getStatusClass, get
           const { name, forecast, unit, actual, variance } = item;
 
           return (
-            <TableRow key={index} className={cn(getStatusClass(item))}>
-              <TableCell className="font-medium flex items-center gap-2">
-                {getStatusIcon(item)} {name}
-              </TableCell>
-              <TableCell className="text-right tabular-nums">{`${forecast} ${unit}`}</TableCell>
-              <TableCell className="text-right tabular-nums">
-                {actual !== undefined && actual !== null ? `${actual} ${unit}` : '-'}
-              </TableCell>
-              <TableCell className="text-right tabular-nums">
-                {variance !== undefined && variance !== null ? variance : '-'}
-              </TableCell>
-            </TableRow>
+           <TableRow key={index} className={cn(typeof getStatusClass === 'function' ? getStatusClass(item) : '')}>
+  <TableCell className="font-medium flex items-center gap-2">
+    {typeof getStatusIcon === 'function' ? getStatusIcon(item) : null} {name}
+  </TableCell>
+  <TableCell className="text-right tabular-nums">{`${forecast} ${unit}`}</TableCell>
+  <TableCell className="text-right tabular-nums">
+    {actual !== undefined && actual !== null ? `${actual} ${unit}` : '-'}
+  </TableCell>
+  <TableCell className="text-right tabular-nums">
+    {variance !== undefined && variance !== null ? variance : '-'}
+  </TableCell>
+</TableRow>
           );
         })}
       </TableBody>
