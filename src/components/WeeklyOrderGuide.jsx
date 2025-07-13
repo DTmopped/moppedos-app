@@ -201,6 +201,8 @@ const WeeklyOrderGuide = () => {
     {Object.entries(safeGuideData).map(([category, items]) => {
   console.log("Rendering category:", category);
   console.log("Items value:", items);
+  console.log("getStatusClass:", typeof getStatusClass);
+  console.log("getStatusIcon:", typeof getStatusIcon);
 
   return (
     <div key={category}>
