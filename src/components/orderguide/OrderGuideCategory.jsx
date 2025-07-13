@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/table.jsx";
 import { cn } from "@/lib/utils";
 
-const OrderGuideCategoryComponent = ({
+const OrderGuideCategory = ({ ... }) => {
   categoryTitle,
   items,
   getStatusClass,
@@ -64,4 +64,4 @@ const OrderGuideCategoryComponent = ({
   );
 };
 
-export default OrderGuideCategoryComponent;
+export default OrderGuideCategory;
