@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import PrintableOrderGuide from './orderguide/PrintableOrderGuide.jsx';
-import OrderGuideCategoryComponent from './orderguide/OrderGuideCategory.jsx';
+import OrderGuideCategory from "@/components/orderguide/OrderGuideCategory";
 
 const WeeklyOrderGuide = () => {
   const {
