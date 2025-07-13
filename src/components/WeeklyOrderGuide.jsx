@@ -97,6 +97,7 @@ const WeeklyOrderGuide = () => {
     { name: 'Broom', forecast: 0, unit: 'each' }
   ]
 };
+    console.log("Generated Order Guide:", guide);
 
     if (manualAdditions && typeof manualAdditions === 'object') {
       Object.entries(manualAdditions).forEach(([category, items]) => {
@@ -197,27 +198,32 @@ const WeeklyOrderGuide = () => {
     exit={{ opacity: 0 }}
     className="space-y-6"
   >
-    {Object.entries(safeGuideData).map(([category, items]) => (
-      <div key={category}>
-        <div className="flex justify-between items-center mb-2">
-          <h2 className="text-xl font-bold text-slate-800 dark:text-white">{category}</h2>
-          {adminMode && (
-            <button
-              onClick={() => handleAddItem(category)}
-              className="text-sm text-blue-600 hover:underline no-print"
-            >
-              + Add Item
-            </button>
-          )}
-        </div>
-        <OrderGuideCategoryComponent
-          categoryTitle={category}
-          items={items}
-          getStatusClass={getStatusClass}
-          getStatusIcon={getStatusIcon}
-        />
+    {Object.entries(safeGuideData).map(([category, items]) => {
+  console.log("Rendering category:", category);
+  console.log("Items value:", items);
+
+  return (
+    <div key={category}>
+      <div className="flex justify-between items-center mb-2">
+        <h2 className="text-xl font-bold text-slate-800 dark:text-white">{category}</h2>
+        {adminMode && (
+          <button
+            onClick={() => handleAddItem(category)}
+            className="text-sm text-blue-600 hover:underline no-print"
+          >
+            + Add Item
+          </button>
+        )}
       </div>
-    ))}
+      <OrderGuideCategoryComponent
+        categoryTitle={category}
+        items={items}
+        getStatusClass={getStatusClass}
+        getStatusIcon={getStatusIcon}
+      />
+    </div>
+  );
+})}
   </motion.div>
 </AnimatePresence>
     </div>
