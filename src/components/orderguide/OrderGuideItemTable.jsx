@@ -1,48 +1,43 @@
 import React from 'react';
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from 'components/ui/table.jsx';
-import { cn } from "@/lib/utils";
 
 const OrderGuideItemTable = ({ items, getStatusClass, getStatusIcon }) => {
-  // ✅ Defensive guards
-  const safeGetStatusClass = typeof getStatusClass === 'function'
-    ? getStatusClass
-    : () => '';
-  const safeGetStatusIcon = typeof getStatusIcon === 'function'
-    ? getStatusIcon
-    : () => null;
-
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead className="w-[40%]">Item</TableHead>
-          <TableHead className="text-right">Forecasted</TableHead>
-          <TableHead className="text-right">Actual</TableHead>
-          <TableHead className="text-right">Variance</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {items.map(({ name, forecast, unit, actual, variance }, index) => (
-          <TableRow
-            key={index}
-            className={cn(safeGetStatusClass({ name, forecast, unit, actual, variance }))}
-          >
-            <TableCell className="font-medium">{name}</TableCell>
-            <TableCell className="text-right tabular-nums">
-              {forecast} {unit}
-            </TableCell>
-            <TableCell className="text-right tabular-nums">
-              {actual !== undefined && actual !== null ? `${actual} ${unit}` : '-'}
-            </TableCell>
-            <TableCell className="text-right tabular-nums">
-              {variance !== undefined && variance !== null ? variance : '-'}
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+    <div className="overflow-x-auto">
+      <table className="min-w-full border border-gray-200 dark:border-gray-700">
+        <thead className="bg-gray-100 dark:bg-gray-800">
+          <tr>
+            <th className="text-left px-4 py-2 text-sm font-semibold">Item</th>
+            <th className="text-left px-4 py-2 text-sm font-semibold">Forecast</th>
+            <th className="text-left px-4 py-2 text-sm font-semibold">Actual</th>
+            <th className="text-left px-4 py-2 text-sm font-semibold">Variance</th>
+            <th className="text-left px-4 py-2 text-sm font-semibold">Unit</th>
+            <th className="text-left px-4 py-2 text-sm font-semibold">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((item, idx) => {
+            const statusClass =
+              typeof getStatusClass === 'function' ? getStatusClass(item) : '';
+            const statusIcon =
+              typeof getStatusIcon === 'function' ? getStatusIcon(item) : null;
+
+            return (
+              <tr
+                key={item.name + idx}
+                className={`border-t border-gray-200 dark:border-gray-700 ${statusClass}`}
+              >
+                <td className="px-4 py-2 text-sm font-medium">{item.name}</td>
+                <td className="px-4 py-2 text-sm">{item.forecast}</td>
+                <td className="px-4 py-2 text-sm">{item.actual}</td>
+                <td className="px-4 py-2 text-sm">{item.variance}</td>
+                <td className="px-4 py-2 text-sm">{item.unit}</td>
+                <td className="px-4 py-2 text-sm">{statusIcon}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   );
 };
 
