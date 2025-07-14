@@ -1,14 +1,17 @@
 import React from 'react';
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
-} from "components/ui/table.jsx";
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from 'components/ui/table.jsx';
 import { cn } from "@/lib/utils";
 
-const OrderGuideItemTable = ({ items, getStatusClass }) => {
-  // 🛡️ Defensive check for the function
+const OrderGuideItemTable = ({ items, getStatusClass, getStatusIcon }) => {
+  // ✅ Defensive guards
   const safeGetStatusClass = typeof getStatusClass === 'function'
     ? getStatusClass
-    : () => ''; // return empty string if not a function
+    : () => '';
+  const safeGetStatusIcon = typeof getStatusIcon === 'function'
+    ? getStatusIcon
+    : () => null;
 
   return (
     <Table>
@@ -24,13 +27,11 @@ const OrderGuideItemTable = ({ items, getStatusClass }) => {
         {items.map(({ name, forecast, unit, actual, variance }, index) => (
           <TableRow
             key={index}
-            className={cn(
-              safeGetStatusClass({ name, forecast, unit, actual, variance })
-            )}
+            className={cn(safeGetStatusClass({ name, forecast, unit, actual, variance }))}
           >
             <TableCell className="font-medium">{name}</TableCell>
             <TableCell className="text-right tabular-nums">
-              {`${forecast} ${unit}`}
+              {forecast} {unit}
             </TableCell>
             <TableCell className="text-right tabular-nums">
               {actual !== undefined && actual !== null ? `${actual} ${unit}` : '-'}
