@@ -199,10 +199,12 @@ const WeeklyOrderGuide = () => {
     className="space-y-6"
   >
     {Object.entries(safeGuideData).map(([category, items]) => {
-  console.log("Rendering category:", category);
-  console.log("Items value:", items);
-  console.log("getStatusClass:", typeof getStatusClass);
-  console.log("getStatusIcon:", typeof getStatusIcon);
+  console.log("🧪 Rendering category:", category);
+  console.log("➡️ Items value:", items);
+  console.log("➡️ Type of items:", typeof items);
+  console.log("➡️ items instanceof Array:", items instanceof Array);
+  console.log("➡️ getStatusClass:", typeof getStatusClass);
+  console.log("➡️ getStatusIcon:", typeof getStatusIcon);
 
   return (
     <div key={category}>
