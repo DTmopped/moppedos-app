@@ -1,6 +1,11 @@
 import React from 'react';
 
 const OrderGuideItemTable = ({ items, getStatusClass, getStatusIcon }) => {
+  if (!Array.isArray(items)) {
+    console.error("❌ Error: 'items' is not an array in OrderGuideItemTable:", items);
+    return <div className="text-red-500 p-2">Error: This category's data is not an array.</div>;
+  }
+
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full border border-gray-200 dark:border-gray-700">
