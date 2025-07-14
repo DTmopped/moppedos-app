@@ -198,8 +198,8 @@ const WeeklyOrderGuide = () => {
     exit={{ opacity: 0 }}
     className="space-y-6"
   >
-   {Object.entries(safeGuideData).map(([category, items]) => {
-  console.log("🖋 Rendering category:", category);
+  Object.entries(safeGuideData).map(([category, items]) => {
+  console.log("📝 Rendering category:", category);
   console.log("➡️ Items value:", items);
   console.log("➡️ Type of items:", typeof items);
   console.log("➡️ items instanceof Array:", items instanceof Array);
@@ -227,7 +227,7 @@ const WeeklyOrderGuide = () => {
       />
     </div>
   );
-})} // ✅ <-- Make sure this curly brace closes the `.map()`
+}); // <-- closes the .map
   </motion.div>
 </AnimatePresence>
     </div>
