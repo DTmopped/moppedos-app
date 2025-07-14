@@ -28,7 +28,7 @@ const OrderGuideItemTable = ({ items, getStatusClass, getStatusIcon }) => {
               statusClass = safeGetStatusClass(item);
               statusIcon = safeGetStatusIcon(item);
             } catch (err) {
-              console.warn(`⚠️ Error in status functions for item [${item.name}]:`, err);
+              console.warn(`⚠️ Error applying status functions for ${item.name}:`, err);
             }
 
             return (
