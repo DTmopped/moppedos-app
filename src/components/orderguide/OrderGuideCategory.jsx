@@ -5,9 +5,9 @@ const OrderGuideCategory = ({ categoryTitle, items, getStatusClass, getStatusIco
   const safeItems = Array.isArray(items) ? items : [];
 
   console.log("📦 [OrderGuideCategory] Rendering:", categoryTitle);
-  console.log("📦 Items:", safeItems);
-  console.log("📦 getStatusClass:", typeof getStatusClass);
-  console.log("📦 getStatusIcon:", typeof getStatusIcon);
+  console.log("🧾 Items:", safeItems);
+  console.log("🔍 getStatusClass typeof:", typeof getStatusClass, "| value:", getStatusClass);
+  console.log("🔍 getStatusIcon typeof:", typeof getStatusIcon, "| value:", getStatusIcon);
 
   const safeGetStatusClass = typeof getStatusClass === 'function' ? getStatusClass : () => '';
   const safeGetStatusIcon = typeof getStatusIcon === 'function' ? getStatusIcon : () => null;
