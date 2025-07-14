@@ -199,37 +199,35 @@ const WeeklyOrderGuide = () => {
     className="space-y-6"
   >
     {
-      Object.entries(safeGuideData).map(([category, items]) => {
-        console.log("📝 Rendering category:", category);
-        console.log("➡️ Items value:", items);
-        console.log("➡️ Type of items:", typeof items);
-        console.log("➡️ items instanceof Array:", items instanceof Array);
-        console.log("➡️ getStatusClass:", typeof getStatusClass);
-        console.log("➡️ getStatusIcon:", typeof getStatusIcon);
-
-        return (
-          <div key={category}>
-            <div className="flex justify-between items-center mb-2">
-              <h2 className="text-xl font-bold text-slate-800 dark:text-white">{category}</h2>
-              {adminMode && (
-                <button
-                  onClick={() => handleAddItem(category)}
-                  className="text-sm text-blue-600 hover:underline no-print"
-                >
-                  + Add Item
-                </button>
-              )}
-            </div>
-            <OrderGuideCategory
-              categoryTitle={category}
-              items={items}
-              getStatusClass={getStatusClass}
-              getStatusIcon={getStatusIcon}
-            />
-          </div>
-        );
-      })
+  Object.entries(safeGuideData).map(([category, items]) => {
+    if (!Array.isArray(items)) {
+      console.error(`❌ Skipping category "${category}" – items is not an array`, items);
+      return null;
     }
+
+    return (
+      <div key={category}>
+        <div className="flex justify-between items-center mb-2">
+          <h2 className="text-xl font-bold text-slate-800 dark:text-white">{category}</h2>
+          {adminMode && (
+            <button
+              onClick={() => handleAddItem(category)}
+              className="text-sm text-blue-600 hover:underline no-print"
+            >
+              + Add Item
+            </button>
+          )}
+        </div>
+        <OrderGuideCategory
+          categoryTitle={category}
+          items={items}
+          getStatusClass={getStatusClass}
+          getStatusIcon={getStatusIcon}
+        />
+      </div>
+    );
+  })
+}
   </motion.div>
 </AnimatePresence>
     </div>
