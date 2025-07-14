@@ -1,27 +1,21 @@
 import React from 'react';
-import OrderGuideItemTable from './OrderGuideItemTable';
+import OrderGuideItemTable from "./OrderGuideItemTable";
 
 const OrderGuideCategory = ({ categoryTitle, items, getStatusClass, getStatusIcon }) => {
-  // 🧪 Debug log to confirm function props
-  console.log(`🧪 [OrderGuideCategory] Props for ${categoryTitle}:`, {
-    getStatusClass,
-    getStatusIcon
-  });
+  const safeItems = Array.isArray(items) ? items : [];
 
-  // ✅ Safe fallback guards
-  const safeGetStatusClass = typeof getStatusClass === 'function'
-    ? getStatusClass
-    : () => '';
+  console.log("📦 [OrderGuideCategory] Rendering:", categoryTitle);
+  console.log("📦 Items:", safeItems);
+  console.log("📦 getStatusClass:", typeof getStatusClass);
+  console.log("📦 getStatusIcon:", typeof getStatusIcon);
 
-  const safeGetStatusIcon = typeof getStatusIcon === 'function'
-    ? getStatusIcon
-    : () => null;
+  const safeGetStatusClass = typeof getStatusClass === 'function' ? getStatusClass : () => '';
+  const safeGetStatusIcon = typeof getStatusIcon === 'function' ? getStatusIcon : () => null;
 
   return (
-    <div className="space-y-2">
-      <h3 className="text-lg font-semibold">{categoryTitle}</h3>
+    <div className="mb-6">
       <OrderGuideItemTable
-        items={Array.isArray(items) ? items : []}
+        items={safeItems}
         getStatusClass={safeGetStatusClass}
         getStatusIcon={safeGetStatusIcon}
       />
