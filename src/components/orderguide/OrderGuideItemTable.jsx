@@ -1,9 +1,10 @@
 import React from 'react';
 
 const OrderGuideItemTable = ({ items, getStatusClass, getStatusIcon }) => {
-  const safeItems = Array.isArray(items) ? items : [];
   const safeGetStatusClass = typeof getStatusClass === 'function' ? getStatusClass : () => '';
   const safeGetStatusIcon = typeof getStatusIcon === 'function' ? getStatusIcon : () => null;
+
+  const safeItems = Array.isArray(items) ? items : [];
 
   return (
     <div className="overflow-x-auto">
@@ -20,8 +21,15 @@ const OrderGuideItemTable = ({ items, getStatusClass, getStatusIcon }) => {
         </thead>
         <tbody>
           {safeItems.map((item, idx) => {
-            const statusClass = safeGetStatusClass(item);
-            const statusIcon = safeGetStatusIcon(item);
+            let statusClass = '';
+            let statusIcon = null;
+
+            try {
+              statusClass = safeGetStatusClass(item);
+              statusIcon = safeGetStatusIcon(item);
+            } catch (err) {
+              console.warn(`⚠️ Error in status functions for item [${item.name}]:`, err);
+            }
 
             return (
               <tr
