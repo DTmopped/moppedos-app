@@ -1,10 +1,19 @@
 import React from 'react';
 
 const OrderGuideItemTable = ({ items, getStatusClass, getStatusIcon }) => {
-  if (!Array.isArray(items)) {
-    console.error("❌ Error: 'items' is not an array in OrderGuideItemTable:", items);
-    return <div className="text-red-500 p-2">Error: This category's data is not an array.</div>;
-  }
+  const safeItems = Array.isArray(items) ? items : [];
+
+  const safeGetStatusClass = typeof getStatusClass === 'function'
+    ? getStatusClass
+    : () => '';
+
+  const safeGetStatusIcon = typeof getStatusIcon === 'function'
+    ? getStatusIcon
+    : () => null;
+
+  console.log("🧪 [ItemTable] Rendering table with items:", safeItems);
+  console.log("🧪 [ItemTable] getStatusClass type:", typeof getStatusClass);
+  console.log("🧪 [ItemTable] getStatusIcon type:", typeof getStatusIcon);
 
   return (
     <div className="overflow-x-auto">
@@ -20,11 +29,9 @@ const OrderGuideItemTable = ({ items, getStatusClass, getStatusIcon }) => {
           </tr>
         </thead>
         <tbody>
-          {items.map((item, idx) => {
-            const statusClass =
-              typeof getStatusClass === 'function' ? getStatusClass(item) : '';
-            const statusIcon =
-              typeof getStatusIcon === 'function' ? getStatusIcon(item) : null;
+          {safeItems.map((item, idx) => {
+            const statusClass = safeGetStatusClass(item);
+            const statusIcon = safeGetStatusIcon(item);
 
             return (
               <tr
