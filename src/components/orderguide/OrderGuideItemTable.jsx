@@ -1,9 +1,8 @@
-mport React from 'react';
+import React from 'react';
 
 const OrderGuideItemTable = ({ items, getStatusClass, getStatusIcon }) => {
   const safeGetStatusClass = typeof getStatusClass === 'function' ? getStatusClass : () => '';
   const safeGetStatusIcon = typeof getStatusIcon === 'function' ? getStatusIcon : () => null;
-
   const safeItems = Array.isArray(items) ? items : [];
 
   return (
@@ -26,7 +25,7 @@ const OrderGuideItemTable = ({ items, getStatusClass, getStatusIcon }) => {
 
             return (
               <tr
-                key={item.name + idx}
+                key={`${item.name}-${idx}`}
                 className={`border-t border-gray-200 dark:border-gray-700 ${statusClass}`}
               >
                 <td className="px-4 py-2 text-sm font-medium">{item.name}</td>
