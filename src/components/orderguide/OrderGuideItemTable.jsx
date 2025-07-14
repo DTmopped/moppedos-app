@@ -20,31 +20,35 @@ const OrderGuideItemTable = ({ items, getStatusClass, getStatusIcon }) => {
           </tr>
         </thead>
         <tbody>
-          {safeItems.map((item, idx) => {
-            let statusClass = '';
-            let statusIcon = null;
+         {safeItems.map((item, idx) => {
+  let statusClass = '';
+  let statusIcon = null;
 
-            try {
-              statusClass = safeGetStatusClass(item);
-              statusIcon = safeGetStatusIcon(item);
-            } catch (err) {
-              console.warn(`⚠️ Error applying status functions for ${item.name}:`, err);
-            }
+  console.log(`🧪 Item: ${item.name}`);
+  console.log("↪️ typeof getStatusClass:", typeof safeGetStatusClass);
+  console.log("↪️ typeof getStatusIcon:", typeof safeGetStatusIcon);
 
-            return (
-              <tr
-                key={item.name + idx}
-                className={`border-t border-gray-200 dark:border-gray-700 ${statusClass}`}
-              >
-                <td className="px-4 py-2 text-sm font-medium">{item.name}</td>
-                <td className="px-4 py-2 text-sm">{item.forecast}</td>
-                <td className="px-4 py-2 text-sm">{item.actual}</td>
-                <td className="px-4 py-2 text-sm">{item.variance}</td>
-                <td className="px-4 py-2 text-sm">{item.unit}</td>
-                <td className="px-4 py-2 text-sm">{statusIcon}</td>
-              </tr>
-            );
-          })}
+  try {
+    statusClass = safeGetStatusClass(item);
+    statusIcon = safeGetStatusIcon(item);
+  } catch (err) {
+    console.error(`❌ Error applying status functions for ${item.name}:`, err);
+  }
+
+  return (
+    <tr
+      key={item.name + idx}
+      className={`border-t border-gray-200 dark:border-gray-700 ${statusClass}`}
+    >
+      <td className="px-4 py-2 text-sm font-medium">{item.name}</td>
+      <td className="px-4 py-2 text-sm">{item.forecast}</td>
+      <td className="px-4 py-2 text-sm">{item.actual}</td>
+      <td className="px-4 py-2 text-sm">{item.variance}</td>
+      <td className="px-4 py-2 text-sm">{item.unit}</td>
+      <td className="px-4 py-2 text-sm">{statusIcon}</td>
+    </tr>
+  );
+})}
         </tbody>
       </table>
     </div>
