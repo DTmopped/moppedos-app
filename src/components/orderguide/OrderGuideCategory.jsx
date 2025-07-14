@@ -17,6 +17,13 @@ const OrderGuideCategory = ({
 }) => {
   const isValidArray = Array.isArray(items);
 
+console.log("🚨 OrderGuideCategory Props Debug:");
+console.log("➡️ categoryTitle:", categoryTitle);
+console.log("➡️ typeof getStatusClass:", typeof getStatusClass);
+console.log("➡️ typeof getStatusIcon:", typeof getStatusIcon);
+console.log("➡️ isValidArray:", isValidArray);
+console.log("➡️ items:", items);
+
   return (
     <Table>
       <TableHeader>
