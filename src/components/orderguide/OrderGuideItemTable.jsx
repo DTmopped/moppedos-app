@@ -3,6 +3,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "c
 import { cn } from "@/lib/utils";
 
 const OrderGuideItemTable = ({ items, getStatusClass }) => {
+  // Defensive check
+  const safeGetStatusClass = typeof getStatusClass === 'function'
+    ? getStatusClass
+    : () => '';
+
   return (
     <Table>
       <TableHeader>
@@ -15,7 +20,7 @@ const OrderGuideItemTable = ({ items, getStatusClass }) => {
       </TableHeader>
       <TableBody>
         {items.map(({ name, forecast, unit, actual, variance }, index) => (
-          <TableRow key={index} className={cn(getStatusClass({ name, forecast, unit, actual, variance }))}>
+          <TableRow key={index} className={cn(safeGetStatusClass({ name, forecast, unit, actual, variance }))}>
             <TableCell className="font-medium">{name}</TableCell>
             <TableCell className="text-right tabular-nums">{`${forecast} ${unit}`}</TableCell>
             <TableCell className="text-right tabular-nums">{actual !== undefined && actual !== null ? `${actual} ${unit}` : '-'}</TableCell>
