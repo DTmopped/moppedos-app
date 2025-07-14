@@ -1,73 +1,16 @@
 import React from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from "@/components/ui/table.jsx";
-import { cn } from "@/lib/utils";
+import OrderGuideItemTable from './OrderGuideItemTable';
 
-const OrderGuideCategory = ({
-  categoryTitle,
-  items,
-  getStatusClass = () => '',
-  getStatusIcon = () => null
-}) => {
-  const isValidArray = Array.isArray(items);
-
-console.log("🚨 OrderGuideCategory Props Debug:");
-console.log("➡️ categoryTitle:", categoryTitle);
-console.log("➡️ typeof getStatusClass:", typeof getStatusClass);
-console.log("➡️ typeof getStatusIcon:", typeof getStatusIcon);
-console.log("➡️ isValidArray:", isValidArray);
-console.log("➡️ items:", items);
-
+const OrderGuideCategory = ({ categoryTitle, items, getStatusClass, getStatusIcon }) => {
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead className="w-[40%]">Item</TableHead>
-          <TableHead className="text-right">Forecasted</TableHead>
-          <TableHead className="text-right">Actual</TableHead>
-          <TableHead className="text-right">Variance</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {isValidArray ? (
-          items.map((item, index) => {
-            const { name, forecast, unit, actual, variance } = item;
-
-            return (
-              <TableRow
-                key={index}
-                className={cn(
-                  typeof getStatusClass === 'function' ? getStatusClass(item) : ''
-                )}
-              >
-                <TableCell className="font-medium flex items-center gap-2">
-                  {typeof getStatusIcon === 'function' ? getStatusIcon(item) : null} {name}
-                </TableCell>
-                <TableCell className="text-right tabular-nums">{`${forecast} ${unit}`}</TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {actual !== undefined && actual !== null ? `${actual} ${unit}` : '-'}
-                </TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {variance !== undefined && variance !== null ? variance : '-'}
-                </TableCell>
-              </TableRow>
-            );
-          })
-        ) : (
-          <TableRow>
-            <TableCell colSpan={4} className="text-red-500 text-sm text-center">
-              ⚠️ Error: Invalid data for this category. Expected an array, got {typeof items}.
-            </TableCell>
-          </TableRow>
-        )}
-      </TableBody>
-    </Table>
+    <div className="space-y-2">
+      <h3 className="text-lg font-semibold">{categoryTitle}</h3>
+      <OrderGuideItemTable
+        items={items}
+        getStatusClass={getStatusClass}
+        getStatusIcon={getStatusIcon}
+      />
+    </div>
   );
 };
 
