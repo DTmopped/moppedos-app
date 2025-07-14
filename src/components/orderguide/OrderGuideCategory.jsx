@@ -2,7 +2,13 @@ import React from 'react';
 import OrderGuideItemTable from './OrderGuideItemTable';
 
 const OrderGuideCategory = ({ categoryTitle, items, getStatusClass, getStatusIcon }) => {
-  // Add fallback checks
+  // 🧪 Debug log to confirm function props
+  console.log(`🧪 [OrderGuideCategory] Props for ${categoryTitle}:`, {
+    getStatusClass,
+    getStatusIcon
+  });
+
+  // ✅ Safe fallback guards
   const safeGetStatusClass = typeof getStatusClass === 'function'
     ? getStatusClass
     : () => '';
@@ -15,7 +21,7 @@ const OrderGuideCategory = ({ categoryTitle, items, getStatusClass, getStatusIco
     <div className="space-y-2">
       <h3 className="text-lg font-semibold">{categoryTitle}</h3>
       <OrderGuideItemTable
-        items={items}
+        items={Array.isArray(items) ? items : []}
         getStatusClass={safeGetStatusClass}
         getStatusIcon={safeGetStatusIcon}
       />
