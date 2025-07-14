@@ -1,19 +1,10 @@
-import React from 'react';
+mport React from 'react';
 
 const OrderGuideItemTable = ({ items, getStatusClass, getStatusIcon }) => {
+  const safeGetStatusClass = typeof getStatusClass === 'function' ? getStatusClass : () => '';
+  const safeGetStatusIcon = typeof getStatusIcon === 'function' ? getStatusIcon : () => null;
+
   const safeItems = Array.isArray(items) ? items : [];
-
-  const safeGetStatusClass = typeof getStatusClass === 'function'
-    ? getStatusClass
-    : () => '';
-
-  const safeGetStatusIcon = typeof getStatusIcon === 'function'
-    ? getStatusIcon
-    : () => null;
-
-  console.log("🧪 [ItemTable] Rendering table with items:", safeItems);
-  console.log("🧪 [ItemTable] getStatusClass type:", typeof getStatusClass);
-  console.log("🧪 [ItemTable] getStatusIcon type:", typeof getStatusIcon);
 
   return (
     <div className="overflow-x-auto">
