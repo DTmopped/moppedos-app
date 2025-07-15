@@ -11,9 +11,10 @@ import OrderGuideCategory from "@/components/orderguide/OrderGuideCategory";
 
 const WeeklyOrderGuide = () => {
   const {
-    forecastData, actualData, guideData, setGuideData,
-    setPrintDate, adminMode, setAdminMode,
-    manualAdditions, setManualAdditions
+    forecastData,
+    actualData,
+    guideData,
+    setGuideData
   } = useData();
 
   const safeGuideData = typeof guideData === 'object' && guideData !== null ? guideData : {};
