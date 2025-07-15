@@ -205,23 +205,32 @@ const getStatusIcon = useCallback((item) => {
             }
 
             return (
-              <div key={category}>
-                <div className="flex justify-between items-center mb-2">
-                  <h2 className="text-xl font-bold">{category}</h2>
-                  {adminMode && (
-                    <button onClick={() => handleAddItem(category)} className="text-sm text-blue-600 hover:underline no-print">
-                      + Add Item
-                    </button>
-                  )}
-                </div>
-                <OrderGuideCategory
-                  categoryTitle={category}
-                  items={items}
-                  getStatusClass={getStatusClass}
-                  getStatusIcon={getStatusIcon}
-                />
-              </div>
-            );
+  <div key={category}>
+    <div className="flex justify-between items-center mb-2">
+      <h2 className="text-xl font-bold">{category}</h2>
+      {adminMode && (
+        <button onClick={() => handleAddItem(category)} className="text-sm text-blue-600 hover:underline no-print">
+          + Add Item
+        </button>
+      )}
+    </div>
+
+    {/* 🔍 Debugging Logs */}
+    {console.log("🔍 Category:", category)}
+    {console.log("📦 Items:", items)}
+    {console.log("📐 IsArray:", Array.isArray(items))}
+    {items?.forEach((item, idx) => {
+      console.log(`   [${idx}]`, item, typeof item, typeof getStatusClass);
+    })}
+
+    <OrderGuideCategory
+      categoryTitle={category}
+      items={items}
+      getStatusClass={getStatusClass}
+      getStatusIcon={getStatusIcon}
+    />
+  </div>
+);
           })}
         </motion.div>
       </AnimatePresence>
