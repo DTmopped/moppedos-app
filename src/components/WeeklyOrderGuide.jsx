@@ -98,12 +98,15 @@ const WeeklyOrderGuide = () => {
     };
 
     if (manualAdditions && typeof manualAdditions === 'object') {
-      Object.entries(manualAdditions).forEach(([category, items]) => {
-        if (!guide[category]) guide[category] = [];
-        guide[category].push(...items);
-      });
+  Object.entries(manualAdditions).forEach(([category, items]) => {
+    if (!guide[category]) guide[category] = [];
+    if (Array.isArray(items)) {
+      guide[category].push(...items);
+    } else {
+      console.warn(`⚠️ Skipped "${category}" – manual items not an array:`, items);
     }
-
+  });
+}
     Object.keys(guide).forEach(category => {
       guide[category].forEach(item => {
         item.actual = 0;
@@ -117,8 +120,12 @@ const WeeklyOrderGuide = () => {
   }, [forecastData, actualData, manualAdditions]);
 
   useEffect(() => {
-    generateOrderGuide();
-  }, [generateOrderGuide]);
+  Object.entries(safeGuideData).forEach(([category, val]) => {
+    if (!Array.isArray(val)) {
+      console.error(`❌ guideData["${category}"] is not an array:`, val);
+    }
+  });
+}, [safeGuideData]);
 
   const handlePrint = () => {
     const printable = ReactDOMServer.renderToStaticMarkup(
