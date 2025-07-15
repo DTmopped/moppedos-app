@@ -18,7 +18,8 @@ export const DataProvider = ({ children }) => {
   const [actualData, setActualData] = useState(initialActualData);
   const [posData, setPosData] = useState(initialPosData);
   const [printDate, setPrintDate] = useState(null);
-  
+  const [guideData, setGuideData] = useState({});
+  const [manualAdditions, setManualAdditions] = useState({});
   // Optional: persist forecastData to localStorage on change
   useEffect(() => {
     localStorage.setItem("weeklyForecastResults", JSON.stringify(forecastData));
@@ -92,21 +93,23 @@ export const DataProvider = ({ children }) => {
   }, []);
 
   return (
-    <DataContext.Provider value={{
-  forecastData,
-  actualData,
-  posData,
-  setForecastData,
-  setPosData,
-  addForecastEntry,
-  addActualEntry,
-  isAdminMode,
-  toggleAdminMode,
-  adminSettings,
-  updateAdminSetting,
-  printDate,              // ✅ ADD THIS
-  setPrintDate            // ✅ AND THIS
-}}>
+  <DataContext.Provider value={{
+    forecastData,
+    actualData,
+    posData,
+    setForecastData,
+    setPosData,
+    addForecastEntry,
+    addActualEntry,
+    isAdminMode,
+    toggleAdminMode,
+    adminSettings,
+    updateAdminSetting,
+    guideData,
+    setGuideData,
+    manualAdditions,
+    setManualAdditions
+  }}>
       {children}
     </DataContext.Provider>
   );
