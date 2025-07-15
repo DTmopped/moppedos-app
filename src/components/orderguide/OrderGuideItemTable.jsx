@@ -28,12 +28,16 @@ const OrderGuideItemTable = ({ items, getStatusClass, getStatusIcon }) => {
   console.log("↪️ typeof getStatusClass:", typeof safeGetStatusClass);
   console.log("↪️ typeof getStatusIcon:", typeof safeGetStatusIcon);
 
-  try {
+ try {
+  if (typeof safeGetStatusClass === 'function') {
     statusClass = safeGetStatusClass(item);
-    statusIcon = safeGetStatusIcon(item);
-  } catch (err) {
-    console.error(`❌ Error applying status functions for ${item.name}:`, err);
   }
+  if (typeof safeGetStatusIcon === 'function') {
+    statusIcon = safeGetStatusIcon(item);
+  }
+} catch (err) {
+  console.error(`❌ Error applying status logic for ${item?.name || 'unknown item'}`, err);
+}
 
   return (
     <tr
