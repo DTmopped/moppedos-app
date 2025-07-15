@@ -144,26 +144,26 @@ const WeeklyOrderGuide = () => {
     }));
   };
 
-  const getStatusClass = (item) => {
-    const { forecast, actual } = item;
-    if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0) return '';
-    const variance = ((actual - forecast) / forecast) * 100;
-    if (Math.abs(variance) <= 10) return 'bg-green-500/10 text-green-700';
-    if (variance <= 30) return 'bg-yellow-500/10 text-yellow-700';
-    return 'bg-red-500/10 text-red-700';
-  };
+ const getStatusClass = useCallback((item) => {
+  const { forecast, actual } = item;
+  if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0) return '';
+  const variance = ((actual - forecast) / forecast) * 100;
+  if (Math.abs(variance) <= 10) return 'bg-green-500/10 text-green-700';
+  if (variance <= 30) return 'bg-yellow-500/10 text-yellow-700';
+  return 'bg-red-500/10 text-red-700';
+}, []);
 
-  const getStatusIcon = (item) => {
-    const { forecast, actual } = item;
-    if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0)
-      return <HelpCircle className="h-4 w-4 text-slate-500" />;
-    const variance = ((actual - forecast) / forecast) * 100;
-    if (Math.abs(variance) <= 10)
-      return <CheckCircle2 className="h-4 w-4 text-green-500" />;
-    if (variance <= 30)
-      return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
-    return <TrendingUp className="h-4 w-4 text-red-500" />;
-  };
+const getStatusIcon = useCallback((item) => {
+  const { forecast, actual } = item;
+  if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0)
+    return <HelpCircle className="h-4 w-4 text-slate-500" />;
+  const variance = ((actual - forecast) / forecast) * 100;
+  if (Math.abs(variance) <= 10)
+    return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+  if (variance <= 30)
+    return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+  return <TrendingUp className="h-4 w-4 text-red-500" />;
+}, []);
 
   if (!guideData || typeof guideData !== 'object' || Object.keys(guideData).length === 0) {
     return <div className="text-center p-8">Generating order guide...</div>;
