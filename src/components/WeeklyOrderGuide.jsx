@@ -127,6 +127,13 @@ const WeeklyOrderGuide = () => {
   });
 }, [safeGuideData]);
 
+  useEffect(() => {
+  if (!guideData || Object.keys(guideData).length === 0) {
+    console.log("🔁 Calling generateOrderGuide on mount");
+    generateOrderGuide();
+  }
+}, [generateOrderGuide, guideData]);
+
   const handlePrint = () => {
     const printable = ReactDOMServer.renderToStaticMarkup(
       <PrintableOrderGuide data={guideData} />
