@@ -120,6 +120,18 @@ const WeeklyOrderGuide = () => {
     generateOrderGuide();
   }, [generateOrderGuide]);
 
+  // ✅ INLINE DEBUGGING LOGS MOVED HERE
+  useEffect(() => {
+    Object.entries(safeGuideData).forEach(([category, items]) => {
+      console.log("🔍 Category:", category);
+      console.log("📦 Items:", items);
+      console.log("📐 IsArray:", Array.isArray(items));
+      items?.forEach((item, idx) => {
+        console.log(`   [${idx}]`, item, typeof item, typeof getStatusClass);
+      });
+    });
+  }, [safeGuideData]);
+
   const handlePrint = () => {
     const printable = ReactDOMServer.renderToStaticMarkup(
       <PrintableOrderGuide data={guideData} />
@@ -144,26 +156,26 @@ const WeeklyOrderGuide = () => {
     }));
   };
 
- const getStatusClass = useCallback((item) => {
-  const { forecast, actual } = item;
-  if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0) return '';
-  const variance = ((actual - forecast) / forecast) * 100;
-  if (Math.abs(variance) <= 10) return 'bg-green-500/10 text-green-700';
-  if (variance <= 30) return 'bg-yellow-500/10 text-yellow-700';
-  return 'bg-red-500/10 text-red-700';
-}, []);
+  const getStatusClass = useCallback((item) => {
+    const { forecast, actual } = item;
+    if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0) return '';
+    const variance = ((actual - forecast) / forecast) * 100;
+    if (Math.abs(variance) <= 10) return 'bg-green-500/10 text-green-700';
+    if (variance <= 30) return 'bg-yellow-500/10 text-yellow-700';
+    return 'bg-red-500/10 text-red-700';
+  }, []);
 
-const getStatusIcon = useCallback((item) => {
-  const { forecast, actual } = item;
-  if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0)
-    return <HelpCircle className="h-4 w-4 text-slate-500" />;
-  const variance = ((actual - forecast) / forecast) * 100;
-  if (Math.abs(variance) <= 10)
-    return <CheckCircle2 className="h-4 w-4 text-green-500" />;
-  if (variance <= 30)
-    return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
-  return <TrendingUp className="h-4 w-4 text-red-500" />;
-}, []);
+  const getStatusIcon = useCallback((item) => {
+    const { forecast, actual } = item;
+    if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0)
+      return <HelpCircle className="h-4 w-4 text-slate-500" />;
+    const variance = ((actual - forecast) / forecast) * 100;
+    if (Math.abs(variance) <= 10)
+      return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+    if (variance <= 30)
+      return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+    return <TrendingUp className="h-4 w-4 text-red-500" />;
+  }, []);
 
   if (!guideData || typeof guideData !== 'object' || Object.keys(guideData).length === 0) {
     return <div className="text-center p-8">Generating order guide...</div>;
@@ -198,39 +210,29 @@ const getStatusIcon = useCallback((item) => {
           className="space-y-6"
         >
           {Object.entries(safeGuideData).map(([category, items]) => {
-            console.log(`📦 Rendering category: ${category}`);
             if (!Array.isArray(items)) {
               console.warn(`❌ Skipping "${category}" — items is not an array:`, items);
               return null;
             }
 
             return (
-  <div key={category}>
-    <div className="flex justify-between items-center mb-2">
-      <h2 className="text-xl font-bold">{category}</h2>
-      {adminMode && (
-        <button onClick={() => handleAddItem(category)} className="text-sm text-blue-600 hover:underline no-print">
-          + Add Item
-        </button>
-      )}
-    </div>
-
-    {/* 🔍 Debugging Logs */}
-    {console.log("🔍 Category:", category)}
-    {console.log("📦 Items:", items)}
-    {console.log("📐 IsArray:", Array.isArray(items))}
-    {items?.forEach((item, idx) => {
-      console.log(`   [${idx}]`, item, typeof item, typeof getStatusClass);
-    })}
-
-    <OrderGuideCategory
-      categoryTitle={category}
-      items={items}
-      getStatusClass={getStatusClass}
-      getStatusIcon={getStatusIcon}
-    />
-  </div>
-);
+              <div key={category}>
+                <div className="flex justify-between items-center mb-2">
+                  <h2 className="text-xl font-bold">{category}</h2>
+                  {adminMode && (
+                    <button onClick={() => handleAddItem(category)} className="text-sm text-blue-600 hover:underline no-print">
+                      + Add Item
+                    </button>
+                  )}
+                </div>
+                <OrderGuideCategory
+                  categoryTitle={category}
+                  items={items}
+                  getStatusClass={getStatusClass}
+                  getStatusIcon={getStatusIcon}
+                />
+              </div>
+            );
           })}
         </motion.div>
       </AnimatePresence>
