@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 
-const PrintableOrderGuide = ({ guideData, printDate }) => {
+const PrintableOrderGuide = forwardRef(({ guideData, printDate }, ref) => {
   if (!guideData) {
     return <div className="p-4">Loading print data...</div>;
   }
@@ -16,7 +16,7 @@ const PrintableOrderGuide = ({ guideData, printDate }) => {
   };
 
   return (
-    <div className="printable-order-guide-container p-4 font-sans">
+    <div ref={ref} className="printable-order-guide-container p-4 font-sans">
       <style>
         {`
           @media print {
@@ -102,8 +102,12 @@ const PrintableOrderGuide = ({ guideData, printDate }) => {
                 const forecast = item.forecast !== undefined ? item.forecast : item[1];
                 const unit = item.unit || item[2] || "";
                 const actual = item.actual !== undefined ? item.actual : (item.posDataValue !== undefined ? item.posDataValue : 0);
-                const variance = item.variance !== undefined ? item.variance : (typeof forecast === 'number' && typeof actual === 'number' ? (actual - forecast).toFixed(1) : "-");
-                
+                const variance = item.variance !== undefined
+                  ? item.variance
+                  : (typeof forecast === 'number' && typeof actual === 'number'
+                      ? (actual - forecast).toFixed(1)
+                      : "-");
+
                 let statusClass = "";
                 if (typeof forecast === 'number' && typeof actual === 'number' && forecast !== 0) {
                   const variancePercent = ((actual - forecast) / forecast) * 100;
@@ -128,6 +132,6 @@ const PrintableOrderGuide = ({ guideData, printDate }) => {
       ))}
     </div>
   );
-};
+});
 
 export default PrintableOrderGuide;
