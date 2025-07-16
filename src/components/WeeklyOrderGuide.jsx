@@ -14,7 +14,11 @@ const WeeklyOrderGuide = () => {
     forecastData,
     actualData,
     guideData,
-    setGuideData
+    setGuideData,
+    setPrintDate,
+    adminMode,
+    manualAdditions,      // ✅ this needs to be in your useData() context
+    setManualAdditions,   // ✅ this too
   } = useData();
 
   const safeGuideData = typeof guideData === 'object' && guideData !== null ? guideData : {};
@@ -98,7 +102,7 @@ const WeeklyOrderGuide = () => {
       ]
     };
 
-    if (manualAdditions && typeof manualAdditions === 'object') {
+    if (adminMode && manualAdditions && typeof manualAdditions === 'object') {
   Object.entries(manualAdditions).forEach(([category, items]) => {
     if (!guide[category]) guide[category] = [];
     if (Array.isArray(items)) {
