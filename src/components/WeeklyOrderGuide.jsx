@@ -170,30 +170,111 @@ const WeeklyOrderGuide = () => {
   }, [generateOrderGuide, guideData]);
 
 const handlePrint = () => {
-  const html = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>Print Test</title>
-        <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-      </head>
-      <body class="p-8">
-        <h1 class="text-2xl font-bold">This is a test</h1>
-        <p>If you can see this, then rendering works.</p>
-      </body>
-    </html>
-  `;
+  if (!guideData) return;
+
+  const formatDate = (date) =>
+    new Date(date).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
 
   const printWindow = window.open('', '_blank');
-  if (printWindow) {
-    printWindow.document.write(html);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-    }, 500);
-  }
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>Order Guide</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            font-size: 10pt;
+            color: #000;
+          }
+          h1 {
+            font-size: 16pt;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 0;
+          }
+          h2 {
+            font-size: 14pt;
+            margin-top: 24px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 4px;
+          }
+          .date {
+            text-align: center;
+            font-size: 9pt;
+            margin-bottom: 20px;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+          }
+          th, td {
+            border: 1px solid #ccc;
+            padding: 6px;
+            text-align: left;
+          }
+          th {
+            background-color: #f0f0f0;
+          }
+          .item-name {
+            font-weight: bold;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>Mopped OS – Weekly Order Guide</h1>
+        <div class="date">Printed on: ${formatDate(new Date())}</div>
+
+        ${Object.entries(guideData).map(([category, items]) => `
+          <h2>${category}</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Forecasted</th>
+                <th>Actual</th>
+                <th>Variance</th>
+                <th>Unit</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${items.map((item) => {
+                const itemName = item.name || item[0];
+                const forecast = item.forecast ?? item[1] ?? 0;
+                const unit = item.unit || item[2] || '';
+                const actual = item.actual ?? item.posDataValue ?? 0;
+                const variance = (typeof forecast === 'number' && typeof actual === 'number')
+                  ? (actual - forecast).toFixed(1)
+                  : '-';
+
+                return `
+                  <tr>
+                    <td class="item-name">${itemName}</td>
+                    <td>${forecast.toLocaleString()}</td>
+                    <td>${actual.toLocaleString()}</td>
+                    <td>${variance}</td>
+                    <td>${unit}</td>
+                  </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        `).join('')}
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+  printWindow.focus();
+  setTimeout(() => {
+    printWindow.print();
+    printWindow.close();
+  }, 500);
 };
 
   const handleAddItem = (category) => {
