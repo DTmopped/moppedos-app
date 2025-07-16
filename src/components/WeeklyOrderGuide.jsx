@@ -26,33 +26,34 @@ const WeeklyOrderGuide = () => {
   const safeGuideData = typeof guideData === 'object' && guideData !== null ? guideData : {};
 
   // ✅ Supabase sync helper
-  const syncManualAdditionsToSupabase = async (manualAdditions, printDate) => {
-    if (!manualAdditions || typeof manualAdditions !== 'object') return;
-    const rows = [];
+ const syncManualAdditionsToSupabase = async (manualAdditions, printDate) => {
+  if (!manualAdditions || typeof manualAdditions !== 'object') return;
 
-    Object.entries(manualAdditions).forEach(([category, items]) => {
-      if (!Array.isArray(items)) return;
-      items.forEach(item => {
-        rows.push({
-          guide_date: printDate.toISOString().split('T')[0],
-          category,
-          item_name: item.name,
-          forecast: item.forecast,
-          unit: item.unit,
-          is_manual: true
-        });
+  const rows = [];
+
+  Object.entries(manualAdditions).forEach(([category, items]) => {
+    if (!Array.isArray(items)) return;
+    items.forEach(item => {
+      rows.push({
+        guide_date: printDate.toISOString().split('T')[0],
+        category,
+        item_name: item.name,
+        forecast: item.forecast,
+        unit: item.unit,
+        is_manual: true
       });
     });
+  });
 
-    if (rows.length > 0) {
-      const { error } = await supabase.from('manual_additions').insert(rows);
-      if (error) {
-        console.error("❌ Supabase insert error:", error.message);
-      } else {
-        console.log("✅ Manual additions synced to Supabase");
-      }
+  if (rows.length > 0) {
+    const { error } = await supabase.from('manual_additions').insert(rows);
+    if (error) {
+      console.error("❌ Supabase insert error:", error.message);
+    } else {
+      console.log("✅ Manual additions synced to Supabase");
     }
-  };
+  }
+};
 
   const generateOrderGuide = useCallback(() => {
     if (!forecastData || forecastData.length === 0) return;
