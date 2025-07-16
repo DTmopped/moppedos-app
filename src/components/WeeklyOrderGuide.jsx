@@ -8,6 +8,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import PrintableOrderGuide from './orderguide/PrintableOrderGuide.jsx';
 import OrderGuideCategory from "@/components/orderguide/OrderGuideCategory";
+import { supabase } from '@/lib/supabaseClient'; // ✅ Supabase
 
 const WeeklyOrderGuide = () => {
   const {
@@ -17,12 +18,39 @@ const WeeklyOrderGuide = () => {
     setGuideData,
     setPrintDate,
     isAdminMode: adminMode,
-    toggleAdminMode,         // ✅ Added
+    toggleAdminMode,
     manualAdditions,
     setManualAdditions
   } = useData();
 
   const safeGuideData = typeof guideData === 'object' && guideData !== null ? guideData : {};
+
+  // ✅ Supabase sync helper
+  const syncManualAdditionsToSupabase = async (manualAdditions, printDate) => {
+    const rows = [];
+
+    Object.entries(manualAdditions).forEach(([category, items]) => {
+      items.forEach(item => {
+        rows.push({
+          guide_date: printDate.toISOString().split('T')[0],
+          category,
+          item_name: item.name,
+          forecast: item.forecast,
+          unit: item.unit,
+          is_manual: true
+        });
+      });
+    });
+
+    if (rows.length > 0) {
+      const { error } = await supabase.from('manual_additions').insert(rows);
+      if (error) {
+        console.error("❌ Failed to sync manual additions:", error.message);
+      } else {
+        console.log("✅ Synced manual additions to Supabase");
+      }
+    }
+  };
 
   const generateOrderGuide = useCallback(() => {
     if (!forecastData || forecastData.length === 0) return;
@@ -103,6 +131,7 @@ const WeeklyOrderGuide = () => {
       ]
     };
 
+    // ✅ Inject manual items
     if (adminMode && manualAdditions && typeof manualAdditions === 'object') {
       Object.entries(manualAdditions).forEach(([category, items]) => {
         if (!guide[category]) guide[category] = [];
@@ -123,16 +152,11 @@ const WeeklyOrderGuide = () => {
 
     console.log("✅ Generated Order Guide:", guide);
     setGuideData(guide);
-    setPrintDate(new Date());
-  }, [forecastData, actualData, manualAdditions, adminMode]);
 
-  useEffect(() => {
-    Object.entries(safeGuideData).forEach(([category, val]) => {
-      if (!Array.isArray(val)) {
-        console.error(`❌ guideData["${category}"] is not an array:`, val);
-      }
-    });
-  }, [safeGuideData]);
+    const now = new Date();
+    setPrintDate(now);
+    syncManualAdditionsToSupabase(manualAdditions, now); // ✅ Save to Supabase
+  }, [forecastData, actualData, manualAdditions, adminMode]);
 
   useEffect(() => {
     if (!guideData || Object.keys(guideData).length === 0) {
