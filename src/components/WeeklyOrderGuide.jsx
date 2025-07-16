@@ -8,9 +8,9 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import PrintableOrderGuide from './orderguide/PrintableOrderGuide.jsx';
 import OrderGuideCategory from "@/components/orderguide/OrderGuideCategory";
-import { supabase } from '@/lib/supabaseClient'; // ✅ Supabase
+import { supabase } from '@/lib/supabaseClient';
 
-// ✅ Moved here to avoid being undefined when called inside generateOrderGuide
+// ✅ Manual sync — works safely when called inside generateOrderGuide
 const syncManualAdditionsToSupabase = async (manualAdditions, printDate) => {
   const rows = [];
 
@@ -131,7 +131,7 @@ const WeeklyOrderGuide = () => {
       ]
     };
 
-    // ✅ Inject manual items
+    // ✅ Inject manual additions
     if (adminMode && manualAdditions && typeof manualAdditions === 'object') {
       Object.entries(manualAdditions).forEach(([category, items]) => {
         if (!guide[category]) guide[category] = [];
@@ -143,6 +143,7 @@ const WeeklyOrderGuide = () => {
       });
     }
 
+    // Attach actual + variance
     Object.keys(guide).forEach(category => {
       guide[category].forEach(item => {
         item.actual = 0;
@@ -150,12 +151,15 @@ const WeeklyOrderGuide = () => {
       });
     });
 
-    console.log("✅ Generated Order Guide:", guide);
-    setGuideData(guide);
-
     const now = new Date();
+    setGuideData(guide);
     setPrintDate(now);
-    syncManualAdditionsToSupabase(manualAdditions, now); // ✅ Now works without crashing
+
+    if (adminMode) {
+      syncManualAdditionsToSupabase(manualAdditions, now);
+    }
+
+    console.log("✅ Generated Order Guide:", guide);
   }, [forecastData, actualData, manualAdditions, adminMode, setGuideData, setPrintDate]);
 
   useEffect(() => {
