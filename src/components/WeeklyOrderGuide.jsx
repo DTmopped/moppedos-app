@@ -170,14 +170,55 @@ const WeeklyOrderGuide = () => {
   }, [generateOrderGuide, guideData]);
 
   const handlePrint = () => {
-    const printable = ReactDOMServer.renderToStaticMarkup(
-      <PrintableOrderGuide data={guideData} />
-    );
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(printable);
-    printWindow.document.close();
+  const printable = ReactDOMServer.renderToStaticMarkup(
+    <PrintableOrderGuide data={guideData} />
+  );
+
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) return;
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Weekly Order Guide</title>
+        <style>
+          body {
+            font-family: sans-serif;
+            padding: 2rem;
+          }
+          h1, h2 {
+            color: #1d4ed8;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+          }
+          th, td {
+            border: 1px solid #ccc;
+            padding: 0.5rem;
+            text-align: left;
+          }
+          th {
+            background-color: #f3f4f6;
+          }
+        </style>
+      </head>
+      <body>
+        ${printable}
+      </body>
+    </html>
+  `);
+
+  printWindow.document.close();
+  printWindow.focus();
+
+  setTimeout(() => {
     printWindow.print();
-  };
+    printWindow.close();
+  }, 500); // slight delay ensures DOM is ready
+};
 
   const handleAddItem = (category) => {
     const name = prompt(`Add item to "${category}"\nEnter item name:`)?.trim();
