@@ -169,39 +169,31 @@ const WeeklyOrderGuide = () => {
     }
   }, [generateOrderGuide, guideData]);
 
- const handlePrint = () => {
-  const printable = ReactDOMServer.renderToStaticMarkup(
-    <PrintableOrderGuide data={guideData} />
-  );
-
-  const printWindow = window.open('', '_blank');
-  if (!printWindow) return;
-
-  printWindow.document.write(`
+const handlePrint = () => {
+  const html = `
     <!DOCTYPE html>
     <html>
       <head>
-        <title>Weekly Order Guide</title>
+        <title>Print Test</title>
         <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-        <style>
-          @media print {
-            .no-print { display: none !important; }
-          }
-        </style>
       </head>
-      <body class="p-8 bg-white text-black">
-        ${printable}
+      <body class="p-8">
+        <h1 class="text-2xl font-bold">This is a test</h1>
+        <p>If you can see this, then rendering works.</p>
       </body>
     </html>
-  `);
+  `;
 
-  printWindow.document.close();
-  printWindow.focus();
-
-  setTimeout(() => {
-    printWindow.print();
-    printWindow.close();
-  }, 500); // Wait a bit to allow styles to load
+  const printWindow = window.open('', '_blank');
+  if (printWindow) {
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 500);
+  }
 };
 
   const handleAddItem = (category) => {
