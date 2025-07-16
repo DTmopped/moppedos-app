@@ -169,7 +169,7 @@ const WeeklyOrderGuide = () => {
     }
   }, [generateOrderGuide, guideData]);
 
-  const handlePrint = () => {
+ const handlePrint = () => {
   const printable = ReactDOMServer.renderToStaticMarkup(
     <PrintableOrderGuide data={guideData} />
   );
@@ -182,30 +182,14 @@ const WeeklyOrderGuide = () => {
     <html>
       <head>
         <title>Weekly Order Guide</title>
+        <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
         <style>
-          body {
-            font-family: sans-serif;
-            padding: 2rem;
-          }
-          h1, h2 {
-            color: #1d4ed8;
-          }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 2rem;
-          }
-          th, td {
-            border: 1px solid #ccc;
-            padding: 0.5rem;
-            text-align: left;
-          }
-          th {
-            background-color: #f3f4f6;
+          @media print {
+            .no-print { display: none !important; }
           }
         </style>
       </head>
-      <body>
+      <body class="p-8 bg-white text-black">
         ${printable}
       </body>
     </html>
@@ -217,7 +201,7 @@ const WeeklyOrderGuide = () => {
   setTimeout(() => {
     printWindow.print();
     printWindow.close();
-  }, 500); // slight delay ensures DOM is ready
+  }, 500); // Wait a bit to allow styles to load
 };
 
   const handleAddItem = (category) => {
