@@ -17,8 +17,9 @@ const WeeklyOrderGuide = () => {
     setGuideData,
     setPrintDate,
     isAdminMode: adminMode,
-    manualAdditions,      // ✅ this needs to be in your useData() context
-    setManualAdditions,   // ✅ this too
+    toggleAdminMode,         // ✅ Added
+    manualAdditions,
+    setManualAdditions
   } = useData();
 
   const safeGuideData = typeof guideData === 'object' && guideData !== null ? guideData : {};
@@ -103,15 +104,16 @@ const WeeklyOrderGuide = () => {
     };
 
     if (adminMode && manualAdditions && typeof manualAdditions === 'object') {
-  Object.entries(manualAdditions).forEach(([category, items]) => {
-    if (!guide[category]) guide[category] = [];
-    if (Array.isArray(items)) {
-      guide[category].push(...items);
-    } else {
-      console.warn(`⚠️ Skipped "${category}" – manual items not an array:`, items);
+      Object.entries(manualAdditions).forEach(([category, items]) => {
+        if (!guide[category]) guide[category] = [];
+        if (Array.isArray(items)) {
+          guide[category].push(...items);
+        } else {
+          console.warn(`⚠️ Skipped "${category}" – manual items not an array:`, items);
+        }
+      });
     }
-  });
-}
+
     Object.keys(guide).forEach(category => {
       guide[category].forEach(item => {
         item.actual = 0;
@@ -122,22 +124,22 @@ const WeeklyOrderGuide = () => {
     console.log("✅ Generated Order Guide:", guide);
     setGuideData(guide);
     setPrintDate(new Date());
-  }, [forecastData, actualData, manualAdditions]);
+  }, [forecastData, actualData, manualAdditions, adminMode]);
 
   useEffect(() => {
-  Object.entries(safeGuideData).forEach(([category, val]) => {
-    if (!Array.isArray(val)) {
-      console.error(`❌ guideData["${category}"] is not an array:`, val);
+    Object.entries(safeGuideData).forEach(([category, val]) => {
+      if (!Array.isArray(val)) {
+        console.error(`❌ guideData["${category}"] is not an array:`, val);
+      }
+    });
+  }, [safeGuideData]);
+
+  useEffect(() => {
+    if (!guideData || Object.keys(guideData).length === 0) {
+      console.log("🔁 Calling generateOrderGuide on mount");
+      generateOrderGuide();
     }
-  });
-}, [safeGuideData]);
-
-  useEffect(() => {
-  if (!guideData || Object.keys(guideData).length === 0) {
-    console.log("🔁 Calling generateOrderGuide on mount");
-    generateOrderGuide();
-  }
-}, [generateOrderGuide, guideData]);
+  }, [generateOrderGuide, guideData]);
 
   const handlePrint = () => {
     const printable = ReactDOMServer.renderToStaticMarkup(
@@ -198,7 +200,7 @@ const WeeklyOrderGuide = () => {
           <Button onClick={handlePrint} className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white no-print">
             <Printer size={20} className="mr-2" /> Print
           </Button>
-          <Button onClick={() => setAdminMode(!adminMode)} variant="outline" className="no-print text-sm">
+          <Button onClick={toggleAdminMode} variant="outline" className="no-print text-sm">
             {adminMode ? '🛠️ Admin Mode: ON' : 'Admin Mode: OFF'}
           </Button>
         </div>
