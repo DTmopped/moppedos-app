@@ -94,23 +94,25 @@ export const DataProvider = ({ children }) => {
 
   return (
   <DataContext.Provider value={{
-    forecastData,
-    actualData,
-    posData,
-    setForecastData,
-    setPosData,
-    addForecastEntry,
-    addActualEntry,
-    isAdminMode,
-    toggleAdminMode,
-    adminSettings,
-    updateAdminSetting,
-    guideData,
-    setGuideData,
-    manualAdditions,
-    setManualAdditions
-  }}>
-      {children}
-    </DataContext.Provider>
+  forecastData,
+  actualData,
+  posData,
+  setForecastData,
+  setPosData,
+  addForecastEntry,
+  addActualEntry,
+  isAdminMode,
+  toggleAdminMode,
+  adminSettings,
+  updateAdminSetting,
+  guideData,
+  setGuideData,
+  manualAdditions,
+  setManualAdditions,
+  printDate,            // ✅ Already exposed
+  setPrintDate          // ✅ This is missing — ADD THIS LINE
+}}>
+  {children}
+</DataContext.Provider>
   );
 };
