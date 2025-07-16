@@ -223,13 +223,14 @@ export default defineConfig({
         exclude: ['@radix-ui/react-dialog']
     },
 	build: {
-		rollupOptions: {
-			external: [
-				'@babel/parser',
-				'@babel/traverse',
-				'@babel/generator',
-				'@babel/types'
-			]
-		}
-	}
+  minify: false, // <-- Add this line
+  rollupOptions: {
+    external: [
+      '@babel/parser',
+      '@babel/traverse',
+      '@babel/generator',
+      '@babel/types'
+    ]
+  }
+}
 });
