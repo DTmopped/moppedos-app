@@ -16,7 +16,7 @@ const WeeklyOrderGuide = () => {
     guideData,
     setGuideData,
     setPrintDate,
-    adminMode,
+    isAdminMode: adminMode,
     manualAdditions,      // ✅ this needs to be in your useData() context
     setManualAdditions,   // ✅ this too
   } = useData();
