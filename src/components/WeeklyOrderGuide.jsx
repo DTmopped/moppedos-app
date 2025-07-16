@@ -4,14 +4,12 @@ import React, {
   useCallback,
   useRef
 } from 'react';
-import ReactDOMServer from 'react-dom/server';
 import { useData } from '@/contexts/DataContext';
 import { Button } from '@/components/ui/button.jsx';
 import {
   Printer, TrendingUp, AlertTriangle, CheckCircle2, HelpCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import ReactToPrint from 'react-to-print';
 import PrintableOrderGuide from './orderguide/PrintableOrderGuide.jsx';
 import OrderGuideCategory from "@/components/orderguide/OrderGuideCategory";
 import { supabase } from '@/lib/supabaseClient';
@@ -219,16 +217,6 @@ const WeeklyOrderGuide = () => {
           <Button onClick={() => window.print()} className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white no-print">
             <Printer size={20} className="mr-2" /> Print
           </Button>
-          <ReactToPrint
-            trigger={() => (
-              <Button className="bg-black text-white no-print">
-                Export to PDF
-              </Button>
-            )}
-            content={() => printableRef.current}
-            documentTitle="MoppedOS_WeeklyOrderGuide"
-            pageStyle="@page { size: landscape; margin: 20mm }"
-          />
           <Button onClick={toggleAdminMode} variant="outline" className="no-print text-sm">
             {adminMode ? '🛠️ Admin Mode: ON' : 'Admin Mode: OFF'}
           </Button>
