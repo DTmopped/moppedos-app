@@ -8,31 +8,13 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import PrintableOrderGuide from './orderguide/PrintableOrderGuide.jsx';
 import OrderGuideCategory from "@/components/orderguide/OrderGuideCategory";
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient'; // ✅ Supabase
 
-const WeeklyOrderGuide = () => {
-  const {
-    forecastData,
-    actualData,
-    guideData,
-    setGuideData,
-    setPrintDate,
-    isAdminMode: adminMode,
-    toggleAdminMode,
-    manualAdditions,
-    setManualAdditions
-  } = useData();
-
-  const safeGuideData = typeof guideData === 'object' && guideData !== null ? guideData : {};
-
-  // ✅ Supabase sync helper
- const syncManualAdditionsToSupabase = async (manualAdditions, printDate) => {
-  if (!manualAdditions || typeof manualAdditions !== 'object') return;
-
+// ✅ Moved here to avoid being undefined when called inside generateOrderGuide
+const syncManualAdditionsToSupabase = async (manualAdditions, printDate) => {
   const rows = [];
 
   Object.entries(manualAdditions).forEach(([category, items]) => {
-    if (!Array.isArray(items)) return;
     items.forEach(item => {
       rows.push({
         guide_date: printDate.toISOString().split('T')[0],
@@ -48,12 +30,27 @@ const WeeklyOrderGuide = () => {
   if (rows.length > 0) {
     const { error } = await supabase.from('manual_additions').insert(rows);
     if (error) {
-      console.error("❌ Supabase insert error:", error.message);
+      console.error("❌ Failed to sync manual additions:", error.message);
     } else {
-      console.log("✅ Manual additions synced to Supabase");
+      console.log("✅ Synced manual additions to Supabase");
     }
   }
 };
+
+const WeeklyOrderGuide = () => {
+  const {
+    forecastData,
+    actualData,
+    guideData,
+    setGuideData,
+    setPrintDate,
+    isAdminMode: adminMode,
+    toggleAdminMode,
+    manualAdditions,
+    setManualAdditions
+  } = useData();
+
+  const safeGuideData = typeof guideData === 'object' && guideData !== null ? guideData : {};
 
   const generateOrderGuide = useCallback(() => {
     if (!forecastData || forecastData.length === 0) return;
@@ -75,18 +72,18 @@ const WeeklyOrderGuide = () => {
     const sidePortionLbs = portionToLbs(4, totalSidePortions / sideItemsLbs.length);
 
     const guide = {
-      Meats: [
+      "Meats": [
         { name: 'Brisket', forecast: Math.ceil(portionToLbs(4, plateGuests) + portionToLbs(6, sandwichGuests / 3)), unit: 'lbs' },
         { name: 'Pulled Pork', forecast: Math.ceil(portionToLbs(4, plateGuests) + portionToLbs(6, sandwichGuests / 3)), unit: 'lbs' },
         { name: 'Chicken', forecast: Math.ceil(portionToLbs(4, plateGuests) + portionToLbs(6, sandwichGuests / 3)), unit: 'lbs' },
         { name: 'St. Louis Ribs', forecast: Math.ceil(portionToLbs(16, plateGuests)), unit: 'lbs' },
         { name: 'Bone-in Short Rib', forecast: Math.ceil(portionToLbs(16, plateGuests)), unit: 'lbs' }
       ],
-      Bread: [
+      "Bread": [
         { name: 'Buns', forecast: sandwichGuests, unit: 'each' },
         { name: 'Texas Toast', forecast: plateGuests, unit: 'each' }
       ],
-      Sides: [
+      "Sides": [
         ...sideItemsLbs.map(item => ({
           name: item,
           forecast: Math.ceil(sidePortionLbs),
@@ -95,12 +92,12 @@ const WeeklyOrderGuide = () => {
         { name: 'Corn Muffin', forecast: plateGuests, unit: 'each' },
         { name: 'Honey Butter', forecast: plateGuests, unit: 'each' }
       ],
-      Sweets: [
+      "Sweets": [
         { name: 'Banana Pudding', forecast: plateGuests, unit: 'each' },
         { name: 'Key Lime Pie', forecast: plateGuests, unit: 'each' },
         { name: 'Hummingbird Cake', forecast: plateGuests, unit: 'each' }
       ],
-      Condiments: [
+      "Condiments": [
         { name: 'House Pickles (32oz)', forecast: Math.ceil((plateGuests * 3) / 50), unit: 'jars' },
         { name: 'Mop Glaze', forecast: 0, unit: 'oz' },
         { name: 'BBQ 1', forecast: 0, unit: 'oz' },
@@ -110,7 +107,7 @@ const WeeklyOrderGuide = () => {
         { name: 'Hot Sauce 2', forecast: 0, unit: 'oz' },
         { name: 'Hot Sauce 3', forecast: 0, unit: 'oz' }
       ],
-      PaperGoods: [
+      "PaperGoods": [
         { name: 'To-Go Cups', forecast: adjustedGuests * 3, unit: 'each' },
         { name: '1 oz Soufflé Cup', forecast: 0, unit: 'each' },
         { name: 'Cutlery Kit', forecast: adjustedGuests, unit: 'each' },
@@ -118,7 +115,7 @@ const WeeklyOrderGuide = () => {
         { name: 'To-Go Bag Large', forecast: 0, unit: 'each' },
         { name: 'Moist Towelettes', forecast: adjustedGuests, unit: 'each' }
       ],
-      CleaningSupplies: [
+      "CleaningSupplies": [
         { name: 'Trash Bags', forecast: 0, unit: 'case' },
         { name: 'Gloves - S', forecast: 0, unit: 'case' },
         { name: 'Gloves - M', forecast: 0, unit: 'case' },
@@ -134,17 +131,22 @@ const WeeklyOrderGuide = () => {
       ]
     };
 
+    // ✅ Inject manual items
     if (adminMode && manualAdditions && typeof manualAdditions === 'object') {
       Object.entries(manualAdditions).forEach(([category, items]) => {
         if (!guide[category]) guide[category] = [];
-        if (Array.isArray(items)) guide[category].push(...items);
+        if (Array.isArray(items)) {
+          guide[category].push(...items);
+        } else {
+          console.warn(`⚠️ Skipped "${category}" – manual items not an array:`, items);
+        }
       });
     }
 
-    Object.entries(guide).forEach(([_, items]) => {
-      items.forEach(item => {
+    Object.keys(guide).forEach(category => {
+      guide[category].forEach(item => {
         item.actual = 0;
-        item.variance = typeof item.forecast === 'number' ? (-item.forecast).toFixed(1) : '-';
+        item.variance = (typeof item.forecast === 'number') ? (-item.forecast).toFixed(1) : '-';
       });
     });
 
@@ -153,8 +155,8 @@ const WeeklyOrderGuide = () => {
 
     const now = new Date();
     setPrintDate(now);
-    syncManualAdditionsToSupabase(manualAdditions, now); // ✅ Save
-  }, [forecastData, actualData, manualAdditions, adminMode]);
+    syncManualAdditionsToSupabase(manualAdditions, now); // ✅ Now works without crashing
+  }, [forecastData, actualData, manualAdditions, adminMode, setGuideData, setPrintDate]);
 
   useEffect(() => {
     if (!guideData || Object.keys(guideData).length === 0) {
@@ -164,7 +166,9 @@ const WeeklyOrderGuide = () => {
   }, [generateOrderGuide, guideData]);
 
   const handlePrint = () => {
-    const printable = ReactDOMServer.renderToStaticMarkup(<PrintableOrderGuide data={guideData} />);
+    const printable = ReactDOMServer.renderToStaticMarkup(
+      <PrintableOrderGuide data={guideData} />
+    );
     const printWindow = window.open('', '_blank');
     printWindow.document.write(printable);
     printWindow.document.close();
@@ -234,8 +238,13 @@ const WeeklyOrderGuide = () => {
           exit={{ opacity: 0 }}
           className="space-y-6"
         >
-          {Object.entries(safeGuideData).map(([category, items]) => (
-            Array.isArray(items) ? (
+          {Object.entries(safeGuideData).map(([category, items]) => {
+            if (!Array.isArray(items)) {
+              console.warn(`❌ Skipping "${category}" — items is not an array:`, items);
+              return null;
+            }
+
+            return (
               <div key={category}>
                 <div className="flex justify-between items-center mb-2">
                   <h2 className="text-xl font-bold">{category}</h2>
@@ -252,8 +261,8 @@ const WeeklyOrderGuide = () => {
                   getStatusIcon={getStatusIcon}
                 />
               </div>
-            ) : null
-          ))}
+            );
+          })}
         </motion.div>
       </AnimatePresence>
     </div>
