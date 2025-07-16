@@ -1,4 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef
+} from 'react';
 import ReactDOMServer from 'react-dom/server';
 import { useData } from '@/contexts/DataContext';
 import { Button } from '@/components/ui/button.jsx';
@@ -6,11 +11,11 @@ import {
   Printer, TrendingUp, AlertTriangle, CheckCircle2, HelpCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ReactToPrint from 'react-to-print';
 import PrintableOrderGuide from './orderguide/PrintableOrderGuide.jsx';
 import OrderGuideCategory from "@/components/orderguide/OrderGuideCategory";
 import { supabase } from '@/lib/supabaseClient';
 
-// ✅ Manual sync — works safely when called inside generateOrderGuide
 const syncManualAdditionsToSupabase = async (manualAdditions, printDate) => {
   const rows = [];
 
@@ -50,6 +55,7 @@ const WeeklyOrderGuide = () => {
     setManualAdditions
   } = useData();
 
+  const printableRef = useRef();
   const safeGuideData = typeof guideData === 'object' && guideData !== null ? guideData : {};
 
   const generateOrderGuide = useCallback(() => {
@@ -131,19 +137,15 @@ const WeeklyOrderGuide = () => {
       ]
     };
 
-    // ✅ Inject manual additions
     if (adminMode && manualAdditions && typeof manualAdditions === 'object') {
       Object.entries(manualAdditions).forEach(([category, items]) => {
         if (!guide[category]) guide[category] = [];
         if (Array.isArray(items)) {
           guide[category].push(...items);
-        } else {
-          console.warn(`⚠️ Skipped "${category}" – manual items not an array:`, items);
         }
       });
     }
 
-    // Attach actual + variance
     Object.keys(guide).forEach(category => {
       guide[category].forEach(item => {
         item.actual = 0;
@@ -164,118 +166,9 @@ const WeeklyOrderGuide = () => {
 
   useEffect(() => {
     if (!guideData || Object.keys(guideData).length === 0) {
-      console.log("🔁 Calling generateOrderGuide on mount");
       generateOrderGuide();
     }
   }, [generateOrderGuide, guideData]);
-
-const handlePrint = () => {
-  if (!guideData) return;
-
-  const formatDate = (date) =>
-    new Date(date).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-
-  const printWindow = window.open('', '_blank');
-  printWindow.document.write(`
-    <html>
-      <head>
-        <title>Order Guide</title>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            font-size: 10pt;
-            color: #000;
-          }
-          h1 {
-            font-size: 16pt;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 0;
-          }
-          h2 {
-            font-size: 14pt;
-            margin-top: 24px;
-            border-bottom: 2px solid #000;
-            padding-bottom: 4px;
-          }
-          .date {
-            text-align: center;
-            font-size: 9pt;
-            margin-bottom: 20px;
-          }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-          }
-          th, td {
-            border: 1px solid #ccc;
-            padding: 6px;
-            text-align: left;
-          }
-          th {
-            background-color: #f0f0f0;
-          }
-          .item-name {
-            font-weight: bold;
-          }
-        </style>
-      </head>
-      <body>
-        <h1>Mopped OS – Weekly Order Guide</h1>
-        <div class="date">Printed on: ${formatDate(new Date())}</div>
-
-        ${Object.entries(guideData).map(([category, items]) => `
-          <h2>${category}</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Item</th>
-                <th>Forecasted</th>
-                <th>Actual</th>
-                <th>Variance</th>
-                <th>Unit</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${items.map((item) => {
-                const itemName = item.name || item[0];
-                const forecast = item.forecast ?? item[1] ?? 0;
-                const unit = item.unit || item[2] || '';
-                const actual = item.actual ?? item.posDataValue ?? 0;
-                const variance = (typeof forecast === 'number' && typeof actual === 'number')
-                  ? (actual - forecast).toFixed(1)
-                  : '-';
-
-                return `
-                  <tr>
-                    <td class="item-name">${itemName}</td>
-                    <td>${forecast.toLocaleString()}</td>
-                    <td>${actual.toLocaleString()}</td>
-                    <td>${variance}</td>
-                    <td>${unit}</td>
-                  </tr>`;
-              }).join('')}
-            </tbody>
-          </table>
-        `).join('')}
-      </body>
-    </html>
-  `);
-  printWindow.document.close();
-  printWindow.focus();
-  setTimeout(() => {
-    printWindow.print();
-    printWindow.close();
-  }, 500);
-};
 
   const handleAddItem = (category) => {
     const name = prompt(`Add item to "${category}"\nEnter item name:`)?.trim();
@@ -323,9 +216,19 @@ const handlePrint = () => {
           Weekly Order Guide
         </motion.h1>
         <div className="flex gap-3">
-          <Button onClick={handlePrint} className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white no-print">
+          <Button onClick={() => window.print()} className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white no-print">
             <Printer size={20} className="mr-2" /> Print
           </Button>
+          <ReactToPrint
+            trigger={() => (
+              <Button className="bg-black text-white no-print">
+                Export to PDF
+              </Button>
+            )}
+            content={() => printableRef.current}
+            documentTitle="MoppedOS_WeeklyOrderGuide"
+            pageStyle="@page { size: landscape; margin: 20mm }"
+          />
           <Button onClick={toggleAdminMode} variant="outline" className="no-print text-sm">
             {adminMode ? '🛠️ Admin Mode: ON' : 'Admin Mode: OFF'}
           </Button>
@@ -367,6 +270,15 @@ const handlePrint = () => {
           })}
         </motion.div>
       </AnimatePresence>
+
+      {/* Hidden printable component */}
+      <div style={{ display: 'none' }}>
+        <PrintableOrderGuide
+          ref={printableRef}
+          guideData={safeGuideData}
+          printDate={new Date()}
+        />
+      </div>
     </div>
   );
 };
