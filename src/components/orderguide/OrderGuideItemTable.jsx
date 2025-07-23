@@ -1,17 +1,13 @@
 import React from 'react';
 import { useData } from '@/contexts/DataContext';
 
-const OrderGuideItemTable = ({
-  items = [],
-  getStatusClass = () => '',
-  getStatusIcon = () => null
-}) => {
+const OrderGuideItemTable = ({ items = [], getStatusClass = () => '', getStatusIcon = () => null }) => {
   const {
     manualAdditions,
     setManualAdditions,
     isAdminMode,
     setGuideData,
-    guideData
+    guideData,
   } = useData();
 
   const handleRemove = (itemToRemove) => {
@@ -22,26 +18,39 @@ const OrderGuideItemTable = ({
 
     const updatedManuals = {
       ...manualAdditions,
-      [category]: manualAdditions[category].filter(item => item.name !== itemToRemove.name)
+      [category]: manualAdditions[category].filter(item => item.name !== itemToRemove.name),
     };
 
     const updatedGuide = {
       ...guideData,
-      [category]: guideData[category].filter(item => item.name !== itemToRemove.name)
+      [category]: guideData[category].filter(item => item.name !== itemToRemove.name),
     };
 
     setManualAdditions(updatedManuals);
     setGuideData(updatedGuide);
   };
 
-  const handleForecastChange = (e, name) => {
-    const updated = { ...guideData };
-    for (const category in updated) {
-      updated[category] = updated[category].map(item =>
-        item.name === name ? { ...item, forecast: Number(e.target.value) || 0 } : item
-      );
-    }
-    setGuideData(updated);
+  const handleParForecastChange = (e, itemToUpdate) => {
+    const newForecast = Number(e.target.value);
+    const category = Object.keys(guideData).find(cat =>
+      guideData[cat]?.some(item => item.name === itemToUpdate.name)
+    );
+    if (!category) return;
+
+    const updatedCategory = guideData[category].map(item =>
+      item.name === itemToUpdate.name
+        ? {
+            ...item,
+            forecast: newForecast,
+            variance: newForecast - (item.actual || 0),
+          }
+        : item
+    );
+
+    setGuideData({
+      ...guideData,
+      [category]: updatedCategory,
+    });
   };
 
   return (
@@ -72,30 +81,22 @@ const OrderGuideItemTable = ({
               >
                 <td className="px-4 py-2 text-sm">{item.name}</td>
 
-                {/* Forecast */}
                 <td className="px-4 py-2 text-sm">
-                  {isAdminMode ? (
+                  {isPar && isAdminMode ? (
                     <input
                       type="number"
-                      value={item.forecast}
-                      onChange={(e) => handleForecastChange(e, item.name)}
+                      value={item.forecast || 0}
                       className="w-20 px-2 py-1 border rounded text-sm"
+                      onChange={(e) => handleParForecastChange(e, item)}
                     />
                   ) : (
                     item.forecast
                   )}
                 </td>
 
-                {/* Actual */}
                 <td className="px-4 py-2 text-sm">{item.actual}</td>
-
-                {/* Variance */}
                 <td className="px-4 py-2 text-sm">{item.variance}</td>
-
-                {/* Unit */}
                 <td className="px-4 py-2 text-sm">{item.unit}</td>
-
-                {/* Status */}
                 <td className="px-4 py-2 text-sm">
                   {isPar ? (
                     <span className="text-xs font-semibold text-yellow-700 bg-yellow-100 px-2 py-1 rounded">
@@ -105,8 +106,6 @@ const OrderGuideItemTable = ({
                     statusIcon
                   )}
                 </td>
-
-                {/* Actions */}
                 {isAdminMode && (
                   <td className="px-4 py-2 text-sm">
                     {isManual ? (
@@ -131,3 +130,4 @@ const OrderGuideItemTable = ({
 };
 
 export default OrderGuideItemTable;
+
