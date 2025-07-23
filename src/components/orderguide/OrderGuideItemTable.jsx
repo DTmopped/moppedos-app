@@ -82,21 +82,21 @@ const OrderGuideItemTable = ({ items = [], getStatusClass = () => '', getStatusI
                 <td className="px-4 py-2 text-sm">{item.name}</td>
 
                 <td className="px-4 py-2 text-sm">
-                  {isPar && isAdminMode && isManual ? (
+                  {isPar && isAdminMode ? (
                     <input
                       type="number"
-                      value={item.forecast || 0}
+                      value={item.forecast || ''}
                       className="w-20 px-2 py-1 border rounded text-sm"
                       onChange={(e) => handleParForecastChange(e, item)}
                     />
                   ) : (
-                    item.forecast
+                    item.forecast ?? 0
                   )}
                 </td>
 
-                <td className="px-4 py-2 text-sm">{item.actual}</td>
-                <td className="px-4 py-2 text-sm">{item.variance}</td>
-                <td className="px-4 py-2 text-sm">{item.unit}</td>
+                <td className="px-4 py-2 text-sm">{item.actual ?? 0}</td>
+                <td className="px-4 py-2 text-sm">{item.variance ?? 0}</td>
+                <td className="px-4 py-2 text-sm">{item.unit || ''}</td>
                 <td className="px-4 py-2 text-sm">
                   {isPar ? (
                     <span className="text-xs font-semibold text-yellow-700 bg-yellow-100 px-2 py-1 rounded">
