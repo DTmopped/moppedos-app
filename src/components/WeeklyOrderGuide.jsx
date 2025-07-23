@@ -102,37 +102,37 @@ const WeeklyOrderGuide = () => {
         { name: 'Hummingbird Cake', forecast: plateGuests, unit: 'each' }
       ],
       "Condiments": [
-        { name: 'House Pickles (32oz)', forecast: Math.ceil((plateGuests * 3) / 50), unit: 'jars' },
-        { name: 'Mop Glaze', forecast: 0, unit: 'oz' },
-        { name: 'BBQ 1', forecast: 0, unit: 'oz' },
-        { name: 'BBQ 2', forecast: 0, unit: 'oz' },
-        { name: 'BBQ 3', forecast: 0, unit: 'oz' },
-        { name: 'Hot Sauce 1', forecast: 0, unit: 'oz' },
-        { name: 'Hot Sauce 2', forecast: 0, unit: 'oz' },
-        { name: 'Hot Sauce 3', forecast: 0, unit: 'oz' }
-      ],
-      "PaperGoods": [
-        { name: 'To-Go Cups', forecast: adjustedGuests * 3, unit: 'each' },
-        { name: '1 oz Soufflé Cup', forecast: 0, unit: 'each' },
-        { name: 'Cutlery Kit', forecast: adjustedGuests, unit: 'each' },
-        { name: 'To-Go Bag Small', forecast: 0, unit: 'each' },
-        { name: 'To-Go Bag Large', forecast: 0, unit: 'each' },
-        { name: 'Moist Towelettes', forecast: adjustedGuests, unit: 'each' }
-      ],
+  { name: 'House Pickles (32oz)', forecast: Math.ceil((plateGuests * 3) / 50), unit: 'jars' },
+  { name: 'Mop Glaze', forecast: Math.ceil(plateGuests * 2), unit: 'oz' },
+  { name: 'BBQ 1', forecast: Math.ceil(adjustedGuests * 1), unit: 'oz' },
+  { name: 'BBQ 2', forecast: Math.ceil(adjustedGuests * 1), unit: 'oz' },
+  { name: 'BBQ 3', forecast: Math.ceil(adjustedGuests * 1), unit: 'oz' },
+  { name: 'Hot Sauce 1', forecast: Math.ceil(adjustedGuests * 0.5), unit: 'oz' },
+  { name: 'Hot Sauce 2', forecast: Math.ceil(adjustedGuests * 0.5), unit: 'oz' },
+  { name: 'Hot Sauce 3', forecast: Math.ceil(adjustedGuests * 0.5), unit: 'oz' }
+],
+     "PaperGoods": [
+  { name: 'To-Go Cups', forecast: adjustedGuests * 3, unit: 'each' },
+  { name: '1 oz Soufflé Cup', forecast: plateGuests * 3, unit: 'each' },
+  { name: 'Cutlery Kit', forecast: adjustedGuests, unit: 'each' },
+  { name: 'To-Go Bag Small', forecast: 0, unit: 'each', isPar: true },
+  { name: 'To-Go Bag Large', forecast: 0, unit: 'each', isPar: true },
+  { name: 'Moist Towelettes', forecast: adjustedGuests, unit: 'each' }
+],
       "CleaningSupplies": [
-        { name: 'Trash Bags', forecast: 0, unit: 'case' },
-        { name: 'Gloves - S', forecast: 0, unit: 'case' },
-        { name: 'Gloves - M', forecast: 0, unit: 'case' },
-        { name: 'Gloves - L', forecast: 0, unit: 'case' },
-        { name: 'Gloves - XL', forecast: 0, unit: 'case' },
-        { name: 'Dish Soap', forecast: 0, unit: 'gal' },
-        { name: 'Dish Sanitizer', forecast: 0, unit: 'gal' },
-        { name: 'C-Folds', forecast: 0, unit: 'case' },
-        { name: 'Sanitizing Wipes', forecast: 0, unit: 'case' },
-        { name: 'Green Scrubbies', forecast: 0, unit: 'pack' },
-        { name: 'Metal Scrubbies', forecast: 0, unit: 'pack' },
-        { name: 'Broom', forecast: 0, unit: 'each' }
-      ]
+  { name: 'Trash Bags', forecast: 0, unit: 'case', isPar: true },
+  { name: 'Gloves - S', forecast: 0, unit: 'case', isPar: true },
+  { name: 'Gloves - M', forecast: 0, unit: 'case', isPar: true },
+  { name: 'Gloves - L', forecast: 0, unit: 'case', isPar: true },
+  { name: 'Gloves - XL', forecast: 0, unit: 'case', isPar: true },
+  { name: 'Dish Soap', forecast: 0, unit: 'gal', isPar: true },
+  { name: 'Dish Sanitizer', forecast: 0, unit: 'gal', isPar: true },
+  { name: 'C-Folds', forecast: 0, unit: 'case', isPar: true },
+  { name: 'Sanitizing Wipes', forecast: 0, unit: 'case', isPar: true },
+  { name: 'Green Scrubbies', forecast: 0, unit: 'pack', isPar: true },
+  { name: 'Metal Scrubbies', forecast: 0, unit: 'pack', isPar: true },
+  { name: 'Broom', forecast: 0, unit: 'each', isPar: true }
+],
     };
 
     if (adminMode && manualAdditions && typeof manualAdditions === 'object') {
