@@ -171,14 +171,46 @@ const WeeklyOrderGuide = () => {
   const handleAddItem = (category) => {
   const name = prompt(`Add item to "${category}"\nEnter item name:`)?.trim();
   if (!name) return;
-  const forecast = parseFloat(prompt(`Enter forecasted amount for "${name}":`));
-  if (isNaN(forecast)) return;
+
   const unit = prompt(`What unit for "${name}"? (e.g. lbs, each)`);
   if (!unit) return;
 
+  // Calculate guest volume
+  const totalGuests = forecastData.reduce((sum, day) => sum + (day.guests || 0), 0);
+  const sandwichGuests = Math.round(totalGuests * 0.5);
+  const plateGuests = totalGuests - sandwichGuests;
+  let forecast = 0;
+
+  // Calculate forecast based on category
+  switch (category) {
+    case 'Meats':
+      forecast = ((plateGuests * 4) + (sandwichGuests / 3) * 6) / 16; // in lbs
+      break;
+    case 'Sides':
+      forecast = ((plateGuests * 3) * 4) / 16; // in lbs
+      break;
+    case 'Bread':
+      forecast = name.toLowerCase().includes("bun") ? sandwichGuests : plateGuests;
+      break;
+    case 'Sweets':
+      forecast = plateGuests;
+      break;
+    case 'PaperGoods':
+      if (name.toLowerCase().includes("cup")) {
+        forecast = totalGuests * 3;
+      } else if (name.toLowerCase().includes("cutlery")) {
+        forecast = totalGuests;
+      } else {
+        forecast = 0;
+      }
+      break;
+    default:
+      forecast = 0;
+  }
+
   const newItem = {
     name,
-    forecast,
+    forecast: Math.ceil(forecast),
     unit,
     actual: 0,
     variance: (-forecast).toFixed(1),
@@ -186,19 +218,19 @@ const WeeklyOrderGuide = () => {
   };
 
   setManualAdditions(prev => {
-    const updated = {
+    const updatedManuals = {
       ...prev,
       [category]: [...(prev[category] || []), newItem]
     };
 
-    // 🛠 Force regenerate guide after updating manualAdditions
-    const updatedGuide = { ...guideData };
+    setGuideData(prevGuide => {
+      const updatedGuide = { ...prevGuide };
+      if (!updatedGuide[category]) updatedGuide[category] = [];
+      updatedGuide[category] = [...updatedGuide[category], newItem];
+      return updatedGuide;
+    });
 
-    if (!updatedGuide[category]) updatedGuide[category] = [];
-    updatedGuide[category] = [...updatedGuide[category], newItem];
-
-    setGuideData(updatedGuide);
-    return updated;
+    return updatedManuals;
   });
 };
 
