@@ -169,18 +169,38 @@ const WeeklyOrderGuide = () => {
   }, [generateOrderGuide, guideData]);
 
   const handleAddItem = (category) => {
-    const name = prompt(`Add item to "${category}"\nEnter item name:`)?.trim();
-    if (!name) return;
-    const forecast = parseFloat(prompt(`Enter forecasted amount for "${name}":`));
-    if (isNaN(forecast)) return;
-    const unit = prompt(`What unit for "${name}"? (e.g. lbs, each)`);
-    if (!unit) return;
-    const newItem = { name, forecast, unit, actual: 0, variance: (-forecast).toFixed(1), isManual: true };
-    setManualAdditions(prev => ({
+  const name = prompt(`Add item to "${category}"\nEnter item name:`)?.trim();
+  if (!name) return;
+  const forecast = parseFloat(prompt(`Enter forecasted amount for "${name}":`));
+  if (isNaN(forecast)) return;
+  const unit = prompt(`What unit for "${name}"? (e.g. lbs, each)`);
+  if (!unit) return;
+
+  const newItem = {
+    name,
+    forecast,
+    unit,
+    actual: 0,
+    variance: (-forecast).toFixed(1),
+    isManual: true
+  };
+
+  setManualAdditions(prev => {
+    const updated = {
       ...prev,
       [category]: [...(prev[category] || []), newItem]
-    }));
-  };
+    };
+
+    // 🛠 Force regenerate guide after updating manualAdditions
+    const updatedGuide = { ...guideData };
+
+    if (!updatedGuide[category]) updatedGuide[category] = [];
+    updatedGuide[category] = [...updatedGuide[category], newItem];
+
+    setGuideData(updatedGuide);
+    return updated;
+  });
+};
 
   const getStatusClass = useCallback((item) => {
     const { forecast, actual } = item;
