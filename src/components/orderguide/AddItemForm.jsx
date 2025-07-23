@@ -1,66 +1,85 @@
 import React, { useState } from 'react';
 import { useData } from '@/contexts/DataContext';
+import { Button } from '@/components/ui/button';
 
 const AddItemForm = ({ category, onClose }) => {
-  const { addItem, isAdminMode } = useData();
+  const { guideData, setGuideData, manualAdditions, setManualAdditions } = useData();
+
   const [name, setName] = useState('');
   const [unit, setUnit] = useState('');
-  const [isPar, setIsPar] = useState(true);
+  const [isPar, setIsPar] = useState(false);
   const [forecast, setForecast] = useState('');
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!name || !unit || (isPar && forecast === '')) {
-      alert('Please fill in all required fields.');
-      return;
-    }
+  const handleAdd = () => {
+    if (!name || !unit || (isPar && forecast === '')) return;
 
     const newItem = {
       name,
       unit,
       isPar,
-      forecast: isPar ? Number(forecast) : 0,
+      isManual: true,
+      forecast: isPar ? parseFloat(forecast) : 0,
       actual: 0,
-      variance: 0,
-      isManual: true
+      variance: isPar ? -parseFloat(forecast) : 0,
     };
 
-    addItem(category, newItem);
+    const updatedGuideData = {
+      ...guideData,
+      [category]: [...(guideData[category] || []), newItem],
+    };
+
+    const updatedManuals = {
+      ...manualAdditions,
+      [category]: [...(manualAdditions[category] || []), newItem],
+    };
+
+    setGuideData(updatedGuideData);
+    setManualAdditions(updatedManuals);
+
     onClose();
   };
 
   return (
-    <form onSubmit={handleSubmit} className="p-4 bg-white dark:bg-gray-800 rounded shadow">
-      <div className="mb-2">
-        <label className="block text-sm font-medium">Item Name</label>
-        <input className="w-full border px-2 py-1 rounded" value={name} onChange={e => setName(e.target.value)} />
-      </div>
-      <div className="mb-2">
-        <label className="block text-sm font-medium">Unit</label>
-        <input className="w-full border px-2 py-1 rounded" value={unit} onChange={e => setUnit(e.target.value)} />
-      </div>
-      <div className="mb-2">
-        <label className="flex items-center space-x-2">
-          <input type="checkbox" checked={isPar} onChange={() => setIsPar(!isPar)} />
-          <span>PAR Item?</span>
+    <div className="border p-4 rounded-md shadow bg-white dark:bg-gray-900">
+      <h4 className="font-semibold text-base mb-2">{category}</h4>
+      <div className="grid grid-cols-1 gap-3">
+        <input
+          type="text"
+          placeholder="Item Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="border p-2 rounded"
+        />
+        <input
+          type="text"
+          placeholder="Unit (e.g., lbs, case)"
+          value={unit}
+          onChange={(e) => setUnit(e.target.value)}
+          className="border p-2 rounded"
+        />
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={isPar}
+            onChange={() => setIsPar(!isPar)}
+          />
+          PAR Item?
         </label>
-      </div>
-      {isPar && (
-        <div className="mb-2">
-          <label className="block text-sm font-medium">PAR Forecast</label>
+        {isPar && (
           <input
             type="number"
-            className="w-full border px-2 py-1 rounded"
+            placeholder="PAR Forecast"
             value={forecast}
-            onChange={e => setForecast(e.target.value)}
+            onChange={(e) => setForecast(e.target.value)}
+            className="border p-2 rounded"
           />
+        )}
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleAdd}>Add Item</Button>
         </div>
-      )}
-      <div className="flex justify-end mt-4 gap-2">
-        <button type="button" onClick={onClose} className="text-gray-500 hover:underline">Cancel</button>
-        <button type="submit" className="bg-blue-600 text-white px-4 py-1 rounded">Add Item</button>
       </div>
-    </form>
+    </div>
   );
 };
 
