@@ -1,7 +1,11 @@
 import React from 'react';
 import { useData } from '@/contexts/DataContext';
 
-const OrderGuideItemTable = ({ items = [], getStatusClass = () => '', getStatusIcon = () => null }) => {
+const OrderGuideItemTable = ({
+  items = [],
+  getStatusClass = () => '',
+  getStatusIcon = () => null
+}) => {
   const {
     manualAdditions,
     setManualAdditions,
@@ -30,6 +34,16 @@ const OrderGuideItemTable = ({ items = [], getStatusClass = () => '', getStatusI
     setGuideData(updatedGuide);
   };
 
+  const handleForecastChange = (e, name) => {
+    const updated = { ...guideData };
+    for (const category in updated) {
+      updated[category] = updated[category].map(item =>
+        item.name === name ? { ...item, forecast: Number(e.target.value) || 0 } : item
+      );
+    }
+    setGuideData(updated);
+  };
+
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full border border-gray-200 dark:border-gray-700">
@@ -56,48 +70,32 @@ const OrderGuideItemTable = ({ items = [], getStatusClass = () => '', getStatusI
                 key={`${item.name}-${idx}`}
                 className={`border-t ${statusClass} ${isPar ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''}`}
               >
-                {/* ITEM NAME */}
                 <td className="px-4 py-2 text-sm">{item.name}</td>
 
-                {/* FORECAST (editable if PAR + AdminMode) */}
+                {/* Forecast */}
                 <td className="px-4 py-2 text-sm">
-                  {isPar && isAdminMode ? (
+                  {isAdminMode ? (
                     <input
                       type="number"
-                      className="w-24 px-2 py-1 border rounded text-sm bg-white"
                       value={item.forecast}
-                      onChange={(e) => {
-                        const newForecast = parseFloat(e.target.value) || 0;
-                        const category = Object.keys(guideData).find(cat =>
-                          guideData[cat]?.some(i => i.name === item.name)
-                        );
-                        if (!category) return;
-
-                        const updatedItems = guideData[category].map(i =>
-                          i.name === item.name
-                            ? { ...i, forecast: newForecast, variance: (i.actual - newForecast).toFixed(1) }
-                            : i
-                        );
-
-                        const updatedGuide = { ...guideData, [category]: updatedItems };
-                        setGuideData(updatedGuide);
-                      }}
+                      onChange={(e) => handleForecastChange(e, item.name)}
+                      className="w-20 px-2 py-1 border rounded text-sm"
                     />
                   ) : (
                     item.forecast
                   )}
                 </td>
 
-                {/* ACTUAL */}
+                {/* Actual */}
                 <td className="px-4 py-2 text-sm">{item.actual}</td>
 
-                {/* VARIANCE */}
+                {/* Variance */}
                 <td className="px-4 py-2 text-sm">{item.variance}</td>
 
-                {/* UNIT */}
+                {/* Unit */}
                 <td className="px-4 py-2 text-sm">{item.unit}</td>
 
-                {/* STATUS */}
+                {/* Status */}
                 <td className="px-4 py-2 text-sm">
                   {isPar ? (
                     <span className="text-xs font-semibold text-yellow-700 bg-yellow-100 px-2 py-1 rounded">
@@ -108,7 +106,7 @@ const OrderGuideItemTable = ({ items = [], getStatusClass = () => '', getStatusI
                   )}
                 </td>
 
-                {/* ACTIONS */}
+                {/* Actions */}
                 {isAdminMode && (
                   <td className="px-4 py-2 text-sm">
                     {isManual ? (
