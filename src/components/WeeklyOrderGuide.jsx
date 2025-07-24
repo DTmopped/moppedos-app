@@ -302,12 +302,6 @@ const WeeklyOrderGuide = () => {
                   )}
                 </div>
 
-                {showForm && isParCategory && (
-                  <div className="mb-4">
-                    <AddItemForm category={category} onClose={() => setActiveAddForm(null)} />
-                  </div>
-                )}
-
                 <OrderGuideCategory
                   categoryTitle={category}
                   items={items}
