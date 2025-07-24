@@ -1,18 +1,14 @@
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useRef
-} from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useData } from '@/contexts/DataContext';
 import { Button } from '@/components/ui/button.jsx';
-import {
-  Printer, TrendingUp, AlertTriangle, CheckCircle2, HelpCircle
-} from 'lucide-react';
+import { Printer, TrendingUp, AlertTriangle, CheckCircle2, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import PrintableOrderGuide from './orderguide/PrintableOrderGuide.jsx';
 import OrderGuideCategory from "@/components/orderguide/OrderGuideCategory";
+import AddItemForm from './AddItemForm.jsx';
 import { supabase } from '@/lib/supabaseClient';
+
+const parBasedCategories = ['PaperGoods', 'CleaningSupplies', 'Condiments'];
 
 const syncManualAdditionsToSupabase = async (manualAdditions, printDate) => {
   const rows = [];
@@ -53,6 +49,7 @@ const WeeklyOrderGuide = () => {
     setManualAdditions
   } = useData();
 
+  const [activeAddForm, setActiveAddForm] = useState(null);
   const printableRef = useRef();
   const safeGuideData = typeof guideData === 'object' && guideData !== null ? guideData : {};
 
@@ -102,37 +99,37 @@ const WeeklyOrderGuide = () => {
         { name: 'Hummingbird Cake', forecast: plateGuests, unit: 'each' }
       ],
       "Condiments": [
-  { name: 'House Pickles (32oz)', forecast: Math.ceil((plateGuests * 3) / 50), unit: 'jars' },
-  { name: 'Mop Glaze', forecast: Math.ceil(plateGuests * 2), unit: 'oz' },
-  { name: 'BBQ 1', forecast: Math.ceil(adjustedGuests * 1), unit: 'oz' },
-  { name: 'BBQ 2', forecast: Math.ceil(adjustedGuests * 1), unit: 'oz' },
-  { name: 'BBQ 3', forecast: Math.ceil(adjustedGuests * 1), unit: 'oz' },
-  { name: 'Hot Sauce 1', forecast: Math.ceil(adjustedGuests * 0.5), unit: 'oz' },
-  { name: 'Hot Sauce 2', forecast: Math.ceil(adjustedGuests * 0.5), unit: 'oz' },
-  { name: 'Hot Sauce 3', forecast: Math.ceil(adjustedGuests * 0.5), unit: 'oz' }
-],
-     "PaperGoods": [
-  { name: 'To-Go Cups', forecast: adjustedGuests * 3, unit: 'each' },
-  { name: '1 oz Soufflé Cup', forecast: plateGuests * 3, unit: 'each' },
-  { name: 'Cutlery Kit', forecast: adjustedGuests, unit: 'each' },
-  { name: 'To-Go Bag Small', forecast: 0, unit: 'each', isPar: true },
-  { name: 'To-Go Bag Large', forecast: 0, unit: 'each', isPar: true },
-  { name: 'Moist Towelettes', forecast: adjustedGuests, unit: 'each' }
-],
+        { name: 'House Pickles (32oz)', forecast: Math.ceil((plateGuests * 3) / 50), unit: 'jars' },
+        { name: 'Mop Glaze', forecast: Math.ceil(plateGuests * 2), unit: 'oz' },
+        { name: 'BBQ 1', forecast: Math.ceil(adjustedGuests * 1), unit: 'oz' },
+        { name: 'BBQ 2', forecast: Math.ceil(adjustedGuests * 1), unit: 'oz' },
+        { name: 'BBQ 3', forecast: Math.ceil(adjustedGuests * 1), unit: 'oz' },
+        { name: 'Hot Sauce 1', forecast: Math.ceil(adjustedGuests * 0.5), unit: 'oz' },
+        { name: 'Hot Sauce 2', forecast: Math.ceil(adjustedGuests * 0.5), unit: 'oz' },
+        { name: 'Hot Sauce 3', forecast: Math.ceil(adjustedGuests * 0.5), unit: 'oz' }
+      ],
+      "PaperGoods": [
+        { name: 'To-Go Cups', forecast: adjustedGuests * 3, unit: 'each' },
+        { name: '1 oz Soufflé Cup', forecast: plateGuests * 3, unit: 'each' },
+        { name: 'Cutlery Kit', forecast: adjustedGuests, unit: 'each' },
+        { name: 'To-Go Bag Small', forecast: 0, unit: 'each', isPar: true },
+        { name: 'To-Go Bag Large', forecast: 0, unit: 'each', isPar: true },
+        { name: 'Moist Towelettes', forecast: adjustedGuests, unit: 'each' }
+      ],
       "CleaningSupplies": [
-  { name: 'Trash Bags', forecast: 0, unit: 'case', isPar: true },
-  { name: 'Gloves - S', forecast: 0, unit: 'case', isPar: true },
-  { name: 'Gloves - M', forecast: 0, unit: 'case', isPar: true },
-  { name: 'Gloves - L', forecast: 0, unit: 'case', isPar: true },
-  { name: 'Gloves - XL', forecast: 0, unit: 'case', isPar: true },
-  { name: 'Dish Soap', forecast: 0, unit: 'gal', isPar: true },
-  { name: 'Dish Sanitizer', forecast: 0, unit: 'gal', isPar: true },
-  { name: 'C-Folds', forecast: 0, unit: 'case', isPar: true },
-  { name: 'Sanitizing Wipes', forecast: 0, unit: 'case', isPar: true },
-  { name: 'Green Scrubbies', forecast: 0, unit: 'pack', isPar: true },
-  { name: 'Metal Scrubbies', forecast: 0, unit: 'pack', isPar: true },
-  { name: 'Broom', forecast: 0, unit: 'each', isPar: true }
-],
+        { name: 'Trash Bags', forecast: 0, unit: 'case', isPar: true },
+        { name: 'Gloves - S', forecast: 0, unit: 'case', isPar: true },
+        { name: 'Gloves - M', forecast: 0, unit: 'case', isPar: true },
+        { name: 'Gloves - L', forecast: 0, unit: 'case', isPar: true },
+        { name: 'Gloves - XL', forecast: 0, unit: 'case', isPar: true },
+        { name: 'Dish Soap', forecast: 0, unit: 'gal', isPar: true },
+        { name: 'Dish Sanitizer', forecast: 0, unit: 'gal', isPar: true },
+        { name: 'C-Folds', forecast: 0, unit: 'case', isPar: true },
+        { name: 'Sanitizing Wipes', forecast: 0, unit: 'case', isPar: true },
+        { name: 'Green Scrubbies', forecast: 0, unit: 'pack', isPar: true },
+        { name: 'Metal Scrubbies', forecast: 0, unit: 'pack', isPar: true },
+        { name: 'Broom', forecast: 0, unit: 'each', isPar: true }
+      ]
     };
 
     if (adminMode && manualAdditions && typeof manualAdditions === 'object') {
@@ -169,70 +166,67 @@ const WeeklyOrderGuide = () => {
   }, [generateOrderGuide, guideData]);
 
   const handleAddItem = (category) => {
-  const name = prompt(`Add item to "${category}"\nEnter item name:`)?.trim();
-  if (!name) return;
+    const name = prompt(`Add item to "${category}"\nEnter item name:`)?.trim();
+    if (!name) return;
+    const unit = prompt(`What unit for "${name}"? (e.g. lbs, each)`);
+    if (!unit) return;
 
-  const unit = prompt(`What unit for "${name}"? (e.g. lbs, each)`);
-  if (!unit) return;
+    const totalGuests = forecastData.reduce((sum, day) => sum + (day.guests || 0), 0);
+    const sandwichGuests = Math.round(totalGuests * 0.5);
+    const plateGuests = totalGuests - sandwichGuests;
+    let forecast = 0;
 
-  // Calculate guest volume
-  const totalGuests = forecastData.reduce((sum, day) => sum + (day.guests || 0), 0);
-  const sandwichGuests = Math.round(totalGuests * 0.5);
-  const plateGuests = totalGuests - sandwichGuests;
-  let forecast = 0;
-
-  // Calculate forecast based on category
-  switch (category) {
-    case 'Meats':
-      forecast = ((plateGuests * 4) + (sandwichGuests / 3) * 6) / 16; // in lbs
-      break;
-    case 'Sides':
-      forecast = ((plateGuests * 3) * 4) / 16; // in lbs
-      break;
-    case 'Bread':
-      forecast = name.toLowerCase().includes("bun") ? sandwichGuests : plateGuests;
-      break;
-    case 'Sweets':
-      forecast = plateGuests;
-      break;
-    case 'PaperGoods':
-      if (name.toLowerCase().includes("cup")) {
-        forecast = totalGuests * 3;
-      } else if (name.toLowerCase().includes("cutlery")) {
-        forecast = totalGuests;
-      } else {
+    switch (category) {
+      case 'Meats':
+        forecast = ((plateGuests * 4) + (sandwichGuests / 3) * 6) / 16;
+        break;
+      case 'Sides':
+        forecast = ((plateGuests * 3) * 4) / 16;
+        break;
+      case 'Bread':
+        forecast = name.toLowerCase().includes("bun") ? sandwichGuests : plateGuests;
+        break;
+      case 'Sweets':
+        forecast = plateGuests;
+        break;
+      case 'PaperGoods':
+        if (name.toLowerCase().includes("cup")) {
+          forecast = totalGuests * 3;
+        } else if (name.toLowerCase().includes("cutlery")) {
+          forecast = totalGuests;
+        } else {
+          forecast = 0;
+        }
+        break;
+      default:
         forecast = 0;
-      }
-      break;
-    default:
-      forecast = 0;
-  }
+    }
 
-  const newItem = {
-    name,
-    forecast: Math.ceil(forecast),
-    unit,
-    actual: 0,
-    variance: (-forecast).toFixed(1),
-    isManual: true
-  };
-
-  setManualAdditions(prev => {
-    const updatedManuals = {
-      ...prev,
-      [category]: [...(prev[category] || []), newItem]
+    const newItem = {
+      name,
+      forecast: Math.ceil(forecast),
+      unit,
+      actual: 0,
+      variance: (-forecast).toFixed(1),
+      isManual: true
     };
 
-    setGuideData(prevGuide => {
-      const updatedGuide = { ...prevGuide };
-      if (!updatedGuide[category]) updatedGuide[category] = [];
-      updatedGuide[category] = [...updatedGuide[category], newItem];
-      return updatedGuide;
-    });
+    setManualAdditions(prev => {
+      const updatedManuals = {
+        ...prev,
+        [category]: [...(prev[category] || []), newItem]
+      };
 
-    return updatedManuals;
-  });
-};
+      setGuideData(prevGuide => {
+        const updatedGuide = { ...prevGuide };
+        if (!updatedGuide[category]) updatedGuide[category] = [];
+        updatedGuide[category] = [...updatedGuide[category], newItem];
+        return updatedGuide;
+      });
+
+      return updatedManuals;
+    });
+  };
 
   const getStatusClass = useCallback((item) => {
     const { forecast, actual } = item;
@@ -284,21 +278,37 @@ const WeeklyOrderGuide = () => {
           className="space-y-6"
         >
           {Object.entries(safeGuideData).map(([category, items]) => {
-            if (!Array.isArray(items)) {
-              console.warn(`❌ Skipping "${category}" — items is not an array:`, items);
-              return null;
-            }
+            if (!Array.isArray(items)) return null;
+
+            const isParCategory = parBasedCategories.includes(category);
+            const showForm = activeAddForm === category;
 
             return (
               <div key={category}>
                 <div className="flex justify-between items-center mb-2">
                   <h2 className="text-xl font-bold">{category}</h2>
                   {adminMode && (
-                    <button onClick={() => handleAddItem(category)} className="text-sm text-blue-600 hover:underline no-print">
+                    <button
+                      onClick={() => {
+                        if (isParCategory) {
+                          setActiveAddForm(prev => prev === category ? null : category);
+                        } else {
+                          handleAddItem(category);
+                        }
+                      }}
+                      className="text-sm text-blue-600 hover:underline no-print"
+                    >
                       + Add Item
                     </button>
                   )}
                 </div>
+
+                {showForm && isParCategory && (
+                  <div className="mb-4">
+                    <AddItemForm category={category} onClose={() => setActiveAddForm(null)} />
+                  </div>
+                )}
+
                 <OrderGuideCategory
                   categoryTitle={category}
                   items={items}
@@ -311,7 +321,6 @@ const WeeklyOrderGuide = () => {
         </motion.div>
       </AnimatePresence>
 
-      {/* Hidden printable component */}
       <div style={{ display: 'none' }}>
         <PrintableOrderGuide
           ref={printableRef}
