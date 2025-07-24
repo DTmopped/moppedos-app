@@ -42,7 +42,7 @@ const OrderGuideItemTable = ({ items = [], getStatusClass = () => '', getStatusI
         ? {
             ...item,
             forecast: newForecast,
-            variance: newForecast - (item.actual || 0),
+            variance: (newForecast || 0) - (item.actual || 0),
           }
         : item
     );
@@ -125,7 +125,9 @@ const OrderGuideItemTable = ({ items = [], getStatusClass = () => '', getStatusI
             return (
               <tr
                 key={`${item.name}-${idx}`}
-                className={`border-t ${statusClass} ${isPar ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''}`}
+                className={`border-t ${statusClass} 
+                 ${isPar ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''} 
+                 ${isManual && !isPar ? 'bg-blue-50 dark:bg-blue-900/10' : ''}`}
               >
                 <td className="px-4 py-2 text-sm">{item.name}</td>
 
