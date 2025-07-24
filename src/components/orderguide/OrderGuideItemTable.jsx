@@ -53,6 +53,44 @@ const OrderGuideItemTable = ({ items = [], getStatusClass = () => '', getStatusI
     });
   };
 
+  const handleManualForecastChange = (e, itemToUpdate) => {
+    const newForecast = Number(e.target.value);
+    const category = Object.keys(manualAdditions).find(cat =>
+      manualAdditions[cat]?.some(item => item.name === itemToUpdate.name)
+    );
+    if (!category) return;
+
+    const updatedManuals = {
+      ...manualAdditions,
+      [category]: manualAdditions[category].map(item =>
+        item.name === itemToUpdate.name
+          ? {
+              ...item,
+              forecast: newForecast,
+              variance: newForecast - (item.actual || 0),
+            }
+          : item
+      ),
+    };
+
+    setManualAdditions(updatedManuals);
+
+    const updatedGuide = {
+      ...guideData,
+      [category]: guideData[category].map(item =>
+        item.name === itemToUpdate.name
+          ? {
+              ...item,
+              forecast: newForecast,
+              variance: newForecast - (item.actual || 0),
+            }
+          : item
+      ),
+    };
+
+    setGuideData(updatedGuide);
+  };
+
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full border border-gray-200 dark:border-gray-700">
@@ -82,12 +120,16 @@ const OrderGuideItemTable = ({ items = [], getStatusClass = () => '', getStatusI
                 <td className="px-4 py-2 text-sm">{item.name}</td>
 
                 <td className="px-4 py-2 text-sm">
-                  {isPar && isAdminMode ? (
+                  {(isManual || (isPar && isAdminMode)) ? (
                     <input
                       type="number"
                       value={item.forecast || ''}
                       className="w-20 px-2 py-1 border rounded text-sm"
-                      onChange={(e) => handleParForecastChange(e, item)}
+                      onChange={(e) =>
+                        isManual
+                          ? handleManualForecastChange(e, item)
+                          : handleParForecastChange(e, item)
+                      }
                     />
                   ) : (
                     item.forecast ?? 0
