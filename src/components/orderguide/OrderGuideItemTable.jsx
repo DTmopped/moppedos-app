@@ -112,6 +112,16 @@ const OrderGuideItemTable = ({ items = [], getStatusClass = () => '', getStatusI
             const statusClass = getStatusClass(item);
             const statusIcon = getStatusIcon(item);
 
+            const category = Object.keys(guideData).find(cat =>
+              guideData[cat]?.some(i => i.name === item.name)
+            ) || '';
+
+            const showInput =
+              isPar ||
+              (isManual &&
+                category !== 'Meats' &&
+                category !== 'Sides');
+
             return (
               <tr
                 key={`${item.name}-${idx}`}
@@ -120,7 +130,7 @@ const OrderGuideItemTable = ({ items = [], getStatusClass = () => '', getStatusI
                 <td className="px-4 py-2 text-sm">{item.name}</td>
 
                 <td className="px-4 py-2 text-sm">
-                  {(isManual || (isPar && isAdminMode)) ? (
+                  {showInput ? (
                     <input
                       type="number"
                       value={item.forecast || ''}
@@ -132,7 +142,7 @@ const OrderGuideItemTable = ({ items = [], getStatusClass = () => '', getStatusI
                       }
                     />
                   ) : (
-                    item.forecast ?? 0
+                    <span>{item.forecast ?? 0}</span>
                   )}
                 </td>
 
