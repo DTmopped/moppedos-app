@@ -126,8 +126,7 @@ const OrderGuideItemTable = ({ items = [], getStatusClass = () => '', getStatusI
               <tr
                 key={`${item.name}-${idx}`}
                 className={`border-t ${statusClass} 
-                 ${isPar ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''} 
-                 ${isManual && !isPar ? 'bg-blue-50 dark:bg-blue-900/10' : ''}`}
+                   ${(isPar || (isManual && !isPar)) ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''}`}
               >
                 <td className="px-4 py-2 text-sm">{item.name}</td>
 
