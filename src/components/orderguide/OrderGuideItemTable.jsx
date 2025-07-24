@@ -122,15 +122,21 @@ const OrderGuideItemTable = ({ items = [], getStatusClass = () => '', getStatusI
                 category !== 'Meats' &&
                 category !== 'Sides');
 
+            const bgClass =
+              isPar || (isManual && category === 'Meats')
+                ? 'bg-yellow-50 dark:bg-yellow-900/20'
+                : isManual
+                ? 'bg-blue-50 dark:bg-blue-900/10'
+                : '';
+
             return (
               <tr
                 key={`${item.name}-${idx}`}
-                className={`border-t ${statusClass} 
-                   ${(isPar || (isManual && !isPar)) ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''}`}
+                className={`border-t ${statusClass} ${bgClass}`}
               >
-                <td className="px-4 py-2 text-sm">{item.name}</td>
+                <td className="px-4 py-2 text-sm h-[40px] align-middle">{item.name}</td>
 
-                <td className="px-4 py-2 text-sm">
+                <td className="px-4 py-2 text-sm h-[40px] align-middle">
                   {showInput ? (
                     <input
                       type="number"
@@ -147,10 +153,10 @@ const OrderGuideItemTable = ({ items = [], getStatusClass = () => '', getStatusI
                   )}
                 </td>
 
-                <td className="px-4 py-2 text-sm">{item.actual ?? 0}</td>
-                <td className="px-4 py-2 text-sm">{item.variance ?? 0}</td>
-                <td className="px-4 py-2 text-sm">{item.unit || ''}</td>
-                <td className="px-4 py-2 text-sm">
+                <td className="px-4 py-2 text-sm h-[40px] align-middle">{item.actual ?? 0}</td>
+                <td className="px-4 py-2 text-sm h-[40px] align-middle">{item.variance ?? 0}</td>
+                <td className="px-4 py-2 text-sm h-[40px] align-middle">{item.unit || ''}</td>
+                <td className="px-4 py-2 text-sm h-[40px] align-middle">
                   {isPar ? (
                     <span className="text-xs font-semibold text-yellow-700 bg-yellow-100 px-2 py-1 rounded">
                       PAR Item
@@ -160,14 +166,16 @@ const OrderGuideItemTable = ({ items = [], getStatusClass = () => '', getStatusI
                   )}
                 </td>
                 {isAdminMode && (
-                  <td className="px-4 py-2 text-sm">
+                  <td className="px-4 py-2 text-sm h-[40px] align-middle">
                     {isManual ? (
-                      <button
-                        onClick={() => handleRemove(item)}
-                        className="text-red-600 hover:underline"
-                      >
-                        Delete
-                      </button>
+                      <div className="flex items-center h-full">
+                        <button
+                          onClick={() => handleRemove(item)}
+                          className="text-red-600 hover:underline"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     ) : (
                       <span className="text-xs italic text-gray-400">Auto</span>
                     )}
