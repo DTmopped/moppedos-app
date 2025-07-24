@@ -5,7 +5,6 @@ import { Printer, TrendingUp, AlertTriangle, CheckCircle2, HelpCircle } from 'lu
 import { motion, AnimatePresence } from 'framer-motion';
 import PrintableOrderGuide from './orderguide/PrintableOrderGuide.jsx';
 import OrderGuideCategory from "@/components/orderguide/OrderGuideCategory";
-import AddItemForm from './AddItemForm.jsx';
 import { supabase } from '@/lib/supabaseClient';
 
 const parBasedCategories = ['PaperGoods', 'CleaningSupplies', 'Condiments'];
