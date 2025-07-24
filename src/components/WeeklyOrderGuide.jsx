@@ -287,19 +287,13 @@ const WeeklyOrderGuide = () => {
                 <div className="flex justify-between items-center mb-2">
                   <h2 className="text-xl font-bold">{category}</h2>
                   {adminMode && (
-                    <button
-                      onClick={() => {
-                        if (isParCategory) {
-                          setActiveAddForm(prev => prev === category ? null : category);
-                        } else {
-                          handleAddItem(category);
-                        }
-                      }}
-                      className="text-sm text-blue-600 hover:underline no-print"
-                    >
-                      + Add Item
-                    </button>
-                  )}
+             <button
+              onClick={() => handleAddItem(category)}
+              className="text-sm text-blue-600 hover:underline no-print"
+               >
+             + Add Item
+               </button>
+               )}
                 </div>
 
                 <OrderGuideCategory
