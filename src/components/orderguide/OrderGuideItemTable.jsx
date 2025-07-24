@@ -77,20 +77,24 @@ const OrderGuideItemTable = ({ items = [], getStatusClass = () => '', getStatusI
 
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full border border-gray-200 dark:border-gray-700">
-        <thead className="bg-gray-100 dark:bg-gray-800">
+      <table className="min-w-full border border-gray-300 dark:border-gray-700 text-sm text-gray-800 dark:text-gray-100">
+        <thead className="bg-gray-100 dark:bg-gray-800 text-left font-semibold">
           <tr>
-            {['Item', 'Forecast', 'Actual', 'Variance', 'Unit', 'Status']
-              .map((header) => (
-                <th key={header} className="text-left px-4 py-2 text-sm font-semibold">{header}</th>
-              ))}
-            {isAdminMode && <th className="text-left px-4 py-2 text-sm font-semibold">Actions</th>}
+            <th className="px-4 py-2">Item</th>
+            <th className="px-4 py-2">Forecast</th>
+            <th className="px-4 py-2">Actual</th>
+            <th className="px-4 py-2">Variance</th>
+            <th className="px-4 py-2">Unit</th>
+            <th className="px-4 py-2">Status</th>
+            {isAdminMode && <th className="px-4 py-2">Actions</th>}
           </tr>
         </thead>
         <tbody>
           {items.map((item, idx) => {
             const isManual = item?.isManual;
             const isPar = item?.isPar;
+            const statusClass = getStatusClass(item);
+            const statusIcon = getStatusIcon(item);
 
             const category = Object.keys(guideData).find(cat =>
               guideData[cat]?.some(i => i.name === item.name)
@@ -98,20 +102,23 @@ const OrderGuideItemTable = ({ items = [], getStatusClass = () => '', getStatusI
 
             const showInput = isPar || (isManual && category !== 'Meats' && category !== 'Sides');
 
-            const rowColor =
-              isPar || isManual
-                ? 'bg-yellow-50 text-amber-950'
-                : 'bg-orange-50 text-orange-900';
+            const rowClass = `h-[44px] align-middle ${
+              isPar
+                ? 'bg-yellow-50 dark:bg-yellow-900/10'
+                : isManual
+                ? 'bg-blue-50 dark:bg-blue-900/10'
+                : 'bg-white dark:bg-gray-900'
+            }`;
 
             return (
-              <tr key={`${item.name}-${idx}`} className={`border-t text-sm h-[40px] ${rowColor}`}>
-                <td className="px-4 py-2 align-middle">{item.name}</td>
-                <td className="px-4 py-2 align-middle">
+              <tr key={`${item.name}-${idx}`} className={`${rowClass} border-t border-gray-200 dark:border-gray-700`}>
+                <td className="px-4 py-2">{item.name}</td>
+                <td className="px-4 py-2">
                   {showInput ? (
                     <input
                       type="number"
                       value={item.forecast || ''}
-                      className="w-20 px-2 py-1 border rounded text-sm bg-gray-50 dark:bg-gray-800"
+                      className="w-20 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-800 text-sm"
                       onChange={(e) =>
                         isManual
                           ? handleManualForecastChange(e, item)
@@ -122,24 +129,24 @@ const OrderGuideItemTable = ({ items = [], getStatusClass = () => '', getStatusI
                     <span>{item.forecast ?? 0}</span>
                   )}
                 </td>
-                <td className="px-4 py-2 align-middle">{item.actual ?? 0}</td>
-                <td className="px-4 py-2 align-middle">{item.variance ?? 0}</td>
-                <td className="px-4 py-2 align-middle">{item.unit || ''}</td>
-                <td className="px-4 py-2 align-middle">
+                <td className="px-4 py-2">{item.actual ?? 0}</td>
+                <td className="px-4 py-2">{item.variance ?? 0}</td>
+                <td className="px-4 py-2">{item.unit || ''}</td>
+                <td className="px-4 py-2">
                   {isPar ? (
-                    <span className="text-xs font-semibold text-yellow-700 bg-yellow-100 px-2 py-1 rounded">
+                    <span className="text-xs font-semibold text-yellow-800 bg-yellow-100 px-2 py-1 rounded">
                       PAR Item
                     </span>
                   ) : (
-                    getStatusIcon(item)
+                    statusIcon
                   )}
                 </td>
                 {isAdminMode && (
-                  <td className="px-4 py-2 align-middle">
+                  <td className="px-4 py-2">
                     {isManual ? (
                       <button
                         onClick={() => handleRemove(item)}
-                        className="text-red-600 hover:underline text-sm"
+                        className="text-red-600 hover:underline text-xs"
                       >
                         Delete
                       </button>
