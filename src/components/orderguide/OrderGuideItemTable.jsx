@@ -67,7 +67,7 @@ const OrderGuideItemTable = ({ items = [], getStatusClass = () => '', getStatusI
           ? {
               ...item,
               forecast: newForecast,
-              variance: newForecast - (item.actual || 0),
+              variance: (newForecast || 0) - (item.actual || 0),
             }
           : item
       ),
@@ -82,7 +82,7 @@ const OrderGuideItemTable = ({ items = [], getStatusClass = () => '', getStatusI
           ? {
               ...item,
               forecast: newForecast,
-              variance: newForecast - (item.actual || 0),
+              variance: (newForecast || 0) - (item.actual || 0),
             }
           : item
       ),
@@ -136,7 +136,7 @@ const OrderGuideItemTable = ({ items = [], getStatusClass = () => '', getStatusI
                     <input
                       type="number"
                       value={item.forecast || ''}
-                      className="w-20 px-2 py-1 border rounded text-sm"
+                      className="w-20 px-2 py-1 border rounded text-sm bg-gray-50 dark:bg-gray-800"
                       onChange={(e) =>
                         isManual
                           ? handleManualForecastChange(e, item)
