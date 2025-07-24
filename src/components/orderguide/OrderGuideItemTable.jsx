@@ -39,18 +39,11 @@ const OrderGuideItemTable = ({ items = [], getStatusClass = () => '', getStatusI
 
     const updatedCategory = guideData[category].map(item =>
       item.name === itemToUpdate.name
-        ? {
-            ...item,
-            forecast: newForecast,
-            variance: (newForecast || 0) - (item.actual || 0),
-          }
+        ? { ...item, forecast: newForecast, variance: (newForecast || 0) - (item.actual || 0) }
         : item
     );
 
-    setGuideData({
-      ...guideData,
-      [category]: updatedCategory,
-    });
+    setGuideData({ ...guideData, [category]: updatedCategory });
   };
 
   const handleManualForecastChange = (e, itemToUpdate) => {
@@ -64,30 +57,21 @@ const OrderGuideItemTable = ({ items = [], getStatusClass = () => '', getStatusI
       ...manualAdditions,
       [category]: manualAdditions[category].map(item =>
         item.name === itemToUpdate.name
-          ? {
-              ...item,
-              forecast: newForecast,
-              variance: (newForecast || 0) - (item.actual || 0),
-            }
+          ? { ...item, forecast: newForecast, variance: (newForecast || 0) - (item.actual || 0) }
           : item
       ),
     };
-
-    setManualAdditions(updatedManuals);
 
     const updatedGuide = {
       ...guideData,
       [category]: guideData[category].map(item =>
         item.name === itemToUpdate.name
-          ? {
-              ...item,
-              forecast: newForecast,
-              variance: (newForecast || 0) - (item.actual || 0),
-            }
+          ? { ...item, forecast: newForecast, variance: (newForecast || 0) - (item.actual || 0) }
           : item
       ),
     };
 
+    setManualAdditions(updatedManuals);
     setGuideData(updatedGuide);
   };
 
@@ -96,12 +80,10 @@ const OrderGuideItemTable = ({ items = [], getStatusClass = () => '', getStatusI
       <table className="min-w-full border border-gray-200 dark:border-gray-700">
         <thead className="bg-gray-100 dark:bg-gray-800">
           <tr>
-            <th className="text-left px-4 py-2 text-sm font-semibold">Item</th>
-            <th className="text-left px-4 py-2 text-sm font-semibold">Forecast</th>
-            <th className="text-left px-4 py-2 text-sm font-semibold">Actual</th>
-            <th className="text-left px-4 py-2 text-sm font-semibold">Variance</th>
-            <th className="text-left px-4 py-2 text-sm font-semibold">Unit</th>
-            <th className="text-left px-4 py-2 text-sm font-semibold">Status</th>
+            {['Item', 'Forecast', 'Actual', 'Variance', 'Unit', 'Status']
+              .map((header) => (
+                <th key={header} className="text-left px-4 py-2 text-sm font-semibold">{header}</th>
+              ))}
             {isAdminMode && <th className="text-left px-4 py-2 text-sm font-semibold">Actions</th>}
           </tr>
         </thead>
@@ -109,34 +91,22 @@ const OrderGuideItemTable = ({ items = [], getStatusClass = () => '', getStatusI
           {items.map((item, idx) => {
             const isManual = item?.isManual;
             const isPar = item?.isPar;
-            const statusClass = getStatusClass(item);
-            const statusIcon = getStatusIcon(item);
 
             const category = Object.keys(guideData).find(cat =>
               guideData[cat]?.some(i => i.name === item.name)
             ) || '';
 
-            const showInput =
-              isPar ||
-              (isManual &&
-                category !== 'Meats' &&
-                category !== 'Sides');
+            const showInput = isPar || (isManual && category !== 'Meats' && category !== 'Sides');
 
-            const bgClass =
-              isPar || (isManual && category === 'Meats')
-                ? 'bg-yellow-50 dark:bg-yellow-900/20'
-                : isManual
-                ? 'bg-blue-50 dark:bg-blue-900/10'
-                : '';
+            const rowColor =
+              isPar || isManual
+                ? 'bg-yellow-50 text-amber-950'
+                : 'bg-orange-50 text-orange-900';
 
             return (
-              <tr
-                key={`${item.name}-${idx}`}
-                className={`border-t ${statusClass} ${bgClass}`}
-              >
-                <td className="px-4 py-2 text-sm h-[40px] align-middle">{item.name}</td>
-
-                <td className="px-4 py-2 text-sm h-[40px] align-middle">
+              <tr key={`${item.name}-${idx}`} className={`border-t text-sm h-[40px] ${rowColor}`}>
+                <td className="px-4 py-2 align-middle">{item.name}</td>
+                <td className="px-4 py-2 align-middle">
                   {showInput ? (
                     <input
                       type="number"
@@ -152,30 +122,27 @@ const OrderGuideItemTable = ({ items = [], getStatusClass = () => '', getStatusI
                     <span>{item.forecast ?? 0}</span>
                   )}
                 </td>
-
-                <td className="px-4 py-2 text-sm h-[40px] align-middle">{item.actual ?? 0}</td>
-                <td className="px-4 py-2 text-sm h-[40px] align-middle">{item.variance ?? 0}</td>
-                <td className="px-4 py-2 text-sm h-[40px] align-middle">{item.unit || ''}</td>
-                <td className="px-4 py-2 text-sm h-[40px] align-middle">
+                <td className="px-4 py-2 align-middle">{item.actual ?? 0}</td>
+                <td className="px-4 py-2 align-middle">{item.variance ?? 0}</td>
+                <td className="px-4 py-2 align-middle">{item.unit || ''}</td>
+                <td className="px-4 py-2 align-middle">
                   {isPar ? (
                     <span className="text-xs font-semibold text-yellow-700 bg-yellow-100 px-2 py-1 rounded">
                       PAR Item
                     </span>
                   ) : (
-                    statusIcon
+                    getStatusIcon(item)
                   )}
                 </td>
                 {isAdminMode && (
-                  <td className="px-4 py-2 text-sm h-[40px] align-middle">
+                  <td className="px-4 py-2 align-middle">
                     {isManual ? (
-                      <div className="flex items-center h-full">
-                        <button
-                          onClick={() => handleRemove(item)}
-                          className="text-red-600 hover:underline"
-                        >
-                          Delete
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => handleRemove(item)}
+                        className="text-red-600 hover:underline text-sm"
+                      >
+                        Delete
+                      </button>
                     ) : (
                       <span className="text-xs italic text-gray-400">Auto</span>
                     )}
