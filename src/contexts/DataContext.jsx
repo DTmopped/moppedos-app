@@ -26,9 +26,10 @@ export const DataProvider = ({ children }) => {
   }, [forecastData]);
 
   const [isAdminMode, setIsAdminMode] = useState(() => {
-    const stored = localStorage.getItem('adminMode');
-    return stored === 'true';
-  });
+  const stored = localStorage.getItem('adminMode');
+  // Default to false if nothing is stored
+  return stored === null ? false : stored === 'true';
+});
 
   const toggleAdminMode = () => {
     setIsAdminMode(prev => {
