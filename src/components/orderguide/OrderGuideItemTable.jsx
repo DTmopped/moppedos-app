@@ -1,6 +1,6 @@
 import React from 'react';
 import { useData } from '@/contexts/DataContext';
-import { HelpCircle, AlertTriangle } from 'lucide-react';
+import { AlertTriangle, HelpCircle } from 'lucide-react';
 
 const OrderGuideItemTable = ({
   items = [],
@@ -12,39 +12,8 @@ const OrderGuideItemTable = ({
     setManualAdditions,
     isAdminMode,
     setGuideData,
-    guideData,
+    guideData
   } = useData();
-
-  const handleForecastChange = (e, itemToUpdate, isManual = false) => {
-    const newForecast = Number(e.target.value);
-    const categorySource = isManual ? manualAdditions : guideData;
-    const category = Object.keys(categorySource).find(cat =>
-      categorySource[cat]?.some(item => item.name === itemToUpdate.name)
-    );
-    if (!category) return;
-
-    const updatedItems = categorySource[category].map(item =>
-      item.name === itemToUpdate.name
-        ? {
-            ...item,
-            forecast: newForecast,
-            variance: (newForecast || 0) - (item.actual || 0),
-          }
-        : item
-    );
-
-    if (isManual) {
-      setManualAdditions({
-        ...manualAdditions,
-        [category]: updatedItems,
-      });
-    }
-
-    setGuideData({
-      ...guideData,
-      [category]: updatedItems,
-    });
-  };
 
   const handleRemove = (itemToRemove) => {
     const category = Object.keys(manualAdditions).find(cat =>
@@ -66,19 +35,67 @@ const OrderGuideItemTable = ({
     setGuideData(updatedGuide);
   };
 
+  const handleForecastChange = (e, itemToUpdate) => {
+    const newForecast = Number(e.target.value);
+
+    // Determine which set (manual or system) the item is from
+    const source = manualAdditions && Object.keys(manualAdditions).some(cat =>
+      manualAdditions[cat]?.some(item => item.name === itemToUpdate.name)
+    ) ? manualAdditions : guideData;
+
+    const setSource = source === manualAdditions ? setManualAdditions : setGuideData;
+
+    const category = Object.keys(source).find(cat =>
+      source[cat]?.some(item => item.name === itemToUpdate.name)
+    );
+    if (!category) return;
+
+    const updatedItems = source[category].map(item =>
+      item.name === itemToUpdate.name
+        ? {
+            ...item,
+            forecast: newForecast,
+            variance: (newForecast || 0) - (item.actual || 0),
+          }
+        : item
+    );
+
+    setSource({
+      ...source,
+      [category]: updatedItems
+    });
+
+    // Sync guideData if editing manualAdditions
+    if (source === manualAdditions) {
+      const updatedGuide = {
+        ...guideData,
+        [category]: guideData[category].map(item =>
+          item.name === itemToUpdate.name
+            ? {
+                ...item,
+                forecast: newForecast,
+                variance: (newForecast || 0) - (item.actual || 0),
+              }
+            : item
+        ),
+      };
+      setGuideData(updatedGuide);
+    }
+  };
+
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full border border-gray-200 dark:border-gray-700">
+      <table className="min-w-full border border-gray-200 dark:border-gray-700 text-sm">
         <thead className="bg-gray-100 dark:bg-gray-800">
           <tr>
-            <th className="text-left px-4 py-2 text-sm font-semibold">Item</th>
-            <th className="text-left px-4 py-2 text-sm font-semibold">Forecast</th>
-            <th className="text-left px-4 py-2 text-sm font-semibold">Actual</th>
-            <th className="text-left px-4 py-2 text-sm font-semibold">Variance</th>
-            <th className="text-left px-4 py-2 text-sm font-semibold">Unit</th>
-            <th className="text-left px-4 py-2 text-sm font-semibold">Status</th>
+            <th className="text-left px-4 py-2 font-semibold">Item</th>
+            <th className="text-left px-4 py-2 font-semibold">Forecast</th>
+            <th className="text-left px-4 py-2 font-semibold">Actual</th>
+            <th className="text-left px-4 py-2 font-semibold">Variance</th>
+            <th className="text-left px-4 py-2 font-semibold">Unit</th>
+            <th className="text-left px-4 py-2 font-semibold">Status</th>
             {isAdminMode && (
-              <th className="text-left px-4 py-2 text-sm font-semibold">Actions</th>
+              <th className="text-left px-4 py-2 font-semibold">Actions</th>
             )}
           </tr>
         </thead>
@@ -86,17 +103,18 @@ const OrderGuideItemTable = ({
           {items.map((item, index) => {
             const isParItem = item.status === 'PAR Item';
             const isCustom = item.status === 'Custom';
-            const isManual = isCustom;
 
             return (
               <tr
                 key={index}
-                className={`${
-                  isAdminMode && isParItem ? 'bg-yellow-50' : ''
-                } border-t text-sm text-gray-800 h-[48px]`}
+                className={`border-t h-[48px] ${
+                  isParItem ? 'bg-yellow-50' : 'bg-white'
+                }`}
               >
-                {/* Item Name */}
-                <td className="px-3 py-2 font-semibold text-gray-900">{item.name}</td>
+                {/* Item */}
+                <td className="px-3 py-2 font-semibold text-gray-900">
+                  {item.name}
+                </td>
 
                 {/* Forecast */}
                 <td className="px-3 py-2">
@@ -104,8 +122,8 @@ const OrderGuideItemTable = ({
                     <input
                       type="number"
                       value={item.forecast}
-                      onChange={(e) => handleForecastChange(e, item, isManual)}
-                      className="w-full px-2 py-1 text-sm border rounded bg-white text-gray-900"
+                      onChange={(e) => handleForecastChange(e, item)}
+                      className="w-full px-2 py-1 border rounded text-gray-900 text-sm bg-white"
                     />
                   ) : (
                     <span>{item.forecast}</span>
@@ -136,7 +154,7 @@ const OrderGuideItemTable = ({
 
                 {/* Actions */}
                 {isAdminMode && (
-                  <td className="px-3 py-2 text-right">
+                  <td className="px-3 py-2">
                     {isCustom ? (
                       <button
                         onClick={() => handleRemove(item)}
