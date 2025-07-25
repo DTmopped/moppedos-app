@@ -111,74 +111,75 @@ const OrderGuideItemTable = ({
             )}
           </tr>
         </thead>
-        <tbody>
-          {items.map((item, idx) => {
-            const isManual = item?.isManual;
-            const isPar = item?.isPar;
-            const statusIcon = getStatusIcon(item);
+       <tbody>
+  {items.map((item, index) => {
+    const isAdmin = adminMode;
+    const isParItem = item.status === 'PAR Item';
+    const isCustom = item.status === 'Custom';
 
-            const category = Object.keys(guideData).find(cat =>
-              guideData[cat]?.some(i => i.name === item.name)
-            ) || '';
+    return (
+      <tr
+        key={index}
+        className={`${
+          isAdmin ? 'bg-yellow-50' : ''
+        } border-t text-sm text-gray-800 h-[48px]`}
+      >
+        {/* Item Name */}
+        <td className="px-3 py-2 font-semibold text-gray-900">{item.name}</td>
 
-            const showInput =
-              isPar || (isManual && category !== 'Meats' && category !== 'Sides');
+        {/* Forecast (editable if admin + par item) */}
+        <td className="px-3 py-2">
+          {isAdmin && isParItem ? (
+            <input
+              type="number"
+              value={item.forecast}
+              onChange={(e) => handleManualChange(e, category, index)}
+              className="w-full px-2 py-1 text-sm border rounded bg-white text-gray-900"
+            />
+          ) : (
+            <span>{item.forecast}</span>
+          )}
+        </td>
 
-            return (
-              <tr
-                key={`${item.name}-${idx}`}
-                className={`border-t h-[40px] text-sm align-middle bg-yellow-50 dark:bg-yellow-900/20`}
-              >
-                <td className="px-4 py-2 align-middle">{item.name}</td>
+        {/* Actual */}
+        <td className="px-3 py-2">{item.actual}</td>
 
-                <td className="px-4 py-2 align-middle">
-                  {showInput ? (
-                    <input
-                      type="number"
-                      value={item.forecast || ''}
-                      className="w-20 px-2 py-1 border rounded text-sm bg-gray-50 dark:bg-gray-800"
-                      onChange={(e) =>
-                        isManual
-                          ? handleManualForecastChange(e, item)
-                          : handleParForecastChange(e, item)
-                      }
-                    />
-                  ) : (
-                    <span>{item.forecast ?? 0}</span>
-                  )}
-                </td>
+        {/* Variance */}
+        <td className="px-3 py-2">{item.variance}</td>
 
-                <td className="px-4 py-2 align-middle">{item.actual ?? 0}</td>
-                <td className="px-4 py-2 align-middle">{item.variance ?? 0}</td>
-                <td className="px-4 py-2 align-middle">{item.unit || ''}</td>
-                <td className="px-4 py-2 align-middle">
-                  {isPar ? (
-                    <span className="text-xs font-semibold text-yellow-700 bg-yellow-100 px-2 py-1 rounded">
-                      PAR Item
-                    </span>
-                  ) : (
-                    statusIcon
-                  )}
-                </td>
+        {/* Unit */}
+        <td className="px-3 py-2">{item.unit}</td>
 
-                {isAdminMode && (
-                  <td className="px-4 py-2 align-middle">
-                    {isManual ? (
-                      <button
-                        onClick={() => handleRemove(item)}
-                        className="text-red-600 hover:underline"
-                      >
-                        Delete
-                      </button>
-                    ) : (
-                      <span className="text-xs italic text-gray-400">Auto</span>
-                    )}
-                  </td>
-                )}
-              </tr>
-            );
-          })}
-        </tbody>
+        {/* Status */}
+        <td className="px-3 py-2">
+          {isParItem ? (
+            <span className="inline-block px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-200 rounded">
+              PAR Item
+            </span>
+          ) : isCustom ? (
+            <HelpCircle size={16} className="text-gray-500 inline" />
+          ) : (
+            <AlertTriangle size={16} className="text-yellow-500 inline" />
+          )}
+        </td>
+
+        {/* Actions */}
+        <td className="px-3 py-2 text-right">
+          {isAdmin && isCustom ? (
+            <button
+              onClick={() => handleRemoveItem(category, index)}
+              className="text-red-600 hover:underline text-sm"
+            >
+              Delete
+            </button>
+          ) : (
+            <span className="text-gray-400 text-xs italic">Auto</span>
+          )}
+        </td>
+      </tr>
+    );
+  })}
+</tbody>
       </table>
     </div>
   );
