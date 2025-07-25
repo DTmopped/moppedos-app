@@ -4,8 +4,6 @@ import { AlertTriangle, HelpCircle } from 'lucide-react';
 
 const OrderGuideItemTable = ({
   items = [],
-  getStatusClass = () => '',
-  getStatusIcon = () => null
 }) => {
   const {
     manualAdditions,
@@ -14,8 +12,6 @@ const OrderGuideItemTable = ({
     setGuideData,
     guideData,
   } = useData();
-
-  const isAdmin = isAdminMode;
 
   const handleRemove = (itemToRemove) => {
     const category = Object.keys(manualAdditions).find(cat =>
@@ -37,39 +33,19 @@ const OrderGuideItemTable = ({
     setGuideData(updatedGuide);
   };
 
-  const handleParForecastChange = (e, itemToUpdate) => {
+  const handleForecastChange = (e, itemToUpdate, isManual) => {
     const newForecast = Number(e.target.value);
-    const category = Object.keys(guideData).find(cat =>
-      guideData[cat]?.some(item => item.name === itemToUpdate.name)
+    const sourceData = isManual ? manualAdditions : guideData;
+    const updateFunc = isManual ? setManualAdditions : setGuideData;
+
+    const category = Object.keys(sourceData).find(cat =>
+      sourceData[cat]?.some(item => item.name === itemToUpdate.name)
     );
     if (!category) return;
 
-    const updatedCategory = guideData[category].map(item =>
-      item.name === itemToUpdate.name
-        ? {
-            ...item,
-            forecast: newForecast,
-            variance: (newForecast || 0) - (item.actual || 0),
-          }
-        : item
-    );
-
-    setGuideData({
-      ...guideData,
-      [category]: updatedCategory,
-    });
-  };
-
-  const handleManualForecastChange = (e, itemToUpdate) => {
-    const newForecast = Number(e.target.value);
-    const category = Object.keys(manualAdditions).find(cat =>
-      manualAdditions[cat]?.some(item => item.name === itemToUpdate.name)
-    );
-    if (!category) return;
-
-    const updatedManuals = {
-      ...manualAdditions,
-      [category]: manualAdditions[category].map(item =>
+    const updated = {
+      ...sourceData,
+      [category]: sourceData[category].map(item =>
         item.name === itemToUpdate.name
           ? {
               ...item,
@@ -80,8 +56,9 @@ const OrderGuideItemTable = ({
       ),
     };
 
-    setManualAdditions(updatedManuals);
+    updateFunc(updated);
 
+    // Also update guideData so it stays synced
     const updatedGuide = {
       ...guideData,
       [category]: guideData[category].map(item =>
@@ -94,7 +71,6 @@ const OrderGuideItemTable = ({
           : item
       ),
     };
-
     setGuideData(updatedGuide);
   };
 
@@ -109,7 +85,7 @@ const OrderGuideItemTable = ({
             <th className="text-left px-4 py-2 text-sm font-semibold">Variance</th>
             <th className="text-left px-4 py-2 text-sm font-semibold">Unit</th>
             <th className="text-left px-4 py-2 text-sm font-semibold">Status</th>
-            {isAdmin && (
+            {isAdminMode && (
               <th className="text-left px-4 py-2 text-sm font-semibold">Actions</th>
             )}
           </tr>
@@ -118,22 +94,23 @@ const OrderGuideItemTable = ({
           {items.map((item, index) => {
             const isParItem = item.status === 'PAR Item';
             const isCustom = item.status === 'Custom';
+            const isManual = !!manualAdditions && Object.values(manualAdditions).some(cat =>
+              cat.some(manualItem => manualItem.name === item.name)
+            );
 
             return (
               <tr
                 key={index}
-                className={`${
-                  isAdmin ? 'bg-yellow-50' : ''
-                } border-t text-sm text-gray-800 h-[48px]`}
+                className={`border-t text-sm text-gray-800 h-[48px] ${isAdminMode ? 'bg-yellow-50' : ''}`}
               >
                 <td className="px-3 py-2 font-semibold text-gray-900">{item.name}</td>
 
                 <td className="px-3 py-2">
-                  {isAdmin && isParItem ? (
+                  {isAdminMode && isParItem ? (
                     <input
                       type="number"
                       value={item.forecast}
-                      onChange={(e) => handleManualForecastChange(e, item)}
+                      onChange={(e) => handleForecastChange(e, item, isManual)}
                       className="w-full px-2 py-1 text-sm border rounded bg-white text-gray-900"
                     />
                   ) : (
@@ -157,7 +134,7 @@ const OrderGuideItemTable = ({
                   )}
                 </td>
 
-                {isAdmin && (
+                {isAdminMode && (
                   <td className="px-3 py-2 text-right">
                     {isCustom ? (
                       <button
