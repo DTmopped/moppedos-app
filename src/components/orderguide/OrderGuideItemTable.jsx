@@ -99,8 +99,8 @@ const OrderGuideItemTable = ({
         </thead>
         <tbody>
           {items.map((item, index) => {
-            const isParItem = item.status === 'PAR Item';
-            const isCustom = item.status === 'Custom';
+            const isParItem = item.status?.toLowerCase() === 'par item';
+            const isCustom = item.status?.toLowerCase() === 'custom';
 
             return (
               <tr key={index} className="border-t h-[48px] bg-yellow-50">
