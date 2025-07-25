@@ -1,5 +1,6 @@
 import React from 'react';
 import { useData } from '@/contexts/DataContext';
+import { AlertTriangle, HelpCircle } from 'lucide-react';
 
 const OrderGuideItemTable = ({
   items = [],
@@ -13,6 +14,8 @@ const OrderGuideItemTable = ({
     setGuideData,
     guideData,
   } = useData();
+
+  const isAdmin = isAdminMode;
 
   const handleRemove = (itemToRemove) => {
     const category = Object.keys(manualAdditions).find(cat =>
@@ -106,80 +109,72 @@ const OrderGuideItemTable = ({
             <th className="text-left px-4 py-2 text-sm font-semibold">Variance</th>
             <th className="text-left px-4 py-2 text-sm font-semibold">Unit</th>
             <th className="text-left px-4 py-2 text-sm font-semibold">Status</th>
-            {isAdminMode && (
+            {isAdmin && (
               <th className="text-left px-4 py-2 text-sm font-semibold">Actions</th>
             )}
           </tr>
         </thead>
-       <tbody>
-  {items.map((item, index) => {
-    const isAdmin = adminMode;
-    const isParItem = item.status === 'PAR Item';
-    const isCustom = item.status === 'Custom';
+        <tbody>
+          {items.map((item, index) => {
+            const isParItem = item.status === 'PAR Item';
+            const isCustom = item.status === 'Custom';
 
-    return (
-      <tr
-        key={index}
-        className={`${
-          isAdmin ? 'bg-yellow-50' : ''
-        } border-t text-sm text-gray-800 h-[48px]`}
-      >
-        {/* Item Name */}
-        <td className="px-3 py-2 font-semibold text-gray-900">{item.name}</td>
+            return (
+              <tr
+                key={index}
+                className={`${
+                  isAdmin ? 'bg-yellow-50' : ''
+                } border-t text-sm text-gray-800 h-[48px]`}
+              >
+                <td className="px-3 py-2 font-semibold text-gray-900">{item.name}</td>
 
-        {/* Forecast (editable if admin + par item) */}
-        <td className="px-3 py-2">
-          {isAdmin && isParItem ? (
-            <input
-              type="number"
-              value={item.forecast}
-              onChange={(e) => handleManualChange(e, category, index)}
-              className="w-full px-2 py-1 text-sm border rounded bg-white text-gray-900"
-            />
-          ) : (
-            <span>{item.forecast}</span>
-          )}
-        </td>
+                <td className="px-3 py-2">
+                  {isAdmin && isParItem ? (
+                    <input
+                      type="number"
+                      value={item.forecast}
+                      onChange={(e) => handleManualForecastChange(e, item)}
+                      className="w-full px-2 py-1 text-sm border rounded bg-white text-gray-900"
+                    />
+                  ) : (
+                    <span>{item.forecast}</span>
+                  )}
+                </td>
 
-        {/* Actual */}
-        <td className="px-3 py-2">{item.actual}</td>
+                <td className="px-3 py-2">{item.actual}</td>
+                <td className="px-3 py-2">{item.variance}</td>
+                <td className="px-3 py-2">{item.unit}</td>
 
-        {/* Variance */}
-        <td className="px-3 py-2">{item.variance}</td>
+                <td className="px-3 py-2">
+                  {isParItem ? (
+                    <span className="inline-block px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-200 rounded">
+                      PAR Item
+                    </span>
+                  ) : isCustom ? (
+                    <HelpCircle size={16} className="text-gray-500 inline" />
+                  ) : (
+                    <AlertTriangle size={16} className="text-yellow-500 inline" />
+                  )}
+                </td>
 
-        {/* Unit */}
-        <td className="px-3 py-2">{item.unit}</td>
-
-        {/* Status */}
-        <td className="px-3 py-2">
-          {isParItem ? (
-            <span className="inline-block px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-200 rounded">
-              PAR Item
-            </span>
-          ) : isCustom ? (
-            <HelpCircle size={16} className="text-gray-500 inline" />
-          ) : (
-            <AlertTriangle size={16} className="text-yellow-500 inline" />
-          )}
-        </td>
-
-        {/* Actions */}
-        <td className="px-3 py-2 text-right">
-          {isAdmin && isCustom ? (
-            <button
-              onClick={() => handleRemoveItem(category, index)}
-              className="text-red-600 hover:underline text-sm"
-            >
-              Delete
-            </button>
-          ) : (
-            <span className="text-gray-400 text-xs italic">Auto</span>
-          )}
-        </td>
-      </tr>
-    );
-  })}
-</tbody>
+                {isAdmin && (
+                  <td className="px-3 py-2 text-right">
+                    {isCustom ? (
+                      <button
+                        onClick={() => handleRemove(item)}
+                        className="text-red-600 hover:underline text-sm"
+                      >
+                        Delete
+                      </button>
+                    ) : (
+                      <span className="text-gray-400 text-xs italic">Auto</span>
+                    )}
+                  </td>
+                )}
+              </tr>
+            );
+          })}
+        </tbody>
       </table>
     </div>
   );
