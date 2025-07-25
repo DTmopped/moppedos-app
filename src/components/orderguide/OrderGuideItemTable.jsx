@@ -38,7 +38,6 @@ const OrderGuideItemTable = ({
   const handleForecastChange = (e, itemToUpdate) => {
     const newForecast = Number(e.target.value);
 
-    // Determine which set (manual or system) the item is from
     const source = manualAdditions && Object.keys(manualAdditions).some(cat =>
       manualAdditions[cat]?.some(item => item.name === itemToUpdate.name)
     ) ? manualAdditions : guideData;
@@ -65,7 +64,6 @@ const OrderGuideItemTable = ({
       [category]: updatedItems
     });
 
-    // Sync guideData if editing manualAdditions
     if (source === manualAdditions) {
       const updatedGuide = {
         ...guideData,
@@ -107,9 +105,7 @@ const OrderGuideItemTable = ({
             return (
               <tr
                 key={index}
-                className={`border-t h-[48px] ${
-                  isParItem ? 'bg-yellow-50' : 'bg-white'
-                }`}
+                className={`border-t h-[48px] bg-yellow-50`}
               >
                 {/* Item */}
                 <td className="px-3 py-2 font-semibold text-gray-900">
