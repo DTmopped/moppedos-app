@@ -103,14 +103,9 @@ const OrderGuideItemTable = ({
             const isCustom = item.status === 'Custom';
 
             return (
-              <tr
-                key={index}
-                className={`border-t h-[48px] bg-yellow-50`}
-              >
+              <tr key={index} className="border-t h-[48px] bg-yellow-50">
                 {/* Item */}
-                <td className="px-3 py-2 font-semibold text-gray-900">
-                  {item.name}
-                </td>
+                <td className="px-3 py-2 font-semibold text-gray-900">{item.name}</td>
 
                 {/* Forecast */}
                 <td className="px-3 py-2">
