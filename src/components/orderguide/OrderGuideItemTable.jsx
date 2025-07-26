@@ -98,39 +98,47 @@ const OrderGuideItemTable = ({
           </tr>
         </thead>
         <tbody>
-      {items.map((item, index) => {
-  // DEBUG: Temporarily force status to test editable field
-  const status = item.status || 'PAR Item'; // <-- force it for now
-  const isParItem = status === 'PAR Item';
-  const isCustom = status === 'Custom';
+{items.map((item, index) => {
+  const status = item.status?.trim() || 'Unknown';
+  const isParItem = status.toLowerCase() === 'par item';
+  const isCustom = status.toLowerCase() === 'custom';
 
-  console.log(`${item.name} | status: ${status}`);
+  console.log(`${item.item} | status: ${status} | AdminMode: ${adminMode}`);
 
   return (
-    <tr key={index} className="border-t h-[48px] bg-yellow-50">
-      {/* Item */}
-      <td className="px-3 py-2 font-semibold text-gray-900">
-        {item.name}
+    <tr key={index} className="border-b">
+      {/* ITEM NAME */}
+      <td className="px-4 py-2 font-medium text-gray-900 whitespace-nowrap">
+        {item.item}
         {isParItem && (
-          <span className="ml-2 px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-200 rounded">
+          <span className="ml-2 inline-flex items-center rounded bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
             PAR Item
+          </span>
+        )}
+        {isCustom && (
+          <span className="ml-2 inline-flex items-center rounded bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800 ring-1 ring-inset ring-blue-600/20">
+            Custom
           </span>
         )}
       </td>
 
-      {/* Forecast */}
-      <td className="px-3 py-2">
-        {isAdminMode && isParItem ? (
+      {/* FORECAST FIELD (editable if PAR or admin) */}
+      <td className="px-4 py-2">
+        {(isParItem || adminMode) ? (
           <input
             type="number"
-            value={item.forecast ?? ''}
-            onChange={(e) => handleForecastChange(e, item)}
-            className="w-full px-2 py-1 border rounded text-gray-900 text-sm bg-white"
+            className="w-20 rounded border border-gray-300 px-2 py-1 text-right"
+            value={item.forecast}
+            onChange={(e) =>
+              handleItemChange(sectionName, index, 'forecast', Number(e.target.value))
+            }
           />
         ) : (
-          <span>{item.forecast ?? 0}</span>
+          <span>{item.forecast}</span>
         )}
       </td>
+
+      {/* ... other table cells (Actual, Variance, etc.) */}
 
       {/* Actual */}
       <td className="px-3 py-2">{item.actual}</td>
