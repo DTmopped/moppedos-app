@@ -98,71 +98,77 @@ const OrderGuideItemTable = ({
           </tr>
         </thead>
         <tbody>
-          {items.map((item, index) => {
-             const isParItem = item.status === 'PAR Item';
-             const isCustom = item.status === 'Custom';
+      {items.map((item, index) => {
+  const status = item.status || 'Unknown';
+  const isParItem = status === 'PAR Item';
+  const isCustom = status === 'Custom';
 
-            console.log(`[${item.name}] status: "${item.status}" | AdminMode: ${isAdminMode}`);
+  return (
+    <tr key={index} className="border-t h-[48px] bg-yellow-50">
+      {/* Item */}
+      <td className="px-3 py-2 font-semibold text-gray-900">
+        {item.name}
+        {isParItem && (
+          <span className="ml-2 px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-200 rounded">
+            PAR Item
+          </span>
+        )}
+      </td>
 
-            return (
-              <tr key={index} className="border-t h-[48px] bg-yellow-50">
-                {/* Item */}
-                <td className="px-3 py-2 font-semibold text-gray-900">{item.name}</td>
+      {/* Forecast */}
+      <td className="px-3 py-2">
+        {isAdminMode && isParItem ? (
+          <input
+            type="number"
+            value={item.forecast ?? ''}
+            onChange={(e) => handleForecastChange(e, item)}
+            className="w-full px-2 py-1 border rounded text-gray-900 text-sm bg-white"
+          />
+        ) : (
+          <span>{item.forecast ?? 0}</span>
+        )}
+      </td>
 
-                {/* Forecast */}
-                <td className="px-3 py-2">
-                {isAdminMode && isParItem ? (
-                 <input
-                 type="number"
-                  value={item.forecast ?? ''}
-                  onChange={(e) => handleForecastChange(e, item)}
-                 className="w-full px-2 py-1 border rounded text-gray-900 text-sm bg-white"
-                />
-                ) : (
-               <span>{item.forecast ?? 0}</span>
-              )}
-               </td>
+      {/* Actual */}
+      <td className="px-3 py-2">{item.actual}</td>
 
-                {/* Actual */}
-                <td className="px-3 py-2">{item.actual}</td>
+      {/* Variance */}
+      <td className="px-3 py-2">{item.variance}</td>
 
-                {/* Variance */}
-                <td className="px-3 py-2">{item.variance}</td>
+      {/* Unit */}
+      <td className="px-3 py-2">{item.unit}</td>
 
-                {/* Unit */}
-                <td className="px-3 py-2">{item.unit}</td>
+      {/* Status */}
+      <td className="px-3 py-2">
+        {isParItem ? (
+          <span className="inline-block px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-200 rounded">
+            PAR Item
+          </span>
+        ) : isCustom ? (
+          <HelpCircle size={16} className="text-gray-500 inline" />
+        ) : (
+          <AlertTriangle size={16} className="text-yellow-500 inline" />
+        )}
+      </td>
 
-                {/* Status */}
-                <td className="px-3 py-2">
-                  {isParItem ? (
-                    <span className="inline-block px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-200 rounded">
-                      PAR Item
-                    </span>
-                  ) : isCustom ? (
-                    <HelpCircle size={16} className="text-gray-500 inline" />
-                  ) : (
-                    <AlertTriangle size={16} className="text-yellow-500 inline" />
-                  )}
-                </td>
-
-                {/* Actions */}
-                {isAdminMode && (
-                  <td className="px-3 py-2">
-                    {isCustom ? (
-                      <button
-                        onClick={() => handleRemove(item)}
-                        className="text-red-600 hover:underline text-sm"
-                      >
-                        Delete
-                      </button>
-                    ) : (
-                      <span className="text-gray-400 text-xs italic">Auto</span>
-                    )}
-                  </td>
-                )}
-              </tr>
-            );
-          })}
+      {/* Actions */}
+      {isAdminMode && (
+        <td className="px-3 py-2">
+          {isCustom ? (
+            <button
+              onClick={() => handleRemove(item)}
+              className="text-red-600 hover:underline text-sm"
+            >
+              Delete
+            </button>
+          ) : (
+            <span className="text-gray-400 text-xs italic">Auto</span>
+          )}
+        </td>
+      )}
+    </tr>
+  );
+})}
         </tbody>
       </table>
     </div>
