@@ -2,9 +2,7 @@ import React from 'react';
 import { useData } from '@/contexts/DataContext';
 import { AlertTriangle, HelpCircle } from 'lucide-react';
 
-const OrderGuideItemTable = ({
-  items = []
-}) => {
+const OrderGuideItemTable = ({ items = [] }) => {
   const {
     manualAdditions,
     setManualAdditions,
@@ -63,7 +61,6 @@ const OrderGuideItemTable = ({
       [category]: updatedItems
     });
 
-    // Mirror into guideData if updated in manualAdditions
     if (isManual) {
       const updatedGuide = {
         ...guideData,
@@ -106,8 +103,8 @@ const OrderGuideItemTable = ({
 
             return (
               <tr key={index} className="border-b dark:border-gray-700">
-                {/* ITEM NAME */}
-                <td className="px-4 py-2 font-medium text-gray-900 whitespace-nowrap">
+                {/* Item */}
+                <td className="px-4 py-2 font-medium text-gray-900 whitespace-nowrap bg-yellow-50">
                   {name}
                   {isParItem && (
                     <span className="ml-2 inline-flex items-center rounded bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
@@ -121,8 +118,8 @@ const OrderGuideItemTable = ({
                   )}
                 </td>
 
-                {/* Forecast Field */}
-                <td className="px-4 py-2">
+                {/* Forecast */}
+                <td className="px-4 py-2 bg-yellow-50">
                   {(isParItem || isAdminMode) ? (
                     <input
                       type="number"
@@ -136,37 +133,37 @@ const OrderGuideItemTable = ({
                 </td>
 
                 {/* Actual */}
-                <td className="px-3 py-2">{item.actual}</td>
+                <td className="px-3 py-2 bg-yellow-50">{item.actual}</td>
 
                 {/* Variance */}
-                <td className="px-3 py-2">{item.variance}</td>
+                <td className="px-3 py-2 bg-yellow-50">{item.variance}</td>
 
                 {/* Unit */}
-                <td className="px-3 py-2">{item.unit}</td>
+                <td className="px-3 py-2 bg-yellow-50">{item.unit}</td>
 
                 {/* Status */}
-                <td className="px-3 py-2">
-  {isParItem ? (
-    <span className="inline-flex items-center rounded bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
-      <AlertTriangle className="w-3 h-3 mr-1 text-yellow-600" />
-      PAR Item
-    </span>
-  ) : isCustom ? (
-    <span className="inline-flex items-center rounded bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800 ring-1 ring-inset ring-blue-600/20">
-      <HelpCircle className="w-3 h-3 mr-1 text-blue-600" />
-      Custom
-    </span>
-  ) : (
-    <span className="inline-flex items-center rounded bg-yellow-50 px-2 py-0.5 text-xs font-medium text-yellow-700 ring-1 ring-inset ring-yellow-500/20">
-      <AlertTriangle className="w-3 h-3 mr-1 text-yellow-500" />
-      Unknown
-    </span>
-  )}
-</td>
+                <td className="px-3 py-2 bg-yellow-50">
+                  {isParItem ? (
+                    <span className="inline-flex items-center rounded bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
+                      <AlertTriangle className="w-3 h-3 mr-1 text-yellow-600" />
+                      PAR Item
+                    </span>
+                  ) : isCustom ? (
+                    <span className="inline-flex items-center rounded bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800 ring-1 ring-inset ring-blue-600/20">
+                      <HelpCircle className="w-3 h-3 mr-1 text-blue-600" />
+                      Custom
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center rounded bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700 ring-1 ring-inset ring-yellow-500/20">
+                      <AlertTriangle className="w-3 h-3 mr-1 text-yellow-500" />
+                      Unknown
+                    </span>
+                  )}
+                </td>
 
                 {/* Actions */}
                 {isAdminMode && (
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-2 bg-yellow-50">
                     {isCustom ? (
                       <button
                         onClick={() => handleRemove(item)}
