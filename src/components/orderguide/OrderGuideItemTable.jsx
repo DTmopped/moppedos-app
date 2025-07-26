@@ -3,9 +3,7 @@ import { useData } from '@/contexts/DataContext';
 import { AlertTriangle, HelpCircle } from 'lucide-react';
 
 const OrderGuideItemTable = ({
-  items = [],
-  getStatusClass = () => '',
-  getStatusIcon = () => null
+  items = []
 }) => {
   const {
     manualAdditions,
@@ -38,11 +36,12 @@ const OrderGuideItemTable = ({
   const handleForecastChange = (e, itemToUpdate) => {
     const newForecast = Number(e.target.value);
 
-    const source = manualAdditions && Object.keys(manualAdditions).some(cat =>
+    const isManual = Object.keys(manualAdditions).some(cat =>
       manualAdditions[cat]?.some(item => item.name === itemToUpdate.name)
-    ) ? manualAdditions : guideData;
+    );
 
-    const setSource = source === manualAdditions ? setManualAdditions : setGuideData;
+    const source = isManual ? manualAdditions : guideData;
+    const setSource = isManual ? setManualAdditions : setGuideData;
 
     const category = Object.keys(source).find(cat =>
       source[cat]?.some(item => item.name === itemToUpdate.name)
@@ -64,7 +63,8 @@ const OrderGuideItemTable = ({
       [category]: updatedItems
     });
 
-    if (source === manualAdditions) {
+    // Mirror into guideData if updated in manualAdditions
+    if (isManual) {
       const updatedGuide = {
         ...guideData,
         [category]: guideData[category].map(item =>
@@ -98,88 +98,83 @@ const OrderGuideItemTable = ({
           </tr>
         </thead>
         <tbody>
-{items.map((item, index) => {
-  const status = item.status?.trim() || 'Unknown';
-  const isParItem = status.toLowerCase() === 'par item';
-  const isCustom = status.toLowerCase() === 'custom';
+          {items.map((item, index) => {
+            const name = item.name || 'Unnamed Item';
+            const status = item.status?.trim().toLowerCase() || 'unknown';
+            const isParItem = status === 'par item';
+            const isCustom = status === 'custom';
 
-  console.log(`${item.item} | status: ${status} | AdminMode: ${isAdminMode}`);
+            return (
+              <tr key={index} className="border-b dark:border-gray-700">
+                {/* ITEM NAME */}
+                <td className="px-4 py-2 font-medium text-gray-900 whitespace-nowrap">
+                  {name}
+                  {isParItem && (
+                    <span className="ml-2 inline-flex items-center rounded bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
+                      PAR Item
+                    </span>
+                  )}
+                  {isCustom && (
+                    <span className="ml-2 inline-flex items-center rounded bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800 ring-1 ring-inset ring-blue-600/20">
+                      Custom
+                    </span>
+                  )}
+                </td>
 
-  return (
-    <tr key={index} className="border-b">
-      {/* ITEM NAME */}
-      <td className="px-4 py-2 font-medium text-gray-900 whitespace-nowrap">
-        {item.item}
-        {isParItem && (
-          <span className="ml-2 inline-flex items-center rounded bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
-            PAR Item
-          </span>
-        )}
-        {isCustom && (
-          <span className="ml-2 inline-flex items-center rounded bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800 ring-1 ring-inset ring-blue-600/20">
-            Custom
-          </span>
-        )}
-      </td>
+                {/* Forecast Field */}
+                <td className="px-4 py-2">
+                  {(isParItem || isAdminMode) ? (
+                    <input
+                      type="number"
+                      className="w-20 rounded border border-gray-300 px-2 py-1 text-right"
+                      value={item.forecast}
+                      onChange={(e) => handleForecastChange(e, item)}
+                    />
+                  ) : (
+                    <span>{item.forecast}</span>
+                  )}
+                </td>
 
-      {/* FORECAST FIELD (editable if PAR or admin) */}
-      <td className="px-4 py-2">
-        {(isParItem || isAdminMode) ? (
-          <input
-            type="number"
-            className="w-20 rounded border border-gray-300 px-2 py-1 text-right"
-            value={item.forecast}
-            onChange={(e) =>
-              handleItemChange(sectionName, index, 'forecast', Number(e.target.value))
-            }
-          />
-        ) : (
-          <span>{item.forecast}</span>
-        )}
-      </td>
+                {/* Actual */}
+                <td className="px-3 py-2">{item.actual}</td>
 
-      {/* ... other table cells (Actual, Variance, etc.) */}
+                {/* Variance */}
+                <td className="px-3 py-2">{item.variance}</td>
 
-      {/* Actual */}
-      <td className="px-3 py-2">{item.actual}</td>
+                {/* Unit */}
+                <td className="px-3 py-2">{item.unit}</td>
 
-      {/* Variance */}
-      <td className="px-3 py-2">{item.variance}</td>
+                {/* Status */}
+                <td className="px-3 py-2">
+                  {isParItem ? (
+                    <span className="inline-block px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-200 rounded">
+                      PAR Item
+                    </span>
+                  ) : isCustom ? (
+                    <HelpCircle size={16} className="text-gray-500 inline" />
+                  ) : (
+                    <AlertTriangle size={16} className="text-yellow-500 inline" />
+                  )}
+                </td>
 
-      {/* Unit */}
-      <td className="px-3 py-2">{item.unit}</td>
-
-      {/* Status */}
-      <td className="px-3 py-2">
-        {isParItem ? (
-          <span className="inline-block px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-200 rounded">
-            PAR Item
-          </span>
-        ) : isCustom ? (
-          <HelpCircle size={16} className="text-gray-500 inline" />
-        ) : (
-          <AlertTriangle size={16} className="text-yellow-500 inline" />
-        )}
-      </td>
-
-      {/* Actions */}
-      {isAdminMode && (
-        <td className="px-3 py-2">
-          {isCustom ? (
-            <button
-              onClick={() => handleRemove(item)}
-              className="text-red-600 hover:underline text-sm"
-            >
-              Delete
-            </button>
-          ) : (
-            <span className="text-gray-400 text-xs italic">Auto</span>
-          )}
-        </td>
-      )}
-    </tr>
-  );
-})}
+                {/* Actions */}
+                {isAdminMode && (
+                  <td className="px-3 py-2">
+                    {isCustom ? (
+                      <button
+                        onClick={() => handleRemove(item)}
+                        className="text-red-600 hover:underline text-sm"
+                      >
+                        Delete
+                      </button>
+                    ) : (
+                      <span className="text-gray-400 text-xs italic">Auto</span>
+                    )}
+                  </td>
+                )}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
