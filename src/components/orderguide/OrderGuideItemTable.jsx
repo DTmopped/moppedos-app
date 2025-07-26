@@ -99,9 +99,12 @@ const OrderGuideItemTable = ({
         </thead>
         <tbody>
       {items.map((item, index) => {
-  const status = item.status || 'Unknown';
+  // DEBUG: Temporarily force status to test editable field
+  const status = item.status || 'PAR Item'; // <-- force it for now
   const isParItem = status === 'PAR Item';
   const isCustom = status === 'Custom';
+
+  console.log(`${item.name} | status: ${status}`);
 
   return (
     <tr key={index} className="border-t h-[48px] bg-yellow-50">
