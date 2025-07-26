@@ -102,7 +102,7 @@ const OrderGuideItemTable = ({
              const isParItem = item.status === 'PAR Item';
              const isCustom = item.status === 'Custom';
 
-            console.log('AdminMode:', isAdminMode, '|', item.name, '→', item.status);
+            console.log(`[${item.name}] status: "${item.status}" | AdminMode: ${isAdminMode}`);
 
             return (
               <tr key={index} className="border-t h-[48px] bg-yellow-50">
