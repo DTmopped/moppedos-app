@@ -99,8 +99,10 @@ const OrderGuideItemTable = ({
         </thead>
         <tbody>
           {items.map((item, index) => {
-            const isParItem = item.status?.toLowerCase() === 'par item';
-            const isCustom = item.status?.toLowerCase() === 'custom';
+             const isParItem = item.status === 'PAR Item';
+             const isCustom = item.status === 'Custom';
+
+            console.log('AdminMode:', isAdminMode, '|', item.name, '→', item.status);
 
             return (
               <tr key={index} className="border-t h-[48px] bg-yellow-50">
