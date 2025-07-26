@@ -103,7 +103,7 @@ const OrderGuideItemTable = ({
   const isParItem = status.toLowerCase() === 'par item';
   const isCustom = status.toLowerCase() === 'custom';
 
-  console.log(`${item.item} | status: ${status} | AdminMode: ${adminMode}`);
+  console.log(`${item.item} | status: ${status} | AdminMode: ${isAdminMode}`);
 
   return (
     <tr key={index} className="border-b">
@@ -124,7 +124,7 @@ const OrderGuideItemTable = ({
 
       {/* FORECAST FIELD (editable if PAR or admin) */}
       <td className="px-4 py-2">
-        {(isParItem || adminMode) ? (
+        {(isParItem || isAdminMode) ? (
           <input
             type="number"
             className="w-20 rounded border border-gray-300 px-2 py-1 text-right"
