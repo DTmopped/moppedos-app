@@ -97,9 +97,9 @@ const OrderGuideItemTable = ({ items = [] }) => {
         <tbody>
           {items.map((item, index) => {
             const name = item.name || 'Unnamed Item';
-            const status = item.status?.trim().toLowerCase() || 'unknown';
-            const isParItem = status === 'par item';
-            const isCustom = status === 'custom';
+            const rawStatus = item.status || '';
+            const status = rawStatus.trim().toLowerCase();
+            const isParItem = status.includes('par');
 
             return (
               <tr key={index} className="border-b dark:border-gray-700">
