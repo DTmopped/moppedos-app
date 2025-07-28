@@ -141,12 +141,12 @@ const WeeklyOrderGuide = () => {
     }
 
     Object.keys(guide).forEach(category => {
-  guide[category].forEach(item => {
-    item.actual = 0;
-    item.variance = (typeof item.forecast === 'number') ? (-item.forecast).toFixed(1) : '-';
-    item.status = item.isPar ? 'par item' : 'auto'; // 👈 This is the fix
-  });
-});
+      guide[category].forEach(item => {
+        item.actual = 0;
+        item.variance = (typeof item.forecast === 'number') ? (-item.forecast).toFixed(1) : '-';
+        item.status = item.isPar ? 'par item' : 'auto';
+      });
+    });
 
     const now = new Date();
     setGuideData(guide);
@@ -164,69 +164,6 @@ const WeeklyOrderGuide = () => {
       generateOrderGuide();
     }
   }, [generateOrderGuide, guideData]);
-
-  const handleAddItem = (category) => {
-    const name = prompt(`Add item to "${category}"\nEnter item name:`)?.trim();
-    if (!name) return;
-    const unit = prompt(`What unit for "${name}"? (e.g. lbs, each)`);
-    if (!unit) return;
-
-    const totalGuests = forecastData.reduce((sum, day) => sum + (day.guests || 0), 0);
-    const sandwichGuests = Math.round(totalGuests * 0.5);
-    const plateGuests = totalGuests - sandwichGuests;
-    let forecast = 0;
-
-    switch (category) {
-      case 'Meats':
-        forecast = ((plateGuests * 4) + (sandwichGuests / 3) * 6) / 16;
-        break;
-      case 'Sides':
-        forecast = ((plateGuests * 3) * 4) / 16;
-        break;
-      case 'Bread':
-        forecast = name.toLowerCase().includes("bun") ? sandwichGuests : plateGuests;
-        break;
-      case 'Sweets':
-        forecast = plateGuests;
-        break;
-      case 'PaperGoods':
-        if (name.toLowerCase().includes("cup")) {
-          forecast = totalGuests * 3;
-        } else if (name.toLowerCase().includes("cutlery")) {
-          forecast = totalGuests;
-        } else {
-          forecast = 0;
-        }
-        break;
-      default:
-        forecast = 0;
-    }
-
-    const newItem = {
-      name,
-      forecast: Math.ceil(forecast),
-      unit,
-      actual: 0,
-      variance: (-forecast).toFixed(1),
-      isManual: true
-    };
-
-    setManualAdditions(prev => {
-      const updatedManuals = {
-        ...prev,
-        [category]: [...(prev[category] || []), newItem]
-      };
-
-      setGuideData(prevGuide => {
-        const updatedGuide = { ...prevGuide };
-        if (!updatedGuide[category]) updatedGuide[category] = [];
-        updatedGuide[category] = [...updatedGuide[category], newItem];
-        return updatedGuide;
-      });
-
-      return updatedManuals;
-    });
-  };
 
   const getStatusClass = useCallback((item) => {
     const { forecast, actual } = item;
@@ -280,23 +217,9 @@ const WeeklyOrderGuide = () => {
           {Object.entries(safeGuideData).map(([category, items]) => {
             if (!Array.isArray(items)) return null;
 
-            const isParCategory = parBasedCategories.includes(category);
-            const showForm = activeAddForm === category;
-
             return (
               <div key={category}>
-                <div className="flex justify-between items-center mb-2">
-                  <h2 className="text-xl font-bold">{category}</h2>
-                  {adminMode && (
-             <button
-              onClick={() => handleAddItem(category)}
-              className="text-sm text-blue-600 hover:underline no-print"
-               >
-             + Add Item
-               </button>
-               )}
-                </div>
-
+                <h2 className="text-xl font-bold mb-2">{category}</h2>
                 <OrderGuideCategory
                   categoryTitle={category}
                   items={items}
