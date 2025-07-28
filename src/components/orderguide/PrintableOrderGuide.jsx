@@ -7,6 +7,10 @@ const PrintableOrderGuide = ({ data, printDate }) => {
     timeStyle: "short",
   });
 
+  if (!data || typeof data !== "object") {
+    return <div className="p-4">No order guide data available.</div>;
+  }
+
   return (
     <div className="p-4 text-sm text-black">
       <style>
