@@ -1,25 +1,6 @@
 import React, { forwardRef } from 'react';
 
-const PrintableOrderGuide = forwardRef(({ guideData, printDate }, ref) => {
-  if (!guideData) {
-    return <div className="p-4">Loading print data...</div>;
-  }
-
-  const formatDate = (date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  return (
-    <div ref={ref} className="printable-order-guide-container p-4 font-sans">
-     import React, { forwardRef } from 'react';
-
-const PrintableOrderGuide = forwardRef(({ guideData, printDate }, ref) => {
+function PrintableOrderGuideInner({ guideData, printDate }, ref) {
   if (!guideData) {
     return <div className="p-4">Loading print data...</div>;
   }
@@ -99,6 +80,7 @@ const PrintableOrderGuide = forwardRef(({ guideData, printDate }, ref) => {
           }
         `}
       </style>
+
       <div className="print-header-title">Mopped OS – Weekly Order Guide</div>
       <div className="print-header-date">Printed on: {formatDate(printDate)}</div>
 
@@ -118,14 +100,14 @@ const PrintableOrderGuide = forwardRef(({ guideData, printDate }, ref) => {
             <tbody>
               {items.map((item, index) => {
                 const itemName = item.name || item[0];
-                const forecast = item.forecast !== undefined ? item.forecast : item[1];
+                const forecast = item.forecast ?? item[1];
                 const unit = item.unit || item[2] || "";
-                const actual = item.actual !== undefined ? item.actual : (item.posDataValue !== undefined ? item.posDataValue : 0);
-                const variance = item.variance !== undefined
-                  ? item.variance
-                  : (typeof forecast === 'number' && typeof actual === 'number'
-                      ? (actual - forecast).toFixed(1)
-                      : "-");
+                const actual = item.actual ?? item.posDataValue ?? 0;
+                const variance = item.variance ?? (
+                  typeof forecast === 'number' && typeof actual === 'number'
+                    ? (actual - forecast).toFixed(1)
+                    : "-"
+                );
 
                 let statusClass = "";
                 if (typeof forecast === 'number' && typeof actual === 'number' && forecast !== 0) {
@@ -151,61 +133,7 @@ const PrintableOrderGuide = forwardRef(({ guideData, printDate }, ref) => {
       ))}
     </div>
   );
-});
+}
 
-export default PrintableOrderGuide;
-      <div className="print-header-title">Mopped OS – Weekly Order Guide</div>
-      <div className="print-header-date">Printed on: {formatDate(printDate)}</div>
-
-      {Object.entries(guideData).map(([category, items]) => (
-        <div key={category} className="category-section">
-          <h2 className="category-title">{category}</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Item</th>
-                <th>Forecasted</th>
-                <th>Actual</th>
-                <th>Variance</th>
-                <th>Unit</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item, index) => {
-                const itemName = item.name || item[0];
-                const forecast = item.forecast !== undefined ? item.forecast : item[1];
-                const unit = item.unit || item[2] || "";
-                const actual = item.actual !== undefined ? item.actual : (item.posDataValue !== undefined ? item.posDataValue : 0);
-                const variance = item.variance !== undefined
-                  ? item.variance
-                  : (typeof forecast === 'number' && typeof actual === 'number'
-                      ? (actual - forecast).toFixed(1)
-                      : "-");
-
-                let statusClass = "";
-                if (typeof forecast === 'number' && typeof actual === 'number' && forecast !== 0) {
-                  const variancePercent = ((actual - forecast) / forecast) * 100;
-                  if (Math.abs(variancePercent) <= 10) statusClass = 'status-good';
-                  else if (variancePercent > 10 && variancePercent <= 30) statusClass = 'status-low';
-                  else if (variancePercent < -10 || variancePercent > 30) statusClass = 'status-danger';
-                }
-
-                return (
-                  <tr key={`${category}-${itemName}-${index}`} className={statusClass}>
-                    <td className="item-name">{itemName}</td>
-                    <td>{typeof forecast === 'number' ? forecast.toLocaleString() : forecast}</td>
-                    <td>{typeof actual === 'number' ? actual.toLocaleString() : (actual || "-")}</td>
-                    <td>{variance}</td>
-                    <td>{unit}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      ))}
-    </div>
-  );
-});
-
+const PrintableOrderGuide = forwardRef(PrintableOrderGuideInner);
 export default PrintableOrderGuide;
