@@ -241,7 +241,7 @@ const WeeklyOrderGuide = () => {
         <PrintableOrderGuide
           ref={printableRef}
           guideData={safeGuideData}
-          printDate={new Date()}
+          printDate={printDate?.toLocaleDateString?.() ?? ''}
         />
       </div>
     </div>
