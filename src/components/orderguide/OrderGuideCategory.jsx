@@ -24,15 +24,15 @@ const OrderGuideCategory = ({
       <div className="flex justify-between items-center mb-2">
         <h3 className="text-lg font-semibold">{categoryTitle}</h3>
 
-        {adminMode && (
-          <button
-            onClick={() => setShowModal(true)}
-            className="text-sm text-blue-600 hover:underline flex items-center gap-1"
-          >
-            <Plus size={14} />
-            Add Item
-          </button>
-        )}
+        {isAdminMode && (
+  <button
+    onClick={() => setShowModal(true)}
+    className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+  >
+    <Plus size={14} />
+    Add Item
+  </button>
+)}
       </div>
 
       {!adminMode && isParCategory && (
