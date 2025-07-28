@@ -31,57 +31,65 @@ function PrintableOrderGuideInner({ guideData, printDate }, ref) {
               color: #000000 !important;
               font-family: Arial, sans-serif;
               font-size: 10pt !important;
-              margin: 0;
             }
-            header, footer {
-              display: none !important;
-            }
+
             .printable-order-guide-container {
               width: 100%;
             }
+
             .print-header-title {
               text-align: center;
               font-size: 16pt;
               font-weight: bold;
               margin-bottom: 8px;
             }
+
             .print-header-date {
               text-align: center;
               font-size: 9pt;
               margin-bottom: 20px;
             }
-            .print-block {
+
+            .category-section {
               page-break-inside: avoid;
               break-inside: avoid;
               margin-bottom: 24px;
             }
+
             .category-title {
               font-size: 14pt;
               font-weight: bold;
-              margin-top: 12px;
+              margin-top: 20px;
               margin-bottom: 10px;
               border-bottom: 2px solid #000;
-              padding-bottom: 4px;
+              padding-bottom: 5px;
             }
+
             table {
               width: 100%;
               border-collapse: collapse;
               font-size: 9pt;
-              margin-top: 4px;
+              margin-bottom: 12px;
+              page-break-inside: avoid;
+              break-inside: avoid;
             }
+
             th, td {
               border: 1px solid #ccc;
               padding: 6px;
               text-align: left;
             }
+
             th {
               background-color: #f0f0f0;
               font-weight: bold;
             }
+
             tr {
               page-break-inside: avoid;
               break-inside: avoid;
             }
+
             .status-good { background-color: #e0f7e0 !important; }
             .status-low { background-color: #fff7d5 !important; }
             .status-danger { background-color: #ffd6d6 !important; }
@@ -94,13 +102,13 @@ function PrintableOrderGuideInner({ guideData, printDate }, ref) {
       <div className="print-header-date">Printed on: {formatDate(printDate)}</div>
 
       {Object.entries(guideData).map(([category, items]) => (
-        <div key={category} className="print-block">
+        <div key={category} className="category-section">
           <h2 className="category-title">{category}</h2>
           <table>
             <thead>
               <tr>
                 <th>Item</th>
-                <th>Forecasted</th>
+                <th>Forecast</th>
                 <th>Actual</th>
                 <th>Variance</th>
                 <th>Unit</th>
