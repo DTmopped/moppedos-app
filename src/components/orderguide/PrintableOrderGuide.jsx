@@ -1,58 +1,84 @@
-import React from "react";
-import OrderGuideCategory from "./OrderGuideCategory";
+import React, { forwardRef } from 'react';
 
-const PrintableOrderGuide = ({ data, printDate }) => {
-  const formattedDate = new Date(printDate).toLocaleString("en-US", {
-    dateStyle: "short",
-    timeStyle: "short",
-  });
-
-  if (!data || typeof data !== "object") {
-    return <div className="p-4">No order guide data available.</div>;
+const PrintableOrderGuide = forwardRef(({ guideData, printDate }, ref) => {
+  if (!guideData) {
+    return <div className="p-4">Loading print data...</div>;
   }
 
+  const categories = Object.keys(guideData);
+
   return (
-    <div className="p-4 text-sm text-black">
-      <style>
-        {`
-          @media print {
-            .page-break {
-              break-after: page;
-            }
-
-            .print-section {
-              break-inside: avoid;
-              page-break-inside: avoid;
-            }
-
-            table, tr, td, th {
-              break-inside: avoid !important;
-              page-break-inside: avoid !important;
-            }
-
-            thead {
-              display: table-header-group;
-            }
-
-            tfoot {
-              display: table-footer-group;
-            }
+    <div ref={ref} className="p-6 text-sm print:text-xs print:p-2 print:bg-white">
+      <style>{`
+        @media print {
+          body {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
           }
-        `}
-      </style>
+          table th {
+            background-color: #f3f4f6 !important; /* light gray */
+          }
+          tr:nth-child(even) td {
+            background-color: #f9fafb !important;
+          }
+          .page-break {
+            break-before: always;
+          }
+          .par-item {
+            color: #f97316 !important; /* orange-500 */
+            font-weight: 600;
+          }
+        }
+      `}</style>
 
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-blue-700 mb-2">Weekly Order Guide</h1>
-        <div className="text-xs text-gray-600">{formattedDate}</div>
-      </div>
+      <h1 className="text-xl font-semibold mb-4">Weekly Order Guide</h1>
+      <p className="mb-6">{printDate}</p>
 
-      {Object.entries(data).map(([categoryName, items]) => (
-        <div key={categoryName} className="print-section mb-8">
-          <OrderGuideCategory title={categoryName} items={items} />
-        </div>
-      ))}
+      {categories.map((category, index) => {
+        const items = guideData[category];
+        const isCleaningSupplies = category.toLowerCase().includes("cleaning");
+
+        return (
+          <div
+            key={category}
+            className={`${isCleaningSupplies ? 'page-break' : ''} mb-8`}
+          >
+            <h2 className="text-lg font-semibold mb-2">{category}</h2>
+            <table className="w-full border border-gray-300 border-collapse mb-4">
+              <thead>
+                <tr>
+                  <th className="border border-gray-300 px-2 py-1 text-left">Item</th>
+                  <th className="border border-gray-300 px-2 py-1">Forecast</th>
+                  <th className="border border-gray-300 px-2 py-1">Actual</th>
+                  <th className="border border-gray-300 px-2 py-1">Variance</th>
+                  <th className="border border-gray-300 px-2 py-1">Unit</th>
+                  <th className="border border-gray-300 px-2 py-1">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item, i) => (
+                  <tr key={i}>
+                    <td className="border border-gray-300 px-2 py-1 text-left">{item.name}</td>
+                    <td className="border border-gray-300 px-2 py-1 text-center">{item.forecast}</td>
+                    <td className="border border-gray-300 px-2 py-1 text-center">{item.actual}</td>
+                    <td className="border border-gray-300 px-2 py-1 text-center">{item.variance}</td>
+                    <td className="border border-gray-300 px-2 py-1 text-center">{item.unit}</td>
+                    <td className="border border-gray-300 px-2 py-1 text-center">
+                      {item.status === 'PAR Item' ? (
+                        <span className="par-item">⚠️ PAR Item</span>
+                      ) : (
+                        item.status || ''
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      })}
     </div>
   );
-};
+});
 
 export default PrintableOrderGuide;
