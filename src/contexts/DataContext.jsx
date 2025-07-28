@@ -103,6 +103,7 @@ export const DataProvider = ({ children }) => {
   addForecastEntry,
   addActualEntry,
   isAdminMode,
+  setIsAdminMode, // ✅ ADD THIS LINE  
   toggleAdminMode,
   adminSettings,
   updateAdminSetting,
