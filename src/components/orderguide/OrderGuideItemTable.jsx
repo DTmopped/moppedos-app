@@ -120,17 +120,18 @@ const OrderGuideItemTable = ({ items = [] }) => {
 
                 {/* Forecast */}
                 <td className="px-4 py-2 bg-yellow-50">
-                  {(isParItem || isAdminMode) ? (
-                    <input
-                      type="number"
-                      className="w-20 rounded border border-gray-300 px-2 py-1 text-right"
-                      value={item.forecast}
-                      onChange={(e) => handleForecastChange(e, item)}
-                    />
-                  ) : (
-                    <span>{item.forecast}</span>
-                  )}
-                </td>
+  {isParItem && !isAdminMode ? (
+    <span>{item.forecast}</span>
+  ) : (
+    <input
+      type="number"
+      className="w-20 rounded border border-gray-300 px-2 py-1 text-right"
+      value={item.forecast}
+      onChange={(e) => handleForecastChange(e, item)}
+      disabled={isParItem && !isAdminMode}
+    />
+  )}
+</td>
 
                 {/* Actual */}
                 <td className="px-3 py-2 bg-yellow-50">{item.actual}</td>
