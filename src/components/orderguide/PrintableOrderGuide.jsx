@@ -50,25 +50,24 @@ function PrintableOrderGuideInner({ guideData, printDate }, ref) {
               font-size: 9pt;
               margin-bottom: 20px;
             }
-            .category-section {
+            .print-block {
               page-break-inside: avoid;
               break-inside: avoid;
+              margin-bottom: 24px;
             }
             .category-title {
               font-size: 14pt;
               font-weight: bold;
-              margin-top: 20px;
+              margin-top: 12px;
               margin-bottom: 10px;
               border-bottom: 2px solid #000;
-              padding-bottom: 5px;
+              padding-bottom: 4px;
             }
             table {
               width: 100%;
               border-collapse: collapse;
-              margin-bottom: 15px;
               font-size: 9pt;
-              page-break-inside: avoid;
-              break-inside: avoid;
+              margin-top: 4px;
             }
             th, td {
               border: 1px solid #ccc;
@@ -95,7 +94,7 @@ function PrintableOrderGuideInner({ guideData, printDate }, ref) {
       <div className="print-header-date">Printed on: {formatDate(printDate)}</div>
 
       {Object.entries(guideData).map(([category, items]) => (
-        <div key={category} className="category-section">
+        <div key={category} className="print-block">
           <h2 className="category-title">{category}</h2>
           <table>
             <thead>
