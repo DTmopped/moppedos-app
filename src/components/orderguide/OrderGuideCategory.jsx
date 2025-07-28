@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useData } from '@/contexts/DataContext'; // ✅ ADD THIS
 import OrderGuideItemTable from './OrderGuideItemTable.jsx';
 import AddItemModal from './AddItemModal.jsx';
 import { Plus } from 'lucide-react';
@@ -8,9 +9,9 @@ const OrderGuideCategory = ({
   items,
   getStatusClass,
   getStatusIcon,
-  adminMode,
   parBasedCategories
 }) => {
+  const { isAdminMode } = useData(); // ✅ ADD THIS
   const [showModal, setShowModal] = useState(false);
 
   const safeItems = Array.isArray(items) ? items : [];
@@ -25,17 +26,17 @@ const OrderGuideCategory = ({
         <h3 className="text-lg font-semibold">{categoryTitle}</h3>
 
         {isAdminMode && (
-  <button
-    onClick={() => setShowModal(true)}
-    className="text-sm text-blue-600 hover:underline flex items-center gap-1"
-  >
-    <Plus size={14} />
-    Add Item
-  </button>
-)}
+          <button
+            onClick={() => setShowModal(true)}
+            className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+          >
+            <Plus size={14} />
+            Add Item
+          </button>
+        )}
       </div>
 
-      {!adminMode && isParCategory && (
+      {!isAdminMode && isParCategory && (
         <div className="text-sm text-gray-500 italic mb-2">
           Admin Mode required to edit PAR items.
         </div>
@@ -45,11 +46,11 @@ const OrderGuideCategory = ({
         items={safeItems}
         getStatusClass={safeGetStatusClass}
         getStatusIcon={safeGetStatusIcon}
-        adminMode={adminMode}
+        adminMode={isAdminMode}
         isParCategory={isParCategory}
       />
 
-      {adminMode && (
+      {isAdminMode && (
         <AddItemModal
           isOpen={showModal}
           onClose={() => setShowModal(false)}
