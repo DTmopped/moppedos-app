@@ -44,14 +44,15 @@ const WeeklyOrderGuide = () => {
     setPrintDate,
     isAdminMode: adminMode,
     toggleAdminMode,
+    setIsAdminMode, // ✅ Add this line
     manualAdditions,
-    setManualAdditions
+    setManualAdditions,
   } = useData();
 
   useEffect(() => {
-  toggleAdminMode(false); // Start with Admin Mode OFF on initial render
-}, []);
-
+    setIsAdminMode(false); // ✅ Explicitly turn off Admin Mode
+  }, [setIsAdminMode]);     // ✅ Add this dependency
+  
   const [activeAddForm, setActiveAddForm] = useState(null);
   const printableRef = useRef();
   const safeGuideData = typeof guideData === 'object' && guideData !== null ? guideData : {};
