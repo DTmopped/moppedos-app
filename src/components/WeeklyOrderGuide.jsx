@@ -41,6 +41,7 @@ const WeeklyOrderGuide = () => {
     actualData,
     guideData,
     setGuideData,
+    printDate,             // ✅ <-- ADD THIS
     setPrintDate,
     isAdminMode: adminMode,
     toggleAdminMode,
