@@ -141,11 +141,12 @@ const WeeklyOrderGuide = () => {
     }
 
     Object.keys(guide).forEach(category => {
-      guide[category].forEach(item => {
-        item.actual = 0;
-        item.variance = (typeof item.forecast === 'number') ? (-item.forecast).toFixed(1) : '-';
-      });
-    });
+  guide[category].forEach(item => {
+    item.actual = 0;
+    item.variance = (typeof item.forecast === 'number') ? (-item.forecast).toFixed(1) : '-';
+    item.status = item.isPar ? 'par item' : 'auto'; // 👈 This is the fix
+  });
+});
 
     const now = new Date();
     setGuideData(guide);
