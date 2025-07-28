@@ -14,15 +14,15 @@ const AddItemForm = ({ category, onClose }) => {
     if (!name || !unit || (isPar && forecast === '')) return;
 
     const newItem = {
-      name,
-      unit,
-      isPar,
-      isManual: true,
-      forecast: isPar ? parseFloat(forecast) : 0,
-      actual: 0,
-      variance: isPar ? -parseFloat(forecast) : 0,
-    };
-
+  name,
+  unit,
+  isPar,
+  status: isPar ? 'par item' : 'custom', // 👈 ADD THIS LINE
+  isManual: true,
+  forecast: isPar ? parseFloat(forecast) : 0,
+  actual: 0,
+  variance: isPar ? -parseFloat(forecast) : 0,
+};
     const updatedGuideData = {
       ...guideData,
       [category]: [...(guideData[category] || []), newItem],
