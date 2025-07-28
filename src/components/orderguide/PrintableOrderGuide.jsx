@@ -1,156 +1,40 @@
-import React, { forwardRef } from 'react';
+import React from "react";
+import OrderGuideCategory from "./OrderGuideCategory";
 
-function PrintableOrderGuideInner({ guideData, printDate }, ref) {
-  if (!guideData) {
-    return <div className="p-4">Loading print data...</div>;
-  }
-
-  const formatDate = (date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+const PrintableOrderGuide = ({ data, printDate }) => {
+  const formattedDate = new Date(printDate).toLocaleString("en-US", {
+    dateStyle: "short",
+    timeStyle: "short",
+  });
 
   return (
-    <div ref={ref} className="printable-order-guide-container p-4 font-sans">
+    <div className="p-4 text-sm text-black">
       <style>
         {`
           @media print {
-            @page {
-              size: A4;
-              margin: 20mm;
+            .page-break {
+              break-after: page;
             }
-            body {
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-              background-color: #ffffff !important;
-              color: #000000 !important;
-              font-family: Arial, sans-serif;
-              font-size: 10pt !important;
-            }
-
-            .printable-order-guide-container {
-              width: 100%;
-            }
-
-            .print-header-title {
-              text-align: center;
-              font-size: 16pt;
-              font-weight: bold;
-              margin-bottom: 8px;
-            }
-
-            .print-header-date {
-              text-align: center;
-              font-size: 9pt;
-              margin-bottom: 20px;
-            }
-
-            .category-section {
-              page-break-inside: avoid;
+            .print-section {
               break-inside: avoid;
-              margin-bottom: 24px;
-            }
-
-            .category-title {
-              font-size: 14pt;
-              font-weight: bold;
-              margin-top: 20px;
-              margin-bottom: 10px;
-              border-bottom: 2px solid #000;
-              padding-bottom: 5px;
-            }
-
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              font-size: 9pt;
-              margin-bottom: 12px;
               page-break-inside: avoid;
-              break-inside: avoid;
             }
-
-            th, td {
-              border: 1px solid #ccc;
-              padding: 6px;
-              text-align: left;
-            }
-
-            th {
-              background-color: #f0f0f0;
-              font-weight: bold;
-            }
-
-            tr {
-              page-break-inside: avoid;
-              break-inside: avoid;
-            }
-
-            .status-good { background-color: #e0f7e0 !important; }
-            .status-low { background-color: #fff7d5 !important; }
-            .status-danger { background-color: #ffd6d6 !important; }
-            .item-name { font-weight: bold; }
           }
         `}
       </style>
 
-      <div className="print-header-title">Mopped OS – Weekly Order Guide</div>
-      <div className="print-header-date">Printed on: {formatDate(printDate)}</div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-blue-700 mb-2">Weekly Order Guide</h1>
+        <div className="text-xs text-gray-600">{formattedDate}</div>
+      </div>
 
-      {Object.entries(guideData).map(([category, items]) => (
-        <div key={category} className="category-section">
-          <h2 className="category-title">{category}</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Item</th>
-                <th>Forecast</th>
-                <th>Actual</th>
-                <th>Variance</th>
-                <th>Unit</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item, index) => {
-                const itemName = item.name || item[0];
-                const forecast = item.forecast ?? item[1];
-                const unit = item.unit || item[2] || "";
-                const actual = item.actual ?? item.posDataValue ?? 0;
-                const variance = item.variance ?? (
-                  typeof forecast === 'number' && typeof actual === 'number'
-                    ? (actual - forecast).toFixed(1)
-                    : "-"
-                );
-
-                let statusClass = "";
-                if (typeof forecast === 'number' && typeof actual === 'number' && forecast !== 0) {
-                  const variancePercent = ((actual - forecast) / forecast) * 100;
-                  if (Math.abs(variancePercent) <= 10) statusClass = 'status-good';
-                  else if (variancePercent > 10 && variancePercent <= 30) statusClass = 'status-low';
-                  else if (variancePercent < -10 || variancePercent > 30) statusClass = 'status-danger';
-                }
-
-                return (
-                  <tr key={`${category}-${itemName}-${index}`} className={statusClass}>
-                    <td className="item-name">{itemName}</td>
-                    <td>{typeof forecast === 'number' ? forecast.toLocaleString() : forecast}</td>
-                    <td>{typeof actual === 'number' ? actual.toLocaleString() : (actual || "-")}</td>
-                    <td>{variance}</td>
-                    <td>{unit}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+      {Object.entries(data).map(([categoryName, items]) => (
+        <div key={categoryName} className="print-section mb-8">
+          <OrderGuideCategory title={categoryName} items={items} />
         </div>
       ))}
     </div>
   );
-}
+};
 
-const PrintableOrderGuide = forwardRef(PrintableOrderGuideInner);
 export default PrintableOrderGuide;
