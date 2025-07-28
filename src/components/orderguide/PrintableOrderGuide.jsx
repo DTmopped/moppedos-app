@@ -31,6 +31,10 @@ function PrintableOrderGuideInner({ guideData, printDate }, ref) {
               color: #000000 !important;
               font-family: Arial, sans-serif;
               font-size: 10pt !important;
+              margin: 0;
+            }
+            header, footer {
+              display: none !important;
             }
             .printable-order-guide-container {
               width: 100%;
@@ -46,6 +50,10 @@ function PrintableOrderGuideInner({ guideData, printDate }, ref) {
               font-size: 9pt;
               margin-bottom: 20px;
             }
+            .category-section {
+              page-break-inside: avoid;
+              break-inside: avoid;
+            }
             .category-title {
               font-size: 14pt;
               font-weight: bold;
@@ -53,13 +61,14 @@ function PrintableOrderGuideInner({ guideData, printDate }, ref) {
               margin-bottom: 10px;
               border-bottom: 2px solid #000;
               padding-bottom: 5px;
-              page-break-after: avoid;
             }
             table {
               width: 100%;
               border-collapse: collapse;
               margin-bottom: 15px;
               font-size: 9pt;
+              page-break-inside: avoid;
+              break-inside: avoid;
             }
             th, td {
               border: 1px solid #ccc;
@@ -72,6 +81,7 @@ function PrintableOrderGuideInner({ guideData, printDate }, ref) {
             }
             tr {
               page-break-inside: avoid;
+              break-inside: avoid;
             }
             .status-good { background-color: #e0f7e0 !important; }
             .status-low { background-color: #fff7d5 !important; }
