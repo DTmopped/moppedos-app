@@ -19,9 +19,23 @@ const PrintableOrderGuide = ({ data, printDate }) => {
             .page-break {
               break-after: page;
             }
+
             .print-section {
               break-inside: avoid;
               page-break-inside: avoid;
+            }
+
+            table, tr, td, th {
+              break-inside: avoid !important;
+              page-break-inside: avoid !important;
+            }
+
+            thead {
+              display: table-header-group;
+            }
+
+            tfoot {
+              display: table-footer-group;
             }
           }
         `}
