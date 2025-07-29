@@ -41,19 +41,19 @@ const WeeklyOrderGuide = () => {
     actualData,
     guideData,
     setGuideData,
-    printDate,             // ✅ <-- ADD THIS
+    printDate,
     setPrintDate,
     isAdminMode: adminMode,
     toggleAdminMode,
-    setIsAdminMode, // ✅ Add this line
+    setIsAdminMode,
     manualAdditions,
     setManualAdditions,
   } = useData();
 
   useEffect(() => {
-    setIsAdminMode(false); // ✅ Explicitly turn off Admin Mode
-  }, [setIsAdminMode]);     // ✅ Add this dependency
-  
+    setIsAdminMode(false);
+  }, [setIsAdminMode]);
+
   const [activeAddForm, setActiveAddForm] = useState(null);
   const printableRef = useRef();
   const safeGuideData = typeof guideData === 'object' && guideData !== null ? guideData : {};
@@ -194,6 +194,22 @@ const WeeklyOrderGuide = () => {
 
   return (
     <div className="p-4 md:p-6">
+      {/* Print Page Break Rule */}
+      <style>
+        {`
+          @media print {
+            .print-break {
+              page-break-before: always;
+              break-before: page;
+            }
+            .print-break:first-of-type {
+              page-break-before: auto;
+              break-before: auto;
+            }
+          }
+        `}
+      </style>
+
       <div className="flex justify-between items-center mb-6 gap-2">
         <motion.h1
           initial={{ opacity: 0, x: -20 }}
@@ -220,11 +236,11 @@ const WeeklyOrderGuide = () => {
           exit={{ opacity: 0 }}
           className="space-y-6"
         >
-          {Object.entries(safeGuideData).map(([category, items]) => {
+          {Object.entries(safeGuideData).map(([category, items], index) => {
             if (!Array.isArray(items)) return null;
 
             return (
-              <div key={category}>
+              <div key={category} className={index !== 0 ? 'print-break' : ''}>
                 <h2 className="text-xl font-bold mb-2">{category}</h2>
                 <OrderGuideCategory
                   categoryTitle={category}
