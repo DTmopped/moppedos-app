@@ -9,32 +9,30 @@ const PrintableOrderGuide = forwardRef(({ guideData, printDate }, ref) => {
 
   return (
     <div ref={ref} className="p-6 text-sm print:text-xs print:p-2 print:bg-white">
-      <style>{`
-        @media print {
-          body {
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-          table th {
-            background-color: #f3f4f6 !important;
-          }
-          tr:nth-child(even) td {
-            background-color: #f9fafb !important;
-          }
-          .page-break {
-            break-before: always;
-            page-break-before: always;
-          }
-          .print-section {
-            min-height: 480px;
-            break-inside: avoid;
-          }
-          .par-item {
-            color: #f97316 !important;
-            font-weight: 600;
-          }
-        }
-      `}</style>
+     <style>{`
+  @media print {
+    body {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    table th {
+      background-color: #f3f4f6 !important;
+    }
+    tr:nth-child(even) td {
+      background-color: #f9fafb !important;
+    }
+    .page-break {
+      break-before: always;
+    }
+    .par-item {
+      color: #f97316 !important;
+      font-weight: 600;
+    }
+    .print-section {
+      break-inside: avoid;
+    }
+  }
+`}</style>
 
       <h1 className="text-xl font-semibold mb-4">Weekly Order Guide</h1>
       <p className="mb-6">{printDate}</p>
@@ -44,9 +42,10 @@ const PrintableOrderGuide = forwardRef(({ guideData, printDate }, ref) => {
 
         return (
           <div
-            key={category}
-            className={`print-section ${index !== 0 ? 'page-break' : ''} mb-8`}
-          >
+  key={category}
+  className={`print-section ${index !== 0 ? 'page-break' : ''} mb-8`}
+  style={{ breakInside: 'avoid' }} // 👈 ensures header & table stick together
+>
             <h2 className="text-lg font-semibold mb-2">{category}</h2>
 
             <table className="w-full border border-gray-300 border-collapse mb-4">
