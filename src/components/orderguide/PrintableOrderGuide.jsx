@@ -25,6 +25,10 @@ const PrintableOrderGuide = forwardRef(({ guideData, printDate }, ref) => {
             break-before: always;
             page-break-before: always;
           }
+          .print-section {
+            min-height: 480px;
+            break-inside: avoid;
+          }
           .par-item {
             color: #f97316 !important;
             font-weight: 600;
@@ -41,7 +45,7 @@ const PrintableOrderGuide = forwardRef(({ guideData, printDate }, ref) => {
         return (
           <div
             key={category}
-            className={`${index !== 0 ? 'page-break' : ''} mb-8`}
+            className={`print-section ${index !== 0 ? 'page-break' : ''} mb-8`}
           >
             <h2 className="text-lg font-semibold mb-2">{category}</h2>
 
