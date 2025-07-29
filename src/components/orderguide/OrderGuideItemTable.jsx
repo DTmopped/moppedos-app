@@ -1,5 +1,6 @@
 import React from 'react';
 import { useData } from '@/contexts/DataContext';
+import { supabase } from '@/lib/supabaseClient';
 import { AlertTriangle, HelpCircle } from 'lucide-react';
 
 const OrderGuideItemTable = ({ items = [], categoryTitle }) => {
@@ -68,28 +69,33 @@ const OrderGuideItemTable = ({ items = [], categoryTitle }) => {
     }
   };
 
-  // ✅ New: Handle inline name change in Admin Mode
-  const handleNameChange = (newName, itemToUpdate) => {
+  const handleNameChange = async (newName, itemToUpdate) => {
     const category = Object.keys(guideData).find(cat =>
       guideData[cat]?.some(item => item.name === itemToUpdate.name)
     );
     if (!category) return;
 
-    const updatedItems = guideData[category].map(item =>
-      item.name === itemToUpdate.name
-        ? { ...item, name: newName }
-        : item
+    const updatedGuideItems = guideData[category].map(item =>
+      item.name === itemToUpdate.name ? { ...item, name: newName } : item
     );
-
-    setGuideData({ ...guideData, [category]: updatedItems });
+    setGuideData({ ...guideData, [category]: updatedGuideItems });
 
     if (manualAdditions[category]) {
       const updatedManuals = manualAdditions[category].map(item =>
-        item.name === itemToUpdate.name
-          ? { ...item, name: newName }
-          : item
+        item.name === itemToUpdate.name ? { ...item, name: newName } : item
       );
       setManualAdditions({ ...manualAdditions, [category]: updatedManuals });
+
+      // ✅ Sync to Supabase
+      const { error } = await supabase
+        .from('manual_additions')
+        .update({ name: newName })
+        .eq('name', itemToUpdate.name)
+        .eq('category', category);
+
+      if (error) {
+        console.error('Error updating name in Supabase:', error);
+      }
     }
   };
 
@@ -116,7 +122,6 @@ const OrderGuideItemTable = ({ items = [], categoryTitle }) => {
 
             return (
               <tr key={index} className="border-b dark:border-gray-700">
-                {/* ✅ Item Column with Admin Edit */}
                 <td className="px-4 py-2 font-medium text-gray-900 whitespace-nowrap bg-yellow-50">
                   {isAdminMode ? (
                     <input
@@ -142,7 +147,6 @@ const OrderGuideItemTable = ({ items = [], categoryTitle }) => {
                   )}
                 </td>
 
-                {/* Forecast */}
                 <td className="px-4 py-2 bg-yellow-50">
                   <input
                     type="number"
