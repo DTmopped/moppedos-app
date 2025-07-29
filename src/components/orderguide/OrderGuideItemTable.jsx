@@ -11,7 +11,6 @@ const OrderGuideItemTable = ({ items = [], categoryTitle }) => {
     guideData
   } = useData();
 
-  // ✅ Filter out items where name matches the category title
   const filteredItems = items.filter(item => item.name !== categoryTitle);
 
   const handleRemove = (itemToRemove) => {
@@ -36,7 +35,6 @@ const OrderGuideItemTable = ({ items = [], categoryTitle }) => {
 
   const handleForecastChange = (e, itemToUpdate) => {
     const newForecast = Number(e.target.value);
-
     const isManual = Object.keys(manualAdditions).some(cat =>
       manualAdditions[cat]?.some(item => item.name === itemToUpdate.name)
     );
@@ -51,33 +49,47 @@ const OrderGuideItemTable = ({ items = [], categoryTitle }) => {
 
     const updatedItems = source[category].map(item =>
       item.name === itemToUpdate.name
-        ? {
-            ...item,
-            forecast: newForecast,
-            variance: (newForecast || 0) - (item.actual || 0),
-          }
+        ? { ...item, forecast: newForecast, variance: (newForecast || 0) - (item.actual || 0) }
         : item
     );
 
-    setSource({
-      ...source,
-      [category]: updatedItems
-    });
+    setSource({ ...source, [category]: updatedItems });
 
     if (isManual) {
       const updatedGuide = {
         ...guideData,
         [category]: guideData[category].map(item =>
           item.name === itemToUpdate.name
-            ? {
-                ...item,
-                forecast: newForecast,
-                variance: (newForecast || 0) - (item.actual || 0),
-              }
+            ? { ...item, forecast: newForecast, variance: (newForecast || 0) - (item.actual || 0) }
             : item
         ),
       };
       setGuideData(updatedGuide);
+    }
+  };
+
+  // ✅ New: Handle inline name change in Admin Mode
+  const handleNameChange = (newName, itemToUpdate) => {
+    const category = Object.keys(guideData).find(cat =>
+      guideData[cat]?.some(item => item.name === itemToUpdate.name)
+    );
+    if (!category) return;
+
+    const updatedItems = guideData[category].map(item =>
+      item.name === itemToUpdate.name
+        ? { ...item, name: newName }
+        : item
+    );
+
+    setGuideData({ ...guideData, [category]: updatedItems });
+
+    if (manualAdditions[category]) {
+      const updatedManuals = manualAdditions[category].map(item =>
+        item.name === itemToUpdate.name
+          ? { ...item, name: newName }
+          : item
+      );
+      setManualAdditions({ ...manualAdditions, [category]: updatedManuals });
     }
   };
 
@@ -92,9 +104,7 @@ const OrderGuideItemTable = ({ items = [], categoryTitle }) => {
             <th className="text-left px-4 py-2 font-semibold">Variance</th>
             <th className="text-left px-4 py-2 font-semibold">Unit</th>
             <th className="text-left px-4 py-2 font-semibold">Status</th>
-            {isAdminMode && (
-              <th className="text-left px-4 py-2 font-semibold">Actions</th>
-            )}
+            {isAdminMode && <th className="text-left px-4 py-2 font-semibold">Actions</th>}
           </tr>
         </thead>
         <tbody>
@@ -106,18 +116,29 @@ const OrderGuideItemTable = ({ items = [], categoryTitle }) => {
 
             return (
               <tr key={index} className="border-b dark:border-gray-700">
-                {/* Item */}
+                {/* ✅ Item Column with Admin Edit */}
                 <td className="px-4 py-2 font-medium text-gray-900 whitespace-nowrap bg-yellow-50">
-                  {name}
-                  {isParItem && (
-                    <span className="ml-2 inline-flex items-center rounded bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
-                      PAR Item
-                    </span>
-                  )}
-                  {isCustom && (
-                    <span className="ml-2 inline-flex items-center rounded bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800 ring-1 ring-inset ring-blue-600/20">
-                      Custom
-                    </span>
+                  {isAdminMode ? (
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => handleNameChange(e.target.value, item)}
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                    />
+                  ) : (
+                    <>
+                      {name}
+                      {isParItem && (
+                        <span className="ml-2 inline-flex items-center rounded bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
+                          PAR Item
+                        </span>
+                      )}
+                      {isCustom && (
+                        <span className="ml-2 inline-flex items-center rounded bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800 ring-1 ring-inset ring-blue-600/20">
+                          Custom
+                        </span>
+                      )}
+                    </>
                   )}
                 </td>
 
@@ -134,16 +155,10 @@ const OrderGuideItemTable = ({ items = [], categoryTitle }) => {
                   />
                 </td>
 
-                {/* Actual */}
                 <td className="px-3 py-2 bg-yellow-50">{item.actual}</td>
-
-                {/* Variance */}
                 <td className="px-3 py-2 bg-yellow-50">{item.variance}</td>
-
-                {/* Unit */}
                 <td className="px-3 py-2 bg-yellow-50">{item.unit}</td>
 
-                {/* Status */}
                 <td className="px-3 py-2 bg-yellow-50">
                   {isParItem && (
                     <span className="inline-flex items-center rounded bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
@@ -159,7 +174,6 @@ const OrderGuideItemTable = ({ items = [], categoryTitle }) => {
                   )}
                 </td>
 
-                {/* Actions */}
                 {isAdminMode && (
                   <td className="px-3 py-2 bg-yellow-50">
                     {isCustom ? (
