@@ -34,7 +34,7 @@ const OrderGuideItemTable = ({ items = [], categoryTitle }) => {
     setGuideData(updatedGuide);
   };
 
-  const handleForecastChange = (e, itemToUpdate) => {
+  const handleForecastChange = async (e, itemToUpdate) => {
     const newForecast = Number(e.target.value);
     const isManual = Object.keys(manualAdditions).some(cat =>
       manualAdditions[cat]?.some(item => item.name === itemToUpdate.name)
@@ -67,6 +67,16 @@ const OrderGuideItemTable = ({ items = [], categoryTitle }) => {
       };
       setGuideData(updatedGuide);
     }
+
+    const { error } = await supabase
+      .from('order_guide_items')
+      .update({ forecast: newForecast, variance: (newForecast || 0) - (itemToUpdate.actual || 0) })
+      .eq('name', itemToUpdate.name)
+      .eq('category', category);
+
+    if (error) {
+      console.error('Error updating forecast in Supabase:', error);
+    }
   };
 
   const handleNameChange = async (newName, itemToUpdate) => {
@@ -85,17 +95,16 @@ const OrderGuideItemTable = ({ items = [], categoryTitle }) => {
         item.name === itemToUpdate.name ? { ...item, name: newName } : item
       );
       setManualAdditions({ ...manualAdditions, [category]: updatedManuals });
+    }
 
-      // ✅ Sync to Supabase
-      const { error } = await supabase
-        .from('manual_additions')
-        .update({ name: newName })
-        .eq('name', itemToUpdate.name)
-        .eq('category', category);
+    const { error } = await supabase
+      .from('order_guide_items')
+      .update({ name: newName })
+      .eq('name', itemToUpdate.name)
+      .eq('category', category);
 
-      if (error) {
-        console.error('Error updating name in Supabase:', error);
-      }
+    if (error) {
+      console.error('Error updating name in Supabase:', error);
     }
   };
 
