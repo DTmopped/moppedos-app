@@ -58,22 +58,24 @@ const PrintableOrderGuide = forwardRef(({ guideData, printDate }, ref) => {
               </thead>
               <tbody>
                 {Array.isArray(items) ? (
-                  items.map((item, i) => (
-                    <tr key={i}>
-                      <td className="border border-gray-300 px-2 py-1 text-left">{item.name}</td>
-                      <td className="border border-gray-300 px-2 py-1 text-center">{item.forecast}</td>
-                      <td className="border border-gray-300 px-2 py-1 text-center">{item.actual}</td>
-                      <td className="border border-gray-300 px-2 py-1 text-center">{item.variance}</td>
-                      <td className="border border-gray-300 px-2 py-1 text-center">{item.unit}</td>
-                      <td className="border border-gray-300 px-2 py-1 text-center">
-                        {item.status === 'PAR Item' ? (
-                          <span className="par-item">⚠️ PAR Item</span>
-                        ) : (
-                          item.status || ''
-                        )}
-                      </td>
-                    </tr>
-                  ))
+                  items
+                    .filter(item => item.name !== category) // 👈 filter out duplicates
+                    .map((item, i) => (
+                      <tr key={i}>
+                        <td className="border border-gray-300 px-2 py-1 text-left">{item.name}</td>
+                        <td className="border border-gray-300 px-2 py-1 text-center">{item.forecast}</td>
+                        <td className="border border-gray-300 px-2 py-1 text-center">{item.actual}</td>
+                        <td className="border border-gray-300 px-2 py-1 text-center">{item.variance}</td>
+                        <td className="border border-gray-300 px-2 py-1 text-center">{item.unit}</td>
+                        <td className="border border-gray-300 px-2 py-1 text-center">
+                          {item.status === 'PAR Item' ? (
+                            <span className="par-item">⚠️ PAR Item</span>
+                          ) : (
+                            item.status || ''
+                          )}
+                        </td>
+                      </tr>
+                    ))
                 ) : (
                   <tr>
                     <td colSpan="6" className="border px-2 py-2 text-red-600 text-sm">
