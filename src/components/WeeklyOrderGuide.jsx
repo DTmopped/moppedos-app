@@ -1,200 +1,94 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+// src/components/WeeklyOrderGuide.jsx
+import React, { useMemo, useRef } from 'react';
 import { useData } from '@/contexts/DataContext';
 import { Button } from '@/components/ui/button.jsx';
 import { Printer, TrendingUp, AlertTriangle, CheckCircle2, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import PrintableOrderGuide from './orderguide/PrintableOrderGuide.jsx';
-import OrderGuideCategory from "@/components/orderguide/OrderGuideCategory";
-import { supabase } from '@/lib/supabaseClient';
+import OrderGuideCategory from '@/components/orderguide/OrderGuideCategory';
+
+// ✅ new: storage-driven hook
+import { useOrderGuide } from '@/hooks/useOrderGuide';
 
 const parBasedCategories = ['PaperGoods', 'CleaningSupplies', 'Condiments'];
 
-const syncManualAdditionsToSupabase = async (manualAdditions, printDate) => {
-  const rows = [];
-
-  Object.entries(manualAdditions).forEach(([category, items]) => {
-    items.forEach(item => {
-      rows.push({
-        guide_date: printDate.toISOString().split('T')[0],
-        category,
-        item_name: item.name,
-        forecast: item.forecast,
-        unit: item.unit,
-        is_manual: true
-      });
-    });
-  });
-
-  if (rows.length > 0) {
-    const { error } = await supabase.from('manual_additions').insert(rows);
-    if (error) {
-      console.error("❌ Failed to sync manual additions:", error.message);
-    } else {
-      console.log("✅ Synced manual additions to Supabase");
-    }
-  }
-};
-
 const WeeklyOrderGuide = () => {
   const {
-    forecastData,
-    actualData,
-    guideData,
-    setGuideData,
-    printDate,
-    setPrintDate,
     isAdminMode: adminMode,
     toggleAdminMode,
-    setIsAdminMode,
-    manualAdditions,
-    setManualAdditions,
+    printDate,
+    setPrintDate,
   } = useData();
 
-  useEffect(() => {
-    setIsAdminMode(false);
-  }, [setIsAdminMode]);
+  // ✅ fetch live data from Supabase (via the view)
+  const { loading, error, groupedData, refresh } = useOrderGuide({
+    locationId: null, // pass a specific location UUID when you wire multi-unit
+  });
 
-  const [activeAddForm, setActiveAddForm] = useState(null);
   const printableRef = useRef();
-  const safeGuideData = typeof guideData === 'object' && guideData !== null ? guideData : {};
 
-  const generateOrderGuide = useCallback(() => {
-    if (!forecastData || forecastData.length === 0) return;
+  // ✅ set/refresh print date whenever data changes
+  React.useEffect(() => {
+    setPrintDate?.(new Date());
+  }, [groupedData, setPrintDate]);
 
-    const ozPerLb = 16;
-    const portionToLbs = (oz, guests) => ((guests * oz) / ozPerLb);
+  // ✅ Map DB/view rows -> your UI shape
+  // v_order_guide likely returns: { category, item_name, unit, on_hand, par_level, order_quantity, inventory_status, item_status }
+  // Your UI expects: { name, forecast, actual, variance, unit, status }
+  const uiGuideData = useMemo(() => {
+    if (!groupedData) return {};
 
-    const latestActual = actualData?.[actualData.length - 1];
-    const forecastGuests = forecastData.reduce((sum, day) => sum + (day.guests || 0), 0);
-    const actualGuests = latestActual?.guests || 0;
-    const adjustmentFactor = (forecastGuests && actualGuests) ? (actualGuests / forecastGuests) : 1;
+    const mapped = {};
+    Object.entries(groupedData).forEach(([category, rows]) => {
+      mapped[category] = rows.map((r) => {
+        const name = r.item_name ?? r.name ?? '';
+        const unit = r.unit ?? '';
+        const actual = Number(r.on_hand ?? 0);
+        const forecast = Number(r.par_level ?? 0);
+        const variance = (actual - forecast).toFixed(1);
 
-    const adjustedGuests = Math.round(forecastGuests * adjustmentFactor);
-    const sandwichGuests = Math.round(adjustedGuests * 0.5);
-    const plateGuests = adjustedGuests - sandwichGuests;
-    const totalSidePortions = plateGuests * 3;
+        // prefer inventory_status (Critical/Low/Needs Order/In Stock) -> lowercase for consistency
+        const statusRaw = r.inventory_status || r.item_status || 'auto';
+        const status = String(statusRaw).toLowerCase();
 
-    const sideItemsLbs = ['Coleslaw', 'Collard Greens', 'Mac N Cheese', 'Baked Beans', 'Corn Casserole'];
-    const sidePortionLbs = portionToLbs(4, totalSidePortions / sideItemsLbs.length);
-
-    const guide = {
-      "Meats": [
-        { name: 'Brisket', forecast: Math.ceil(portionToLbs(4, plateGuests) + portionToLbs(6, sandwichGuests / 3)), unit: 'lbs' },
-        { name: 'Pulled Pork', forecast: Math.ceil(portionToLbs(4, plateGuests) + portionToLbs(6, sandwichGuests / 3)), unit: 'lbs' },
-        { name: 'Chicken', forecast: Math.ceil(portionToLbs(4, plateGuests) + portionToLbs(6, sandwichGuests / 3)), unit: 'lbs' },
-        { name: 'St. Louis Ribs', forecast: Math.ceil(portionToLbs(16, plateGuests)), unit: 'lbs' },
-        { name: 'Bone-in Short Rib', forecast: Math.ceil(portionToLbs(16, plateGuests)), unit: 'lbs' }
-      ],
-      "Bread": [
-        { name: 'Buns', forecast: sandwichGuests, unit: 'each' },
-        { name: 'Texas Toast', forecast: plateGuests, unit: 'each' }
-      ],
-      "Sides": [
-        ...sideItemsLbs.map(item => ({
-          name: item,
-          forecast: Math.ceil(sidePortionLbs),
-          unit: 'lbs'
-        })),
-        { name: 'Corn Muffin', forecast: plateGuests, unit: 'each' },
-        { name: 'Honey Butter', forecast: plateGuests, unit: 'each' }
-      ],
-      "Sweets": [
-        { name: 'Banana Pudding', forecast: plateGuests, unit: 'each' },
-        { name: 'Key Lime Pie', forecast: plateGuests, unit: 'each' },
-        { name: 'Hummingbird Cake', forecast: plateGuests, unit: 'each' }
-      ],
-      "Condiments": [
-        { name: 'House Pickles (32oz)', forecast: Math.ceil((plateGuests * 3) / 50), unit: 'jars' },
-        { name: 'Mop Glaze', forecast: Math.ceil(plateGuests * 2), unit: 'oz' },
-        { name: 'BBQ 1', forecast: Math.ceil(adjustedGuests * 1), unit: 'oz' },
-        { name: 'BBQ 2', forecast: Math.ceil(adjustedGuests * 1), unit: 'oz' },
-        { name: 'BBQ 3', forecast: Math.ceil(adjustedGuests * 1), unit: 'oz' },
-        { name: 'Hot Sauce 1', forecast: Math.ceil(adjustedGuests * 0.5), unit: 'oz' },
-        { name: 'Hot Sauce 2', forecast: Math.ceil(adjustedGuests * 0.5), unit: 'oz' },
-        { name: 'Hot Sauce 3', forecast: Math.ceil(adjustedGuests * 0.5), unit: 'oz' }
-      ],
-      "PaperGoods": [
-        { name: 'To-Go Cups', forecast: adjustedGuests * 3, unit: 'each' },
-        { name: '1 oz Soufflé Cup', forecast: plateGuests * 3, unit: 'each' },
-        { name: 'Cutlery Kit', forecast: adjustedGuests, unit: 'each' },
-        { name: 'To-Go Bag Small', forecast: 0, unit: 'each', isPar: true },
-        { name: 'To-Go Bag Large', forecast: 0, unit: 'each', isPar: true },
-        { name: 'Moist Towelettes', forecast: adjustedGuests, unit: 'each' }
-      ],
-      "CleaningSupplies": [
-        { name: 'Trash Bags', forecast: 0, unit: 'case', isPar: true },
-        { name: 'Gloves - S', forecast: 0, unit: 'case', isPar: true },
-        { name: 'Gloves - M', forecast: 0, unit: 'case', isPar: true },
-        { name: 'Gloves - L', forecast: 0, unit: 'case', isPar: true },
-        { name: 'Gloves - XL', forecast: 0, unit: 'case', isPar: true },
-        { name: 'Dish Soap', forecast: 0, unit: 'gal', isPar: true },
-        { name: 'Dish Sanitizer', forecast: 0, unit: 'gal', isPar: true },
-        { name: 'C-Folds', forecast: 0, unit: 'case', isPar: true },
-        { name: 'Sanitizing Wipes', forecast: 0, unit: 'case', isPar: true },
-        { name: 'Green Scrubbies', forecast: 0, unit: 'pack', isPar: true },
-        { name: 'Metal Scrubbies', forecast: 0, unit: 'pack', isPar: true },
-        { name: 'Broom', forecast: 0, unit: 'each', isPar: true }
-      ]
-    };
-
-    if (adminMode && manualAdditions && typeof manualAdditions === 'object') {
-      Object.entries(manualAdditions).forEach(([category, items]) => {
-        if (!guide[category]) guide[category] = [];
-        if (Array.isArray(items)) {
-          guide[category].push(...items);
-        }
-      });
-    }
-
-    Object.keys(guide).forEach(category => {
-      guide[category].forEach(item => {
-        item.actual = 0;
-        item.variance = (typeof item.forecast === 'number') ? (-item.forecast).toFixed(1) : '-';
-        item.status = item.isPar ? 'par item' : 'auto';
+        return {
+          name,
+          unit,
+          actual,
+          forecast,
+          variance,
+          status, // 'critical' | 'low' | 'in stock' | 'par item' | 'custom' | 'auto' etc.
+        };
       });
     });
+    return mapped;
+  }, [groupedData]);
 
-    const now = new Date();
-    setGuideData(guide);
-    setPrintDate(now);
-
-    if (adminMode) {
-      syncManualAdditionsToSupabase(manualAdditions, now);
-    }
-
-    console.log("✅ Generated Order Guide:", guide);
-  }, [forecastData, actualData, manualAdditions, adminMode, setGuideData, setPrintDate]);
-
-  useEffect(() => {
-    if (!guideData || Object.keys(guideData).length === 0) {
-      generateOrderGuide();
-    }
-  }, [generateOrderGuide, guideData]);
-
-  const getStatusClass = useCallback((item) => {
-    const { forecast, actual } = item;
+  // ✅ Styling helpers (unchanged behavior)
+  const getStatusClass = React.useCallback((item) => {
+    const { forecast, actual } = item || {};
     if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0) return '';
-    const variance = ((actual - forecast) / forecast) * 100;
-    if (Math.abs(variance) <= 10) return 'bg-green-500/10 text-green-700';
-    if (variance <= 30) return 'bg-yellow-500/10 text-yellow-700';
+    const pct = ((actual - forecast) / forecast) * 100;
+
+    if (Math.abs(pct) <= 10) return 'bg-green-500/10 text-green-700';
+    if (pct <= 30) return 'bg-yellow-500/10 text-yellow-700';
     return 'bg-red-500/10 text-red-700';
   }, []);
 
-  const getStatusIcon = useCallback((item) => {
-    const { forecast, actual } = item;
-    if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0)
+  const getStatusIcon = React.useCallback((item) => {
+    const { forecast, actual } = item || {};
+    if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0) {
       return <HelpCircle className="h-4 w-4 text-slate-500" />;
-    const variance = ((actual - forecast) / forecast) * 100;
-    if (Math.abs(variance) <= 10)
-      return <CheckCircle2 className="h-4 w-4 text-green-500" />;
-    if (variance <= 30)
-      return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+    }
+    const pct = ((actual - forecast) / forecast) * 100;
+    if (Math.abs(pct) <= 10) return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+    if (pct <= 30) return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
     return <TrendingUp className="h-4 w-4 text-red-500" />;
   }, []);
 
   return (
     <div className="p-4 md:p-6">
-      {/* Print Page Break Rule */}
+      {/* Print Page Break Rule (kept) */}
       <style>
         {`
           @media print {
@@ -228,36 +122,50 @@ const WeeklyOrderGuide = () => {
         </div>
       </div>
 
-      <AnimatePresence>
-        <motion.div
-          key="order-guide"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="space-y-6"
-        >
-          {Object.entries(safeGuideData).map(([category, items], index) => {
-            if (!Array.isArray(items)) return null;
+      {/* Loading / Error states */}
+      {loading && (
+        <div className="text-sm text-slate-600">Loading order guide…</div>
+      )}
+      {error && (
+        <div className="text-sm text-red-600">
+          Sorry — couldn’t load order guide. {String(error)}
+          <Button className="ml-2" size="sm" onClick={refresh}>Retry</Button>
+        </div>
+      )}
 
-            return (
-              <div key={category} className={index !== 0 ? 'print-break' : ''}>
-                <h2 className="text-xl font-bold mb-2">{category}</h2>
-                <OrderGuideCategory
-                  categoryTitle={category}
-                  items={items}
-                  getStatusClass={getStatusClass}
-                  getStatusIcon={getStatusIcon}
-                />
-              </div>
-            );
-          })}
-        </motion.div>
-      </AnimatePresence>
+      {!loading && !error && (
+        <AnimatePresence>
+          <motion.div
+            key="order-guide"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="space-y-6"
+          >
+            {Object.entries(uiGuideData).map(([category, items], index) => {
+              if (!Array.isArray(items)) return null;
+              return (
+                <div key={category} className={index !== 0 ? 'print-break' : ''}>
+                  <h2 className="text-xl font-bold mb-2">{category}</h2>
+                  <OrderGuideCategory
+                    categoryTitle={category}
+                    items={items}
+                    getStatusClass={getStatusClass}
+                    getStatusIcon={getStatusIcon}
+                    parBasedCategories={parBasedCategories}
+                  />
+                </div>
+              );
+            })}
+          </motion.div>
+        </AnimatePresence>
+      )}
 
+      {/* Hidden printable */}
       <div style={{ display: 'none' }}>
         <PrintableOrderGuide
           ref={printableRef}
-          guideData={safeGuideData}
+          guideData={uiGuideData}
           printDate={printDate?.toLocaleDateString?.() ?? ''}
         />
       </div>
