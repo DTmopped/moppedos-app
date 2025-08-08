@@ -1,5 +1,5 @@
 // src/components/WeeklyOrderGuide.jsx
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef, useEffect, useCallback } from 'react';
 import { useData } from '@/contexts/DataContext';
 import { Button } from '@/components/ui/button.jsx';
 import { Printer, TrendingUp, AlertTriangle, CheckCircle2, HelpCircle } from 'lucide-react';
@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import PrintableOrderGuide from './orderguide/PrintableOrderGuide.jsx';
 import OrderGuideCategory from '@/components/orderguide/OrderGuideCategory';
 
-// ✅ new: storage-driven hook
+// ✅ storage-driven hook (your version that returns loading/error/groupedData/refresh)
 import { useOrderGuide } from '@/hooks/useOrderGuide';
 
 const parBasedCategories = ['PaperGoods', 'CleaningSupplies', 'Condiments'];
@@ -18,54 +18,27 @@ const WeeklyOrderGuide = () => {
     toggleAdminMode,
     printDate,
     setPrintDate,
+    // if you later store the active location in context, grab it here:
+    // activeLocationId,
   } = useData();
 
-  // ✅ fetch live data from Supabase (via the view)
+  // TODO: replace with a real location id once multi-unit wiring is done
+  const TEST_LOCATION_ID = null; // e.g. '00fe305a-6b02-4eaa-9bfe-cbc2d46d9e17'
+
+  // ✅ fetch live data from Supabase (via your view)
   const { loading, error, groupedData, refresh } = useOrderGuide({
-    locationId: null, // pass a specific location UUID when you wire multi-unit
+    locationId: TEST_LOCATION_ID,
   });
 
   const printableRef = useRef();
 
-  // ✅ set/refresh print date whenever data changes
-  React.useEffect(() => {
+  // ✅ refresh print date when data changes
+  useEffect(() => {
     setPrintDate?.(new Date());
   }, [groupedData, setPrintDate]);
 
-  // ✅ Map DB/view rows -> your UI shape
-  // v_order_guide likely returns: { category, item_name, unit, on_hand, par_level, order_quantity, inventory_status, item_status }
-  // Your UI expects: { name, forecast, actual, variance, unit, status }
-  const uiGuideData = useMemo(() => {
-    if (!groupedData) return {};
-
-    const mapped = {};
-    Object.entries(groupedData).forEach(([category, rows]) => {
-      mapped[category] = rows.map((r) => {
-        const name = r.item_name ?? r.name ?? '';
-        const unit = r.unit ?? '';
-        const actual = Number(r.on_hand ?? 0);
-        const forecast = Number(r.par_level ?? 0);
-        const variance = (actual - forecast).toFixed(1);
-
-        // prefer inventory_status (Critical/Low/Needs Order/In Stock) -> lowercase for consistency
-        const statusRaw = r.inventory_status || r.item_status || 'auto';
-        const status = String(statusRaw).toLowerCase();
-
-        return {
-          name,
-          unit,
-          actual,
-          forecast,
-          variance,
-          status, // 'critical' | 'low' | 'in stock' | 'par item' | 'custom' | 'auto' etc.
-        };
-      });
-    });
-    return mapped;
-  }, [groupedData]);
-
-  // ✅ Styling helpers (unchanged behavior)
-  const getStatusClass = React.useCallback((item) => {
+  // ✅ Helpers unchanged (variance-based color + icon)
+  const getStatusClass = useCallback((item) => {
     const { forecast, actual } = item || {};
     if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0) return '';
     const pct = ((actual - forecast) / forecast) * 100;
@@ -75,7 +48,7 @@ const WeeklyOrderGuide = () => {
     return 'bg-red-500/10 text-red-700';
   }, []);
 
-  const getStatusIcon = React.useCallback((item) => {
+  const getStatusIcon = useCallback((item) => {
     const { forecast, actual } = item || {};
     if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0) {
       return <HelpCircle className="h-4 w-4 text-slate-500" />;
@@ -85,6 +58,37 @@ const WeeklyOrderGuide = () => {
     if (pct <= 30) return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
     return <TrendingUp className="h-4 w-4 text-red-500" />;
   }, []);
+
+  // ✅ Map DB/view rows -> your UI shape
+  // groupedData is expected as { [category]: [{ item_name, unit, on_hand, par_level, inventory_status, ... }] }
+  const uiGuideData = useMemo(() => {
+    if (!groupedData || typeof groupedData !== 'object') return {};
+
+    const mapped = {};
+    Object.entries(groupedData).forEach(([category, rows]) => {
+      mapped[category] = (rows || []).map((r) => {
+        const name = r.item_name ?? r.name ?? '';
+        const unit = r.unit ?? '';
+        const actualNum = Number(r.on_hand ?? r.actual ?? 0);
+        const forecastNum = Number(r.par_level ?? r.forecast ?? 0);
+        const varianceNum = actualNum - forecastNum;
+
+        // prefer inventory_status (Critical/Low/Needs Order/In Stock) if present, else fall back
+        const statusRaw = r.inventory_status || r.item_status || r.status || 'auto';
+        const status = String(statusRaw).toLowerCase();
+
+        return {
+          name,
+          unit,
+          actual: actualNum,
+          forecast: forecastNum,
+          variance: Number.isFinite(varianceNum) ? Number(varianceNum.toFixed(1)) : 0,
+          status, // 'critical' | 'low' | 'in stock' | 'par item' | 'custom' | 'auto', etc.
+        };
+      });
+    });
+    return mapped;
+  }, [groupedData]);
 
   return (
     <div className="p-4 md:p-6">
@@ -128,7 +132,7 @@ const WeeklyOrderGuide = () => {
       )}
       {error && (
         <div className="text-sm text-red-600">
-          Sorry — couldn’t load order guide. {String(error)}
+          Sorry — couldn’t load the order guide. {String(error)}
           <Button className="ml-2" size="sm" onClick={refresh}>Retry</Button>
         </div>
       )}
