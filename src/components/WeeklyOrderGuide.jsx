@@ -26,9 +26,9 @@ const WeeklyOrderGuide = () => {
   const TEST_LOCATION_ID = null; // e.g. '00fe305a-6b02-4eaa-9bfe-cbc2d46d9e17'
 
   // ✅ fetch live data from Supabase (via your view)
-  const { loading, error, groupedData, refresh } = useOrderGuide({
-    locationId: TEST_LOCATION_ID,
-  });
+ const { loading, error, groupedData, refresh } = useOrderGuide({
+  locationId: '00fe305a-6b02-4eaa-9bfe-cbc2d46d9e17' // <- use your Test Location UUID
+});
 
   const printableRef = useRef();
 
