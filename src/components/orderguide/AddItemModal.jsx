@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Dialog } from '@headlessui/react';
 import { useData } from '@/contexts/DataContext';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/supabaseClient';
 
 const AddItemModal = ({ isOpen, onClose, category }) => {
   const {
