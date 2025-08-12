@@ -1,9 +1,10 @@
 import React from 'react';
 import { useData } from '@/contexts/DataContext';
-import { supabase } from '@/supabaseClient';
++import { updateParLevel, updateOnHand } from '@/lib/orderGuideApi';
 import { AlertTriangle, HelpCircle } from 'lucide-react';
 
-const OrderGuideItemTable = ({ items = [], categoryTitle }) => {
+-const OrderGuideItemTable = ({ items = [], categoryTitle }) => {
++const OrderGuideItemTable = ({ items = [], categoryTitle, locationId, onRefresh }) => {
   const {
     manualAdditions,
     setManualAdditions,
@@ -14,99 +15,30 @@ const OrderGuideItemTable = ({ items = [], categoryTitle }) => {
 
   const filteredItems = items.filter(item => item.name !== categoryTitle);
 
-  const handleRemove = (itemToRemove) => {
-    const category = Object.keys(manualAdditions).find(cat =>
-      manualAdditions[cat]?.some(item => item.name === itemToRemove.name)
-    );
-    if (!category) return;
-
-    const updatedManuals = {
-      ...manualAdditions,
-      [category]: manualAdditions[category].filter(item => item.name !== itemToRemove.name),
-    };
-
-    const updatedGuide = {
-      ...guideData,
-      [category]: guideData[category].filter(item => item.name !== itemToRemove.name),
-    };
-
-    setManualAdditions(updatedManuals);
-    setGuideData(updatedGuide);
-  };
-
-  const handleForecastChange = async (e, itemToUpdate) => {
-    const newForecast = Number(e.target.value);
-    const isManual = Object.keys(manualAdditions).some(cat =>
-      manualAdditions[cat]?.some(item => item.name === itemToUpdate.name)
-    );
-
-    const source = isManual ? manualAdditions : guideData;
-    const setSource = isManual ? setManualAdditions : setGuideData;
-
-    const category = Object.keys(source).find(cat =>
-      source[cat]?.some(item => item.name === itemToUpdate.name)
-    );
-    if (!category) return;
-
-    const updatedItems = source[category].map(item =>
-      item.name === itemToUpdate.name
-        ? { ...item, forecast: newForecast, variance: (newForecast || 0) - (item.actual || 0) }
-        : item
-    );
-
-    setSource({ ...source, [category]: updatedItems });
-
-    if (isManual) {
-      const updatedGuide = {
-        ...guideData,
-        [category]: guideData[category].map(item =>
-          item.name === itemToUpdate.name
-            ? { ...item, forecast: newForecast, variance: (newForecast || 0) - (item.actual || 0) }
-            : item
-        ),
-      };
-      setGuideData(updatedGuide);
-    }
-
-    const { error } = await supabase
-      .from('order_guide_items')
-      .update({ forecast: newForecast, variance: (newForecast || 0) - (itemToUpdate.actual || 0) })
-      .eq('name', itemToUpdate.name)
-      .eq('category', category);
-
-    if (error) {
-      console.error('Error updating forecast in Supabase:', error);
-    }
-  };
-
-  const handleNameChange = async (newName, itemToUpdate) => {
-    const category = Object.keys(guideData).find(cat =>
-      guideData[cat]?.some(item => item.name === itemToUpdate.name)
-    );
-    if (!category) return;
-
-    const updatedGuideItems = guideData[category].map(item =>
-      item.name === itemToUpdate.name ? { ...item, name: newName } : item
-    );
-    setGuideData({ ...guideData, [category]: updatedGuideItems });
-
-    if (manualAdditions[category]) {
-      const updatedManuals = manualAdditions[category].map(item =>
-        item.name === itemToUpdate.name ? { ...item, name: newName } : item
-      );
-      setManualAdditions({ ...manualAdditions, [category]: updatedManuals });
-    }
-
-    const { error } = await supabase
-      .from('order_guide_items')
-      .update({ name: newName })
-      .eq('name', itemToUpdate.name)
-      .eq('category', category);
-
-    if (error) {
-      console.error('Error updating name in Supabase:', error);
-    }
-  };
++ const handleParBlur = async (e, row) => {
++   if (!isAdminMode || !row?.item_id || !locationId) return;
++   const val = Number(e.target.value);
++   if (!Number.isFinite(val)) return;
++   try {
++     await updateParLevel({ item_id: row.item_id, location_id: locationId, par_level: val });
++     await onRefresh?.();
++   } catch (err) {
++     console.error('Failed to update PAR:', err);
++     // optionally toast
++   }
++ };
++
++ const handleOnHandBlur = async (e, row) => {
++   if (!isAdminMode || !row?.item_id || !locationId) return;
++   const val = Number(e.target.value);
++   if (!Number.isFinite(val)) return;
++   try {
++     await updateOnHand({ item_id: row.item_id, location_id: locationId, on_hand: val });
++     await onRefresh?.();
++   } catch (err) {
++     console.error('Failed to update on-hand:', err);
++   }
++ };
 
   return (
     <div className="overflow-x-auto">
@@ -114,8 +46,10 @@ const OrderGuideItemTable = ({ items = [], categoryTitle }) => {
         <thead className="bg-gray-100 dark:bg-gray-800">
           <tr>
             <th className="text-left px-4 py-2 font-semibold">Item</th>
-            <th className="text-left px-4 py-2 font-semibold">Forecast</th>
-            <th className="text-left px-4 py-2 font-semibold">Actual</th>
+-           <th className="text-left px-4 py-2 font-semibold">Forecast</th>
+-           <th className="text-left px-4 py-2 font-semibold">Actual</th>
++           <th className="text-left px-4 py-2 font-semibold">PAR</th>
++           <th className="text-left px-4 py-2 font-semibold">On hand</th>
             <th className="text-left px-4 py-2 font-semibold">Variance</th>
             <th className="text-left px-4 py-2 font-semibold">Unit</th>
             <th className="text-left px-4 py-2 font-semibold">Status</th>
@@ -132,73 +66,57 @@ const OrderGuideItemTable = ({ items = [], categoryTitle }) => {
             return (
               <tr key={index} className="border-b dark:border-gray-700">
                 <td className="px-4 py-2 font-medium text-gray-900 whitespace-nowrap bg-yellow-50">
-                  {isAdminMode ? (
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => handleNameChange(e.target.value, item)}
-                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                    />
-                  ) : (
-                    <>
-                      {name}
-                      {isParItem && (
-                        <span className="ml-2 inline-flex items-center rounded bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
-                          PAR Item
-                        </span>
-                      )}
-                      {isCustom && (
-                        <span className="ml-2 inline-flex items-center rounded bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800 ring-1 ring-inset ring-blue-600/20">
-                          Custom
-                        </span>
-                      )}
-                    </>
-                  )}
-                </td>
-
-                <td className="px-4 py-2 bg-yellow-50">
-                  <input
-                    type="number"
-                    className={`w-20 rounded border border-gray-300 px-2 py-1 text-right ${
-                      (!isAdminMode || (isParItem && !isAdminMode)) ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''
-                    }`}
-                    value={item.forecast}
-                    onChange={(e) => handleForecastChange(e, item)}
-                    readOnly={!isAdminMode || (isParItem && !isAdminMode)}
-                  />
-                </td>
-
-                <td className="px-3 py-2 bg-yellow-50">{item.actual}</td>
-                <td className="px-3 py-2 bg-yellow-50">{item.variance}</td>
-                <td className="px-3 py-2 bg-yellow-50">{item.unit}</td>
-
-                <td className="px-3 py-2 bg-yellow-50">
+                  {name}
                   {isParItem && (
-                    <span className="inline-flex items-center rounded bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
-                      <AlertTriangle className="w-3 h-3 mr-1 text-yellow-600" />
+                    <span className="ml-2 inline-flex items-center rounded bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
                       PAR Item
                     </span>
                   )}
                   {isCustom && (
-                    <span className="inline-flex items-center rounded bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800 ring-1 ring-inset ring-blue-600/20">
-                      <HelpCircle className="w-3 h-3 mr-1 text-blue-600" />
+                    <span className="ml-2 inline-flex items-center rounded bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800 ring-1 ring-inset ring-blue-600/20">
                       Custom
                     </span>
                   )}
                 </td>
 
+                {/* PAR (forecast) */}
+                <td className="px-4 py-2 bg-yellow-50">
+                  <input
+                    type="number"
+                    className={`w-24 rounded border border-gray-300 px-2 py-1 text-right ${
+                      !isAdminMode ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''
+                    }`}
+                    value={item.forecast}
+                    readOnly={!isAdminMode}
++                   onBlur={(e) => handleParBlur(e, item)}
+                    onChange={() => {}}
+                  />
+                </td>
+
+                {/* On hand (actual) */}
+                <td className="px-3 py-2 bg-yellow-50">
+                  <input
+                    type="number"
+                    className={`w-24 rounded border border-gray-300 px-2 py-1 text-right ${
+                      !isAdminMode ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''
+                    }`}
+                    value={item.actual}
+                    readOnly={!isAdminMode}
++                   onBlur={(e) => handleOnHandBlur(e, item)}
+                    onChange={() => {}}
+                  />
+                </td>
+
+                <td className="px-3 py-2 bg-yellow-50">{item.variance}</td>
+                <td className="px-3 py-2 bg-yellow-50">{item.unit}</td>
+
+                <td className="px-3 py-2 bg-yellow-50">
+                  {status}
+                </td>
+
                 {isAdminMode && (
                   <td className="px-3 py-2 bg-yellow-50">
-                    {isCustom ? (
-                      <button
-                        onClick={() => handleRemove(item)}
-                        className="text-red-600 hover:underline text-sm"
-                      >
-                        Delete
-                      </button>
-                    ) : (
-                      <span className="text-gray-400 text-xs italic">Auto</span>
-                    )}
+                    <span className="text-gray-400 text-xs italic">Auto</span>
                   </td>
                 )}
               </tr>
@@ -211,4 +129,3 @@ const OrderGuideItemTable = ({ items = [], categoryTitle }) => {
 };
 
 export default OrderGuideItemTable;
-
