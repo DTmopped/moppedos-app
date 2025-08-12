@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import PrintableOrderGuide from './orderguide/PrintableOrderGuide.jsx';
 import OrderGuideCategory from '@/components/orderguide/OrderGuideCategory';
 
-// ✅ storage-driven hook (your version that returns loading/error/groupedData/refresh)
+// storage-driven hook
 import { useOrderGuide } from '@/hooks/useOrderGuide';
 
 const parBasedCategories = ['PaperGoods', 'CleaningSupplies', 'Condiments'];
@@ -18,26 +18,27 @@ const WeeklyOrderGuide = () => {
     toggleAdminMode,
     printDate,
     setPrintDate,
-    // if you later store the active location in context, grab it here:
-    // activeLocationId,
   } = useData();
 
-  // TODO: replace with a real location id once multi-unit wiring is done
-  const TEST_LOCATION_ID = null; // e.g. '00fe305a-6b02-4eaa-9bfe-cbc2d46d9e17'
+  // TODO: later: pull from context. For now, hard-code Test Location UUID
+  const TEST_LOCATION_ID = '00fe305a-6b02-4eaa-9bfe-cbc2d46d9e17';
 
-  // ✅ fetch live data from Supabase (via your view)
- const { loading, error, groupedData, refresh } = useOrderGuide({
-  locationId: '00fe305a-6b02-4eaa-9bfe-cbc2d46d9e17' // <- use your Test Location UUID
-});
+  // ✅ use the hook's current API (positional param; returns isLoading/itemsByCategory)
+  const {
+    isLoading,
+    error,
+    itemsByCategory,
+    refresh
+  } = useOrderGuide(TEST_LOCATION_ID);
 
   const printableRef = useRef();
 
-  // ✅ refresh print date when data changes
+  // refresh print date when data changes
   useEffect(() => {
     setPrintDate?.(new Date());
-  }, [groupedData, setPrintDate]);
+  }, [itemsByCategory, setPrintDate]);
 
-  // ✅ Helpers unchanged (variance-based color + icon)
+  // Helpers (variance-based color + icon)
   const getStatusClass = useCallback((item) => {
     const { forecast, actual } = item || {};
     if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0) return '';
@@ -59,40 +60,16 @@ const WeeklyOrderGuide = () => {
     return <TrendingUp className="h-4 w-4 text-red-500" />;
   }, []);
 
-  // ✅ Map DB/view rows -> your UI shape
-  // groupedData is expected as { [category]: [{ item_name, unit, on_hand, par_level, inventory_status, ... }] }
+  // Map grouped rows -> UI (already in your hook, but keep here if you want a final massaging step)
   const uiGuideData = useMemo(() => {
-    if (!groupedData || typeof groupedData !== 'object') return {};
-
-    const mapped = {};
-    Object.entries(groupedData).forEach(([category, rows]) => {
-      mapped[category] = (rows || []).map((r) => {
-        const name = r.item_name ?? r.name ?? '';
-        const unit = r.unit ?? '';
-        const actualNum = Number(r.on_hand ?? r.actual ?? 0);
-        const forecastNum = Number(r.par_level ?? r.forecast ?? 0);
-        const varianceNum = actualNum - forecastNum;
-
-        // prefer inventory_status (Critical/Low/Needs Order/In Stock) if present, else fall back
-        const statusRaw = r.inventory_status || r.item_status || r.status || 'auto';
-        const status = String(statusRaw).toLowerCase();
-
-        return {
-          name,
-          unit,
-          actual: actualNum,
-          forecast: forecastNum,
-          variance: Number.isFinite(varianceNum) ? Number(varianceNum.toFixed(1)) : 0,
-          status, // 'critical' | 'low' | 'in stock' | 'par item' | 'custom' | 'auto', etc.
-        };
-      });
-    });
-    return mapped;
-  }, [groupedData]);
+    if (!itemsByCategory || typeof itemsByCategory !== 'object') return {};
+    // itemsByCategory is already { [category]: [ { name, forecast, actual, variance, unit, status, ... } ] }
+    return itemsByCategory;
+  }, [itemsByCategory]);
 
   return (
     <div className="p-4 md:p-6">
-      {/* Print Page Break Rule (kept) */}
+      {/* Print Page Break Rule */}
       <style>
         {`
           @media print {
@@ -127,7 +104,7 @@ const WeeklyOrderGuide = () => {
       </div>
 
       {/* Loading / Error states */}
-      {loading && (
+      {isLoading && (
         <div className="text-sm text-slate-600">Loading order guide…</div>
       )}
       {error && (
@@ -137,7 +114,7 @@ const WeeklyOrderGuide = () => {
         </div>
       )}
 
-      {!loading && !error && (
+      {!isLoading && !error && (
         <AnimatePresence>
           <motion.div
             key="order-guide"
