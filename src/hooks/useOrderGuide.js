@@ -1,4 +1,3 @@
-// src/hooks/useOrderGuide.js
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { supabase } from '@/supabaseClient';
 
@@ -22,9 +21,10 @@ export function useOrderGuide({ locationId, category = null, includeInactive = t
         .from('v_order_guide')
         .select(
           [
+            'item_id',              // <-- add this
             'category',
             'location_id',
-            'name:item_name',        // alias for UI
+            'item_name',            // keep original name, we’ll map below
             'unit',
             'on_hand',
             'par_level',
@@ -37,19 +37,14 @@ export function useOrderGuide({ locationId, category = null, includeInactive = t
 
       if (category) query = query.eq('category', category);
 
-      query = query.order('category', { ascending: true }).order('item_name', { ascending: true });
+      query = query
+        .order('category', { ascending: true })
+        .order('item_name', { ascending: true });
 
       const { data, error: qErr } = await query;
       if (qErr) throw qErr;
 
-      // Filter out rows with null, empty, or whitespace-only names
-      const cleanedData = (Array.isArray(data) ? data : []).filter(r => {
-        const rawName = r.name ?? '';
-        const noSpaces = rawName.replace(/[\s\u00A0]+/g, '');
-        return noSpaces.length > 0;
-      });
-
-      setRows(cleanedData);
+      setRows(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err);
     } finally {
@@ -72,7 +67,8 @@ export function useOrderGuide({ locationId, category = null, includeInactive = t
       const variance = Number((actual - forecast).toFixed(1));
 
       grouped[cat].push({
-        name: r.name || '',
+        item_id: r.item_id,                          // <-- keep id
+        name: r.item_name || '',
         unit: r.unit ?? '',
         actual,
         forecast,
