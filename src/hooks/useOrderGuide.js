@@ -1,21 +1,11 @@
 // src/hooks/useOrderGuide.js
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { supabase } from '@/supabaseClient';
 
 /**
  * Fetch order guide rows from view v_order_guide and group by category.
  *
  * @param {{ locationId: string | null, category?: string | null, includeInactive?: boolean }}
- *        locationId  - UUID from `locations` (required to fetch)
- *        category    - optional category filter (e.g., "BBQ")
- *        includeInactive - future flag for inactive items (not used yet)
- *
- * @returns {{
- *   isLoading: boolean,
- *   error: any,
- *   itemsByCategory: Record<string, any[]>,
- *   refresh: () => Promise<void>
- * }}
  */
 export function useOrderGuide({ locationId, category = null, includeInactive = true } = {}) {
   const [rows, setRows] = useState([]);
@@ -23,7 +13,7 @@ export function useOrderGuide({ locationId, category = null, includeInactive = t
   const [error, setError] = useState(null);
 
   const fetchData = useCallback(async () => {
-    // If no location chosen yet, return empty quickly (prevents errors)
+    // Bail early if no location selected yet
     if (!locationId) {
       setRows([]);
       setLoading(false);
@@ -34,21 +24,43 @@ export function useOrderGuide({ locationId, category = null, includeInactive = t
     setError(null);
 
     try {
+      // Select only what we need; alias item_name -> name so UI always has a "name"
       let query = supabase
-        .from("v_order_guide")
-        .select("*")
-        .eq("location_id", locationId);
+        .from('v_order_guide')
+        .select(
+          [
+            'category',
+            'location_id',
+            'item_name:name',        // <-- alias here
+            'unit',
+            'on_hand',
+            'par_level',
+            'order_quantity',
+            'inventory_status',
+            'item_status',
+          ].join(',')
+        )
+        .eq('location_id', locationId);
 
-      if (category) query = query.eq("category", category);
+      if (category) query = query.eq('category', category);
 
-      // When you add an "active" flag to the view, you can use includeInactive here.
+      // When/if an "active" flag exists in the view, use includeInactive to filter here
 
-      query = query.order("category", { ascending: true }).order("item_name", { ascending: true });
+      query = query.order('category', { ascending: true }).order('item_name', { ascending: true });
 
-      const { data, error: qErr } = await query;
-      if (qErr) throw qErr;
+      const { data, error: qErr, status, statusText } = await query;
 
-      setRows(data ?? []);
+      if (qErr) {
+        // Give a richer error to the UI
+        const enriched = new Error(qErr.message || 'Failed to load order guide');
+        enriched.details = qErr.details;
+        enriched.hint = qErr.hint;
+        enriched.status = status;
+        enriched.statusText = statusText;
+        throw enriched;
+      }
+
+      setRows(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err);
     } finally {
@@ -60,11 +72,11 @@ export function useOrderGuide({ locationId, category = null, includeInactive = t
     fetchData();
   }, [fetchData]);
 
-  // Group into { [category]: [items] } and map to UI shape expected by the table/printable
+  // Group into { [category]: [items] } and map to the UI shape
   const itemsByCategory = useMemo(() => {
     const grouped = {};
     for (const r of rows) {
-      const cat = r.category || "Uncategorized";
+      const cat = r.category || 'Uncategorized';
       if (!grouped[cat]) grouped[cat] = [];
 
       const actual = Number(r.on_hand ?? 0);
@@ -72,13 +84,13 @@ export function useOrderGuide({ locationId, category = null, includeInactive = t
       const variance = Number((actual - forecast).toFixed(1));
 
       grouped[cat].push({
-        name: r.item_name ?? r.name ?? "",
-        unit: r.unit ?? "",
+        name: r.name || '', // thanks to alias this should be filled if item_name exists
+        unit: r.unit ?? '',
         actual,
         forecast,
         variance,
-        status: String(r.inventory_status || r.item_status || r.status || "auto").toLowerCase(),
-        // raw fields kept for later UI enhancements
+        status: String(r.inventory_status || r.item_status || 'auto').toLowerCase(),
+        // raw fields kept for future UI
         on_hand: r.on_hand ?? null,
         par_level: r.par_level ?? null,
         order_quantity: r.order_quantity ?? null,
@@ -87,5 +99,9 @@ export function useOrderGuide({ locationId, category = null, includeInactive = t
     return grouped;
   }, [rows]);
 
-  return { isLoading, error, itemsByCategory, refresh: fetchData };
+  // Backward-compatible return shape
+  const loading = isLoading;
+  const groupedData = itemsByCategory;
+
+  return { loading, isLoading, error, groupedData, itemsByCategory, refresh: fetchData };
 }
