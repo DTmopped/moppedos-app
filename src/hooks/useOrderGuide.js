@@ -24,7 +24,7 @@ export function useOrderGuide({ locationId, category = null, includeInactive = t
           [
             'category',
             'location_id',
-            'name:item_name',        // <-- correct alias (alias:column)
+            'name:item_name',        // alias for UI
             'unit',
             'on_hand',
             'par_level',
@@ -42,7 +42,14 @@ export function useOrderGuide({ locationId, category = null, includeInactive = t
       const { data, error: qErr } = await query;
       if (qErr) throw qErr;
 
-      setRows(Array.isArray(data) ? data : []);
+      // Filter out rows with null, empty, or whitespace-only names
+      const cleanedData = (Array.isArray(data) ? data : []).filter(r => {
+        const rawName = r.name ?? '';
+        const noSpaces = rawName.replace(/[\s\u00A0]+/g, '');
+        return noSpaces.length > 0;
+      });
+
+      setRows(cleanedData);
     } catch (err) {
       setError(err);
     } finally {
@@ -79,7 +86,6 @@ export function useOrderGuide({ locationId, category = null, includeInactive = t
     return grouped;
   }, [rows]);
 
-  // Back-compat
   return {
     loading: isLoading,
     isLoading,
