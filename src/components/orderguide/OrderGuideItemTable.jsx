@@ -1,6 +1,6 @@
 import React from 'react';
 import { useData } from '@/contexts/DataContext';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/supabaseClient';
 import { AlertTriangle, HelpCircle } from 'lucide-react';
 
 const OrderGuideItemTable = ({ items = [], categoryTitle }) => {
