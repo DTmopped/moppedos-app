@@ -1,15 +1,14 @@
 // src/hooks/useOrderGuide.js
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/supabaseClient';
 
-/**
- * Fetch and group order guide rows from view v_order_guide.
- * Returns items grouped by category, with both item_id and itemId present.
- */
-export function useOrderGuide({ locationId, category = null, includeInactive = true } = {}) {
+const DEBUG = false;
+
+export function useOrderGuide({ locationId, category = null } = {}) {
   const [rows, setRows] = useState([]);
   const [isLoading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const abortRef = useRef(null);
 
   const fetchData = useCallback(async () => {
     if (!locationId) {
@@ -17,6 +16,11 @@ export function useOrderGuide({ locationId, category = null, includeInactive = t
       setLoading(false);
       return;
     }
+
+    // cancel any in-flight request
+    abortRef.current?.abort?.();
+    const ac = new AbortController();
+    abortRef.current = ac;
 
     setLoading(true);
     setError(null);
@@ -29,7 +33,7 @@ export function useOrderGuide({ locationId, category = null, includeInactive = t
             'item_id',
             'category',
             'location_id',
-            'item_name',
+            'name:item_name',   // alias so we can use r.name directly
             'unit',
             'on_hand',
             'par_level',
@@ -38,71 +42,82 @@ export function useOrderGuide({ locationId, category = null, includeInactive = t
             'item_status',
           ].join(',')
         )
-        .eq('location_id', locationId);
-
-      if (category) query = query.eq('category', category);
-
-      query = query
+        .eq('location_id', locationId)
         .order('category', { ascending: true })
         .order('item_name', { ascending: true });
 
+      if (category) query = query.eq('category', category);
+
       const { data, error: qErr } = await query;
+      if (ac.signal.aborted) return; // component unmounted or refetch started
+
       if (qErr) throw qErr;
 
-      setRows(Array.isArray(data) ? data : []);
+      const safe = Array.isArray(data) ? data : [];
+      if (DEBUG) console.debug('OrderGuide rows:', safe.length, safe);
+      setRows(safe);
     } catch (err) {
-      setError(err);
+      if (DEBUG) console.error('OrderGuide fetch error:', err);
+      // ignore abort errors
+      if (err?.name !== 'AbortError') setError(err);
     } finally {
-      setLoading(false);
+      if (!abortRef.current?.signal?.aborted) setLoading(false);
     }
-  }, [locationId, category, includeInactive]);
+  }, [locationId, category]);
 
   useEffect(() => {
     fetchData();
+    return () => abortRef.current?.abort?.();
   }, [fetchData]);
 
-  // Group into { [category]: [items...] } and map to UI shape
-  const itemsByCategory = useMemo(() => {
-    const grouped = {};
-    for (const r of rows) {
-      const cat = r.category || 'Uncategorized';
-      if (!grouped[cat]) grouped[cat] = [];
-
+  const flatItems = useMemo(() => {
+    return rows.map((r) => {
       const actual = Number(r.on_hand ?? 0);
       const forecast = Number(r.par_level ?? 0);
       const variance = Number((actual - forecast).toFixed(1));
-
-      grouped[cat].push({
-        // IDs (both styles for compatibility with the table)
+      return {
+        // IDs (both styles for compatibility)
         item_id: r.item_id ?? null,
         itemId: r.item_id ?? null,
 
-        // Display fields
-        name: r.item_name || '',
+        // display
+        name: r.name || '',
         unit: r.unit ?? '',
+        category: r.category || 'Uncategorized',
 
-        // Numbers used by the UI
+        // numbers
         actual,
         forecast,
         variance,
+        order_quantity: r.order_quantity ?? null,
 
-        // Status (prefer inventory_status)
+        // status
         status: String(r.inventory_status || r.item_status || 'auto').toLowerCase(),
 
-        // Raw fields (handy for future UI)
+        // raw
         on_hand: r.on_hand ?? null,
         par_level: r.par_level ?? null,
-        order_quantity: r.order_quantity ?? null,
-      });
+        location_id: r.location_id ?? null,
+      };
+    });
+  }, [rows]);
+
+  const itemsByCategory = useMemo(() => {
+    const grouped = {};
+    for (const item of flatItems) {
+      const cat = item.category || 'Uncategorized';
+      (grouped[cat] ||= []).push(item);
     }
     return grouped;
-  }, [rows]);
+  }, [flatItems]);
 
   return {
     isLoading,
     error,
-    groupedData: itemsByCategory, // legacy name some components expect
+    // old and new keys so existing components keep working
+    groupedData: itemsByCategory,
     itemsByCategory,
+    itemsFlat: flatItems,
     refresh: fetchData,
   };
 }
