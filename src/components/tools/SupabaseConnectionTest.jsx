@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button.jsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.jsx";
 import { ScrollArea } from "@/components/ui/scroll-area.jsx";
 import { Loader2, Wifi, CheckCircle2, XCircle } from "lucide-react";
-import { supabase } from "@/lib/supabaseClient"; // adjust path if needed
+import { supabase } from '@/supabaseClient';
 
 const SupabaseConnectionTest = () => {
   const [result, setResult] = useState("");
