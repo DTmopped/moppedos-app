@@ -1,29 +1,14 @@
 // src/components/WeeklyOrderGuide.jsx
-import React, {
-  useMemo,
-  useRef,
-  useEffect,
-  useCallback,
-  useState,
-} from 'react';
+import React, { useEffect, useMemo, useRef, useCallback } from 'react';
 import { useData } from '@/contexts/DataContext';
 import { Button } from '@/components/ui/button.jsx';
-import {
-  Printer,
-  TrendingUp,
-  AlertTriangle,
-  CheckCircle2,
-  HelpCircle,
-} from 'lucide-react';
+import { Printer, TrendingUp, AlertTriangle, CheckCircle2, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import PrintableOrderGuide from './orderguide/PrintableOrderGuide.jsx';
 import OrderGuideCategory from '@/components/orderguide/OrderGuideCategory';
 
-// storage-driven hook (returns { isLoading, error, itemsByCategory, refresh })
+// Storage-driven hook
 import { useOrderGuide } from '@/hooks/useOrderGuide';
-
-// supabase client to fetch a default location
-import { supabase } from '@/lib/supabaseClient';
 
 const parBasedCategories = ['PaperGoods', 'CleaningSupplies', 'Condiments'];
 
@@ -33,57 +18,28 @@ const WeeklyOrderGuide = () => {
     toggleAdminMode,
     printDate,
     setPrintDate,
+    // TODO: wire this from context when multi‑location is ready
+    // activeLocationId,
   } = useData();
 
-  // --- NEW: pick a location automatically (first row in locations) ---
-  const [locationId, setLocationId] = useState(null);
-  const [locError, setLocError] = useState(null);
+  // TEMP: use your Test Location UUID now; replace later with activeLocationId
+  const locationId = '00fe305a-6b02-4eaa-9bfe-cbc2d46d9e17';
 
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      setLocError(null);
-      const { data, error } = await supabase
-        .from('locations')
-        .select('id, name')
-        .order('created_at', { ascending: true })
-        .limit(1)
-        .maybeSingle();
-
-      if (!mounted) return;
-      if (error) {
-        setLocError(error);
-      } else {
-        setLocationId(data?.id ?? null);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  // fetch live data from Supabase view for the chosen location
-  const { isLoading, error, itemsByCategory, refresh } =
-    useOrderGuide(locationId);
+  // ✅ Call the hook with an *object* for long‑term extensibility
+  const { isLoading, error, itemsByCategory, refresh } = useOrderGuide({ locationId });
 
   const printableRef = useRef();
 
-  // refresh print date when data changes
+  // Refresh print date when data changes
   useEffect(() => {
     setPrintDate?.(new Date());
   }, [itemsByCategory, setPrintDate]);
 
-  // Helpers (variance-based color + icon)
+  // Variance-based styling helpers (same behavior as before)
   const getStatusClass = useCallback((item) => {
     const { forecast, actual } = item || {};
-    if (
-      typeof forecast !== 'number' ||
-      typeof actual !== 'number' ||
-      forecast === 0
-    )
-      return '';
+    if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0) return '';
     const pct = ((actual - forecast) / forecast) * 100;
-
     if (Math.abs(pct) <= 10) return 'bg-green-500/10 text-green-700';
     if (pct <= 30) return 'bg-yellow-500/10 text-yellow-700';
     return 'bg-red-500/10 text-red-700';
@@ -91,41 +47,17 @@ const WeeklyOrderGuide = () => {
 
   const getStatusIcon = useCallback((item) => {
     const { forecast, actual } = item || {};
-    if (
-      typeof forecast !== 'number' ||
-      typeof actual !== 'number' ||
-      forecast === 0
-    ) {
+    if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0) {
       return <HelpCircle className="h-4 w-4 text-slate-500" />;
     }
     const pct = ((actual - forecast) / forecast) * 100;
-    if (Math.abs(pct) <= 10)
-      return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+    if (Math.abs(pct) <= 10) return <CheckCircle2 className="h-4 w-4 text-green-500" />;
     if (pct <= 30) return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
     return <TrendingUp className="h-4 w-4 text-red-500" />;
   }, []);
 
-  // The hook already normalizes rows; just alias to the UI var the rest
-  // of this component expects.
-  const uiGuideData = useMemo(() => {
-    return itemsByCategory || {};
-  }, [itemsByCategory]);
-
-  // Early states around location discovery
-  if (!locationId && !locError) {
-    return (
-      <div className="p-4 md:p-6 text-sm text-slate-600">
-        Loading location…
-      </div>
-    );
-  }
-  if (locError) {
-    return (
-      <div className="p-4 md:p-6 text-sm text-red-600">
-        Couldn’t load locations: {String(locError.message || locError)}
-      </div>
-    );
-  }
+  // Ensure we always pass a plain object to children/printable
+  const uiGuideData = useMemo(() => itemsByCategory ?? {}, [itemsByCategory]);
 
   return (
     <div className="p-4 md:p-6">
@@ -133,14 +65,8 @@ const WeeklyOrderGuide = () => {
       <style>
         {`
           @media print {
-            .print-break {
-              page-break-before: always;
-              break-before: page;
-            }
-            .print-break:first-of-type {
-              page-break-before: auto;
-              break-before: auto;
-            }
+            .print-break { page-break-before: always; break-before: page; }
+            .print-break:first-of-type { page-break-before: auto; break-before: auto; }
           }
         `}
       </style>
@@ -154,10 +80,7 @@ const WeeklyOrderGuide = () => {
           Weekly Order Guide
         </motion.h1>
         <div className="flex gap-3">
-          <Button
-            onClick={() => window.print()}
-            className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white no-print"
-          >
+          <Button onClick={() => window.print()} className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white no-print">
             <Printer size={20} className="mr-2" /> Print
           </Button>
           <Button onClick={toggleAdminMode} variant="outline" className="no-print text-sm">
@@ -166,16 +89,13 @@ const WeeklyOrderGuide = () => {
         </div>
       </div>
 
-      {/* Loading / Error states for data */}
-      {isLoading && (
-        <div className="text-sm text-slate-600">Loading order guide…</div>
-      )}
+      {/* Loading / Error states */}
+      {isLoading && <div className="text-sm text-slate-600">Loading order guide…</div>}
+
       {error && (
         <div className="text-sm text-red-600">
-          Sorry — couldn’t load the order guide. {String(error)}
-          <Button className="ml-2" size="sm" onClick={refresh}>
-            Retry
-          </Button>
+          Sorry — couldn’t load the order guide. {String(error?.message ?? error)}
+          <Button className="ml-2" size="sm" onClick={refresh}>Retry</Button>
         </div>
       )}
 
