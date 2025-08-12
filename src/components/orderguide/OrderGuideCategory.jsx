@@ -1,24 +1,36 @@
-import React, { useState } from 'react';
-import { useData } from '@/contexts/DataContext'; // ✅ ADD THIS
-import OrderGuideItemTable from './OrderGuideItemTable.jsx';
-import AddItemModal from './AddItemModal.jsx';
+import React, { useState, useMemo } from 'react';
 import { Plus } from 'lucide-react';
+import { useData } from '@/contexts/DataContext';
+import OrderGuideItemTable from './OrderGuideItemTable.jsx';
+// (Optional) If you use your AddItemModal, keep this import and button. Otherwise you can remove it.
+// import AddItemModal from './AddItemModal.jsx';
 
 const OrderGuideCategory = ({
   categoryTitle,
   items,
   getStatusClass,
   getStatusIcon,
-  parBasedCategories
+  parBasedCategories,
+  locationId,         // ⬅️ NEW from parent
+  onRefresh,          // ⬅️ NEW from parent
 }) => {
-  const { isAdminMode } = useData(); // ✅ ADD THIS
+  const { isAdminMode } = useData();
   const [showModal, setShowModal] = useState(false);
 
-  const safeItems = Array.isArray(items) ? items : [];
-  const safeGetStatusClass = typeof getStatusClass === 'function' ? getStatusClass : () => '';
-  const safeGetStatusIcon = typeof getStatusIcon === 'function' ? getStatusIcon : () => null;
+  const safeItems = useMemo(() => Array.isArray(items) ? items : [], [items]);
+  const safeGetStatusClass = useMemo(
+    () => (typeof getStatusClass === 'function' ? getStatusClass : () => ''),
+    [getStatusClass]
+  );
+  const safeGetStatusIcon = useMemo(
+    () => (typeof getStatusIcon === 'function' ? getStatusIcon : () => null),
+    [getStatusIcon]
+  );
 
-  const isParCategory = parBasedCategories?.includes(categoryTitle);
+  const isParCategory = useMemo(
+    () => Array.isArray(parBasedCategories) && parBasedCategories.includes(categoryTitle),
+    [parBasedCategories, categoryTitle]
+  );
 
   return (
     <div className="border border-gray-300 dark:border-gray-700 rounded-lg p-4 mb-6">
@@ -43,20 +55,24 @@ const OrderGuideCategory = ({
       )}
 
       <OrderGuideItemTable
+        categoryTitle={categoryTitle}
         items={safeItems}
         getStatusClass={safeGetStatusClass}
         getStatusIcon={safeGetStatusIcon}
-        adminMode={isAdminMode}
         isParCategory={isParCategory}
+        // NEW: thread-through props for edge updates
+        locationId={locationId}
+        onRefresh={onRefresh}
       />
 
-      {isAdminMode && (
+      {/* Optional AddItemModal */}
+      {/* {isAdminMode && (
         <AddItemModal
           isOpen={showModal}
           onClose={() => setShowModal(false)}
           category={categoryTitle}
         />
-      )}
+      )} */}
     </div>
   );
 };
