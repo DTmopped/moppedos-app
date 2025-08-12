@@ -1,6 +1,6 @@
 // src/hooks/useOrderGuide.js
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from '@/supabaseClient';
 
 /**
  * Fetch order guide rows from view v_order_guide and group by category.
