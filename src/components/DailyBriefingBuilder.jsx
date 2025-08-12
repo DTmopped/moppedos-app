@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.j
 import { Printer } from 'lucide-react';
 import { triggerPrint } from '@/components/prep/PrintUtils.jsx';
 import PrintableBriefingSheet from './PrintableBriefingSheet.jsx';
-import { supabase } from '@/lib/supabaseClient'; // adjust if different
+import { supabase } from '@/supabaseClient';
 
 const DailyBriefingBuilder = () => {
   const [amGuests, setAmGuests] = useState('');
