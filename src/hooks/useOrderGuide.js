@@ -1,6 +1,11 @@
+// src/hooks/useOrderGuide.js
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { supabase } from '@/supabaseClient';
 
+/**
+ * Fetch and group order guide rows from view v_order_guide.
+ * Returns items grouped by category, with both item_id and itemId present.
+ */
 export function useOrderGuide({ locationId, category = null, includeInactive = true } = {}) {
   const [rows, setRows] = useState([]);
   const [isLoading, setLoading] = useState(true);
@@ -21,10 +26,10 @@ export function useOrderGuide({ locationId, category = null, includeInactive = t
         .from('v_order_guide')
         .select(
           [
-            'item_id',              // <-- add this
+            'item_id',
             'category',
             'location_id',
-            'item_name',            // keep original name, we’ll map below
+            'item_name',
             'unit',
             'on_hand',
             'par_level',
@@ -56,6 +61,7 @@ export function useOrderGuide({ locationId, category = null, includeInactive = t
     fetchData();
   }, [fetchData]);
 
+  // Group into { [category]: [items...] } and map to UI shape
   const itemsByCategory = useMemo(() => {
     const grouped = {};
     for (const r of rows) {
@@ -67,13 +73,23 @@ export function useOrderGuide({ locationId, category = null, includeInactive = t
       const variance = Number((actual - forecast).toFixed(1));
 
       grouped[cat].push({
-        item_id: r.item_id,                          // <-- keep id
+        // IDs (both styles for compatibility with the table)
+        item_id: r.item_id ?? null,
+        itemId: r.item_id ?? null,
+
+        // Display fields
         name: r.item_name || '',
         unit: r.unit ?? '',
+
+        // Numbers used by the UI
         actual,
         forecast,
         variance,
+
+        // Status (prefer inventory_status)
         status: String(r.inventory_status || r.item_status || 'auto').toLowerCase(),
+
+        // Raw fields (handy for future UI)
         on_hand: r.on_hand ?? null,
         par_level: r.par_level ?? null,
         order_quantity: r.order_quantity ?? null,
@@ -83,10 +99,9 @@ export function useOrderGuide({ locationId, category = null, includeInactive = t
   }, [rows]);
 
   return {
-    loading: isLoading,
     isLoading,
     error,
-    groupedData: itemsByCategory,
+    groupedData: itemsByCategory, // legacy name some components expect
     itemsByCategory,
     refresh: fetchData,
   };
