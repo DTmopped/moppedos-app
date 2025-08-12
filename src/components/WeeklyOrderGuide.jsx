@@ -1,14 +1,29 @@
 // src/components/WeeklyOrderGuide.jsx
-import React, { useMemo, useRef, useEffect, useCallback } from 'react';
+import React, {
+  useMemo,
+  useRef,
+  useEffect,
+  useCallback,
+  useState,
+} from 'react';
 import { useData } from '@/contexts/DataContext';
 import { Button } from '@/components/ui/button.jsx';
-import { Printer, TrendingUp, AlertTriangle, CheckCircle2, HelpCircle } from 'lucide-react';
+import {
+  Printer,
+  TrendingUp,
+  AlertTriangle,
+  CheckCircle2,
+  HelpCircle,
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import PrintableOrderGuide from './orderguide/PrintableOrderGuide.jsx';
 import OrderGuideCategory from '@/components/orderguide/OrderGuideCategory';
 
-// storage-driven hook
+// storage-driven hook (returns { isLoading, error, itemsByCategory, refresh })
 import { useOrderGuide } from '@/hooks/useOrderGuide';
+
+// supabase client to fetch a default location
+import { supabase } from '@/lib/supabaseClient';
 
 const parBasedCategories = ['PaperGoods', 'CleaningSupplies', 'Condiments'];
 
@@ -20,16 +35,36 @@ const WeeklyOrderGuide = () => {
     setPrintDate,
   } = useData();
 
-  // TODO: later: pull from context. For now, hard-code Test Location UUID
-  const TEST_LOCATION_ID = '00fe305a-6b02-4eaa-9bfe-cbc2d46d9e17';
+  // --- NEW: pick a location automatically (first row in locations) ---
+  const [locationId, setLocationId] = useState(null);
+  const [locError, setLocError] = useState(null);
 
-  // ✅ use the hook's current API (positional param; returns isLoading/itemsByCategory)
-  const {
-    isLoading,
-    error,
-    itemsByCategory,
-    refresh
-  } = useOrderGuide(TEST_LOCATION_ID);
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setLocError(null);
+      const { data, error } = await supabase
+        .from('locations')
+        .select('id, name')
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (!mounted) return;
+      if (error) {
+        setLocError(error);
+      } else {
+        setLocationId(data?.id ?? null);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // fetch live data from Supabase view for the chosen location
+  const { isLoading, error, itemsByCategory, refresh } =
+    useOrderGuide(locationId);
 
   const printableRef = useRef();
 
@@ -41,7 +76,12 @@ const WeeklyOrderGuide = () => {
   // Helpers (variance-based color + icon)
   const getStatusClass = useCallback((item) => {
     const { forecast, actual } = item || {};
-    if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0) return '';
+    if (
+      typeof forecast !== 'number' ||
+      typeof actual !== 'number' ||
+      forecast === 0
+    )
+      return '';
     const pct = ((actual - forecast) / forecast) * 100;
 
     if (Math.abs(pct) <= 10) return 'bg-green-500/10 text-green-700';
@@ -51,21 +91,41 @@ const WeeklyOrderGuide = () => {
 
   const getStatusIcon = useCallback((item) => {
     const { forecast, actual } = item || {};
-    if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0) {
+    if (
+      typeof forecast !== 'number' ||
+      typeof actual !== 'number' ||
+      forecast === 0
+    ) {
       return <HelpCircle className="h-4 w-4 text-slate-500" />;
     }
     const pct = ((actual - forecast) / forecast) * 100;
-    if (Math.abs(pct) <= 10) return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+    if (Math.abs(pct) <= 10)
+      return <CheckCircle2 className="h-4 w-4 text-green-500" />;
     if (pct <= 30) return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
     return <TrendingUp className="h-4 w-4 text-red-500" />;
   }, []);
 
-  // Map grouped rows -> UI (already in your hook, but keep here if you want a final massaging step)
+  // The hook already normalizes rows; just alias to the UI var the rest
+  // of this component expects.
   const uiGuideData = useMemo(() => {
-    if (!itemsByCategory || typeof itemsByCategory !== 'object') return {};
-    // itemsByCategory is already { [category]: [ { name, forecast, actual, variance, unit, status, ... } ] }
-    return itemsByCategory;
+    return itemsByCategory || {};
   }, [itemsByCategory]);
+
+  // Early states around location discovery
+  if (!locationId && !locError) {
+    return (
+      <div className="p-4 md:p-6 text-sm text-slate-600">
+        Loading location…
+      </div>
+    );
+  }
+  if (locError) {
+    return (
+      <div className="p-4 md:p-6 text-sm text-red-600">
+        Couldn’t load locations: {String(locError.message || locError)}
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-6">
@@ -94,7 +154,10 @@ const WeeklyOrderGuide = () => {
           Weekly Order Guide
         </motion.h1>
         <div className="flex gap-3">
-          <Button onClick={() => window.print()} className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white no-print">
+          <Button
+            onClick={() => window.print()}
+            className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white no-print"
+          >
             <Printer size={20} className="mr-2" /> Print
           </Button>
           <Button onClick={toggleAdminMode} variant="outline" className="no-print text-sm">
@@ -103,14 +166,16 @@ const WeeklyOrderGuide = () => {
         </div>
       </div>
 
-      {/* Loading / Error states */}
+      {/* Loading / Error states for data */}
       {isLoading && (
         <div className="text-sm text-slate-600">Loading order guide…</div>
       )}
       {error && (
         <div className="text-sm text-red-600">
           Sorry — couldn’t load the order guide. {String(error)}
-          <Button className="ml-2" size="sm" onClick={refresh}>Retry</Button>
+          <Button className="ml-2" size="sm" onClick={refresh}>
+            Retry
+          </Button>
         </div>
       )}
 
