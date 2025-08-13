@@ -7,10 +7,22 @@ import { motion, AnimatePresence } from 'framer-motion';
 import PrintableOrderGuide from './orderguide/PrintableOrderGuide.jsx';
 import OrderGuideCategory from '@/components/orderguide/OrderGuideCategory';
 
-// storage-driven hook
+// Storage-driven hook (must import Supabase from moppedos-app/src/supabaseClient.js inside the hook)
 import { useOrderGuide } from '@/hooks/useOrderGuide';
 
+// PAR-only categories (status calc uses % variance)
 const parBasedCategories = ['PaperGoods', 'CleaningSupplies', 'Condiments'];
+
+// Canonical category order (locked)
+const CATEGORY_ORDER = [
+  'Meats',
+  'Sides',
+  'Bread',
+  'Sweets',
+  'Condiments',
+  'PaperGoods',
+  'CleaningSupplies',
+];
 
 const WeeklyOrderGuide = () => {
   const {
@@ -52,7 +64,15 @@ const WeeklyOrderGuide = () => {
     return <TrendingUp className="h-4 w-4 text-red-500" />;
   }, []);
 
+  // Memoize guide data from hook; never fabricate placeholders here
   const uiGuideData = useMemo(() => itemsByCategory ?? {}, [itemsByCategory]);
+
+  // Build an ordered list of [category, items] honoring CATEGORY_ORDER
+  const orderedEntries = useMemo(() => {
+    return CATEGORY_ORDER
+      .filter(cat => uiGuideData && Array.isArray(uiGuideData[cat]) && uiGuideData[cat].length > 0)
+      .map(cat => [cat, uiGuideData[cat]]);
+  }, [uiGuideData]);
 
   return (
     <div className="p-4 md:p-6">
@@ -99,23 +119,20 @@ const WeeklyOrderGuide = () => {
             exit={{ opacity: 0 }}
             className="space-y-6"
           >
-            {Object.entries(uiGuideData).map(([category, items], index) => {
-              if (!Array.isArray(items)) return null;
-              return (
-                <div key={category} className={index !== 0 ? 'print-break' : ''}>
-                  <h2 className="text-xl font-bold mb-2">{category}</h2>
-                  <OrderGuideCategory
-                    categoryTitle={category}
-                    items={items}
-                    getStatusClass={getStatusClass}
-                    getStatusIcon={getStatusIcon}
-                    parBasedCategories={parBasedCategories}
-                    locationId={locationId}
-                    onRefresh={refresh}
-                  />
-                </div>
-              );
-            })}
+            {orderedEntries.map(([category, items], index) => (
+              <div key={category} className={index !== 0 ? 'print-break' : ''}>
+                <h2 className="text-xl font-bold mb-2">{category}</h2>
+                <OrderGuideCategory
+                  categoryTitle={category}
+                  items={items}
+                  getStatusClass={getStatusClass}
+                  getStatusIcon={getStatusIcon}
+                  parBasedCategories={parBasedCategories}
+                  locationId={locationId}
+                  onRefresh={refresh}
+                />
+              </div>
+            ))}
           </motion.div>
         </AnimatePresence>
       )}
