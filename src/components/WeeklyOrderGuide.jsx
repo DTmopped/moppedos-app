@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import PrintableOrderGuide from './orderguide/PrintableOrderGuide.jsx';
 import OrderGuideCategory from '@/components/orderguide/OrderGuideCategory';
 
-// Storage-driven hook
+// storage-driven hook
 import { useOrderGuide } from '@/hooks/useOrderGuide';
 
 const parBasedCategories = ['PaperGoods', 'CleaningSupplies', 'Condiments'];
@@ -18,21 +18,20 @@ const WeeklyOrderGuide = () => {
     toggleAdminMode,
     printDate,
     setPrintDate,
-    // TODO: pull this from context once multi-location is wired
+    // TODO: later: get from context
+    // activeLocationId,
   } = useData();
 
-  // TEMP: use Test Location UUID (replace with context later)
+  // TEMP: your Test Location UUID
   const locationId = '00fe305a-6b02-4eaa-9bfe-cbc2d46d9e17';
 
   const { isLoading, error, itemsByCategory, refresh } = useOrderGuide({ locationId });
   const printableRef = useRef();
 
-  // Refresh print date when data changes
   useEffect(() => {
     setPrintDate?.(new Date());
   }, [itemsByCategory, setPrintDate]);
 
-  // Variance-based styling helpers (same behavior as before)
   const getStatusClass = useCallback((item) => {
     const { forecast, actual } = item || {};
     if (typeof forecast !== 'number' || typeof actual !== 'number' || forecast === 0) return '';
@@ -53,20 +52,16 @@ const WeeklyOrderGuide = () => {
     return <TrendingUp className="h-4 w-4 text-red-500" />;
   }, []);
 
-  // Always pass a plain object to children/printable
   const uiGuideData = useMemo(() => itemsByCategory ?? {}, [itemsByCategory]);
 
   return (
     <div className="p-4 md:p-6">
-      {/* Print Page Break Rule */}
-      <style>
-        {`
-          @media print {
-            .print-break { page-break-before: always; break-before: page; }
-            .print-break:first-of-type { page-break-before: auto; break-before: auto; }
-          }
-        `}
-      </style>
+      <style>{`
+        @media print {
+          .print-break { page-break-before: always; break-before: page; }
+          .print-break:first-of-type { page-break-before: auto; break-before: auto; }
+        }
+      `}</style>
 
       <div className="flex justify-between items-center mb-6 gap-2">
         <motion.h1
@@ -86,7 +81,6 @@ const WeeklyOrderGuide = () => {
         </div>
       </div>
 
-      {/* Loading / Error states */}
       {isLoading && <div className="text-sm text-slate-600">Loading order guide…</div>}
 
       {error && (
@@ -116,7 +110,6 @@ const WeeklyOrderGuide = () => {
                     getStatusClass={getStatusClass}
                     getStatusIcon={getStatusIcon}
                     parBasedCategories={parBasedCategories}
-                    // NEW: thread down for live updates
                     locationId={locationId}
                     onRefresh={refresh}
                   />
@@ -127,7 +120,6 @@ const WeeklyOrderGuide = () => {
         </AnimatePresence>
       )}
 
-      {/* Hidden printable */}
       <div style={{ display: 'none' }}>
         <PrintableOrderGuide
           ref={printableRef}
