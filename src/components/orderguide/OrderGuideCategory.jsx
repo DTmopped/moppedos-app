@@ -11,13 +11,13 @@ const OrderGuideCategory = ({
   getStatusClass,
   getStatusIcon,
   parBasedCategories,
-  locationId,   // <- from parent
-  onRefresh,    // <- from parent
+  locationId,
+  onRefresh,
 }) => {
   const { isAdminMode } = useData();
   const [showModal, setShowModal] = useState(false);
 
-  const safeItems = useMemo(() => (Array.isArray(items) ? items : []), [items]);
+  const safeItems = useMemo(() => Array.isArray(items) ? items : [], [items]);
   const safeGetStatusClass = useMemo(
     () => (typeof getStatusClass === 'function' ? getStatusClass : () => ''),
     [getStatusClass]
@@ -60,21 +60,16 @@ const OrderGuideCategory = ({
         getStatusClass={safeGetStatusClass}
         getStatusIcon={safeGetStatusIcon}
         isParCategory={isParCategory}
-        // Thread-through for live Edge updates
         locationId={locationId}
         onRefresh={onRefresh}
       />
 
-      {/* Add Item (admin only) */}
       {isAdminMode && (
         <AddItemModal
           isOpen={showModal}
-          onClose={() => {
-            setShowModal(false);
-            // if the modal created or restored an item, caller can refresh
-            onRefresh?.();
-          }}
+          onClose={() => setShowModal(false)}
           category={categoryTitle}
+          onAdded={onRefresh}
         />
       )}
     </div>
