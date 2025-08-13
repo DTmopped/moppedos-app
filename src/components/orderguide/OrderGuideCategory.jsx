@@ -1,8 +1,9 @@
+// src/components/orderguide/OrderGuideCategory.jsx
 import React, { useState, useMemo } from 'react';
 import { Plus } from 'lucide-react';
 import { useData } from '@/contexts/DataContext';
 import OrderGuideItemTable from './OrderGuideItemTable.jsx';
-import AddItemModal from './AddItemModal.jsx'; // ✅ Restored
+import AddItemModal from './AddItemModal.jsx';
 
 const OrderGuideCategory = ({
   categoryTitle,
@@ -10,13 +11,13 @@ const OrderGuideCategory = ({
   getStatusClass,
   getStatusIcon,
   parBasedCategories,
-  locationId,   // ✅ Passed from parent
-  onRefresh,    // ✅ Passed from parent
+  locationId,   // <- from parent
+  onRefresh,    // <- from parent
 }) => {
   const { isAdminMode } = useData();
   const [showModal, setShowModal] = useState(false);
 
-  const safeItems = useMemo(() => Array.isArray(items) ? items : [], [items]);
+  const safeItems = useMemo(() => (Array.isArray(items) ? items : []), [items]);
   const safeGetStatusClass = useMemo(
     () => (typeof getStatusClass === 'function' ? getStatusClass : () => ''),
     [getStatusClass]
@@ -59,17 +60,21 @@ const OrderGuideCategory = ({
         getStatusClass={safeGetStatusClass}
         getStatusIcon={safeGetStatusIcon}
         isParCategory={isParCategory}
+        // Thread-through for live Edge updates
         locationId={locationId}
         onRefresh={onRefresh}
       />
 
+      {/* Add Item (admin only) */}
       {isAdminMode && (
         <AddItemModal
           isOpen={showModal}
-          onClose={() => setShowModal(false)}
+          onClose={() => {
+            setShowModal(false);
+            // if the modal created or restored an item, caller can refresh
+            onRefresh?.();
+          }}
           category={categoryTitle}
-          locationId={locationId} // ✅ Pass location to seed correctly
-          onItemAdded={onRefresh} // ✅ Refresh after insert
         />
       )}
     </div>
