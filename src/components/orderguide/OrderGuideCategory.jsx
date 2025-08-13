@@ -2,8 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Plus } from 'lucide-react';
 import { useData } from '@/contexts/DataContext';
 import OrderGuideItemTable from './OrderGuideItemTable.jsx';
-// (Optional) If you use your AddItemModal, keep this import and button. Otherwise you can remove it.
-// import AddItemModal from './AddItemModal.jsx';
+import AddItemModal from './AddItemModal.jsx'; // ✅ Restored
 
 const OrderGuideCategory = ({
   categoryTitle,
@@ -11,8 +10,8 @@ const OrderGuideCategory = ({
   getStatusClass,
   getStatusIcon,
   parBasedCategories,
-  locationId,         // ⬅️ NEW from parent
-  onRefresh,          // ⬅️ NEW from parent
+  locationId,   // ✅ Passed from parent
+  onRefresh,    // ✅ Passed from parent
 }) => {
   const { isAdminMode } = useData();
   const [showModal, setShowModal] = useState(false);
@@ -60,19 +59,19 @@ const OrderGuideCategory = ({
         getStatusClass={safeGetStatusClass}
         getStatusIcon={safeGetStatusIcon}
         isParCategory={isParCategory}
-        // NEW: thread-through props for edge updates
         locationId={locationId}
         onRefresh={onRefresh}
       />
 
-      {/* Optional AddItemModal */}
-      {/* {isAdminMode && (
+      {isAdminMode && (
         <AddItemModal
           isOpen={showModal}
           onClose={() => setShowModal(false)}
           category={categoryTitle}
+          locationId={locationId} // ✅ Pass location to seed correctly
+          onItemAdded={onRefresh} // ✅ Refresh after insert
         />
-      )} */}
+      )}
     </div>
   );
 };
