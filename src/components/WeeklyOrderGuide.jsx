@@ -18,19 +18,16 @@ const WeeklyOrderGuide = () => {
     toggleAdminMode,
     printDate,
     setPrintDate,
-    // TODO: when you wire multi-location, read activeLocationId from context
-    // activeLocationId,
+    // TODO: pull this from context once multi-location is wired
   } = useData();
 
-  // TEMP: Test Location UUID — replace with activeLocationId later
+  // TEMP: use Test Location UUID (replace with context later)
   const locationId = '00fe305a-6b02-4eaa-9bfe-cbc2d46d9e17';
 
-  // Fetch live data from the view
   const { isLoading, error, itemsByCategory, refresh } = useOrderGuide({ locationId });
-
   const printableRef = useRef();
 
-  // Update print date whenever data changes
+  // Refresh print date when data changes
   useEffect(() => {
     setPrintDate?.(new Date());
   }, [itemsByCategory, setPrintDate]);
@@ -56,7 +53,7 @@ const WeeklyOrderGuide = () => {
     return <TrendingUp className="h-4 w-4 text-red-500" />;
   }, []);
 
-  // Ensure we always pass a plain object to children/printable
+  // Always pass a plain object to children/printable
   const uiGuideData = useMemo(() => itemsByCategory ?? {}, [itemsByCategory]);
 
   return (
@@ -119,7 +116,7 @@ const WeeklyOrderGuide = () => {
                     getStatusClass={getStatusClass}
                     getStatusIcon={getStatusIcon}
                     parBasedCategories={parBasedCategories}
-                    /* NEW: pass location + refresh for inline edits via Edge Functions */
+                    // NEW: thread down for live updates
                     locationId={locationId}
                     onRefresh={refresh}
                   />
