@@ -1,94 +1,109 @@
-import React, { useCallback } from 'react';
-import { AlertTriangle, HelpCircle, Check, X } from 'lucide-react';
+// src/components/orderguide/OrderGuideItemTable.jsx
+import React, { useMemo, useRef, useState, useCallback } from 'react';
 import { useData } from '@/contexts/DataContext';
 import { supabase } from '@/supabaseClient';
+import { AlertTriangle, HelpCircle, Loader2 } from 'lucide-react';
 
-/**
- * Expects each `item` to look like:
- * {
- *   name, unit, actual, forecast, variance, status,
- *   on_hand, par_level, order_quantity,
- *   // (ideally present for updates)
- *   itemId | item_id | id
- * }
- */
+/** Small debouncer */
+function useDebounced(callback, delay = 500) {
+  const timer = useRef(null);
+  return useCallback((...args) => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => callback(...args), delay);
+  }, [callback, delay]);
+}
+
 const OrderGuideItemTable = ({
   items = [],
   categoryTitle,
   getStatusClass,
   getStatusIcon,
   isParCategory,
-  locationId,          // ⬅️ needed for edge function payloads
-  onRefresh,           // ⬅️ call after successful update
+  locationId,
+  onRefresh
 }) => {
   const { isAdminMode } = useData();
 
-  const resolveItemId = useCallback((item) => {
-    return item?.itemId ?? item?.item_id ?? item?.id ?? null;
-  }, []);
+  // local draft/saving/error trackers keyed by item_id
+  const [drafts, setDrafts] = useState({});
+  const [saving, setSaving] = useState({});
+  const [errors, setErrors] = useState({});
 
-  const callEdge = useCallback(async (fnName, body) => {
-    // supabase-js v2 automatically forwards the user's auth if signed in
-    return await supabase.functions.invoke(fnName, { body });
-  }, []);
-
-  const handleOnHandChange = useCallback(
-    async (item, value) => {
-      if (!isAdminMode) return;
-      const itemId = resolveItemId(item);
-      if (!itemId || !locationId) {
-        window.alert('Missing itemId or locationId for update.');
-        return;
-      }
-      const on_hand = Number(value);
-      if (Number.isNaN(on_hand)) return;
-
-      const { data, error } = await callEdge('update-on-hand', {
-        item_id: itemId,
-        location_id: locationId,
-        on_hand,
-      });
-
-      if (error) {
-        console.error('update-on-hand error:', error);
-        window.alert(`Failed to update on-hand: ${error.message ?? error}`);
-        return;
-      }
-      // Optional: log or toast
-      // console.log('Updated on-hand:', data);
-      onRefresh?.();
-    },
-    [isAdminMode, resolveItemId, locationId, callEdge, onRefresh]
+  const safeItems = useMemo(
+    () => items.filter((it) => it && (it.item_id || it.itemId) && it.name !== categoryTitle),
+    [items, categoryTitle]
   );
 
-  const handleParChange = useCallback(
-    async (item, value) => {
-      if (!isAdminMode) return;
-      const itemId = resolveItemId(item);
-      if (!itemId || !locationId) {
-        window.alert('Missing itemId or locationId for update.');
-        return;
-      }
-      const par_level = Number(value);
-      if (Number.isNaN(par_level)) return;
+  const setDraftField = useCallback((id, field, value) => {
+    setDrafts((prev) => ({
+      ...prev,
+      [id]: { ...(prev[id] || {}), [field]: value },
+    }));
+  }, []);
 
-      const { data, error } = await callEdge('update-par-level', {
-        item_id: itemId,
-        location_id: locationId,
-        par_level,
+  const optimisticRow = useCallback((row) => {
+    const id = row.item_id || row.itemId;
+    const d = drafts[id] || {};
+    const actual = typeof d.actual === 'number' ? d.actual : row.actual;
+    const forecast = typeof d.forecast === 'number' ? d.forecast : row.forecast;
+    const variance = Number((actual - forecast).toFixed(1));
+    return { ...row, actual, forecast, variance };
+  }, [drafts]);
+
+  const debouncedSaveOnHand = useDebounced(async (itemId, locId, value) => {
+    try {
+      setSaving((s) => ({ ...s, [itemId]: true }));
+      setErrors((e) => ({ ...e, [itemId]: null }));
+
+      const { data, error } = await supabase.functions.invoke('update-on-hand', {
+        method: 'POST',
+        body: { item_id: itemId, location_id: locId, on_hand: value },
       });
+      if (error) throw error;
 
-      if (error) {
-        console.error('update-par-level error:', error);
-        window.alert(`Failed to update PAR: ${error.message ?? error}`);
-        return;
-      }
-      // Optional: log or toast
-      // console.log('Updated PAR:', data);
+      // refresh data to stay true to DB, but keep the UI snappy
       onRefresh?.();
-    },
-    [isAdminMode, resolveItemId, locationId, callEdge, onRefresh]
-  );
+    } catch (err) {
+      setErrors((e) => ({ ...e, [itemId]: err?.message || 'Failed to update on-hand' }));
+    } finally {
+      setSaving((s) => ({ ...s, [itemId]: false }));
+    }
+  }, 600);
+
+  const debouncedSavePar = useDebounced(async (itemId, locId, value) => {
+    try {
+      setSaving((s) => ({ ...s, [itemId]: true }));
+      setErrors((e) => ({ ...e, [itemId]: null }));
+
+      const { data, error } = await supabase.functions.invoke('update-par-level', {
+        method: 'POST',
+        body: { item_id: itemId, location_id: locId, par_level: value },
+      });
+      if (error) throw error;
+
+      onRefresh?.();
+    } catch (err) {
+      setErrors((e) => ({ ...e, [itemId]: err?.message || 'Failed to update PAR' }));
+    } finally {
+      setSaving((s) => ({ ...s, [itemId]: false }));
+    }
+  }, 600);
+
+  const onChangeOnHand = (row, val) => {
+    const itemId = row.item_id || row.itemId;
+    const num = Number(val);
+    if (!Number.isFinite(num)) return;
+    setDraftField(itemId, 'actual', num);       // optimistic
+    if (locationId) debouncedSaveOnHand(itemId, locationId, num);
+  };
+
+  const onChangePar = (row, val) => {
+    const itemId = row.item_id || row.itemId;
+    const num = Number(val);
+    if (!Number.isFinite(num)) return;
+    setDraftField(itemId, 'forecast', num);     // optimistic
+    if (locationId) debouncedSavePar(itemId, locationId, num);
+  };
 
   return (
     <div className="overflow-x-auto">
@@ -96,88 +111,102 @@ const OrderGuideItemTable = ({
         <thead className="bg-gray-100 dark:bg-gray-800">
           <tr>
             <th className="text-left px-4 py-2 font-semibold">Item</th>
-            <th className="text-center px-4 py-2 font-semibold">On Hand</th>
-            <th className="text-center px-4 py-2 font-semibold">PAR</th>
-            <th className="text-center px-4 py-2 font-semibold">Order</th>
+            <th className="text-left px-4 py-2 font-semibold">Forecast (PAR)</th>
+            <th className="text-left px-4 py-2 font-semibold">On Hand</th>
+            <th className="text-left px-4 py-2 font-semibold">Variance</th>
             <th className="text-left px-4 py-2 font-semibold">Unit</th>
             <th className="text-left px-4 py-2 font-semibold">Status</th>
-            {isAdminMode && <th className="text-left px-4 py-2 font-semibold">Actions</th>}
           </tr>
         </thead>
         <tbody>
-          {(Array.isArray(items) ? items : []).map((item, index) => {
-            const name = item?.name ?? 'Unnamed Item';
-            const unit = item?.unit ?? '';
-            // For backwards compat, use explicit on_hand/par_level if present; fall back to actual/forecast.
-            const onHand = Number.isFinite(item?.on_hand) ? Number(item.on_hand) : Number(item?.actual ?? 0);
-            const parLevel = Number.isFinite(item?.par_level) ? Number(item.par_level) : Number(item?.forecast ?? 0);
-            const orderQty = Number.isFinite(item?.order_quantity)
-              ? Number(item.order_quantity)
-              : Math.max(0, parLevel - onHand);
+          {safeItems.map((raw, idx) => {
+            const row = optimisticRow(raw);
+            const id = row.item_id || row.itemId;
+            const isSaving = !!saving[id];
+            const err = errors[id];
 
-            const status = String(item?.status ?? '').toLowerCase();
-            const isParItem = status === 'par item';
-
-            const readOnlyOnHand = !isAdminMode;
-            const readOnlyPar = !isAdminMode || (!isAdminMode && isParCategory);
-
-            const statusClasses = getStatusClass ? getStatusClass({ forecast: parLevel, actual: onHand }) : '';
-            const statusIcon = getStatusIcon ? getStatusIcon({ forecast: parLevel, actual: onHand }) : <HelpCircle className="h-4 w-4 text-slate-500" />;
+            const statusPill = (() => {
+              const status = (row.status || '').toLowerCase();
+              if (status.includes('critical')) {
+                return (
+                  <span className="inline-flex items-center rounded bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-800 ring-1 ring-inset ring-red-600/20">
+                    <AlertTriangle className="w-3 h-3 mr-1 text-red-600" />
+                    Critical
+                  </span>
+                );
+              }
+              if (status.includes('low')) {
+                return (
+                  <span className="inline-flex items-center rounded bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
+                    Low
+                  </span>
+                );
+              }
+              if (status.includes('needs')) {
+                return (
+                  <span className="inline-flex items-center rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 ring-1 ring-inset ring-amber-600/20">
+                    Needs Order
+                  </span>
+                );
+              }
+              return (
+                <span className="inline-flex items-center rounded bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800 ring-1 ring-inset ring-green-600/20">
+                  In Stock
+                </span>
+              );
+            })();
 
             return (
-              <tr key={index} className="border-b dark:border-gray-700">
+              <tr key={id ?? idx} className="border-b dark:border-gray-700">
                 {/* Item name */}
                 <td className="px-4 py-2 font-medium text-gray-900 whitespace-nowrap bg-yellow-50">
-                  {name}
-                  {isParItem && (
-                    <span className="ml-2 inline-flex items-center rounded bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
-                      PAR Item
-                    </span>
+                  {row.name || 'Unnamed Item'}
+                </td>
+
+                {/* Forecast (PAR) */}
+                <td className="px-4 py-2 bg-yellow-50">
+                  <input
+                    type="number"
+                    className={`w-24 rounded border border-gray-300 px-2 py-1 text-right ${
+                      isParCategory ? '' : (isAdminMode ? '' : 'bg-gray-100 text-gray-500 cursor-not-allowed')
+                    }`}
+                    value={row.forecast}
+                    readOnly={!isAdminMode}
+                    onChange={(e) => isAdminMode && onChangePar(row, e.target.value)}
+                  />
+                </td>
+
+                {/* On Hand */}
+                <td className="px-4 py-2 bg-yellow-50">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      className="w-24 rounded border border-gray-300 px-2 py-1 text-right"
+                      value={row.actual}
+                      onChange={(e) => onChangeOnHand(row, e.target.value)}
+                    />
+                    {isSaving && <Loader2 className="h-4 w-4 animate-spin text-slate-500" />}
+                  </div>
+                  {err && (
+                    <div className="text-xs text-red-600 mt-1">
+                      {err}
+                    </div>
                   )}
                 </td>
 
-                {/* On Hand (editable in admin) */}
-                <td className="px-4 py-2 text-center bg-yellow-50">
-                  <input
-                    type="number"
-                    className={`w-24 rounded border border-gray-300 px-2 py-1 text-right ${readOnlyOnHand ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
-                    value={onHand}
-                    onChange={(e) => handleOnHandChange(item, e.target.value)}
-                    readOnly={readOnlyOnHand}
-                  />
+                {/* Variance */}
+                <td className={`px-4 py-2 bg-yellow-50 ${getStatusClass?.(row) || ''}`}>
+                  {row.variance}
                 </td>
-
-                {/* PAR (editable in admin) */}
-                <td className="px-4 py-2 text-center bg-yellow-50">
-                  <input
-                    type="number"
-                    className={`w-24 rounded border border-gray-300 px-2 py-1 text-right ${readOnlyPar ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
-                    value={parLevel}
-                    onChange={(e) => handleParChange(item, e.target.value)}
-                    readOnly={readOnlyPar}
-                  />
-                </td>
-
-                {/* Order (derived) */}
-                <td className="px-4 py-2 text-center bg-yellow-50">{orderQty}</td>
 
                 {/* Unit */}
-                <td className="px-3 py-2 bg-yellow-50 text-left">{unit}</td>
+                <td className="px-4 py-2 bg-yellow-50">{row.unit}</td>
 
                 {/* Status */}
-                <td className="px-3 py-2 bg-yellow-50">
-                  <span className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-semibold ring-1 ring-inset ${statusClasses}`}>
-                    {statusIcon}
-                    {status || '—'}
-                  </span>
+                <td className="px-4 py-2 bg-yellow-50 flex items-center gap-2">
+                  {getStatusIcon?.(row) || <HelpCircle className="w-4 h-4 text-slate-500" />}
+                  {statusPill}
                 </td>
-
-                {/* Actions (placeholder) */}
-                {isAdminMode && (
-                  <td className="px-3 py-2 bg-yellow-50">
-                    <span className="text-gray-400 text-xs italic">Auto</span>
-                  </td>
-                )}
               </tr>
             );
           })}
