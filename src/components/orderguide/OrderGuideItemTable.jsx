@@ -22,13 +22,11 @@ const OrderGuideItemTable = ({
   onRefresh,
 }) => {
   const { isAdminMode } = useData();
-  const [working, setWorking] = useState({}); // { itemId: 'on_hand' | 'par' }
+  const [working, setWorking] = useState({}); // { [itemId]: 'on_hand' | 'par' }
 
   const callEdge = async (fnName, payload) => {
-    // Assumes user is signed in OR anon read policies allow; Edge uses auth header if present
-    return supabase.functions.invoke(fnName, {
-      body: payload,
-    });
+    // Uses current session token if present; anon key is not required for invoke
+    return supabase.functions.invoke(fnName, { body: payload });
   };
 
   const updateOnHand = async (row, newVal) => {
@@ -105,13 +103,8 @@ const OrderGuideItemTable = ({
                     type="number"
                     className={`w-24 rounded border border-gray-300 px-2 py-1 text-right
                       ${!isAdminMode ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
-                    value={row.forecast ?? 0}
-                    onChange={(e) => {
-                      // Optimistic local feel; server refresh after save
-                      row.forecast = Number(e.target.value);
-                      row.variance = Number((row.actual - row.forecast).toFixed(1));
-                    }}
-                    onBlur={(e) => updateParLevel(row, e.target.value)}
+                    defaultValue={row.forecast ?? 0}                /* ← uncontrolled */
+                    onBlur={(e) => isAdminMode && updateParLevel(row, e.target.value)}
                     readOnly={!isAdminMode}
                     disabled={!!busy}
                   />
@@ -122,17 +115,13 @@ const OrderGuideItemTable = ({
                   <input
                     type="number"
                     className="w-24 rounded border border-gray-300 px-2 py-1 text-right"
-                    value={row.actual ?? 0}
-                    onChange={(e) => {
-                      row.actual = Number(e.target.value);
-                      row.variance = Number((row.actual - row.forecast).toFixed(1));
-                    }}
+                    defaultValue={row.actual ?? 0}                  /* ← uncontrolled */
                     onBlur={(e) => updateOnHand(row, e.target.value)}
                     disabled={!!busy}
                   />
                 </td>
 
-                {/* Variance */}
+                {/* Variance (server-truth after refresh) */}
                 <td className={`px-4 py-2 bg-yellow-50 text-right ${getStatusClass(row)}`}>
                   {row.variance ?? 0}
                 </td>
