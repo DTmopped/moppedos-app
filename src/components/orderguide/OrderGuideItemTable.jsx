@@ -5,12 +5,11 @@ import { supabase } from '@/supabaseClient';
 import { AlertTriangle, HelpCircle } from 'lucide-react';
 
 /**
- * Minimal inline editing:
- * - Actual (on_hand): everyone can edit
- * - Forecast (PAR): only in Admin mode
- * Calls Edge Functions:
- *  - update-on-hand
- *  - update-par-level
+ * Inline editing:
+ * - Actual (on_hand): anyone can edit
+ * - Forecast (PAR): Admin Mode only
+ * We intentionally use UNCONTROLLED inputs (defaultValue + onBlur)
+ * so typing is never blocked by React state.
  */
 const OrderGuideItemTable = ({
   items = [],
@@ -25,7 +24,6 @@ const OrderGuideItemTable = ({
   const [working, setWorking] = useState({}); // { [itemId]: 'on_hand' | 'par' }
 
   const callEdge = async (fnName, payload) => {
-    // Uses current session token if present; anon key is not required for invoke
     return supabase.functions.invoke(fnName, { body: payload });
   };
 
@@ -83,8 +81,13 @@ const OrderGuideItemTable = ({
         <tbody>
           {items.map((row, idx) => {
             const statusLower = (row.status || '').toLowerCase();
-            const isParItem = statusLower === 'par item'; // legacy tag, mostly unused now
-            const busy = working[row.item_id];
+            const isParItem = statusLower === 'par item'; // legacy tag; optional
+            const busy = !!working[row.item_id];
+
+            // Use numeric fallbacks for display only
+            const forecast0 = Number(row.forecast ?? 0);
+            const actual0 = Number(row.actual ?? 0);
+            const variance0 = Number((actual0 - forecast0).toFixed(1));
 
             return (
               <tr key={`${row.item_id ?? row.name}-${idx}`} className="border-b dark:border-gray-700">
@@ -97,16 +100,20 @@ const OrderGuideItemTable = ({
                   )}
                 </td>
 
-                {/* Forecast (PAR) */}
+                {/* Forecast (PAR) - Admin only */}
                 <td className="px-4 py-2 bg-yellow-50 text-right">
                   <input
                     type="number"
-                    className={`w-24 rounded border border-gray-300 px-2 py-1 text-right
-                      ${!isAdminMode ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
-                    defaultValue={row.forecast ?? 0}                /* ← uncontrolled */
-                    onBlur={(e) => isAdminMode && updateParLevel(row, e.target.value)}
+                    className={`w-24 rounded border border-gray-300 px-2 py-1 text-right ${
+                      !isAdminMode ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''
+                    }`}
+                    defaultValue={forecast0}
+                    onBlur={(e) => {
+                      if (!isAdminMode) return;
+                      updateParLevel(row, e.target.value);
+                    }}
                     readOnly={!isAdminMode}
-                    disabled={!!busy}
+                    disabled={busy}
                   />
                 </td>
 
@@ -115,15 +122,15 @@ const OrderGuideItemTable = ({
                   <input
                     type="number"
                     className="w-24 rounded border border-gray-300 px-2 py-1 text-right"
-                    defaultValue={row.actual ?? 0}                  /* ← uncontrolled */
+                    defaultValue={actual0}
                     onBlur={(e) => updateOnHand(row, e.target.value)}
-                    disabled={!!busy}
+                    disabled={busy}
                   />
                 </td>
 
-                {/* Variance (server-truth after refresh) */}
-                <td className={`px-4 py-2 bg-yellow-50 text-right ${getStatusClass(row)}`}>
-                  {row.variance ?? 0}
+                {/* Variance (view-only; recalculated on server after save) */}
+                <td className={`px-4 py-2 bg-yellow-50 text-right ${getStatusClass({ ...row, forecast: forecast0, actual: actual0 })}`}>
+                  {variance0}
                 </td>
 
                 {/* Unit */}
@@ -132,7 +139,7 @@ const OrderGuideItemTable = ({
                 {/* Status pill/icon */}
                 <td className="px-4 py-2 bg-yellow-50">
                   <span className="inline-flex items-center gap-1">
-                    {getStatusIcon(row)}
+                    {getStatusIcon({ ...row, forecast: forecast0, actual: actual0 })}
                     <span className="capitalize">{row.status || 'auto'}</span>
                   </span>
                 </td>
@@ -150,7 +157,7 @@ const OrderGuideItemTable = ({
         </tbody>
       </table>
 
-      {/* Legend (optional helper) */}
+      {/* Legend */}
       <div className="mt-2 text-xs text-slate-500 flex items-center gap-3">
         <span className="inline-flex items-center gap-1">
           <HelpCircle className="h-3 w-3" /> Forecast = PAR, Actual = On Hand.
