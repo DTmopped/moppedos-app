@@ -86,7 +86,8 @@ const WeeklyOrderGuide = () => {
   const uiGuideData = fallbackGuide;
   */
 
-  // Real data bindingconst uiGuideData = useMemo(() => {
+// Real data binding
+const uiGuideData = useMemo(() => {
   const normalized = {};
   Object.entries(itemsByCategory ?? {}).forEach(([key, value]) => {
     const alias = CATEGORY_ALIASES[key] || key;
