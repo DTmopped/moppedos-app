@@ -24,6 +24,17 @@ const CATEGORY_ORDER = [
   'CleaningSupplies',
 ];
 
+// Map Supabase category labels to internal category keys
+const CATEGORY_ALIASES = {
+  'Paper Goods': 'PaperGoods',
+  'Cleaning Supplies': 'CleaningSupplies',
+  'Condiments': 'Condiments',
+  'Meats': 'Meats',
+  'Sides': 'Sides',
+  'Bread': 'Bread',
+  'Sweets': 'Sweets',
+};
+
 const WeeklyOrderGuide = () => {
   const {
     isAdminMode: adminMode,
@@ -75,8 +86,14 @@ const WeeklyOrderGuide = () => {
   const uiGuideData = fallbackGuide;
   */
 
-  // Real data binding
-  const uiGuideData = useMemo(() => itemsByCategory ?? {}, [itemsByCategory]);
+  // Real data bindingconst uiGuideData = useMemo(() => {
+  const normalized = {};
+  Object.entries(itemsByCategory ?? {}).forEach(([key, value]) => {
+    const alias = CATEGORY_ALIASES[key] || key;
+    normalized[alias] = value;
+  });
+  return normalized;
+}, [itemsByCategory]);
 
   // Final filtered output
   const orderedEntries = useMemo(() => {
