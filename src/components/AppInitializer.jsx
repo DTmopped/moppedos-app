@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 
 const AppInitializer = () => {
   useEffect(() => {
-    const locationId = '12345678-90ab-cdef-1234-567890abcdef'; // Replace this with YOUR Supabase location UUID
+    const locationId = '00fe305a-6b02-4eaa-9bfe-cbc2d46d9e17'; // Example
     const storedLocationId = localStorage.getItem('locationId');
 
     if (!storedLocationId) {
