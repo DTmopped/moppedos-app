@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import PrintableOrderGuide from './orderguide/PrintableOrderGuide.jsx';
 import OrderGuideCategory from '@/components/orderguide/OrderGuideCategory';
 
-// Storage-driven hook (must import Supabase from moppedos-app/src/supabaseClient.js inside the hook)
+// Storage-driven hook
 import { useOrderGuide } from '@/hooks/useOrderGuide';
 
 // PAR-only categories (status calc uses % variance)
@@ -30,8 +30,6 @@ const WeeklyOrderGuide = () => {
     toggleAdminMode,
     printDate,
     setPrintDate,
-    // TODO: later: get from context
-    // activeLocationId,
   } = useData();
 
   // TEMP: your Test Location UUID
@@ -64,15 +62,37 @@ const WeeklyOrderGuide = () => {
     return <TrendingUp className="h-4 w-4 text-red-500" />;
   }, []);
 
-  // Memoize guide data from hook; never fabricate placeholders here
+  // Log raw data for debugging
+  console.log('🟡 itemsByCategory:', itemsByCategory);
+
+  // Optional fallback for visual debugging — uncomment to test rendering
+  /*
+  const fallbackGuide = {
+    Meats: [{ name: 'Brisket', item_id: 1, forecast: 100, actual: 95 }],
+    Sides: [{ name: 'Coleslaw', item_id: 2, forecast: 80, actual: 90 }],
+    Bread: [{ name: 'Buns', item_id: 3, forecast: 70, actual: 70 }],
+  };
+  const uiGuideData = fallbackGuide;
+  */
+
+  // Real data binding
   const uiGuideData = useMemo(() => itemsByCategory ?? {}, [itemsByCategory]);
 
-  // Build an ordered list of [category, items] honoring CATEGORY_ORDER
+  // Final filtered output
   const orderedEntries = useMemo(() => {
-    return CATEGORY_ORDER
+    const entries = CATEGORY_ORDER
       .filter(cat => uiGuideData && Array.isArray(uiGuideData[cat]) && uiGuideData[cat].length > 0)
       .map(cat => [cat, uiGuideData[cat]]);
+    console.log('🟢 orderedEntries:', entries);
+    return entries;
   }, [uiGuideData]);
+
+  // Warn if no data is coming through
+  useEffect(() => {
+    if (!isLoading && !error && (!itemsByCategory || Object.keys(itemsByCategory).length === 0)) {
+      console.warn('⚠️ Order Guide is empty. Check Supabase data, category mappings, or view logic.');
+    }
+  }, [itemsByCategory, isLoading, error]);
 
   return (
     <div className="p-4 md:p-6">
