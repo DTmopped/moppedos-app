@@ -6,6 +6,7 @@ import { supabase } from '@/supabaseClient';
  * Fetch and group order guide rows from view v_order_guide.
  * - Respects category_rank from the view for stable top->bottom ordering
  * - Maps (on_hand -> actual) and (par_level -> forecast) for your UI
+ * - Includes cost, vendor, and admin fields
  */
 export function useOrderGuide({ locationId, category = null } = {}) {
   const [rows, setRows] = useState([]);
@@ -37,6 +38,12 @@ export function useOrderGuide({ locationId, category = null } = {}) {
           'order_quantity',
           'inventory_status',
           'item_status',
+          'unit_cost',
+          'total_cost',
+          'vendor_name',
+          'brand',
+          'notes',
+          'last_ordered_at',
         ].join(','))
         .eq('location_id', locationId)
         .order('category_rank', { ascending: true })
@@ -59,13 +66,12 @@ export function useOrderGuide({ locationId, category = null } = {}) {
     fetchData();
   }, [fetchData]);
 
-  // Group rows in category_rank order so Object.entries preserves UI order
   const itemsByCategory = useMemo(() => {
-    // rows are already sorted by category_rank then item_name
     const grouped = {};
     for (const r of rows) {
       const cat = r.category || 'Uncategorized';
       if (!grouped[cat]) grouped[cat] = [];
+
       const actual = Number(r.on_hand ?? 0);
       const forecast = Number(r.par_level ?? 0);
       const variance = Number((actual - forecast).toFixed(1));
@@ -82,6 +88,12 @@ export function useOrderGuide({ locationId, category = null } = {}) {
         on_hand: r.on_hand ?? null,
         par_level: r.par_level ?? null,
         order_quantity: r.order_quantity ?? null,
+        unit_cost: r.unit_cost ?? null,
+        total_cost: r.total_cost ?? null,
+        vendor_name: r.vendor_name ?? '',
+        brand: r.brand ?? '',
+        notes: r.notes ?? '',
+        last_ordered_at: r.last_ordered_at ?? null,
       });
     }
     return grouped;
@@ -91,7 +103,7 @@ export function useOrderGuide({ locationId, category = null } = {}) {
     isLoading,
     error,
     itemsByCategory,
-    groupedData: itemsByCategory, // legacy alias if needed elsewhere
+    groupedData: itemsByCategory, // legacy alias
     refresh: fetchData,
   };
 }
