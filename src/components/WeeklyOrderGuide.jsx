@@ -76,27 +76,23 @@ const WeeklyOrderGuide = () => {
   // Log raw data for debugging
   console.log('🟡 itemsByCategory:', itemsByCategory);
 
-  // Optional fallback for visual debugging — uncomment to test rendering
-  /*
-  const fallbackGuide = {
-    Meats: [{ name: 'Brisket', item_id: 1, forecast: 100, actual: 95 }],
-    Sides: [{ name: 'Coleslaw', item_id: 2, forecast: 80, actual: 90 }],
-    Bread: [{ name: 'Buns', item_id: 3, forecast: 70, actual: 70 }],
-  };
-  const uiGuideData = fallbackGuide;
-  */
+  // Real data binding with alias fallback
+  const uiGuideData = useMemo(() => {
+    const normalized = {};
+    const rawKeys = Object.keys(itemsByCategory ?? {});
+    console.log('🧩 Raw category keys from Supabase:', rawKeys);
 
-// Real data binding
-const uiGuideData = useMemo(() => {
-  const normalized = {};
-  Object.entries(itemsByCategory ?? {}).forEach(([key, value]) => {
-    const alias = CATEGORY_ALIASES[key] || key;
-    normalized[alias] = value;
-  });
-  return normalized;
-}, [itemsByCategory]);
+    Object.entries(itemsByCategory ?? {}).forEach(([key, value]) => {
+      const alias = CATEGORY_ALIASES[key];
+      if (!alias) {
+        console.warn(`⚠️ Unknown category label received: "${key}" — consider updating CATEGORY_ALIASES`);
+      }
+      normalized[alias || key] = value;
+    });
 
-  // Final filtered output
+    return normalized;
+  }, [itemsByCategory]);
+
   const orderedEntries = useMemo(() => {
     const entries = CATEGORY_ORDER
       .filter(cat => uiGuideData && Array.isArray(uiGuideData[cat]) && uiGuideData[cat].length > 0)
@@ -105,7 +101,6 @@ const uiGuideData = useMemo(() => {
     return entries;
   }, [uiGuideData]);
 
-  // Warn if no data is coming through
   useEffect(() => {
     if (!isLoading && !error && (!itemsByCategory || Object.keys(itemsByCategory).length === 0)) {
       console.warn('⚠️ Order Guide is empty. Check Supabase data, category mappings, or view logic.');
