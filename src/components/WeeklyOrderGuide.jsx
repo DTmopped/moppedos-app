@@ -22,7 +22,8 @@ const CATEGORY_ORDER = [
   'Condiments',
   'PaperGoods',
   'CleaningSupplies',
-];
+  'Uncategorized', // 👈 Add this line
+ ];
 
 // Map Supabase category labels to internal category keys
 const CATEGORY_ALIASES = {
