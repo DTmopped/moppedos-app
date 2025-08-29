@@ -29,7 +29,7 @@ export function useOrderGuide({ locationId, category = null } = {}) {
         .select([
           'item_id',
           'location_id',
-          'category_name as category', // 👈 this line fixes the issue
+          'category_name as category',
           'category_rank',
           'item_name',
           'unit',
