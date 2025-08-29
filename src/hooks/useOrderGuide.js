@@ -25,7 +25,7 @@ export function useOrderGuide({ locationId, category = null } = {}) {
 
     try {
       let query = supabase
-        .from('v_order_guide')
+        .from('v2_order_guide') // <-- changed from 'v_order_guide'
         .select([
           'item_id',
           'location_id',
