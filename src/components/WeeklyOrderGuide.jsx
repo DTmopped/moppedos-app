@@ -64,7 +64,6 @@ const WeeklyOrderGuide = () => {
   } = useData();
 
   // TEMP: your Test Location UUID
-// ✅ NEW (valid UUID with matching items)
 const locationId = '00fe305a-6b02-4eaa-9bfe-cbc2d646d9e17';
 
   const { isLoading, error, itemsByCategory, refresh } = useOrderGuide({ locationId });
