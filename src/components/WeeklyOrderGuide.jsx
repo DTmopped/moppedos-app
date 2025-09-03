@@ -102,17 +102,21 @@ const WeeklyOrderGuide = () => {
   const rawKeys = Object.keys(itemsByCategory ?? {});
   console.log('🧩 Raw category keys from Supabase:', rawKeys);
 
-  Object.entries(itemsByCategory ?? {}).forEach(([key, value]) => {
-    const cleanKey = key.trim().toLowerCase();
-    const aliasKey = Object.keys(CATEGORY_ALIASES).find(
-      k => k.trim().toLowerCase() === cleanKey
-    );
-    const alias = CATEGORY_ALIASES[aliasKey];
-    if (!alias) {
-      console.warn(`⚠️ Unknown category label received: "${key}" — consider updating CATEGORY_ALIASES`);
-    }
-    normalized[alias || key] = value;
-  });
+Object.entries(itemsByCategory ?? {}).forEach(([key, value]) => {
+  const cleanKey = key.trim().toLowerCase();
+  console.log(`🔍 Supabase Category Key Received: "${key}" → Normalized: "${cleanKey}"`);
+
+  const aliasKey = Object.keys(CATEGORY_ALIASES).find(
+    k => k.trim().toLowerCase() === cleanKey
+  );
+  const alias = CATEGORY_ALIASES[aliasKey];
+
+  if (!alias) {
+    console.warn(`⚠️ No alias match for: "${key}"`);
+  }
+
+  normalized[alias || key] = value;
+});
 
   return normalized;
 }, [itemsByCategory]);
