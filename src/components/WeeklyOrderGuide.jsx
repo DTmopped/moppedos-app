@@ -7,13 +7,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import PrintableOrderGuide from './orderguide/PrintableOrderGuide.jsx';
 import OrderGuideCategory from '@/components/orderguide/OrderGuideCategory';
 
-// Storage-driven hook
 import { useOrderGuide } from '@/hooks/useOrderGuide';
 
-// PAR-only categories (status calc uses % variance)
 const parBasedCategories = ['PaperGoods', 'CleaningSupplies', 'Condiments'];
 
-// Canonical category order (locked)
 const CATEGORY_ORDER = [
   'Meats',
   'Sides',
@@ -22,10 +19,9 @@ const CATEGORY_ORDER = [
   'Condiments',
   'PaperGoods',
   'CleaningSupplies',
-  'Uncategorized', // 👈 Add this line
- ];
+  'Uncategorized',
+];
 
-// Map Supabase category labels to internal category keys
 const CATEGORY_ALIASES = {
   'meats': 'Meats',
   'meat': 'Meats',
@@ -55,6 +51,7 @@ const CATEGORY_ALIASES = {
 
   'uncategorized': 'Uncategorized',
 };
+
 const WeeklyOrderGuide = () => {
   const {
     isAdminMode: adminMode,
@@ -63,8 +60,8 @@ const WeeklyOrderGuide = () => {
     setPrintDate,
   } = useData();
 
-  // TEMP: your Test Location UUID
-const locationId = '00fe305a-6b02-4eaa-9bfe-cbc2d646d9e17';
+  const rawId = '00fe305a-6b02-4eaa-9bfe-cbc2d646d9e17';
+  const locationId = rawId.replace(/['"`]+/g, '').trim();
   const { isLoading, error, itemsByCategory, refresh } = useOrderGuide({ locationId });
   const printableRef = useRef();
 
@@ -92,40 +89,23 @@ const locationId = '00fe305a-6b02-4eaa-9bfe-cbc2d646d9e17';
     return <TrendingUp className="h-4 w-4 text-red-500" />;
   }, []);
 
-  // Log raw data for debugging
-  console.log('🟡 itemsByCategory:', itemsByCategory);
-
-  // Real data binding with alias fallback
   const uiGuideData = useMemo(() => {
-  const normalized = {};
-  const rawKeys = Object.keys(itemsByCategory ?? {});
-  console.log('🧩 Raw category keys from Supabase:', rawKeys);
-
-Object.entries(itemsByCategory ?? {}).forEach(([key, value]) => {
-  const cleanKey = key.trim().toLowerCase();
-  console.log(`🔍 Supabase Category Key Received: "${key}" → Normalized: "${cleanKey}"`);
-
-  const aliasKey = Object.keys(CATEGORY_ALIASES).find(
-    k => k.trim().toLowerCase() === cleanKey
-  );
-  const alias = CATEGORY_ALIASES[aliasKey];
-
-  if (!alias) {
-    console.warn(`⚠️ No alias match for: "${key}"`);
-  }
-
-  normalized[alias || key] = value;
-});
-
-  return normalized;
-}, [itemsByCategory]);
+    const normalized = {};
+    Object.entries(itemsByCategory ?? {}).forEach(([key, value]) => {
+      const cleanKey = key.trim().toLowerCase();
+      const aliasKey = Object.keys(CATEGORY_ALIASES).find(
+        k => k.trim().toLowerCase() === cleanKey
+      );
+      const alias = CATEGORY_ALIASES[aliasKey];
+      normalized[alias || key] = value;
+    });
+    return normalized;
+  }, [itemsByCategory]);
 
   const orderedEntries = useMemo(() => {
-    const entries = CATEGORY_ORDER
-      .filter(cat => uiGuideData && Array.isArray(uiGuideData[cat]) && uiGuideData[cat].length > 0)
+    return CATEGORY_ORDER
+      .filter(cat => Array.isArray(uiGuideData[cat]) && uiGuideData[cat].length > 0)
       .map(cat => [cat, uiGuideData[cat]]);
-    console.log('🟢 orderedEntries:', entries);
-    return entries;
   }, [uiGuideData]);
 
   useEffect(() => {
@@ -209,3 +189,4 @@ Object.entries(itemsByCategory ?? {}).forEach(([key, value]) => {
 };
 
 export default WeeklyOrderGuide;
+
