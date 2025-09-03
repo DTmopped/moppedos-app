@@ -80,20 +80,24 @@ const WeeklyOrderGuide = () => {
 
   // Real data binding with alias fallback
   const uiGuideData = useMemo(() => {
-    const normalized = {};
-    const rawKeys = Object.keys(itemsByCategory ?? {});
-    console.log('🧩 Raw category keys from Supabase:', rawKeys);
+  const normalized = {};
+  const rawKeys = Object.keys(itemsByCategory ?? {});
+  console.log('🧩 Raw category keys from Supabase:', rawKeys);
 
-    Object.entries(itemsByCategory ?? {}).forEach(([key, value]) => {
-      const alias = CATEGORY_ALIASES[key];
-      if (!alias) {
-        console.warn(`⚠️ Unknown category label received: "${key}" — consider updating CATEGORY_ALIASES`);
-      }
-      normalized[alias || key] = value;
-    });
+  Object.entries(itemsByCategory ?? {}).forEach(([key, value]) => {
+    const cleanKey = key.trim().toLowerCase();
+    const aliasKey = Object.keys(CATEGORY_ALIASES).find(
+      k => k.trim().toLowerCase() === cleanKey
+    );
+    const alias = CATEGORY_ALIASES[aliasKey];
+    if (!alias) {
+      console.warn(`⚠️ Unknown category label received: "${key}" — consider updating CATEGORY_ALIASES`);
+    }
+    normalized[alias || key] = value;
+  });
 
-    return normalized;
-  }, [itemsByCategory]);
+  return normalized;
+}, [itemsByCategory]);
 
   const orderedEntries = useMemo(() => {
     const entries = CATEGORY_ORDER
