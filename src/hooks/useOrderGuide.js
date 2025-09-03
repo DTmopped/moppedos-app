@@ -1,4 +1,3 @@
-// src/hooks/useOrderGuide.js
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { supabase } from '@/supabaseClient';
 
@@ -27,24 +26,24 @@ export function useOrderGuide({ locationId, category = null } = {}) {
       let query = supabase
         .from('v1_order_guide') // <-- changed from 'v_order_guide'
         .select([
-  'item_id',
-  'location_id',
-  'category',           // ✅ correct name
-  'category_rank',
-  'item_name',
-  'unit',
-  'on_hand',
-  'par_level',
-  'order_quantity',
-  'inventory_status',
-  'item_status',
-  'unit_cost',
-  'total_cost',
-  'vendor_name',
-  'brand',
-  'notes',
-  'last_ordered_at',
-].join(','))
+          'item_id',
+          'location_id',
+          'category',           // ✅ correct name
+          'category_rank',
+          'item_name',
+          'unit',
+          'on_hand',
+          'par_level',
+          'order_quantity',
+          'inventory_status',
+          'item_status',
+          'unit_cost',
+          'total_cost',
+          'vendor_name',
+          'brand',
+          'notes',
+          'last_ordered_at',
+        ].join(','))
         .eq('location_id', locationId)
         .order('category_rank', { ascending: true })
         .order('item_name', { ascending: true });
@@ -68,6 +67,10 @@ export function useOrderGuide({ locationId, category = null } = {}) {
 
   const itemsByCategory = useMemo(() => {
     const grouped = {};
+
+    // ✅ DEBUG: Output full raw rows from Supabase for troubleshooting
+    console.log('🧾 Raw rows from Supabase:', rows);
+
     for (const r of rows) {
       const cat = r.category || 'Uncategorized';
       if (!grouped[cat]) grouped[cat] = [];
