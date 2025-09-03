@@ -60,8 +60,8 @@ const WeeklyOrderGuide = () => {
     setPrintDate,
   } = useData();
 
-  const rawId = '00fe305a-6b02-4eaa-9bfe-cbc2d646d9e17';
-  const locationId = rawId.replace(/['"`]+/g, '').trim();
+  const rawId = '00fe305a-6b02-4eaa-9bfe–cbc2d646d9e17'; // even if this has a curly hyphen or smart quotes
+ const locationId = rawId.replace(/[^a-fA-F0-9-]/g, '').trim();
   const { isLoading, error, itemsByCategory, refresh } = useOrderGuide({ locationId });
   const printableRef = useRef();
 
