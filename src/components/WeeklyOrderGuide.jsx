@@ -27,13 +27,14 @@ const CATEGORY_ORDER = [
 
 // Map Supabase category labels to internal category keys
 const CATEGORY_ALIASES = {
-  'Paper Goods': 'PaperGoods',
-  'Cleaning Supplies': 'CleaningSupplies',
-  'Condiments': 'Condiments',
-  'Meats': 'Meats',
-  'Sides': 'Sides',
-  'Bread': 'Bread',
-  'Sweets': 'Sweets',
+  'paper goods': 'PaperGoods',
+  'cleaning supplies': 'CleaningSupplies',
+  'condiments': 'Condiments',
+  'meats': 'Meats',
+  'sides': 'Sides',
+  'bread': 'Bread',
+  'sweets': 'Sweets',
+  'uncategorized': 'Uncategorized', // This resolves the warning too
 };
 
 const WeeklyOrderGuide = () => {
