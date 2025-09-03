@@ -65,7 +65,6 @@ const WeeklyOrderGuide = () => {
 
   // TEMP: your Test Location UUID
 const locationId = '00fe305a-6b02-4eaa-9bfe-cbc2d646d9e17';
-
   const { isLoading, error, itemsByCategory, refresh } = useOrderGuide({ locationId });
   const printableRef = useRef();
 
