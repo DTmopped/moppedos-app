@@ -60,7 +60,7 @@ const WeeklyOrderGuide = () => {
     setPrintDate,
   } = useData();
 
-  const rawId = '00fe305a-6b02-4eaa-9bfe-cbc2d646d9e17';
+  const rawId = '00fe305a-6b02-4eaa-9bfe-cbc2d646d9e17'; // ✅ GOOD HYPHENS
   const locationId = rawId.trim();
   const { isLoading, error, itemsByCategory, refresh } = useOrderGuide({ locationId });
   const printableRef = useRef();
