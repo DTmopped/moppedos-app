@@ -13,11 +13,17 @@ export function useOrderGuide({ locationId, category = null } = {}) {
   const [error, setError] = useState(null);
 
   const fetchData = useCallback(async () => {
-    if (!locationId) {
-      setRows([]);
-      setLoading(false);
-      return;
-    }
+  if (!locationId) {
+    console.warn('⛔ No locationId provided to useOrderGuide');
+    setRows([]);
+    setLoading(false);
+    return;
+  }
+
+  // ✅ Log to verify UUID format
+  console.log('🧪 Fetching with locationId:', locationId);
+  console.log('📏 Length:', locationId.length);
+  console.log('🔤 Valid UUID regex:', /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(locationId));
 
     setLoading(true);
     setError(null);
