@@ -60,8 +60,10 @@ const WeeklyOrderGuide = () => {
     setPrintDate,
   } = useData();
 
-  const rawId = '00fe305a-6b02-4eaa-9bfe-cbc2d646d9e17'; // even if it's pasted from somewhere
+  const rawId = '00fe305a-6b02-4eaa-9bfe-cbc2d646d9e17';
   const locationId = rawId.replace(/['"]+/g, '').trim(); // ✅ always safe
+  console.log('✅ Cleaned locationId:', locationId); // 🔍 Add this line
+
   const { isLoading, error, itemsByCategory, refresh } = useOrderGuide({ locationId });
   const printableRef = useRef();
 
