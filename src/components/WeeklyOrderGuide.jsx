@@ -60,7 +60,7 @@ const WeeklyOrderGuide = () => {
     setPrintDate,
   } = useData();
 
-  const rawId = '00fe305a-6b02-4eaa-9bfe-cbc2d646d9e17';
+  const rawId = '00fe305a-6b02-4eaa-9bfe-cbc2d646d9e1'; // remove the trailing "7"
   const locationId = rawId.replace(/['"]+/g, '').trim(); // ✅ always safe
   console.log('✅ Cleaned locationId:', locationId); // 🔍 Add this line
 
