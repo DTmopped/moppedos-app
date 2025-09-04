@@ -44,7 +44,7 @@ export function useOrderGuide({ locationId, category = null } = {}) {
     'notes',
     'last_ordered_at',
   ].join(','))
-  .eq('location_id', locationId.replace(/['"]+/g, '').trim()) // ✅ FIXED
+  .eq('location_id', locationId) // ✅ no cleanup needed here anymore
   .order('category_rank', { ascending: true })
   .order('item_name', { ascending: true });
 
