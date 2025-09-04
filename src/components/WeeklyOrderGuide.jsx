@@ -60,9 +60,7 @@ const WeeklyOrderGuide = () => {
     setPrintDate,
   } = useData();
 
-  const rawId = '00fe305a-6b02-4eaa-9bfe-cbc2d646d9e17';
-const cleanedId = rawId.replace(/['"]+/g, '').trim();
-const locationId = cleanedId.length > 36 ? cleanedId.slice(0, 36) : cleanedId;
+  const locationId = '00fe305a-6b02-4eaa-9bfe-cbc2d46d9e17'; // ← Use exact, correct UUID
 
 console.log('✅ Cleaned locationId:', locationId); // should be 36 characters
   const { isLoading, error, itemsByCategory, refresh } = useOrderGuide({ locationId });
