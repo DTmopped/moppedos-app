@@ -17,6 +17,8 @@ const CATEGORY_ORDER = [
   'Bread',
   'Sweets',
   'Condiments',
+  'Dry Goods',      // ← Add this
+  'Produce',        // ← Add this
   'PaperGoods',
   'CleaningSupplies',
   'Uncategorized',
@@ -26,6 +28,10 @@ const CATEGORY_ALIASES = {
   'meats': 'Meats',
   'meat': 'Meats',
   'meat items': 'Meats',
+
+  'dry goods': 'Dry Goods',
+  'drygoods': 'Dry Goods',
+  'produce': 'Produce',
 
   'sides': 'Sides',
   'side': 'Sides',
