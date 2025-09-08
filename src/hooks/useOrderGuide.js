@@ -54,8 +54,8 @@ export function useOrderGuide({ locationId, category = null } = {}) {
   .order('category_rank', { ascending: true })
   .order('item_name', { ascending: true });
 
-      if (category) query = query.eq('category', category);
-
+      // TEMPORARILY DISABLE CATEGORY FILTER FOR DEBUG
+// if (category) query = query.eq('category', category);
       const { data, error: qErr } = await query;
       if (qErr) throw qErr;
 
