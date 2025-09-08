@@ -97,17 +97,37 @@ console.log('✅ Cleaned locationId:', locationId); // should be 36 characters
   }, []);
 
   const uiGuideData = useMemo(() => {
-    const normalized = {};
-    Object.entries(itemsByCategory ?? {}).forEach(([key, value]) => {
-      const cleanKey = key.trim().toLowerCase();
-      const aliasKey = Object.keys(CATEGORY_ALIASES).find(
-        k => k.trim().toLowerCase() === cleanKey
-      );
-      const alias = CATEGORY_ALIASES[aliasKey];
-      normalized[alias || key] = value;
-    });
-    return normalized;
-  }, [itemsByCategory]);
+  if (!itemsByCategory) return {}; // safety check
+
+  const normalized = {};
+  Object.entries(itemsByCategory ?? {}).forEach(([key, value]) => {
+    const cleanKey = key?.trim().toLowerCase() || '';
+
+    // Find alias (e.g., 'dry goods' → 'Dry Goods')
+    const alias = CATEGORY_ALIASES[cleanKey];
+
+    // Fallback to Title Case if alias not found
+    const titleCasedKey = key
+      ? key
+          .toLowerCase()
+          .split(' ')
+          .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(' ')
+      : 'Uncategorized';
+
+    const finalKey = alias || titleCasedKey;
+
+    // Merge if already exists
+    if (normalized[finalKey]) {
+      normalized[finalKey] = [...normalized[finalKey], ...value];
+    } else {
+      normalized[finalKey] = value;
+    }
+  });
+
+  console.log('✅ Final normalized categories in UI:', Object.keys(normalized));
+  return normalized;
+}, [itemsByCategory]);
 
   const orderedEntries = useMemo(() => {
     return CATEGORY_ORDER
