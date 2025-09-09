@@ -13,46 +13,69 @@ const AddItemForm = ({ category, onClose }) => {
   const [loading, setLoading] = useState(false);
 
   const handleAdd = async () => {
-    if (!name || !unit || (isPar && forecast === '')) return;
+  if (!name || !unit || (isPar && forecast === '')) return;
 
-    const newItem = {
-      item_name: name,
-      unit,
-      category,
-      status: isPar ? 'par item' : 'custom',
-      forecast: isPar ? parseFloat(forecast) : 0,
-      actual: 0,
-      variance: isPar ? -parseFloat(forecast) : 0,
-      is_manual: true,
-    };
+  // 🔍 Step 1: Look up category_id from category name
+  const { data: categoryData, error: categoryError } = await supabase
+    .from('order_guide_categories')
+    .select('id')
+    .eq('name', category)
+    .single();
 
-    setLoading(true);
-    const { error } = await supabase.from('order_guide_items').insert([newItem]);
-    setLoading(false);
+  if (categoryError || !categoryData) {
+    console.error('❌ Failed to find category ID:', categoryError);
+    alert(`Error: Could not find category "${category}" in database.`);
+    return;
+  }
 
-    if (error) {
-      console.error('❌ Failed to insert item into Supabase:', error.message);
-      alert('Error adding item: ' + error.message);
-      return;
-    }
+  const category_id = categoryData.id;
 
-    // ✅ Update local UI state
-    const updatedGuideData = {
-      ...guideData,
-      [category]: [...(guideData[category] || []), newItem],
-    };
+  // ✅ Step 2: Insert into order_guide_items
+  const { error: insertError } = await supabase.from('order_guide_items').insert({
+    name,
+    unit,
+    category_id,
+    is_par: isPar,
+    is_manual: true,
+    forecast: isPar ? parseFloat(forecast) : 0,
+    actual: 0,
+    variance: isPar ? -parseFloat(forecast) : 0,
+    status: isPar ? 'par item' : 'custom',
+  });
 
-    const updatedManuals = {
-      ...manualAdditions,
-      [category]: [...(manualAdditions[category] || []), newItem],
-    };
+  if (insertError) {
+    console.error('❌ Failed to insert item:', insertError);
+    alert(`Error: Could not add item. ${insertError.message}`);
+    return;
+  }
 
-    setGuideData(updatedGuideData);
-    setManualAdditions(updatedManuals);
-
-    onClose();
+  // ✅ Step 3: Update local state
+  const newItem = {
+    name,
+    unit,
+    isPar,
+    status: isPar ? 'par item' : 'custom',
+    isManual: true,
+    forecast: isPar ? parseFloat(forecast) : 0,
+    actual: 0,
+    variance: isPar ? -parseFloat(forecast) : 0,
   };
 
+  const updatedGuideData = {
+    ...guideData,
+    [category]: [...(guideData[category] || []), newItem],
+  };
+
+  const updatedManuals = {
+    ...manualAdditions,
+    [category]: [...(manualAdditions[category] || []), newItem],
+  };
+
+  setGuideData(updatedGuideData);
+  setManualAdditions(updatedManuals);
+
+  onClose();
+};
   return (
     <div className="border p-4 rounded-md shadow bg-white dark:bg-gray-900">
       <h4 className="font-semibold text-base mb-2">{category}</h4>
