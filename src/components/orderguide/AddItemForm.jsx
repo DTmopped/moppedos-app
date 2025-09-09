@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useData } from '@/contexts/DataContext';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/lib/supabaseClient'; // ✅ make sure this path is correct
 
 const AddItemForm = ({ category, onClose }) => {
   const { guideData, setGuideData, manualAdditions, setManualAdditions } = useData();
@@ -9,20 +10,33 @@ const AddItemForm = ({ category, onClose }) => {
   const [unit, setUnit] = useState('');
   const [isPar, setIsPar] = useState(false);
   const [forecast, setForecast] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!name || !unit || (isPar && forecast === '')) return;
 
     const newItem = {
-  name,
-  unit,
-  isPar,
-  status: isPar ? 'par item' : 'custom', // 👈 ADD THIS LINE
-  isManual: true,
-  forecast: isPar ? parseFloat(forecast) : 0,
-  actual: 0,
-  variance: isPar ? -parseFloat(forecast) : 0,
-};
+      item_name: name,
+      unit,
+      category,
+      status: isPar ? 'par item' : 'custom',
+      forecast: isPar ? parseFloat(forecast) : 0,
+      actual: 0,
+      variance: isPar ? -parseFloat(forecast) : 0,
+      is_manual: true,
+    };
+
+    setLoading(true);
+    const { error } = await supabase.from('order_guide_items').insert([newItem]);
+    setLoading(false);
+
+    if (error) {
+      console.error('❌ Failed to insert item into Supabase:', error.message);
+      alert('Error adding item: ' + error.message);
+      return;
+    }
+
+    // ✅ Update local UI state
     const updatedGuideData = {
       ...guideData,
       [category]: [...(guideData[category] || []), newItem],
@@ -76,7 +90,9 @@ const AddItemForm = ({ category, onClose }) => {
         )}
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleAdd}>Add Item</Button>
+          <Button onClick={handleAdd} disabled={loading}>
+            {loading ? 'Adding...' : 'Add Item'}
+          </Button>
         </div>
       </div>
     </div>
