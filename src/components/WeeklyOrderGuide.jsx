@@ -21,6 +21,7 @@ const CATEGORY_ORDER = [
   'Produce',        // ← Add this
   'PaperGoods',
   'CleaningSupplies',
+  'Dairy',
   'Uncategorized',
 ];
 
@@ -54,6 +55,11 @@ const CATEGORY_ALIASES = {
   'cleaning supplies': 'CleaningSupplies',
   'cleaners': 'CleaningSupplies',
   'sanitizer': 'CleaningSupplies',
+
+  'dairy': 'Dairy',
+  'milk': 'Dairy',
+  'cheese': 'Dairy',
+  'butter': 'Dairy',
 
   'uncategorized': 'Uncategorized',
 };
