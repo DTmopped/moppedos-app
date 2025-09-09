@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useData } from '@/contexts/DataContext';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/lib/supabaseClient'; // ✅ make sure this path is correct
+import { supabase } from '@/supabaseClient'; // ✅ make sure this path is correct
 
 const AddItemForm = ({ category, onClose }) => {
   const { guideData, setGuideData, manualAdditions, setManualAdditions } = useData();
