@@ -15,65 +15,42 @@ const AddItemForm = ({ category, onClose }) => {
   const handleAdd = async () => {
   if (!name || !unit || (isPar && forecast === '')) return;
 
-  // 🔍 Step 1: Look up category_id from category name
-  const { data: categoryData, error: categoryError } = await supabase
-    .from('order_guide_categories')
-    .select('id')
-    .eq('name', category)
-    .single();
+  const itemUUID = crypto.randomUUID(); // You must generate a UUID here if it's a new manual item
+  const forecastValue = isPar ? parseFloat(forecast) : 0;
 
-  if (categoryError || !categoryData) {
-    console.error('❌ Failed to find category ID:', categoryError);
-    alert(`Error: Could not find category "${category}" in database.`);
-    return;
-  }
-
-  const category_id = categoryData.id;
-
-  // ✅ Step 2: Insert into order_guide_items
-  const { error: insertError } = await supabase.from('order_guide_items').insert({
-    name,
-    unit,
-    category_id,
-    is_par: isPar,
-    is_manual: true,
-    forecast: isPar ? parseFloat(forecast) : 0,
+  const { data, error } = await supabase.rpc('insert_order_guide_status', {
+    loc_id: currentLocationId,   // This must be passed into your form via props or from context
+    item_id: itemUUID,
+    forecast: forecastValue,
     actual: 0,
-    variance: isPar ? -parseFloat(forecast) : 0,
-    status: isPar ? 'par item' : 'custom',
+    unit
   });
 
-  if (insertError) {
-    console.error('❌ Failed to insert item:', insertError);
-    alert(`Error: Could not add item. ${insertError.message}`);
+  if (error) {
+    console.error('Insert failed:', error.message);
     return;
   }
 
-  // ✅ Step 3: Update local state
   const newItem = {
+    ...data,
     name,
-    unit,
     isPar,
-    status: isPar ? 'par item' : 'custom',
     isManual: true,
-    forecast: isPar ? parseFloat(forecast) : 0,
-    actual: 0,
-    variance: isPar ? -parseFloat(forecast) : 0,
+    status: isPar ? 'par item' : 'custom'
   };
 
   const updatedGuideData = {
     ...guideData,
-    [category]: [...(guideData[category] || []), newItem],
+    [category]: [...(guideData[category] || []), newItem]
   };
 
   const updatedManuals = {
     ...manualAdditions,
-    [category]: [...(manualAdditions[category] || []), newItem],
+    [category]: [...(manualAdditions[category] || []), newItem]
   };
 
   setGuideData(updatedGuideData);
   setManualAdditions(updatedManuals);
-
   onClose();
 };
   return (
