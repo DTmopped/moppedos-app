@@ -3,10 +3,17 @@
 import React, { useState } from 'react';
 import { Dialog } from '@headlessui/react';
 import { supabase } from '@/supabaseClient';
-import { useData } from '@/contexts/DataContext'; // ⬅️ make sure this is correct
+import { useData } from '@/contexts/DataContext'; // ✅ uses shared context
 
-const AddItemModal = ({ isOpen, onClose, category, onAdded }) => {
-  const { locationId } = useData(); // pulls normalized UUID from context
+const AddItemModal = ({ isOpen, onClose, category }) => {
+  const {
+    locationId,
+    setGuideData,
+    setManualAdditions,
+    guideData,
+    manualAdditions
+  } = useData();
+
   const [itemName, setItemName] = useState('');
   const [unit, setUnit] = useState('');
   const [forecast, setForecast] = useState('');
@@ -26,18 +33,18 @@ const AddItemModal = ({ isOpen, onClose, category, onAdded }) => {
     setBusy(true);
 
     try {
-      // STEP 1: Add new item to master list
+      // STEP 1: Add to master item list
       const { data: insertedItems, error: insertError } = await supabase
         .from('order_guide_items')
         .insert([{ category, item_name: itemName, unit }])
-        .select(); // needed to get the inserted UUID
+        .select();
 
       if (insertError) throw insertError;
 
       const itemId = insertedItems?.[0]?.id;
-      if (!itemId) throw new Error('Failed to get inserted item ID');
+      if (!itemId) throw new Error('Item insert succeeded but no ID returned');
 
-      // STEP 2: Call RPC to add row in status table
+      // STEP 2: Insert status row via RPC
       const { error: rpcError } = await supabase.rpc('insert_order_guide_status', {
         loc_id: locationId,
         item_id: itemId,
@@ -48,8 +55,30 @@ const AddItemModal = ({ isOpen, onClose, category, onAdded }) => {
 
       if (rpcError) throw rpcError;
 
-      // STEP 3: Notify parent to re-fetch rows
-      onAdded?.();
+      // STEP 3: Build new item object
+      const newItem = {
+        item_id: itemId,
+        name: itemName,
+        unit,
+        forecast: Number(forecast) || 0,
+        actual: Number(actual) || 0,
+        variance: Number(((actual || 0) - (forecast || 0)).toFixed(1)),
+        status: 'manual',
+        isManual: true,
+      };
+
+      // STEP 4: Optimistically update local context
+      setManualAdditions(prev => ({
+        ...prev,
+        [category]: [...(prev?.[category] || []), newItem],
+      }));
+
+      setGuideData(prev => ({
+        ...prev,
+        [category]: [...(prev?.[category] || []), newItem],
+      }));
+
+      // STEP 5: Cleanup
       reset();
       onClose();
     } catch (e) {
