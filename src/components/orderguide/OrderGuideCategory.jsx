@@ -1,9 +1,10 @@
 // src/components/orderguide/OrderGuideCategory.jsx
 import React, { useState, useMemo } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Clock } from 'lucide-react';
 import { useData } from '@/contexts/DataContext';
 import OrderGuideItemTable from './OrderGuideItemTable.jsx';
 import AddItemModal from './AddItemModal.jsx';
+import ArchivedItemsPanel from './ArchivedItemsPanel.jsx';
 
 const OrderGuideCategory = ({
   categoryTitle,
@@ -16,6 +17,7 @@ const OrderGuideCategory = ({
 }) => {
   const { isAdminMode } = useData();
   const [showModal, setShowModal] = useState(false);
+  const [showArchive, setShowArchive] = useState(false);
 
   const safeItems = useMemo(() => Array.isArray(items) ? items : [], [items]);
   const safeGetStatusClass = useMemo(
@@ -38,13 +40,23 @@ const OrderGuideCategory = ({
         <h3 className="text-lg font-semibold">{categoryTitle}</h3>
 
         {isAdminMode && (
-          <button
-            onClick={() => setShowModal(true)}
-            className="text-sm text-blue-600 hover:underline flex items-center gap-1"
-          >
-            <Plus size={14} />
-            Add Item
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setShowModal(true)}
+              className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+            >
+              <Plus size={14} />
+              Add Item
+            </button>
+
+            <button
+              onClick={() => setShowArchive(true)}
+              className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-white flex items-center gap-1"
+            >
+              <Clock size={14} />
+              Archived
+            </button>
+          </div>
         )}
       </div>
 
@@ -65,12 +77,21 @@ const OrderGuideCategory = ({
       />
 
       {isAdminMode && (
-        <AddItemModal
-          isOpen={showModal}
-          onClose={() => setShowModal(false)}
-          category={categoryTitle}
-          onAdded={onRefresh}
-        />
+        <>
+          <AddItemModal
+            isOpen={showModal}
+            onClose={() => setShowModal(false)}
+            category={categoryTitle}
+            onAdded={onRefresh}
+          />
+
+          <ArchivedItemsPanel
+            isOpen={showArchive}
+            onClose={() => setShowArchive(false)}
+            category={categoryTitle}
+            onRestoreSuccess={onRefresh}
+          />
+        </>
       )}
     </div>
   );
