@@ -18,25 +18,26 @@ const AddItemForm = ({ category, onClose, currentLocationId }) => {
     setLoading(true);
     const forecastValue = isPar ? parseInt(forecast, 10) : 0;
 
-    // 🔍 Step 1: Check if item already exists
+    // 🔍 Step 1: Check if item already exists (matching name + category + unit + location)
     const { data: existingItem, error: fetchError } = await supabase
       .from('order_guide_items')
       .select('item_id')
       .eq('item_name', name)
       .eq('category', category)
+      .eq('unit', unit) // ✅ required to avoid unique constraint violation
       .eq('location_id', currentLocationId)
       .maybeSingle();
 
     if (fetchError) {
-      console.error('Error checking for existing item:', fetchError.message);
+      console.error('❌ Error checking for existing item:', fetchError.message);
       setLoading(false);
       return;
     }
 
-    // ✅ Step 2: Reuse item_id or generate new
+    // ✅ Step 2: Reuse existing item_id if found
     const itemUUID = existingItem?.item_id || crypto.randomUUID();
 
-    // ✅ Debug log: What are we sending?
+    // 🧠 Log for debugging
     console.log('🚀 Submitting to insert_order_guide_status RPC with:', {
       actual: 0,
       forecast: forecastValue,
@@ -46,7 +47,7 @@ const AddItemForm = ({ category, onClose, currentLocationId }) => {
       item_name: name
     });
 
-    // 🧠 Step 3: Upsert via RPC
+    // ⚙️ Step 3: Upsert using Supabase RPC
     const { data, error } = await supabase.rpc('insert_order_guide_status', {
       actual: 0,
       forecast: forecastValue,
@@ -63,7 +64,7 @@ const AddItemForm = ({ category, onClose, currentLocationId }) => {
       return;
     }
 
-    // ✅ Step 4: Update UI state
+    // 🎉 Step 4: Update UI state
     const newItem = {
       ...data,
       name,
