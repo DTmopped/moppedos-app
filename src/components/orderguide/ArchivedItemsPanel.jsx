@@ -1,9 +1,9 @@
 // src/components/orderguide/ArchivedItemsPanel.jsx
 
 import React, { useEffect, useState } from "react";
-import { supabase } from '@/supabaseClient'; // ✅ make sure this path is correct
+import { supabase } from '@/supabaseClient';
 
-const ArchivedItemsPanel = ({ categoryName, onClose, onRestoreSuccess }) => {
+const ArchivedItemsPanel = ({ category, onClose, onRestoreSuccess }) => {
   const [archivedItems, setArchivedItems] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -14,16 +14,20 @@ const ArchivedItemsPanel = ({ categoryName, onClose, onRestoreSuccess }) => {
         .from("manual_additions")
         .select("id, item_name")
         .eq("is_active", false)
-        .eq("category", categoryName)
+        .eq("category", category)
         .order("created_at", { ascending: false });
 
-      if (error) console.error("Error fetching archived items:", error);
-      else setArchivedItems(data);
+      if (error) {
+        console.error("Error fetching archived items:", error);
+      } else {
+        setArchivedItems(data || []);
+      }
+
       setLoading(false);
     };
 
     fetchArchivedItems();
-  }, [categoryName]);
+  }, [category]);
 
   const handleRestore = async (id) => {
     const { error } = await supabase
@@ -45,7 +49,7 @@ const ArchivedItemsPanel = ({ categoryName, onClose, onRestoreSuccess }) => {
     <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
       <div className="bg-white dark:bg-gray-900 p-6 rounded-lg w-[600px] max-h-[80vh] overflow-auto shadow-xl">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-bold">Archived Items – {categoryName}</h2>
+          <h2 className="text-lg font-bold">Archived Items – {category}</h2>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-red-500 text-sm"
@@ -82,3 +86,4 @@ const ArchivedItemsPanel = ({ categoryName, onClose, onRestoreSuccess }) => {
 };
 
 export default ArchivedItemsPanel;
+
