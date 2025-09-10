@@ -6,7 +6,7 @@ const ArchivedItemsPanel = ({ isOpen, category, onClose, onRestoreSuccess }) => 
   const [archivedItems, setArchivedItems] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // 🛑 Do not render if the panel is not open
+  // ✅ Don't render at all if not open
   if (!isOpen) return null;
 
   useEffect(() => {
@@ -88,5 +88,4 @@ const ArchivedItemsPanel = ({ isOpen, category, onClose, onRestoreSuccess }) => 
 };
 
 export default ArchivedItemsPanel;
-
 
