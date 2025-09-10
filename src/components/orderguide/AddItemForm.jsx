@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useData } from '@/contexts/DataContext';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/supabaseClient'; // ✅ make sure this path is correct
+import { supabase } from '@/supabaseClient';
 
 const AddItemForm = ({ category, onClose, currentLocationId }) => {
   const { guideData, setGuideData, manualAdditions, setManualAdditions } = useData();
@@ -12,70 +12,81 @@ const AddItemForm = ({ category, onClose, currentLocationId }) => {
   const [forecast, setForecast] = useState('');
   const [loading, setLoading] = useState(false);
 
-const handleAdd = async () => {
-  if (!name || !unit || (isPar && forecast === '')) return;
+  const handleAdd = async () => {
+    if (!name || !unit || (isPar && forecast === '')) return;
 
-  setLoading(true);
-  const forecastValue = isPar ? parseInt(forecast, 10) : 0;
+    setLoading(true);
+    const forecastValue = isPar ? parseInt(forecast, 10) : 0;
 
-  // Step 1: Check if item already exists
-  const { data: existingItem, error: fetchError } = await supabase
-    .from('order_guide_items')
-    .select('item_id')
-    .eq('item_name', name)
-    .eq('category', category)
-    .eq('location_id', currentLocationId)
-    .maybeSingle(); // ← avoid hard crash if no match
+    // 🔍 Step 1: Check if item already exists
+    const { data: existingItem, error: fetchError } = await supabase
+      .from('order_guide_items')
+      .select('item_id')
+      .eq('item_name', name)
+      .eq('category', category)
+      .eq('location_id', currentLocationId)
+      .maybeSingle();
 
-  if (fetchError) {
-    console.error('Error checking for existing item:', fetchError.message);
+    if (fetchError) {
+      console.error('Error checking for existing item:', fetchError.message);
+      setLoading(false);
+      return;
+    }
+
+    // ✅ Step 2: Reuse item_id or generate new
+    const itemUUID = existingItem?.item_id || crypto.randomUUID();
+
+    // ✅ Debug log: What are we sending?
+    console.log('🚀 Submitting to insert_order_guide_status RPC with:', {
+      actual: 0,
+      forecast: forecastValue,
+      item_id: itemUUID,
+      unit,
+      location_id: currentLocationId,
+      item_name: name
+    });
+
+    // 🧠 Step 3: Upsert via RPC
+    const { data, error } = await supabase.rpc('insert_order_guide_status', {
+      actual: 0,
+      forecast: forecastValue,
+      item_id: itemUUID,
+      unit,
+      location_id: currentLocationId,
+      item_name: name
+    });
+
     setLoading(false);
-    return;
-  }
 
-  // Step 2: Reuse item_id or generate new one
-  const itemUUID = existingItem?.item_id || crypto.randomUUID();
+    if (error) {
+      console.error('❌ Insert/upsert failed:', error.message);
+      return;
+    }
 
-  // Step 3: Upsert via RPC
-  const { data, error } = await supabase.rpc('insert_order_guide_status', {
-    actual: 0,
-    forecast: forecastValue,
-    item_id: itemUUID,
-    unit,
-    location_id: currentLocationId,
-    item_name: name
-  });
+    // ✅ Step 4: Update UI state
+    const newItem = {
+      ...data,
+      name,
+      isPar,
+      isManual: true,
+      status: isPar ? 'par item' : 'custom'
+    };
 
-  setLoading(false);
+    const updatedGuideData = {
+      ...guideData,
+      [category]: [...(guideData[category] || []), newItem]
+    };
 
-  if (error) {
-    console.error('Insert/upsert failed:', error.message);
-    return;
-  }
+    const updatedManuals = {
+      ...manualAdditions,
+      [category]: [...(manualAdditions[category] || []), newItem]
+    };
 
-  // Step 4: Update state
-  const newItem = {
-    ...data,
-    name,
-    isPar,
-    isManual: true,
-    status: isPar ? 'par item' : 'custom'
+    setGuideData(updatedGuideData);
+    setManualAdditions(updatedManuals);
+    onClose();
   };
 
-  const updatedGuideData = {
-    ...guideData,
-    [category]: [...(guideData[category] || []), newItem]
-  };
-
-  const updatedManuals = {
-    ...manualAdditions,
-    [category]: [...(manualAdditions[category] || []), newItem]
-  };
-
-  setGuideData(updatedGuideData);
-  setManualAdditions(updatedManuals);
-  onClose();
-};
   return (
     <div className="border p-4 rounded-md shadow bg-white dark:bg-gray-900">
       <h4 className="font-semibold text-base mb-2">{category}</h4>
@@ -123,3 +134,4 @@ const handleAdd = async () => {
 };
 
 export default AddItemForm;
+
