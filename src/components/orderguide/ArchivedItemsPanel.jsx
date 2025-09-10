@@ -1,11 +1,13 @@
 // src/components/orderguide/ArchivedItemsPanel.jsx
-
 import React, { useEffect, useState } from "react";
 import { supabase } from '@/supabaseClient';
 
-const ArchivedItemsPanel = ({ category, onClose, onRestoreSuccess }) => {
+const ArchivedItemsPanel = ({ isOpen, category, onClose, onRestoreSuccess }) => {
   const [archivedItems, setArchivedItems] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  // 🛑 Do not render if the panel is not open
+  if (!isOpen) return null;
 
   useEffect(() => {
     const fetchArchivedItems = async () => {
@@ -86,4 +88,5 @@ const ArchivedItemsPanel = ({ category, onClose, onRestoreSuccess }) => {
 };
 
 export default ArchivedItemsPanel;
+
 
