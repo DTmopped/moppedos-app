@@ -12,19 +12,24 @@ const AddItemForm = ({ category, onClose }) => {
   const [forecast, setForecast] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleAdd = async () => {
+ const handleAdd = async () => {
   if (!name || !unit || (isPar && forecast === '')) return;
 
-  const itemUUID = crypto.randomUUID(); // You must generate a UUID here if it's a new manual item
-  const forecastValue = isPar ? parseFloat(forecast) : 0;
+  setLoading(true);
+
+  const itemUUID = crypto.randomUUID();
+  const forecastValue = isPar ? parseInt(forecast, 10) : 0;
 
   const { data, error } = await supabase.rpc('insert_order_guide_status', {
-    loc_id: currentLocationId,   // This must be passed into your form via props or from context
-    item_id: itemUUID,
-    forecast: forecastValue,
     actual: 0,
-    unit
+    forecast: forecastValue,
+    item_id: itemUUID,
+    unit,
+    location_id: currentLocationId, // 👈 ensure this is defined
+    item_name: name
   });
+
+  setLoading(false);
 
   if (error) {
     console.error('Insert failed:', error.message);
