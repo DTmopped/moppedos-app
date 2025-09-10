@@ -86,11 +86,11 @@ const OrderGuideCategory = ({
           />
 
           <ArchivedItemsPanel
-            isOpen={showArchive}
-            onClose={() => setShowArchive(false)}
-            category={categoryTitle}
-            onRestoreSuccess={onRefresh}
-          />
+  isOpen={showArchive}
+  onClose={() => setShowArchive(false)}
+  category={categoryTitle}
+  onRestoreSuccess={onRefresh}
+/>
         </>
       )}
     </div>
