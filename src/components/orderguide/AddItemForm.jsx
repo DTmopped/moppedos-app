@@ -12,30 +12,48 @@ const AddItemForm = ({ category, onClose, currentLocationId }) => {
   const [forecast, setForecast] = useState('');
   const [loading, setLoading] = useState(false);
 
- const handleAdd = async () => {
+const handleAdd = async () => {
   if (!name || !unit || (isPar && forecast === '')) return;
 
   setLoading(true);
-
-  const itemUUID = crypto.randomUUID();
   const forecastValue = isPar ? parseInt(forecast, 10) : 0;
 
+  // Step 1: Check if item already exists
+  const { data: existingItem, error: fetchError } = await supabase
+    .from('order_guide_items')
+    .select('item_id')
+    .eq('item_name', name)
+    .eq('category', category)
+    .eq('location_id', currentLocationId)
+    .maybeSingle(); // ← avoid hard crash if no match
+
+  if (fetchError) {
+    console.error('Error checking for existing item:', fetchError.message);
+    setLoading(false);
+    return;
+  }
+
+  // Step 2: Reuse item_id or generate new one
+  const itemUUID = existingItem?.item_id || crypto.randomUUID();
+
+  // Step 3: Upsert via RPC
   const { data, error } = await supabase.rpc('insert_order_guide_status', {
     actual: 0,
     forecast: forecastValue,
     item_id: itemUUID,
     unit,
-    location_id: currentLocationId, // 👈 ensure this is defined
+    location_id: currentLocationId,
     item_name: name
   });
 
   setLoading(false);
 
   if (error) {
-    console.error('Insert failed:', error.message);
+    console.error('Insert/upsert failed:', error.message);
     return;
   }
 
+  // Step 4: Update state
   const newItem = {
     ...data,
     name,
