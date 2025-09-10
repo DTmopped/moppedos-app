@@ -1,7 +1,7 @@
 // src/components/orderguide/ArchivedItemsPanel.jsx
 
 import React, { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from '@/supabaseClient'; // ✅ make sure this path is correct
 
 const ArchivedItemsPanel = ({ categoryName, onClose, onRestoreSuccess }) => {
   const [archivedItems, setArchivedItems] = useState([]);
