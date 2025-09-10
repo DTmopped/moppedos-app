@@ -3,7 +3,7 @@ import { useData } from '@/contexts/DataContext';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/supabaseClient'; // ✅ make sure this path is correct
 
-const AddItemForm = ({ category, onClose }) => {
+const AddItemForm = ({ category, onClose, currentLocationId }) => {
   const { guideData, setGuideData, manualAdditions, setManualAdditions } = useData();
 
   const [name, setName] = useState('');
