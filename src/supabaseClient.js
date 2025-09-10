@@ -3,14 +3,17 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Optional: pull location from a global config, env, or hardcode for now
-const CURRENT_LOCATION_ID = '00000000-0000-0000-0000-000000000001'; // <-- replace with real UUID
+// Get location ID from localStorage (or fallback default for now)
+const storedLocationId = localStorage.getItem('location_id');
+const DEFAULT_LOCATION_ID = '00000000-0000-0000-0000-000000000001';
+const CURRENT_LOCATION_ID = storedLocationId || DEFAULT_LOCATION_ID;
 
-// sanity checks in case envs are missing
+// Sanity check
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('Supabase ENV missing', { supabaseUrl, anonPresent: !!supabaseAnonKey });
 }
 
+// Create Supabase client with dynamic x-location-id header
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
@@ -18,7 +21,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
   global: {
     headers: {
-      'x-location-id': CURRENT_LOCATION_ID, // 💡 Set this dynamically later
+      'x-location-id': CURRENT_LOCATION_ID,
     },
   },
 });
