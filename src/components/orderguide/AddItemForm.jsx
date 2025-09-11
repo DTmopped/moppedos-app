@@ -39,23 +39,25 @@ const AddItemForm = ({ category, onClose, currentLocationId }) => {
 
     // 🧠 Log for debugging
     console.log('🚀 Submitting to insert_order_guide_status RPC with:', {
-      actual: 0,
-      forecast: forecastValue,
-      item_id: itemUUID,
-      unit,
-      location_id: currentLocationId,
-      item_name: name
-    });
+  actual: 0,
+  forecast: forecastValue,
+  item_id: itemUUID,
+  unit,
+  location_id: currentLocationId,
+  item_name: name,
+  category
+});
 
     // ⚙️ Step 3: Upsert using Supabase RPC
     const { data, error } = await supabase.rpc('insert_order_guide_status', {
-      actual: 0,
-      forecast: forecastValue,
-      item_id: itemUUID,
-      unit,
-      location_id: currentLocationId,
-      item_name: name
-    });
+  actual: 0,
+  forecast: forecastValue,
+  item_id: itemUUID,
+  unit,
+  location_id: currentLocationId,
+  item_name: name,
+  category // ✅ must now be passed explicitly
+});
 
     setLoading(false);
 
