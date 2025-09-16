@@ -29,15 +29,21 @@ const FvaDashboard = () => {
   const [ytd, setYtd] = useState(null);
   const [ytdSplit, setYtdSplit] = useState(null);
 
-  useEffect(() => {
-    const fetchYtdData = async () => {
-      const { data: ytdData } = await supabase.rpc("get_ytd_fva_v3", { p_location_id: null, p_as_of: today });
-      const { data: splitData } = await supabase.rpc("get_ytd_fva_split_v2", { p_location_id: null, p_as_of: today });
-      setYtd(ytdData?.[0]);
-      setYtdSplit(splitData?.[0]);
-    };
-    fetchYtdData();
-  }, [today]);
+ useEffect(() => {
+  const fetchYtdData = async () => {
+    const { data: ytdData } = await supabase.rpc("get_ytd_fva_v3", {
+      p_location_id: null,
+      p_as_of: today,
+    });
+    const { data: splitData } = await supabase.rpc("get_ytd_fva_split_v2", {
+      p_location_id: null,
+      p_as_of: today,
+    });
+    setYtd(ytdData?.[0]);
+    setYtdSplit(splitData?.[0]);
+  };
+  fetchYtdData();
+}, [today]);
 
   const combinedData = forecastData.map(forecast => {
     const actual = actualData.find(a => a.date === forecast.date);
@@ -155,42 +161,55 @@ const FvaDashboard = () => {
     <Card>
       <CardContent className="p-4">
         <p className="text-sm text-slate-500">YTD Food Cost %</p>
-        <p className="text-lg font-semibold text-green-600">{ytd.food_pct !== null ? `${(ytd.food_pct * 100).toFixed(1)}%` : "N/A"}</p>
+        <p className="text-lg font-semibold text-green-600">
+          {ytd.food_pct !== null ? `${(ytd.food_pct * 100).toFixed(1)}%` : "N/A"}
+        </p>
       </CardContent>
     </Card>
     <Card>
       <CardContent className="p-4">
         <p className="text-sm text-slate-500">YTD Beverage Cost %</p>
-        <p className="text-lg font-semibold text-blue-600">{ytd.bev_pct !== null ? `${(ytd.bev_pct * 100).toFixed(1)}%` : "N/A"}</p>
+        <p className="text-lg font-semibold text-blue-600">
+          {ytd.bev_pct !== null ? `${(ytd.bev_pct * 100).toFixed(1)}%` : "N/A"}
+        </p>
       </CardContent>
     </Card>
     <Card>
       <CardContent className="p-4">
         <p className="text-sm text-slate-500">YTD Labor Cost %</p>
-        <p className="text-lg font-semibold text-purple-600">{ytd.labor_pct !== null ? `${(ytd.labor_pct * 100).toFixed(1)}%` : "N/A"}</p>
+        <p className="text-lg font-semibold text-purple-600">
+          {ytd.labor_pct !== null ? `${(ytd.labor_pct * 100).toFixed(1)}%` : "N/A"}
+        </p>
       </CardContent>
     </Card>
   </div>
 )}
 
+{/* YTD Labor Split Row */}
 {ytdSplit && (
-  <div className="grid grid-cols-3 gap-4">
+  <div className="grid grid-cols-3 gap-4 mt-4">
     <Card>
       <CardContent className="p-4">
         <p className="text-sm text-slate-500">FOH Labor %</p>
-        <p className="text-lg font-semibold text-orange-600">{ytdSplit.foh_labor_pct !== null ? `${(ytdSplit.foh_labor_pct * 100).toFixed(1)}%` : "N/A"}</p>
+        <p className="text-lg font-semibold text-orange-600">
+          {ytdSplit.foh_labor_pct !== null ? `${(ytdSplit.foh_labor_pct * 100).toFixed(1)}%` : "N/A"}
+        </p>
       </CardContent>
     </Card>
     <Card>
       <CardContent className="p-4">
         <p className="text-sm text-slate-500">BOH Labor %</p>
-        <p className="text-lg font-semibold text-yellow-600">{ytdSplit.boh_labor_pct !== null ? `${(ytdSplit.boh_labor_pct * 100).toFixed(1)}%` : "N/A"}</p>
+        <p className="text-lg font-semibold text-yellow-600">
+          {ytdSplit.boh_labor_pct !== null ? `${(ytdSplit.boh_labor_pct * 100).toFixed(1)}%` : "N/A"}
+        </p>
       </CardContent>
     </Card>
     <Card>
       <CardContent className="p-4">
         <p className="text-sm text-slate-500">Total Labor %</p>
-        <p className="text-lg font-semibold text-purple-700">{ytdSplit.total_labor_pct !== null ? `${(ytdSplit.total_labor_pct * 100).toFixed(1)}%` : "N/A"}</p>
+        <p className="text-lg font-semibold text-purple-700">
+          {ytdSplit.total_labor_pct !== null ? `${(ytdSplit.total_labor_pct * 100).toFixed(1)}%` : "N/A"}
+        </p>
       </CardContent>
     </Card>
   </div>
