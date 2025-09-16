@@ -8,7 +8,7 @@ import { useData } from "../contexts/DataContext";
 import ForecastActualTable from "./dashboard/ForecastActualTable.jsx";
 import PrintableFvaDashboard from "./dashboard/PrintableFvaDashboard.jsx";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from '@/supabaseClient';
 
 const FvaDashboard = () => {
   const { forecastData, actualData } = useData();
