@@ -7,6 +7,9 @@ const getCostTargets = () => ({
   labor: parseFloat(localStorage.getItem("laborCostGoal")) || 0.14,
 });
 
+const formatCurrency = (val) => (val !== null ? `$${val.toLocaleString()}` : "N/A");
+const formatPercent = (val) => (val !== null ? `${val.toFixed(1)}%` : "N/A");
+
 const ForecastActualTable = ({ combinedData }) => {
   const { food: foodTarget, bev: bevTarget, labor: laborTarget } = getCostTargets();
 
@@ -18,6 +21,8 @@ const ForecastActualTable = ({ combinedData }) => {
             <th className="px-3 py-2">Date</th>
             <th className="px-3 py-2">Forecasted Sales ($)</th>
             <th className="px-3 py-2">Actual Sales ($)</th>
+            <th className="px-3 py-2">Variance ($)</th>
+            <th className="px-3 py-2">Variance %</th>
             <th className="px-3 py-2">Food Cost %</th>
             <th className="px-3 py-2">Bev Cost %</th>
             <th className="px-3 py-2">Labor Cost %</th>
@@ -26,48 +31,52 @@ const ForecastActualTable = ({ combinedData }) => {
         </thead>
         <tbody>
           {combinedData.map((entry, index) => {
-            const food = entry.hasActuals ? entry.foodPct : null;
-            const bev = entry.hasActuals ? entry.bevPct : null;
-            const labor = entry.hasActuals ? entry.laborPct : null;
+            const { date, forecastSales, actualSales, hasActuals, foodPct, bevPct, laborPct } = entry;
 
-            const foodClass = food !== null ? cn(
+            const dollarVar = hasActuals ? actualSales - forecastSales : null;
+            const pctVar = hasActuals && forecastSales ? ((actualSales - forecastSales) / forecastSales) * 100 : null;
+
+            const foodClass = hasActuals ? cn(
               "font-semibold",
-              food > foodTarget ? "text-red-500 bg-red-100" : "text-green-600 bg-green-100"
-            ) : "text-slate-500";
-            const bevClass = bev !== null ? cn(
-              "font-semibold",
-              bev > bevTarget ? "text-red-500 bg-red-100" : "text-green-600 bg-green-100"
-            ) : "text-slate-500";
-            const laborClass = labor !== null ? cn(
-              "font-semibold",
-              labor > laborTarget ? "text-red-500 bg-red-100" : "text-green-600 bg-green-100"
+              foodPct > foodTarget ? "text-red-500 bg-red-100" : "text-green-600 bg-green-100"
             ) : "text-slate-500";
 
-            const alert = entry.hasActuals
+            const bevClass = hasActuals ? cn(
+              "font-semibold",
+              bevPct > bevTarget ? "text-red-500 bg-red-100" : "text-green-600 bg-green-100"
+            ) : "text-slate-500";
+
+            const laborClass = hasActuals ? cn(
+              "font-semibold",
+              laborPct > laborTarget ? "text-red-500 bg-red-100" : "text-green-600 bg-green-100"
+            ) : "text-slate-500";
+
+            const varianceClass = (val) =>
+              val === null ? "text-slate-500" : val < 0 ? "text-red-600 font-semibold" : "text-green-600 font-semibold";
+
+            const alert = hasActuals
               ? [
-                  food > foodTarget ? "Food Over" : null,
-                  bev > bevTarget ? "Bev Over" : null,
-                  labor > laborTarget ? "Labor Over" : null
+                  foodPct > foodTarget ? "Food Over" : null,
+                  bevPct > bevTarget ? "Bev Over" : null,
+                  laborPct > laborTarget ? "Labor Over" : null
                 ].filter(Boolean).join(", ") || "On Target"
               : "No Actuals";
 
             return (
               <tr key={index} className="border-t border-slate-200">
+                <td className="px-3 py-2">{date ? new Date(date).toLocaleDateString("en-US") : "—"}</td>
+                <td className="px-3 py-2">{formatCurrency(forecastSales)}</td>
+                <td className="px-3 py-2">{hasActuals ? formatCurrency(actualSales) : "N/A"}</td>
+                <td className={`px-3 py-2 ${varianceClass(dollarVar)}`}>{formatCurrency(dollarVar)}</td>
+                <td className={`px-3 py-2 ${varianceClass(pctVar)}`}>{formatPercent(pctVar)}</td>
                 <td className="px-3 py-2">
-                  {entry.date ? new Date(entry.date).toLocaleDateString("en-US") : "—"}
-                </td>
-                <td className="px-3 py-2">{entry.forecastSales?.toLocaleString()}</td>
-                <td className="px-3 py-2">
-                  {entry.hasActuals ? entry.actualSales?.toLocaleString() : "N/A"}
-                </td>
-                <td className="px-3 py-2">
-                  {food !== null ? <span className={foodClass}>{(food * 100).toFixed(1)}%</span> : "N/A"}
+                  {hasActuals ? <span className={foodClass}>{(foodPct * 100).toFixed(1)}%</span> : "N/A"}
                 </td>
                 <td className="px-3 py-2">
-                  {bev !== null ? <span className={bevClass}>{(bev * 100).toFixed(1)}%</span> : "N/A"}
+                  {hasActuals ? <span className={bevClass}>{(bevPct * 100).toFixed(1)}%</span> : "N/A"}
                 </td>
                 <td className="px-3 py-2">
-                  {labor !== null ? <span className={laborClass}>{(labor * 100).toFixed(1)}%</span> : "N/A"}
+                  {hasActuals ? <span className={laborClass}>{(laborPct * 100).toFixed(1)}%</span> : "N/A"}
                 </td>
                 <td className="px-3 py-2 text-slate-700 text-xs">{alert}</td>
               </tr>
