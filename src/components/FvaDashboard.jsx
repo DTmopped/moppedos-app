@@ -77,6 +77,65 @@ const FvaDashboard = () => {
   const eom = getAverages(eomData);
 
   // ... rest of your existing code (handlePrint, exportToCSV, etc.) remains unchanged
+  const handlePrint = () => {
+    const printDate = new Date();
+    const targets = { foodTarget, bevTarget, laborTarget };
+    const printableComponentHtml = ReactDOMServer.renderToStaticMarkup(
+      <PrintableFvaDashboard combinedData={combinedData} printDate={printDate} targets={targets} />
+    );
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "absolute";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.style.left = "-9999px";
+    iframe.style.top = "-9999px";
+    document.body.appendChild(iframe);
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(`<!DOCTYPE html><html><head><title>FVA Dashboard - Print</title></head><body>${printableComponentHtml}</body></html>`);
+    doc.close();
+    iframe.contentWindow.focus();
+    setTimeout(() => {
+      iframe.contentWindow.print();
+      document.body.removeChild(iframe);
+    }, 500);
+  };
+
+  const exportToCSV = () => {
+    const rows = [
+      ["Date", "Forecasted Sales", "Actual Sales", "Food Cost %", "Bev Cost %", "Labor Cost %", "Alerts"],
+      ...combinedData.map(d => {
+        const food = d.hasActuals ? `${(d.foodPct * 100).toFixed(1)}%` : "N/A";
+        const bev = d.hasActuals ? `${(d.bevPct * 100).toFixed(1)}%` : "N/A";
+        const labor = d.hasActuals ? `${(d.laborPct * 100).toFixed(1)}%` : "N/A";
+        const alert = d.hasActuals
+          ? [
+              d.foodPct > foodTarget ? "Food Over" : null,
+              d.bevPct > bevTarget ? "Bev Over" : null,
+              d.laborPct > laborTarget ? "Labor Over" : null
+            ].filter(Boolean).join(", ") || "On Target"
+          : "No Actuals";
+        return [
+          d.date,
+          d.forecastSales,
+          d.hasActuals ? d.actualSales : "N/A",
+          food,
+          bev,
+          labor,
+          alert
+        ];
+      })
+    ];
+    const csv = rows.map(row => row.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `fva-dashboard-${today}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-6">
