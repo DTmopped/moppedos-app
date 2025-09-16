@@ -84,25 +84,91 @@ const FvaDashboard = () => {
       {/* ... your existing cards */}
 
       {/* YTD Metrics */}
-      {ytd && (
-        <div className="grid grid-cols-4 gap-4">
-          <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">YTD Actual Sales</p><p className="text-xl font-bold">${ytd.total_sales?.toLocaleString() || 0}</p></CardContent></Card>
-          <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">YTD Food Cost %</p><p className="text-xl font-bold">{ytd.food_pct ?? "N/A"}%</p></CardContent></Card>
-          <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">YTD Beverage Cost %</p><p className="text-xl font-bold">{ytd.bev_pct ?? "N/A"}%</p></CardContent></Card>
-          <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">YTD Labor Cost %</p><p className="text-xl font-bold">{ytd.labor_pct ?? "N/A"}%</p></CardContent></Card>
-        </div>
-      )}
+      {/* YTD Metrics */}
+{ytd && (
+  <div className="grid grid-cols-4 gap-4">
+    <Card>
+      <CardContent className="p-4">
+        <p className="text-sm text-slate-500">YTD Actual Sales</p>
+        <p className="text-lg font-semibold text-slate-800">${ytd.total_sales?.toLocaleString() || 0}</p>
+      </CardContent>
+    </Card>
+    <Card>
+      <CardContent className="p-4">
+        <p className="text-sm text-slate-500">YTD Food Cost %</p>
+        <p className="text-lg font-semibold text-green-600">{ytd.food_pct !== null ? `${(ytd.food_pct * 100).toFixed(1)}%` : "N/A"}</p>
+      </CardContent>
+    </Card>
+    <Card>
+      <CardContent className="p-4">
+        <p className="text-sm text-slate-500">YTD Beverage Cost %</p>
+        <p className="text-lg font-semibold text-blue-600">{ytd.bev_pct !== null ? `${(ytd.bev_pct * 100).toFixed(1)}%` : "N/A"}</p>
+      </CardContent>
+    </Card>
+    <Card>
+      <CardContent className="p-4">
+        <p className="text-sm text-slate-500">YTD Labor Cost %</p>
+        <p className="text-lg font-semibold text-purple-600">{ytd.labor_pct !== null ? `${(ytd.labor_pct * 100).toFixed(1)}%` : "N/A"}</p>
+      </CardContent>
+    </Card>
+  </div>
+)}
 
-      {ytdSplit && (
-        <div className="grid grid-cols-3 gap-4">
-          <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">FOH Labor %</p><p className="text-xl font-bold">{ytdSplit.foh_labor_pct ?? "N/A"}%</p></CardContent></Card>
-          <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">BOH Labor %</p><p className="text-xl font-bold">{ytdSplit.boh_labor_pct ?? "N/A"}%</p></CardContent></Card>
-          <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Total Labor %</p><p className="text-xl font-bold">{ytdSplit.total_labor_pct ?? "N/A"}%</p></CardContent></Card>
-        </div>
-      )}
+{ytdSplit && (
+  <div className="grid grid-cols-3 gap-4">
+    <Card>
+      <CardContent className="p-4">
+        <p className="text-sm text-slate-500">FOH Labor %</p>
+        <p className="text-lg font-semibold text-orange-600">{ytdSplit.foh_labor_pct !== null ? `${(ytdSplit.foh_labor_pct * 100).toFixed(1)}%` : "N/A"}</p>
+      </CardContent>
+    </Card>
+    <Card>
+      <CardContent className="p-4">
+        <p className="text-sm text-slate-500">BOH Labor %</p>
+        <p className="text-lg font-semibold text-yellow-600">{ytdSplit.boh_labor_pct !== null ? `${(ytdSplit.boh_labor_pct * 100).toFixed(1)}%` : "N/A"}</p>
+      </CardContent>
+    </Card>
+    <Card>
+      <CardContent className="p-4">
+        <p className="text-sm text-slate-500">Total Labor %</p>
+        <p className="text-lg font-semibold text-purple-700">{ytdSplit.total_labor_pct !== null ? `${(ytdSplit.total_labor_pct * 100).toFixed(1)}%` : "N/A"}</p>
+      </CardContent>
+    </Card>
+  </div>
+)}
 
-      {/* Forecast Table */}
-      {/* ... rest of your return */}
+           {/* Forecast Table */}
+      <Card className="shadow-xl bg-white text-slate-800 border border-slate-200">
+        <CardHeader className="pb-4 flex flex-row items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="p-3 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 shadow-lg">
+              <BarChartHorizontalBig className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500">
+                Forecast vs. Actual Dashboard
+              </CardTitle>
+              <CardDescription className="text-slate-500">
+                Daily comparison of forecasted and actual performance metrics.
+              </CardDescription>
+            </div>
+          </div>
+          <div className="flex space-x-2">
+            <Button onClick={handlePrint} variant="outline" className="border-indigo-500 text-indigo-500 hover:bg-indigo-100">
+              <Printer className="mr-2 h-4 w-4" /> Print Report
+            </Button>
+            <Button onClick={exportToCSV} variant="outline" className="border-blue-500 text-blue-500 hover:bg-blue-100">
+              <FileDown className="mr-2 h-4 w-4" /> Export CSV
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <ForecastActualTable combinedData={combinedData} />
+          <p className="text-xs text-slate-400 mt-4 italic">
+            Note: This dashboard sources data from the central data store. Future enhancements could involve integrating data from other parser tools within the application.
+          </p>
+        </CardContent>
+      </Card>
     </motion.div>
   );
 };
