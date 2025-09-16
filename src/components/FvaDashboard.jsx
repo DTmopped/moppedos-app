@@ -28,6 +28,7 @@ const FvaDashboard = () => {
 
   const [ytd, setYtd] = useState(null);
   const [ytdSplit, setYtdSplit] = useState(null);
+  const [showYTD, setShowYTD] = useState(false);
 
  useEffect(() => {
   const fetchYtdData = async () => {
@@ -194,6 +195,53 @@ const FvaDashboard = () => {
   )}
 </div>
 
+      {/* MTD Metrics Summary */}
+<div className="grid grid-cols-4 gap-4 mt-6">
+  <Card>
+    <CardContent className="p-4">
+      <p className="text-sm text-slate-500">
+        MTD Actual Sales
+        <span title="Total actual sales this month-to-date." className="ml-1 text-blue-400 cursor-help"> ℹ️ </span>
+      </p>
+      <p className="text-lg font-semibold text-slate-800">
+        ${mtd.actualSales.toLocaleString() || 0}
+      </p>
+    </CardContent>
+  </Card>
+  <Card>
+    <CardContent className="p-4">
+      <p className="text-sm text-slate-500">
+        MTD Food Cost %
+        <span title="Food cost as a % of actual sales MTD." className="ml-1 text-blue-400 cursor-help"> ℹ️ </span>
+      </p>
+      <p className={`text-lg font-semibold ${mtd.foodPct > foodTarget ? 'text-red-600' : 'text-green-600'}`}>
+        {(mtd.foodPct * 100).toFixed(1)}%
+      </p>
+    </CardContent>
+  </Card>
+  <Card>
+    <CardContent className="p-4">
+      <p className="text-sm text-slate-500">
+        MTD Beverage Cost %
+        <span title="Beverage cost as a % of actual sales MTD." className="ml-1 text-blue-400 cursor-help"> ℹ️ </span>
+      </p>
+      <p className={`text-lg font-semibold ${mtd.bevPct > bevTarget ? 'text-red-600' : 'text-green-600'}`}>
+        {(mtd.bevPct * 100).toFixed(1)}%
+      </p>
+    </CardContent>
+  </Card>
+  <Card>
+    <CardContent className="p-4">
+      <p className="text-sm text-slate-500">
+        MTD Labor Cost %
+        <span title="Labor cost as a % of actual sales MTD." className="ml-1 text-blue-400 cursor-help"> ℹ️ </span>
+      </p>
+      <p className={`text-lg font-semibold ${mtd.laborPct > laborTarget ? 'text-red-600' : 'text-green-600'}`}>
+        {(mtd.laborPct * 100).toFixed(1)}%
+      </p>
+    </CardContent>
+  </Card>
+</div>
 {/* YTD Metrics Row */}
 {ytd && (
   <div className="grid grid-cols-4 gap-4 mt-6">
