@@ -194,7 +194,13 @@ const FvaDashboard = () => {
     </div>
   )}
 </div>
-
+<Button
+  onClick={() => setShowYTD(prev => !prev)}
+  variant="outline"
+  className="text-sm border-gray-300 hover:bg-gray-100 mb-2"
+>
+  {showYTD ? "Hide YTD Metrics" : "Show YTD Metrics"}
+</Button>
       {/* MTD Metrics Summary */}
 <div className="grid grid-cols-4 gap-4 mt-6">
   <Card>
@@ -243,83 +249,93 @@ const FvaDashboard = () => {
   </Card>
 </div>
 {/* YTD Metrics Row */}
-{ytd && (
-  <div className="grid grid-cols-4 gap-4 mt-6">
-    <Card>
-      <CardContent className="p-4">
-        <p className="text-sm text-slate-500">
-          YTD Actual Sales <span title="Total actual sales year-to-date across all locations." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
-        </p>
-        <p className="text-lg font-semibold text-slate-800">${ytd.total_sales?.toLocaleString() || 0}</p>
-      </CardContent>
-    </Card>
-    <Card>
-      <CardContent className="p-4">
-        <p className="text-sm text-slate-500">
-          YTD Food Cost % <span title="Year-to-date food cost as a % of actual sales." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
-        </p>
-        <p className="text-lg font-semibold text-green-600">
-          {ytd.food_pct !== null ? `${(ytd.food_pct * 100).toFixed(1)}%` : "N/A"}
-        </p>
-      </CardContent>
-    </Card>
-    <Card>
-      <CardContent className="p-4">
-        <p className="text-sm text-slate-500">
-          YTD Beverage Cost % <span title="Year-to-date beverage cost as a % of actual sales." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
-        </p>
-        <p className="text-lg font-semibold text-blue-600">
-          {ytd.bev_pct !== null ? `${(ytd.bev_pct * 100).toFixed(1)}%` : "N/A"}
-        </p>
-      </CardContent>
-    </Card>
-    <Card>
-      <CardContent className="p-4">
-        <p className="text-sm text-slate-500">
-          YTD Labor Cost % <span title="Year-to-date total labor cost as a % of actual sales." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
-        </p>
-        <p className="text-lg font-semibold text-purple-600">
-          {ytd.labor_pct !== null ? `${(ytd.labor_pct * 100).toFixed(1)}%` : "N/A"}
-        </p>
-      </CardContent>
-    </Card>
-  </div>
-)}
+{showYTD && ytd && (
+  <>
+    <div className="grid grid-cols-4 gap-4 mt-6">
+      <Card>
+        <CardContent className="p-4">
+          <p className="text-sm text-slate-500">
+            YTD Actual Sales
+            <span title="Total actual sales year-to-date across all locations." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+          </p>
+          <p className="text-lg font-semibold text-slate-800">
+            ${ytd.total_sales?.toLocaleString() || 0}
+          </p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="p-4">
+          <p className="text-sm text-slate-500">
+            YTD Food Cost %
+            <span title="Year-to-date food cost as a % of actual sales." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+          </p>
+          <p className="text-lg font-semibold text-green-600">
+            {(ytd.food_cost_pct * 100).toFixed(1)}%
+          </p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="p-4">
+          <p className="text-sm text-slate-500">
+            YTD Beverage Cost %
+            <span title="Year-to-date beverage cost as a % of actual sales." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+          </p>
+          <p className="text-lg font-semibold text-blue-600">
+            {ytd.bev_pct !== null ? `${(ytd.bev_pct * 100).toFixed(1)}%` : "N/A"}
+          </p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="p-4">
+          <p className="text-sm text-slate-500">
+            YTD Labor Cost %
+            <span title="Year-to-date total labor cost as a % of actual sales." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+          </p>
+          <p className="text-lg font-semibold text-purple-600">
+            {ytd.labor_pct !== null ? `${(ytd.labor_pct * 100).toFixed(1)}%` : "N/A"}
+          </p>
+        </CardContent>
+      </Card>
+    </div>
 
-{/* YTD Labor Split Row */}
-{ytdSplit && (
-  <div className="grid grid-cols-3 gap-4 mt-4">
-    <Card>
-      <CardContent className="p-4">
-        <p className="text-sm text-slate-500">
-          FOH Labor % <span title="Front-of-house labor as a % of actual sales." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
-        </p>
-        <p className="text-lg font-semibold text-orange-600">
-          {ytdSplit.foh_labor_pct !== null ? `${(ytdSplit.foh_labor_pct * 100).toFixed(1)}%` : "N/A"}
-        </p>
-      </CardContent>
-    </Card>
-    <Card>
-      <CardContent className="p-4">
-        <p className="text-sm text-slate-500">
-          BOH Labor % <span title="Back-of-house labor as a % of actual sales." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
-        </p>
-        <p className="text-lg font-semibold text-yellow-600">
-          {ytdSplit.boh_labor_pct !== null ? `${(ytdSplit.boh_labor_pct * 100).toFixed(1)}%` : "N/A"}
-        </p>
-      </CardContent>
-    </Card>
-    <Card>
-      <CardContent className="p-4">
-        <p className="text-sm text-slate-500">
-          Total Labor % <span title="Combined FOH and BOH labor % of actual sales." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
-        </p>
-        <p className="text-lg font-semibold text-purple-700">
-          {ytdSplit.total_labor_pct !== null ? `${(ytdSplit.total_labor_pct * 100).toFixed(1)}%` : "N/A"}
-        </p>
-      </CardContent>
-    </Card>
-  </div>
+    {ytdSplit && (
+      <div className="grid grid-cols-3 gap-4 mt-4">
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-slate-500">
+              FOH Labor %
+              <span title="Front-of-house labor as a % of actual sales." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+            </p>
+            <p className="text-lg font-semibold text-orange-600">
+              {ytdSplit.foh_labor_pct !== null ? `${(ytdSplit.foh_labor_pct * 100).toFixed(1)}%` : "N/A"}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-slate-500">
+              BOH Labor %
+              <span title="Back-of-house labor as a % of actual sales." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+            </p>
+            <p className="text-lg font-semibold text-yellow-600">
+              {ytdSplit.boh_labor_pct !== null ? `${(ytdSplit.boh_labor_pct * 100).toFixed(1)}%` : "N/A"}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-slate-500">
+              Total Labor %
+              <span title="Combined FOH and BOH labor % of actual sales." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+            </p>
+            <p className="text-lg font-semibold text-purple-700">
+              {ytdSplit.total_labor_pct !== null ? `${(ytdSplit.total_labor_pct * 100).toFixed(1)}%` : "N/A"}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    )}
+  </>
 )}
 
            {/* Forecast Table */}
