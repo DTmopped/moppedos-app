@@ -74,6 +74,14 @@ const FvaDashboard = () => {
         </CardContent>
       </Card>
       <Card>
+  <CardContent className="p-4">
+    <p className="text-sm text-slate-500">Avg Beverage Cost %</p>
+    <p className={`text-lg font-semibold ${lastMonthSummary.avg_bev_cost_pct > bevTarget ? "text-red-600" : "text-green-600"}`}>
+      {(lastMonthSummary.avg_bev_cost_pct * 100).toFixed(1)}%
+    </p>
+  </CardContent>
+</Card>
+      <Card>
         <CardContent className="p-4">
           <p className="text-sm text-slate-500">Avg Labor Cost %</p>
           <p className={`text-lg font-semibold ${lastMonthSummary.avg_labor_cost_pct > laborTarget ? "text-red-600" : "text-green-600"}`}>
