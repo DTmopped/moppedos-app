@@ -40,7 +40,7 @@ const FvaDashboard = () => {
     lastMonthSummary.total_forecast_sales;
 
   return (
-    <div className="grid grid-cols-5 gap-4 mt-4">
+    <div className="grid grid-cols-6 gap-4 mt-4">
       <Card>
         <CardContent className="p-4">
           <p className="text-sm text-slate-500">Last Month Forecast Sales</p>
