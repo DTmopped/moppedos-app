@@ -1,6 +1,6 @@
 import React from "react";
 
-const PrintableFvaDashboard = ({ combinedData, printDate, targets }) => {
+const PrintableFvaDashboard = ({ combinedData, printDate, targets, lastMonthSummary }) => {
   if (!combinedData || combinedData.length === 0) {
     return <div className="p-4">Loading print data or no FVA data available...</div>;
   }
@@ -18,6 +18,10 @@ const PrintableFvaDashboard = ({ combinedData, printDate, targets }) => {
     if (isNaN(pct) || !target) return "";
     return pct > target ? "print-bg-red" : "print-bg-green";
   };
+
+  const salesVariance = lastMonthSummary
+    ? ((lastMonthSummary.total_actual_sales - lastMonthSummary.total_forecast_sales) / lastMonthSummary.total_forecast_sales) * 100
+    : 0;
 
   return (
     <div className="printable-fva-dashboard-container p-4 font-sans">
@@ -49,6 +53,19 @@ const PrintableFvaDashboard = ({ combinedData, printDate, targets }) => {
             text-align: center;
             font-size: 8pt;
             margin-bottom: 15px;
+          }
+          .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 9pt;
+          }
+          .summary-cell {
+            flex: 1;
+            margin-right: 10px;
+            border: 1px solid #ccc;
+            padding: 6px;
+            background-color: #f9f9f9;
           }
           table {
             width: 100%;
@@ -105,6 +122,31 @@ const PrintableFvaDashboard = ({ combinedData, printDate, targets }) => {
           timeStyle: "short",
         })}
       </div>
+
+      {lastMonthSummary && (
+        <div className="summary-row">
+          <div className="summary-cell">
+            <strong>Forecast Sales:</strong><br />
+            ${lastMonthSummary.total_forecast_sales.toLocaleString()}
+          </div>
+          <div className="summary-cell">
+            <strong>Actual Sales:</strong><br />
+            ${lastMonthSummary.total_actual_sales.toLocaleString()}
+          </div>
+          <div className="summary-cell">
+            <strong>Sales Variance %:</strong><br />
+            {salesVariance.toFixed(1)}%
+          </div>
+          <div className="summary-cell">
+            <strong>Avg Food Cost %:</strong><br />
+            {(lastMonthSummary.avg_food_cost_pct * 100).toFixed(1)}%
+          </div>
+          <div className="summary-cell">
+            <strong>Avg Labor Cost %:</strong><br />
+            {(lastMonthSummary.avg_labor_cost_pct * 100).toFixed(1)}%
+          </div>
+        </div>
+      )}
 
       <table>
         <thead>
