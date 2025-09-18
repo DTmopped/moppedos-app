@@ -72,9 +72,16 @@ useEffect(() => {
     }
 
     if (data && data.length > 0) {
-      setLastMonthSummary(data[0]);
-    }
-  };
+  setLastMonthSummary(data[0]);
+} else {
+  console.warn("⚠️ No last month data found. Showing placeholder metrics.");
+  setLastMonthSummary({
+    total_forecast_sales: 72000,
+    total_actual_sales: 69500,
+    avg_food_cost_pct: 0.285,
+    avg_labor_cost_pct: 0.13
+  });
+}
 
   fetchLastMonthData();
 }, []);
