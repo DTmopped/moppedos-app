@@ -29,6 +29,7 @@ const FvaDashboard = () => {
   const [ytd, setYtd] = useState(null);
   const [ytdSplit, setYtdSplit] = useState(null);
   const [showYTD, setShowYTD] = useState(false);
+  const [showLastMonth, setShowLastMonth] = useState(false);
 
  useEffect(() => {
   const fetchYtdData = async () => {
@@ -190,15 +191,12 @@ useEffect(() => {
     </Button>
 
     {/* ✅ NEW BUTTON */}
-    <Button
-  onClick={() => {
-    const summary = document.querySelector("#lastMonthDetails summary");
-    if (summary) summary.click(); // simulate native toggle
-  }}
+   <Button
+  onClick={() => setShowLastMonth(prev => !prev)} // ✅ Toggles state
   variant="outline"
   className="text-sm border-gray-300 hover:bg-gray-100"
 >
-  Toggle Last Month Summary
+  {showLastMonth ? "Hide Last Month Summary" : "Toggle Last Month Summary"} {/* ✅ Dynamic label */}
 </Button>
   </div>
 
@@ -387,8 +385,13 @@ useEffect(() => {
   </>
 )}
 
-  {lastMonthSummary && (
-  <details id="lastMonthDetails" className="mt-8 border-t pt-4">
+ {lastMonthSummary && (
+  <details 
+    id="lastMonthDetails" 
+    className="mt-8 border-t pt-4"
+    open={showLastMonth}
+    onToggle={(e) => setShowLastMonth(e.currentTarget.open)}
+  >
     <summary className="cursor-pointer text-slate-700 font-medium hover:underline">
       View Last Month Summary
     </summary>
