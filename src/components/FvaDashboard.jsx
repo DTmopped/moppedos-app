@@ -54,7 +54,7 @@ useEffect(() => {
     const firstDayOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastMonthStart = new Date(firstDayOfThisMonth);
     lastMonthStart.setMonth(lastMonthStart.getMonth() - 1);
-    const nextMonthStart = new Date(firstDayOfThisMonth); // this month start
+    const nextMonthStart = new Date(firstDayOfThisMonth);
 
     const startIso = lastMonthStart.toISOString(); // e.g. "2025-08-01T00:00:00.000Z"
     const endIso = nextMonthStart.toISOString();   // e.g. "2025-09-01T00:00:00.000Z"
@@ -64,7 +64,7 @@ useEffect(() => {
       .select("*")
       .gte("month", startIso)
       .lt("month", endIso)
-      .limit(1); // assuming only one row per month/location
+      .limit(1);
 
     if (error) {
       console.error("Last Month fetch error", error);
@@ -72,20 +72,20 @@ useEffect(() => {
     }
 
     if (data && data.length > 0) {
-  setLastMonthSummary(data[0]);
-} else {
-  console.warn("⚠️ No last month data found. Showing placeholder metrics.");
-  setLastMonthSummary({
-    total_forecast_sales: 72000,
-    total_actual_sales: 69500,
-    avg_food_cost_pct: 0.285,
-    avg_labor_cost_pct: 0.13
-  });
-}
+      setLastMonthSummary(data[0]);
+    } else {
+      console.warn("⚠️ No last month data found. Showing placeholder metrics.");
+      setLastMonthSummary({
+        total_forecast_sales: 72000,
+        total_actual_sales: 69500,
+        avg_food_cost_pct: 0.285,
+        avg_labor_cost_pct: 0.13
+      });
+    }
+  };
 
-  fetchLastMonthData();
+  fetchLastMonthData(); // ✅ This should be *after* the function declaration
 }, []);
-
   const combinedData = forecastData.map(forecast => {
     const actual = actualData.find(a => a.date === forecast.date);
     if (actual) {
