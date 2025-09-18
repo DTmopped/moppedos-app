@@ -23,6 +23,7 @@ const FvaDashboard = () => {
   useEffect(() => { localStorage.setItem("bevCostGoal", bevTarget); }, [bevTarget]);
   useEffect(() => { localStorage.setItem("laborCostGoal", laborTarget); }, [laborTarget]);
 
+
   const today = new Date().toISOString().split("T")[0];
   const currentMonth = new Date().toISOString().slice(0, 7);
 
@@ -31,7 +32,58 @@ const FvaDashboard = () => {
   const [showYTD, setShowYTD] = useState(false);
   const [showLastMonth, setShowLastMonth] = useState(false);
   const [lastMonthSummary, setLastMonthSummary] = useState(null);
+  const renderLastMonthCards = () => {
+  if (!lastMonthSummary) return null;
 
+  const variance =
+    (lastMonthSummary.total_actual_sales - lastMonthSummary.total_forecast_sales) /
+    lastMonthSummary.total_forecast_sales;
+
+  return (
+    <div className="grid grid-cols-5 gap-4 mt-4">
+      <Card>
+        <CardContent className="p-4">
+          <p className="text-sm text-slate-500">Last Month Forecast Sales</p>
+          <p className="text-lg font-semibold">
+            ${lastMonthSummary.total_forecast_sales?.toLocaleString()}
+          </p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="p-4">
+          <p className="text-sm text-slate-500">Last Month Actual Sales</p>
+          <p className="text-lg font-semibold">
+            ${lastMonthSummary.total_actual_sales?.toLocaleString()}
+          </p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="p-4">
+          <p className="text-sm text-slate-500">Sales Variance %</p>
+          <p className={`text-lg font-semibold ${variance >= 0 ? "text-green-600" : "text-red-600"}`}>
+            {(variance * 100).toFixed(1)}%
+          </p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="p-4">
+          <p className="text-sm text-slate-500">Avg Food Cost %</p>
+          <p className={`text-lg font-semibold ${lastMonthSummary.avg_food_cost_pct > foodTarget ? "text-red-600" : "text-green-600"}`}>
+            {(lastMonthSummary.avg_food_cost_pct * 100).toFixed(1)}%
+          </p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="p-4">
+          <p className="text-sm text-slate-500">Avg Labor Cost %</p>
+          <p className={`text-lg font-semibold ${lastMonthSummary.avg_labor_cost_pct > laborTarget ? "text-red-600" : "text-green-600"}`}>
+            {(lastMonthSummary.avg_labor_cost_pct * 100).toFixed(1)}%
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
   useEffect(() => {
     const fetchYtdData = async () => {
       const { data: ytdData } = await supabase.rpc("get_ytd_fva_v3", { p_location_id: null, p_as_of: today });
@@ -41,6 +93,7 @@ const FvaDashboard = () => {
     };
     fetchYtdData();
   }, [today]);
+
 
   useEffect(() => {
     const fetchLastMonthData = async () => {
@@ -68,7 +121,7 @@ const FvaDashboard = () => {
       if (data && data.length > 0) {
         setLastMonthSummary(data[0]);
       } else {
-        console.warn("\u26A0\uFE0F No last month data found. Showing placeholder metrics.");
+        console.warn("⚠️ No last month data found. Showing placeholder metrics.");
         setLastMonthSummary({
           total_forecast_sales: 72000,
           total_actual_sales: 69500,
@@ -77,9 +130,7 @@ const FvaDashboard = () => {
         });
       }
     };
-
-
-  fetchLastMonthData();
+    fetchLastMonthData();
   }, []);
 
   const combinedData = forecastData.map(forecast => {
@@ -401,82 +452,11 @@ const FvaDashboard = () => {
   </>
 )}
 
- {lastMonthSummary && (
- <details
-  id="lastMonthDetails"
-  className="mt-8 border-t pt-4"
-  open={showLastMonth}
-  onToggle={(e) => setShowLastMonth(e.currentTarget.open)}
->
-  <summary
-    className="list-none cursor-pointer text-lg font-semibold text-slate-700 py-2 hover:text-indigo-600 flex items-center"
-    title="Click to view performance metrics from last month."
-  >
-    <span
-      className={`transform transition-transform duration-200 ${
-        showLastMonth ? "rotate-90" : ""
-      }`}
-    >
-      ▶
-    </span>
-    <span className="ml-2">View Last Month Summary</span>
-  </summary>
-
-  <div className="mt-4">
-    {lastMonthSummary ? (
-      <div className="grid grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-slate-500">Last Month Forecast Sales</p>
-            <p className="text-lg font-semibold">
-              ${lastMonthSummary.total_forecast_sales?.toLocaleString()}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-slate-500">Last Month Actual Sales</p>
-            <p className="text-lg font-semibold">
-              ${lastMonthSummary.total_actual_sales?.toLocaleString()}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-slate-500">Avg Food Cost %</p>
-            <p
-              className={`text-lg font-semibold ${
-                lastMonthSummary.avg_food_cost_pct > foodTarget
-                  ? "text-red-600"
-                  : "text-green-600"
-              }`}
-            >
-              {(lastMonthSummary.avg_food_cost_pct * 100).toFixed(1)}%
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-slate-500">Avg Labor Cost %</p>
-            <p
-              className={`text-lg font-semibold ${
-                lastMonthSummary.avg_labor_cost_pct > laborTarget
-                  ? "text-red-600"
-                  : "text-green-600"
-              }`}
-            >
-              {(lastMonthSummary.avg_labor_cost_pct * 100).toFixed(1)}%
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    ) : (
-      <div className="text-sm text-slate-500 italic">
-        No summary data available for last month.
-      </div>
-    )}
+{showLastMonth && lastMonthSummary && (
+  <div className="mt-8 border-t pt-4">
+    <h3 className="text-lg font-semibold text-slate-700 mb-2">Last Month Summary</h3>
+    {renderLastMonthCards()}
   </div>
-</details>
 )}
            {/* Forecast Table */}
       <Card className="shadow-xl bg-white text-slate-800 border border-slate-200">
