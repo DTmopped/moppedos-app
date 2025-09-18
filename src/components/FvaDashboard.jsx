@@ -211,40 +211,65 @@ const FvaDashboard = () => {
     }, 500);
   };
 
-  const exportToCSV = () => {
-    const rows = [
-      ["Date", "Forecasted Sales", "Actual Sales", "Food Cost %", "Bev Cost %", "Labor Cost %", "Alerts"],
-      ...combinedData.map(d => {
-        const food = d.hasActuals ? `${(d.foodPct * 100).toFixed(1)}%` : "N/A";
-        const bev = d.hasActuals ? `${(d.bevPct * 100).toFixed(1)}%` : "N/A";
-        const labor = d.hasActuals ? `${(d.laborPct * 100).toFixed(1)}%` : "N/A";
-        const alert = d.hasActuals
-          ? [
-              d.foodPct > foodTarget ? "Food Over" : null,
-              d.bevPct > bevTarget ? "Bev Over" : null,
-              d.laborPct > laborTarget ? "Labor Over" : null
-            ].filter(Boolean).join(", ") || "On Target"
-          : "No Actuals";
-        return [
-          d.date,
-          d.forecastSales,
-          d.hasActuals ? d.actualSales : "N/A",
-          food,
-          bev,
-          labor,
-          alert
-        ];
-      })
-    ];
-    const csv = rows.map(row => row.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `fva-dashboard-${today}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
+const exportToCSV = () => {
+  const formatCurrency = value =>
+    typeof value === "number" ? `$${value.toLocaleString()}` : "";
+
+  const rows = [
+    ["Date", "Forecasted Sales", "Actual Sales", "Food Cost %", "Bev Cost %", "Labor Cost %", "Alerts"],
+    ...combinedData.map(d => {
+      const food = d.hasActuals ? `${(d.foodPct * 100).toFixed(1)}%` : "";
+      const bev = d.hasActuals ? `${(d.bevPct * 100).toFixed(1)}%` : "";
+      const labor = d.hasActuals ? `${(d.laborPct * 100).toFixed(1)}%` : "";
+      const alert = d.hasActuals
+        ? [
+            d.foodPct > foodTarget ? "Food Over" : null,
+            d.bevPct > bevTarget ? "Bev Over" : null,
+            d.laborPct > laborTarget ? "Labor Over" : null
+          ].filter(Boolean).join(", ") || "On Target"
+        : "No Actuals";
+
+      return [
+        d.date,
+        formatCurrency(d.forecastSales),
+        d.hasActuals ? formatCurrency(d.actualSales) : "",
+        food,
+        bev,
+        labor,
+        alert
+      ];
+    })
+  ];
+
+  // Totals and averages
+  const actualRows = combinedData.filter(d => d.hasActuals);
+  const totalForecast = combinedData.reduce((sum, d) => sum + (d.forecastSales || 0), 0);
+  const totalActual = actualRows.reduce((sum, d) => sum + d.actualSales, 0);
+  const avgFoodPct = actualRows.length ? actualRows.reduce((sum, d) => sum + d.foodPct, 0) / actualRows.length : 0;
+  const avgBevPct = actualRows.length ? actualRows.reduce((sum, d) => sum + d.bevPct, 0) / actualRows.length : 0;
+  const avgLaborPct = actualRows.length ? actualRows.reduce((sum, d) => sum + d.laborPct, 0) / actualRows.length : 0;
+
+  // Final row
+  rows.push([
+    "TOTAL / AVG",
+    formatCurrency(totalForecast),
+    formatCurrency(totalActual),
+    `${(avgFoodPct * 100).toFixed(1)}%`,
+    `${(avgBevPct * 100).toFixed(1)}%`,
+    `${(avgLaborPct * 100).toFixed(1)}%`,
+    ""
+  ]);
+
+  // Download logic
+  const csv = rows.map(row => row.join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `fva-dashboard-${today}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+};
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-6">
