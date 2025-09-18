@@ -50,18 +50,30 @@ const FvaDashboard = () => {
 
 useEffect(() => {
   const fetchLastMonthData = async () => {
-    const firstDayOfThisMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-    const lastMonth = new Date(firstDayOfThisMonth);
-    lastMonth.setMonth(lastMonth.getMonth() - 1);
-    const monthString = lastMonth.toISOString().slice(0, 7) + "-01";
+    const now = new Date();
+    const firstDayOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastMonthStart = new Date(firstDayOfThisMonth);
+    lastMonthStart.setMonth(lastMonthStart.getMonth() - 1);
+    const nextMonthStart = new Date(firstDayOfThisMonth); // this month start
+
+    const startIso = lastMonthStart.toISOString(); // e.g. "2025-08-01T00:00:00.000Z"
+    const endIso = nextMonthStart.toISOString();   // e.g. "2025-09-01T00:00:00.000Z"
 
     const { data, error } = await supabase
       .from("fva_history_rollup_view")
       .select("*")
-      .eq("location_id", null)
-      .eq("month", monthString);
+      .gte("month", startIso)
+      .lt("month", endIso)
+      .limit(1); // assuming only one row per month/location
 
-    if (data && data.length > 0) setLastMonthSummary(data[0]);
+    if (error) {
+      console.error("Last Month fetch error", error);
+      return;
+    }
+
+    if (data && data.length > 0) {
+      setLastMonthSummary(data[0]);
+    }
   };
 
   fetchLastMonthData();
