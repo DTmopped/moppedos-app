@@ -126,7 +126,8 @@ const FvaDashboard = () => {
           total_forecast_sales: 72000,
           total_actual_sales: 69500,
           avg_food_cost_pct: 0.285,
-          avg_labor_cost_pct: 0.13
+          avg_labor_cost_pct: 0.13,
+          avg_bev_cost_pct: 0.18
         });
       }
     };
