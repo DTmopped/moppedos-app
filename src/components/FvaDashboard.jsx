@@ -191,15 +191,15 @@ useEffect(() => {
 
     {/* ✅ NEW BUTTON */}
     <Button
-      onClick={() => {
-        const details = document.querySelector("#lastMonthDetails");
-        if (details) details.open = !details.open;
-      }}
-      variant="outline"
-      className="text-sm border-gray-300 hover:bg-gray-100"
-    >
-      Toggle Last Month Summary
-    </Button>
+  onClick={() => {
+    const summary = document.querySelector("#lastMonthDetails summary");
+    if (summary) summary.click(); // simulate native toggle
+  }}
+  variant="outline"
+  className="text-sm border-gray-300 hover:bg-gray-100"
+>
+  Toggle Last Month Summary
+</Button>
   </div>
 
   {isAdmin && (
