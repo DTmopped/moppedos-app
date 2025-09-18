@@ -45,6 +45,26 @@ const FvaDashboard = () => {
   };
   fetchYtdData();
 }, [today]);
+  const [lastMonthSummary, setLastMonthSummary] = useState(null);
+
+useEffect(() => {
+  const fetchLastMonthData = async () => {
+    const firstDayOfThisMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    const lastMonth = new Date(firstDayOfThisMonth);
+    lastMonth.setMonth(lastMonth.getMonth() - 1);
+    const monthString = lastMonth.toISOString().slice(0, 7) + "-01";
+
+    const { data, error } = await supabase
+      .from("fva_history_rollup_view")
+      .select("*")
+      .eq("location_id", null)
+      .eq("month", monthString);
+
+    if (data && data.length > 0) setLastMonthSummary(data[0]);
+  };
+
+  fetchLastMonthData();
+}, []);
 
   const combinedData = forecastData.map(forecast => {
     const actual = actualData.find(a => a.date === forecast.date);
@@ -353,6 +373,48 @@ const FvaDashboard = () => {
       </div>
     )}
   </>
+)}
+
+  {lastMonthSummary && (
+  <details className="mt-8 border-t pt-4">
+    <summary className="cursor-pointer text-slate-700 font-medium hover:underline">
+      View Last Month Summary
+    </summary>
+    <div className="grid grid-cols-4 gap-4 mt-4">
+      <Card>
+        <CardContent className="p-4">
+          <p className="text-sm text-slate-500">Last Month Forecast Sales</p>
+          <p className="text-lg font-semibold">
+            ${lastMonthSummary.total_forecast_sales?.toLocaleString()}
+          </p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="p-4">
+          <p className="text-sm text-slate-500">Last Month Actual Sales</p>
+          <p className="text-lg font-semibold">
+            ${lastMonthSummary.total_actual_sales?.toLocaleString()}
+          </p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="p-4">
+          <p className="text-sm text-slate-500">Avg Food Cost %</p>
+          <p className={`text-lg font-semibold ${lastMonthSummary.avg_food_cost_pct > foodTarget ? 'text-red-600' : 'text-green-600'}`}>
+            {(lastMonthSummary.avg_food_cost_pct * 100).toFixed(1)}%
+          </p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="p-4">
+          <p className="text-sm text-slate-500">Avg Labor Cost %</p>
+          <p className={`text-lg font-semibold ${lastMonthSummary.avg_labor_cost_pct > laborTarget ? 'text-red-600' : 'text-green-600'}`}>
+            {(lastMonthSummary.avg_labor_cost_pct * 100).toFixed(1)}%
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  </details>
 )}
            {/* Forecast Table */}
       <Card className="shadow-xl bg-white text-slate-800 border border-slate-200">
