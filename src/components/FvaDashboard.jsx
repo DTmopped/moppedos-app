@@ -386,15 +386,24 @@ useEffect(() => {
 )}
 
  {lastMonthSummary && (
-  <details 
-    id="lastMonthDetails" 
+  <details
+    id="lastMonthDetails"
     className="mt-8 border-t pt-4"
     open={showLastMonth}
     onToggle={(e) => setShowLastMonth(e.currentTarget.open)}
   >
-    <summary className="cursor-pointer text-slate-700 font-medium hover:underline">
-      View Last Month Summary
-    </summary>
+    <summary className="list-none cursor-pointer text-lg font-semibold text-slate-700 py-2 hover:text-indigo-600 flex items-center">
+  <span className={`transform transition-transform duration-200 ${showLastMonth ? 'rotate-90' : ''}`}>
+    ▶
+  </span>
+  <span 
+    className="ml-2" 
+    title="Click to view performance metrics from last month."
+  >
+    View Last Month Summary
+  </span>
+</summary>
+
     <div className="grid grid-cols-4 gap-4 mt-4">
       <Card>
         <CardContent className="p-4">
