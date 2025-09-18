@@ -30,62 +30,58 @@ const FvaDashboard = () => {
   const [ytdSplit, setYtdSplit] = useState(null);
   const [showYTD, setShowYTD] = useState(false);
   const [showLastMonth, setShowLastMonth] = useState(false);
-
- useEffect(() => {
-  const fetchYtdData = async () => {
-    const { data: ytdData } = await supabase.rpc("get_ytd_fva_v3", {
-      p_location_id: null,
-      p_as_of: today,
-    });
-    const { data: splitData } = await supabase.rpc("get_ytd_fva_split_v2", {
-      p_location_id: null,
-      p_as_of: today,
-    });
-    setYtd(ytdData?.[0]);
-    setYtdSplit(splitData?.[0]);
-  };
-  fetchYtdData();
-}, [today]);
   const [lastMonthSummary, setLastMonthSummary] = useState(null);
 
-useEffect(() => {
-  const fetchLastMonthData = async () => {
-    const now = new Date();
-    const firstDayOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const lastMonthStart = new Date(firstDayOfThisMonth);
-    lastMonthStart.setMonth(lastMonthStart.getMonth() - 1);
-    const nextMonthStart = new Date(firstDayOfThisMonth);
+  useEffect(() => {
+    const fetchYtdData = async () => {
+      const { data: ytdData } = await supabase.rpc("get_ytd_fva_v3", { p_location_id: null, p_as_of: today });
+      const { data: splitData } = await supabase.rpc("get_ytd_fva_split_v2", { p_location_id: null, p_as_of: today });
+      setYtd(ytdData?.[0]);
+      setYtdSplit(splitData?.[0]);
+    };
+    fetchYtdData();
+  }, [today]);
 
-    const startIso = lastMonthStart.toISOString(); // e.g. "2025-08-01T00:00:00.000Z"
-    const endIso = nextMonthStart.toISOString();   // e.g. "2025-09-01T00:00:00.000Z"
+  useEffect(() => {
+    const fetchLastMonthData = async () => {
+      const now = new Date();
+      const firstDayOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const lastMonthStart = new Date(firstDayOfThisMonth);
+      lastMonthStart.setMonth(lastMonthStart.getMonth() - 1);
+      const nextMonthStart = new Date(firstDayOfThisMonth);
 
-    const { data, error } = await supabase
-      .from("fva_history_rollup_view")
-      .select("*")
-      .gte("month", startIso)
-      .lt("month", endIso)
-      .limit(1);
+      const startIso = lastMonthStart.toISOString();
+      const endIso = nextMonthStart.toISOString();
 
-    if (error) {
-      console.error("Last Month fetch error", error);
-      return;
-    }
+      const { data, error } = await supabase
+        .from("fva_history_rollup_view")
+        .select("*")
+        .gte("month", startIso)
+        .lt("month", endIso)
+        .limit(1);
 
-    if (data && data.length > 0) {
-      setLastMonthSummary(data[0]);
-    } else {
-      console.warn("⚠️ No last month data found. Showing placeholder metrics.");
-      setLastMonthSummary({
-        total_forecast_sales: 72000,
-        total_actual_sales: 69500,
-        avg_food_cost_pct: 0.285,
-        avg_labor_cost_pct: 0.13
-      });
-    }
-  };
+      if (error) {
+        console.error("Last Month fetch error", error);
+        return;
+      }
 
-  fetchLastMonthData(); // ✅ This should be *after* the function declaration
-}, []);
+      if (data && data.length > 0) {
+        setLastMonthSummary(data[0]);
+      } else {
+        console.warn("\u26A0\uFE0F No last month data found. Showing placeholder metrics.");
+        setLastMonthSummary({
+          total_forecast_sales: 72000,
+          total_actual_sales: 69500,
+          avg_food_cost_pct: 0.285,
+          avg_labor_cost_pct: 0.13
+        });
+      }
+    };
+
+
+  fetchLastMonthData();
+  }, []);
+
   const combinedData = forecastData.map(forecast => {
     const actual = actualData.find(a => a.date === forecast.date);
     if (actual) {
@@ -103,6 +99,7 @@ useEffect(() => {
 
   const mtdData = combinedData.filter(d => d.date.startsWith(currentMonth) && d.date <= today);
   const eomData = combinedData.filter(d => d.date.startsWith(currentMonth));
+
 
   const getAverages = data => {
     const count = data.filter(d => d.hasActuals).length;
