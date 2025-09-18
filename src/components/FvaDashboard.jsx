@@ -188,6 +188,18 @@ useEffect(() => {
     >
       {showYTD ? "Hide YTD Metrics" : "Show YTD Metrics"}
     </Button>
+
+    {/* ✅ NEW BUTTON */}
+    <Button
+      onClick={() => {
+        const details = document.querySelector("#lastMonthDetails");
+        if (details) details.open = !details.open;
+      }}
+      variant="outline"
+      className="text-sm border-gray-300 hover:bg-gray-100"
+    >
+      Toggle Last Month Summary
+    </Button>
   </div>
 
   {isAdmin && (
@@ -376,7 +388,7 @@ useEffect(() => {
 )}
 
   {lastMonthSummary && (
-  <details className="mt-8 border-t pt-4">
+  <details id="lastMonthDetails" className="mt-8 border-t pt-4">
     <summary className="cursor-pointer text-slate-700 font-medium hover:underline">
       View Last Month Summary
     </summary>
