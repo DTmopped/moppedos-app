@@ -176,8 +176,13 @@ const FvaDashboard = () => {
     const printDate = new Date();
     const targets = { foodTarget, bevTarget, laborTarget };
     const printableComponentHtml = ReactDOMServer.renderToStaticMarkup(
-      <PrintableFvaDashboard combinedData={combinedData} printDate={printDate} targets={targets} />
-    );
+  <PrintableFvaDashboard
+    combinedData={combinedData}
+    printDate={printDate}
+    targets={targets}
+    lastMonthSummary={lastMonthSummary} // ✅ This is the missing prop!
+  />
+);
     const iframe = document.createElement("iframe");
     iframe.style.position = "absolute";
     iframe.style.width = "0";
