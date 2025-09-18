@@ -398,59 +398,81 @@ useEffect(() => {
 )}
 
  {lastMonthSummary && (
-  <details
-    id="lastMonthDetails"
-    className="mt-8 border-t pt-4"
-    open={showLastMonth}
-    onToggle={(e) => setShowLastMonth(e.currentTarget.open)}
-  >
-    <summary className="list-none cursor-pointer text-lg font-semibold text-slate-700 py-2 hover:text-indigo-600 flex items-center">
-  <span className={`transform transition-transform duration-200 ${showLastMonth ? 'rotate-90' : ''}`}>
-    ▶
-  </span>
-  <span 
-    className="ml-2" 
+ <details
+  id="lastMonthDetails"
+  className="mt-8 border-t pt-4"
+  open={showLastMonth}
+  onToggle={(e) => setShowLastMonth(e.currentTarget.open)}
+>
+  <summary
+    className="list-none cursor-pointer text-lg font-semibold text-slate-700 py-2 hover:text-indigo-600 flex items-center"
     title="Click to view performance metrics from last month."
   >
-    View Last Month Summary
-  </span>
-</summary>
+    <span
+      className={`transform transition-transform duration-200 ${
+        showLastMonth ? "rotate-90" : ""
+      }`}
+    >
+      ▶
+    </span>
+    <span className="ml-2">View Last Month Summary</span>
+  </summary>
 
-    <div className="grid grid-cols-4 gap-4 mt-4">
-      <Card>
-        <CardContent className="p-4">
-          <p className="text-sm text-slate-500">Last Month Forecast Sales</p>
-          <p className="text-lg font-semibold">
-            ${lastMonthSummary.total_forecast_sales?.toLocaleString()}
-          </p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className="p-4">
-          <p className="text-sm text-slate-500">Last Month Actual Sales</p>
-          <p className="text-lg font-semibold">
-            ${lastMonthSummary.total_actual_sales?.toLocaleString()}
-          </p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className="p-4">
-          <p className="text-sm text-slate-500">Avg Food Cost %</p>
-          <p className={`text-lg font-semibold ${lastMonthSummary.avg_food_cost_pct > foodTarget ? 'text-red-600' : 'text-green-600'}`}>
-            {(lastMonthSummary.avg_food_cost_pct * 100).toFixed(1)}%
-          </p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className="p-4">
-          <p className="text-sm text-slate-500">Avg Labor Cost %</p>
-          <p className={`text-lg font-semibold ${lastMonthSummary.avg_labor_cost_pct > laborTarget ? 'text-red-600' : 'text-green-600'}`}>
-            {(lastMonthSummary.avg_labor_cost_pct * 100).toFixed(1)}%
-          </p>
-        </CardContent>
-      </Card>
-    </div>
-  </details>
+  <div className="mt-4">
+    {lastMonthSummary ? (
+      <div className="grid grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-slate-500">Last Month Forecast Sales</p>
+            <p className="text-lg font-semibold">
+              ${lastMonthSummary.total_forecast_sales?.toLocaleString()}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-slate-500">Last Month Actual Sales</p>
+            <p className="text-lg font-semibold">
+              ${lastMonthSummary.total_actual_sales?.toLocaleString()}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-slate-500">Avg Food Cost %</p>
+            <p
+              className={`text-lg font-semibold ${
+                lastMonthSummary.avg_food_cost_pct > foodTarget
+                  ? "text-red-600"
+                  : "text-green-600"
+              }`}
+            >
+              {(lastMonthSummary.avg_food_cost_pct * 100).toFixed(1)}%
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-slate-500">Avg Labor Cost %</p>
+            <p
+              className={`text-lg font-semibold ${
+                lastMonthSummary.avg_labor_cost_pct > laborTarget
+                  ? "text-red-600"
+                  : "text-green-600"
+              }`}
+            >
+              {(lastMonthSummary.avg_labor_cost_pct * 100).toFixed(1)}%
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    ) : (
+      <div className="text-sm text-slate-500 italic">
+        No summary data available for last month.
+      </div>
+    )}
+  </div>
+</details>
 )}
            {/* Forecast Table */}
       <Card className="shadow-xl bg-white text-slate-800 border border-slate-200">
