@@ -216,16 +216,14 @@ const renderLastMonthCards = () => {
   };
 
 const exportToCSV = () => {
-  const { spendPerGuest } = adminSettings;
-
   const formatCurrency = value =>
-    typeof value === "number" ? `$${value.toFixed(2)}` : "";
+    typeof value === "number" ? `$${value.toLocaleString()}` : "";
 
   const rows = [
     ["Date", "Forecasted Sales", "Actual Sales", "Food Cost %", "Bev Cost %", "Labor Cost %", "Alerts"],
     ...combinedData.map(d => {
-      const forecastSales = d.forecastSales * spendPerGuest;
-      const actualSales = d.hasActuals ? d.actualSales * spendPerGuest : null;
+      const forecastSales = d.forecastSales;
+      const actualSales = d.hasActuals ? d.actualSales : null;
 
       const food = d.hasActuals ? `${(d.foodPct * 100).toFixed(1)}%` : "";
       const bev = d.hasActuals ? `${(d.bevPct * 100).toFixed(1)}%` : "";
@@ -242,7 +240,7 @@ const exportToCSV = () => {
       return [
         d.date,
         formatCurrency(forecastSales),
-        d.hasActuals ? formatCurrency(actualSales) : "",
+        actualSales !== null ? formatCurrency(actualSales) : "",
         food,
         bev,
         labor,
@@ -253,8 +251,8 @@ const exportToCSV = () => {
 
   // Totals and averages
   const actualRows = combinedData.filter(d => d.hasActuals);
-  const totalForecast = combinedData.reduce((sum, d) => sum + (d.forecastSales * spendPerGuest || 0), 0);
-  const totalActual = actualRows.reduce((sum, d) => sum + d.actualSales * spendPerGuest, 0);
+  const totalForecast = combinedData.reduce((sum, d) => sum + (d.forecastSales || 0), 0);
+  const totalActual = actualRows.reduce((sum, d) => sum + d.actualSales, 0);
   const avgFoodPct = actualRows.length ? actualRows.reduce((sum, d) => sum + d.foodPct, 0) / actualRows.length : 0;
   const avgBevPct = actualRows.length ? actualRows.reduce((sum, d) => sum + d.bevPct, 0) / actualRows.length : 0;
   const avgLaborPct = actualRows.length ? actualRows.reduce((sum, d) => sum + d.laborPct, 0) / actualRows.length : 0;
@@ -266,13 +264,10 @@ const exportToCSV = () => {
     `${(avgFoodPct * 100).toFixed(1)}%`,
     `${(avgBevPct * 100).toFixed(1)}%`,
     `${(avgLaborPct * 100).toFixed(1)}%`,
-    ""
+    "",
   ]);
 
-  // ✅ Moved 'today' inside here for accurate timestamp
   const today = new Date().toISOString().split("T")[0];
-
-  // ✅ Download logic
   const csv = rows.map(row => row.join(",")).join("\n");
   const blob = new Blob([csv], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
