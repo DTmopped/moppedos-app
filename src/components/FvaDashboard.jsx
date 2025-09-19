@@ -289,7 +289,33 @@ const exportToCSV = () => {
     transition={{ duration: 0.5 }}
     className="space-y-6"
   >
-
+{/* Dashboard Header & Toggles */}
+<div className="flex justify-between items-center mb-4">
+  <div>
+    <h2 className="text-2xl font-bold tracking-tight text-slate-800">Forecast vs. Actual Dashboard</h2>
+    <p className="text-sm text-slate-500">Review performance across MTD, YTD, and prior month.</p>
+  </div>
+  <div className="flex gap-2">
+    <Button
+      variant={isAdminMode ? "default" : "outline"}
+      onClick={() => setIsAdminMode(!isAdminMode)}
+    >
+      {isAdminMode ? "Admin Mode: ON" : "Admin Mode"}
+    </Button>
+    <Button
+      variant={showYTD ? "default" : "outline"}
+      onClick={() => setShowYTD(!showYTD)}
+    >
+      {showYTD ? "Hide YTD" : "Show YTD"}
+    </Button>
+    <Button
+      variant={showLastMonth ? "default" : "outline"}
+      onClick={() => setShowLastMonth(!showLastMonth)}
+    >
+      {showLastMonth ? "Hide Last Month" : "Last Month"}
+    </Button>
+  </div>
+</div>
     {/* ✅ Render Last Month Cards if toggled */}
     {showLastMonth && renderLastMonthCards()}
 
