@@ -222,8 +222,8 @@ const exportToCSV = () => {
   const rows = [
   ["Date", "Forecasted Sales", "Actual Sales", "Food Cost %", "Bev Cost %", "Labor Cost %", "Alerts"],
   ...combinedData.map(d => {
-    const forecastSales = d.forecastSales; // ❌ no multiplication!
-    const actualSales = d.hasActuals ? d.actualSales : null;
+   const totalForecast = combinedData.reduce((sum, d) => sum + (d.forecastSales * spendPerGuest || 0), 0);
+const totalActual = actualRows.reduce((sum, d) => sum + (d.actualSales * spendPerGuest), 0);
 
     const food = d.hasActuals ? `${(d.foodPct * 100).toFixed(1)}%` : "";
     const bev = d.hasActuals ? `${(d.bevPct * 100).toFixed(1)}%` : "";
