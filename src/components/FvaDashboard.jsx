@@ -11,33 +11,37 @@ import { cn } from "@/lib/utils";
 import { supabase } from '@/supabaseClient';
 
 const FvaDashboard = () => {
-  const { forecastData, actualData } = useData();
-  const [isAdmin, setIsAdmin] = useState(() => localStorage.getItem("isAdminMode") === "true");
-  useEffect(() => { localStorage.setItem("isAdminMode", isAdmin.toString()); }, [isAdmin]);
+  const {
+    forecastData,
+    actualData,
+    isAdminMode,
+    setIsAdminMode,
+    adminSettings,
+    updateAdminSetting,
+  } = useData();
 
-  const [foodTarget, setFoodTarget] = useState(() => parseFloat(localStorage.getItem("foodCostGoal")) || 0.3);
-  const [bevTarget, setBevTarget] = useState(() => parseFloat(localStorage.getItem("bevCostGoal")) || 0.2);
-  const [laborTarget, setLaborTarget] = useState(() => parseFloat(localStorage.getItem("laborCostGoal")) || 0.14);
-
-  useEffect(() => { localStorage.setItem("foodCostGoal", foodTarget); }, [foodTarget]);
-  useEffect(() => { localStorage.setItem("bevCostGoal", bevTarget); }, [bevTarget]);
-  useEffect(() => { localStorage.setItem("laborCostGoal", laborTarget); }, [laborTarget]);
+  const {
+    foodCostGoal: foodTarget,
+    bevCostGoal: bevTarget,
+    laborCostGoal: laborTarget
+  } = adminSettings;
 
 
-  const today = new Date().toISOString().split("T")[0];
-  const currentMonth = new Date().toISOString().slice(0, 7);
+const today = new Date().toISOString().split("T")[0];
+const currentMonth = new Date().toISOString().slice(0, 7);
 
-  const [ytd, setYtd] = useState(null);
-  const [ytdSplit, setYtdSplit] = useState(null);
-  const [showYTD, setShowYTD] = useState(false);
-  const [showLastMonth, setShowLastMonth] = useState(false);
-  const [lastMonthSummary, setLastMonthSummary] = useState(null);
-  const renderLastMonthCards = () => {
+const [ytd, setYtd] = useState(null);
+const [ytdSplit, setYtdSplit] = useState(null);
+const [showYTD, setShowYTD] = useState(false);
+const [showLastMonth, setShowLastMonth] = useState(false);
+const [lastMonthSummary, setLastMonthSummary] = useState(null);
+
+const renderLastMonthCards = () => {
   if (!lastMonthSummary) return null;
 
-  const variance =
-    (lastMonthSummary.total_actual_sales - lastMonthSummary.total_forecast_sales) /
-    lastMonthSummary.total_forecast_sales;
+  const variance = (
+    lastMonthSummary.total_actual_sales - lastMonthSummary.total_forecast_sales
+  ) / lastMonthSummary.total_forecast_sales;
 
   return (
     <div className="grid grid-cols-6 gap-4 mt-4">
@@ -74,13 +78,13 @@ const FvaDashboard = () => {
         </CardContent>
       </Card>
       <Card>
-  <CardContent className="p-4">
-    <p className="text-sm text-slate-500">Avg Beverage Cost %</p>
-    <p className={`text-lg font-semibold ${lastMonthSummary.avg_bev_cost_pct > bevTarget ? "text-red-600" : "text-green-600"}`}>
-      {(lastMonthSummary.avg_bev_cost_pct * 100).toFixed(1)}%
-    </p>
-  </CardContent>
-</Card>
+        <CardContent className="p-4">
+          <p className="text-sm text-slate-500">Avg Beverage Cost %</p>
+          <p className={`text-lg font-semibold ${lastMonthSummary.avg_bev_cost_pct > bevTarget ? "text-red-600" : "text-green-600"}`}>
+            {(lastMonthSummary.avg_bev_cost_pct * 100).toFixed(1)}%
+          </p>
+        </CardContent>
+      </Card>
       <Card>
         <CardContent className="p-4">
           <p className="text-sm text-slate-500">Avg Labor Cost %</p>
@@ -272,75 +276,82 @@ const exportToCSV = () => {
 };
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-6">
-      {/* Admin Mode Toggle & Target Editors */}
-{/* Top Control Bar */}
-<div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-  <div className="flex items-center gap-2">
-    <Button
-      onClick={() => setIsAdmin(prev => !prev)}
-      variant="outline"
-      className={cn(
-        "text-sm font-medium",
-        isAdmin ? "bg-green-100 border-green-500 text-green-700" : "bg-slate-100 border-slate-300 text-slate-600"
-      )}
-    >
-      {isAdmin ? "Admin Mode: ON" : "Admin Mode: OFF"}
-    </Button>
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.5 }}
+    className="space-y-6"
+  >
+    {/* Top Control Bar */}
+    <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+      <div className="flex items-center gap-2">
+        <Button
+          onClick={() => setIsAdminMode(prev => !prev)}
+          variant="outline"
+          className={cn(
+            "text-sm font-medium",
+            isAdminMode ? "bg-green-100 border-green-500 text-green-700" : "bg-slate-100 border-slate-300 text-slate-600"
+          )}
+        >
+          {isAdminMode ? "Admin Mode: ON" : "Admin Mode: OFF"}
+        </Button>
 
-    <Button
-      onClick={() => setShowYTD(prev => !prev)}
-      variant="outline"
-      className="text-sm border-gray-300 hover:bg-gray-100"
-    >
-      {showYTD ? "Hide YTD Metrics" : "Show YTD Metrics"}
-    </Button>
+        <Button
+          onClick={() => setShowYTD(prev => !prev)}
+          variant="outline"
+          className="text-sm border-gray-300 hover:bg-gray-100"
+        >
+          {showYTD ? "Hide YTD Metrics" : "Show YTD Metrics"}
+        </Button>
 
-    {/* ✅ NEW BUTTON */}
-   <Button
-  onClick={() => setShowLastMonth(prev => !prev)} // ✅ Toggles state
-  variant="outline"
-  className="text-sm border-gray-300 hover:bg-gray-100"
->
-  {showLastMonth ? "Hide Last Month Summary" : "Toggle Last Month Summary"} {/* ✅ Dynamic label */}
-</Button>
-  </div>
-
-  {isAdmin && (
-    <div className="flex gap-4 text-sm items-center">
-      <label>
-        Food Target %
-        <input
-          type="number"
-          step="0.01"
-          value={foodTarget}
-          onChange={e => setFoodTarget(parseFloat(e.target.value))}
-          className="ml-1 border rounded px-2 py-1 w-16 text-right"
-        />
-      </label>
-      <label>
-        Bev Target %
-        <input
-          type="number"
-          step="0.01"
-          value={bevTarget}
-          onChange={e => setBevTarget(parseFloat(e.target.value))}
-          className="ml-1 border rounded px-2 py-1 w-16 text-right"
-        />
-      </label>
-      <label>
-        Labor Target %
-        <input
-          type="number"
-          step="0.01"
-          value={laborTarget}
-          onChange={e => setLaborTarget(parseFloat(e.target.value))}
-          className="ml-1 border rounded px-2 py-1 w-16 text-right"
-        />
-      </label>
+        <Button
+          onClick={() => setShowLastMonth(prev => !prev)}
+          variant="outline"
+          className="text-sm border-gray-300 hover:bg-gray-100"
+        >
+          {showLastMonth ? "Hide Last Month Summary" : "Toggle Last Month Summary"}
+        </Button>
+      </div>
     </div>
-  )}
-</div>
+
+    {/* ✅ Render Last Month Cards if toggled */}
+    {showLastMonth && renderLastMonthCards()}
+
+    {/* Admin Mode Target Inputs */}
+    {isAdminMode && (
+      <div className="flex gap-4 text-sm items-center">
+        <label>
+          Food Target %
+          <input
+            type="number"
+            step="0.01"
+            value={foodTarget}
+            onChange={e => updateAdminSetting("foodCostGoal", parseFloat(e.target.value))}
+            className="ml-1 border rounded px-2 py-1 w-16 text-right"
+          />
+        </label>
+        <label>
+          Bev Target %
+          <input
+            type="number"
+            step="0.01"
+            value={bevTarget}
+            onChange={e => updateAdminSetting("bevCostGoal", parseFloat(e.target.value))}
+            className="ml-1 border rounded px-2 py-1 w-16 text-right"
+          />
+        </label>
+        <label>
+          Labor Target %
+          <input
+            type="number"
+            step="0.01"
+            value={laborTarget}
+            onChange={e => updateAdminSetting("laborCostGoal", parseFloat(e.target.value))}
+            className="ml-1 border rounded px-2 py-1 w-16 text-right"
+          />
+        </label>
+      </div>
+    )}
 
 {/* MTD Metrics Row */}
 <div className="grid grid-cols-4 gap-4">
