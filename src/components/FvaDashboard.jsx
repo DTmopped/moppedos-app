@@ -216,78 +216,114 @@ const renderLastMonthCards = () => {
   };
 
 const exportToCSV = () => {
-  const formatCurrency = value =>
-    typeof value === "number" ? `$${value.toLocaleString()}` : "";
-
-  const formatPercent = value =>
-    typeof value === "number" ? `${(value * 100).toFixed(1)}%` : "";
+  const formatCurrency = val =>
+    typeof val === "number" ? `$${val.toFixed(2)}` : "N/A";
+  const formatPercent = val =>
+    typeof val === "number" ? `${val.toFixed(1)}%` : "N/A";
 
   const rows = [
-    ["Date", "Forecasted Sales", "Actual Sales", "Variance ($)", "Variance (%)", "Food Cost %", "Bev Cost %", "Labor Cost %", "Alerts"],
-    ...combinedData.map(d => {
-      const forecastSales = d.forecastSales;
-      const actualSales = d.hasActuals ? d.actualSales : null;
-
-      const variance = d.hasActuals ? actualSales - forecastSales : null;
-      const variancePct = d.hasActuals && forecastSales !== 0 ? (variance / forecastSales) : null;
-
-      const food = d.hasActuals ? formatPercent(d.foodPct) : "";
-      const bev = d.hasActuals ? formatPercent(d.bevPct) : "";
-      const labor = d.hasActuals ? formatPercent(d.laborPct) : "";
-
-      const alert = d.hasActuals
-        ? [
-            d.foodPct > foodTarget ? "Food Over" : null,
-            d.bevPct > bevTarget ? "Bev Over" : null,
-            d.laborPct > laborTarget ? "Labor Over" : null
-          ].filter(Boolean).join(", ") || "On Target"
-        : "No Actuals";
-
-      return [
-        d.date,
-        formatCurrency(forecastSales),
-        d.hasActuals ? formatCurrency(actualSales) : "",
-        d.hasActuals ? formatCurrency(variance) : "",
-        d.hasActuals ? `${(variancePct * 100).toFixed(1)}%` : "",
-        food,
-        bev,
-        labor,
-        alert
-      ];
-    })
+    [
+      "Date",
+      "Forecasted Sales",
+      "Actual Sales",
+      "Variance ($)",
+      "Variance (%)",
+      "Food Cost (F / A / $)",
+      "Bev Cost (F / A / $)",
+      "Labor Cost (F / A / $)",
+      "Alerts",
+    ],
   ];
 
-  // Totals and averages row
-  const actualRows = combinedData.filter(d => d.hasActuals);
-  const totalForecast = combinedData.reduce((sum, d) => sum + (d.forecastSales || 0), 0);
-  const totalActual = actualRows.reduce((sum, d) => sum + d.actualSales, 0);
-  const avgFoodPct = actualRows.length ? actualRows.reduce((sum, d) => sum + d.foodPct, 0) / actualRows.length : 0;
-  const avgBevPct = actualRows.length ? actualRows.reduce((sum, d) => sum + d.bevPct, 0) / actualRows.length : 0;
-  const avgLaborPct = actualRows.length ? actualRows.reduce((sum, d) => sum + d.laborPct, 0) / actualRows.length : 0;
+  let totals = {
+    forecast: 0,
+    actual: 0,
+    food$: 0,
+    bev$: 0,
+    labor$: 0,
+    daysWithActuals: 0,
+  };
 
-  const totalVariance = totalActual - totalForecast;
-  const totalVariancePct = totalForecast !== 0 ? totalVariance / totalForecast : 0;
+  combinedData.forEach(d => {
+    const dollarVar = d.hasActuals ? d.actualSales - d.forecastSales : null;
+    const pctVar =
+      d.hasActuals && d.forecastSales
+        ? ((d.actualSales - d.forecastSales) / d.forecastSales) * 100
+        : null;
+
+    const forecastFoodCost = d.hasActuals ? d.forecastSales * d.foodPct : null;
+    const actualFoodCost = d.hasActuals ? d.actualSales * d.foodPct : null;
+    const foodVar = d.hasActuals ? actualFoodCost - forecastFoodCost : null;
+
+    const forecastBevCost = d.hasActuals ? d.forecastSales * d.bevPct : null;
+    const actualBevCost = d.hasActuals ? d.actualSales * d.bevPct : null;
+    const bevVar = d.hasActuals ? actualBevCost - forecastBevCost : null;
+
+    const forecastLaborCost = d.hasActuals ? d.forecastSales * d.laborPct : null;
+    const actualLaborCost = d.hasActuals ? d.actualSales * d.laborPct : null;
+    const laborVar = d.hasActuals ? actualLaborCost - forecastLaborCost : null;
+
+    const alerts = d.hasActuals
+      ? [
+          foodVar > 0 ? "Food Over" : null,
+          bevVar > 0 ? "Bev Over" : null,
+          laborVar > 0 ? "Labor Over" : null,
+        ].filter(Boolean).join(", ") || "On Target"
+      : "No Actuals";
+
+    rows.push([
+      d.date,
+      formatCurrency(d.forecastSales),
+      d.hasActuals ? formatCurrency(d.actualSales) : "N/A",
+      formatCurrency(dollarVar),
+      formatPercent(pctVar),
+      d.hasActuals
+        ? `${formatCurrency(forecastFoodCost)} / ${formatCurrency(actualFoodCost)} / ${formatCurrency(foodVar)}`
+        : "N/A",
+      d.hasActuals
+        ? `${formatCurrency(forecastBevCost)} / ${formatCurrency(actualBevCost)} / ${formatCurrency(bevVar)}`
+        : "N/A",
+      d.hasActuals
+        ? `${formatCurrency(forecastLaborCost)} / ${formatCurrency(actualLaborCost)} / ${formatCurrency(laborVar)}`
+        : "N/A",
+      alerts,
+    ]);
+
+    // Running totals for summary row
+    totals.forecast += d.forecastSales || 0;
+    if (d.hasActuals) {
+      totals.actual += d.actualSales || 0;
+      totals.food$ += foodVar || 0;
+      totals.bev$ += bevVar || 0;
+      totals.labor$ += laborVar || 0;
+      totals.daysWithActuals++;
+    }
+  });
 
   rows.push([
     "TOTAL / AVG",
-    formatCurrency(totalForecast),
-    formatCurrency(totalActual),
-    formatCurrency(totalVariance),
-    `${(totalVariancePct * 100).toFixed(1)}%`,
-    formatPercent(avgFoodPct),
-    formatPercent(avgBevPct),
-    formatPercent(avgLaborPct),
-    ""
+    formatCurrency(totals.forecast),
+    formatCurrency(totals.actual),
+    formatCurrency(totals.actual - totals.forecast),
+    totals.daysWithActuals
+      ? formatPercent(
+          ((totals.actual - totals.forecast) / totals.forecast) * 100
+        )
+      : "N/A",
+    formatCurrency(totals.food$),
+    formatCurrency(totals.bev$),
+    formatCurrency(totals.labor$),
+    "",
   ]);
 
-  // Download CSV
-  const csvContent = rows.map(e => e.join(",")).join("\n");
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const csv = rows.map(row => row.join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
-  link.setAttribute("href", url);
-  link.setAttribute("download", `fva-dashboard-${new Date().toISOString().slice(0, 10)}.csv`);
+  link.href = url;
+  link.download = `fva-dashboard-${new Date().toISOString().split("T")[0]}.csv`;
   link.click();
+  URL.revokeObjectURL(url);
 };
   return (
   <motion.div
