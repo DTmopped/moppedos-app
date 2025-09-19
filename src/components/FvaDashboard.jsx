@@ -220,34 +220,34 @@ const exportToCSV = () => {
     typeof value === "number" ? `$${value.toLocaleString()}` : "";
 
   const rows = [
-    ["Date", "Forecasted Sales", "Actual Sales", "Food Cost %", "Bev Cost %", "Labor Cost %", "Alerts"],
-    ...combinedData.map(d => {
-      const forecastSales = d.forecastSales;
-      const actualSales = d.hasActuals ? d.actualSales : null;
+  ["Date", "Forecasted Sales", "Actual Sales", "Food Cost %", "Bev Cost %", "Labor Cost %", "Alerts"],
+  ...combinedData.map(d => {
+    const forecastSales = d.forecastSales; // ❌ no multiplication!
+    const actualSales = d.hasActuals ? d.actualSales : null;
 
-      const food = d.hasActuals ? `${(d.foodPct * 100).toFixed(1)}%` : "";
-      const bev = d.hasActuals ? `${(d.bevPct * 100).toFixed(1)}%` : "";
-      const labor = d.hasActuals ? `${(d.laborPct * 100).toFixed(1)}%` : "";
+    const food = d.hasActuals ? `${(d.foodPct * 100).toFixed(1)}%` : "";
+    const bev = d.hasActuals ? `${(d.bevPct * 100).toFixed(1)}%` : "";
+    const labor = d.hasActuals ? `${(d.laborPct * 100).toFixed(1)}%` : "";
 
-      const alert = d.hasActuals
-        ? [
-            d.foodPct > foodTarget ? "Food Over" : null,
-            d.bevPct > bevTarget ? "Bev Over" : null,
-            d.laborPct > laborTarget ? "Labor Over" : null
-          ].filter(Boolean).join(", ") || "On Target"
-        : "No Actuals";
+    const alert = d.hasActuals
+      ? [
+          d.foodPct > foodTarget ? "Food Over" : null,
+          d.bevPct > bevTarget ? "Bev Over" : null,
+          d.laborPct > laborTarget ? "Labor Over" : null
+        ].filter(Boolean).join(", ") || "On Target"
+      : "No Actuals";
 
-      return [
-        d.date,
-        formatCurrency(forecastSales),
-        actualSales !== null ? formatCurrency(actualSales) : "",
-        food,
-        bev,
-        labor,
-        alert
-      ];
-    })
-  ];
+    return [
+      d.date,
+      formatCurrency(forecastSales),
+      d.hasActuals ? formatCurrency(actualSales) : "",
+      food,
+      bev,
+      labor,
+      alert
+    ];
+  })
+];
 
   // Totals and averages
   const actualRows = combinedData.filter(d => d.hasActuals);
