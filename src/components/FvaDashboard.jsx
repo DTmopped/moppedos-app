@@ -270,12 +270,13 @@ const exportToCSV = () => {
     ""
   ]);
 
-  // Download logic
+  // ✅ Download logic
   const csv = rows.map(row => row.join(",")).join("\n");
   const blob = new Blob([csv], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
+  const today = new Date().toISOString().split("T")[0]; // ✅ Added this
   link.download = `fva-dashboard-${today}.csv`;
   link.click();
   URL.revokeObjectURL(url);
