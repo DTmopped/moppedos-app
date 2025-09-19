@@ -22,7 +22,7 @@ const BriefingFormField = ({
 }) => {
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id} className="text-sm font-medium text-foreground/90">
+      <Label htmlFor={id} className="text-sm font-medium text-gray-700">
         {label}
       </Label>
 
@@ -32,14 +32,14 @@ const BriefingFormField = ({
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="bg-background/70 dark:bg-background/60 placeholder:text-muted-foreground/80 focus:border-primary text-sm"
-          style={{ minHeight: minHeight || "80px" }}
+          className="w-full p-3 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-800 placeholder-gray-400 text-sm resize-none"
+          style={{ minHeight: minHeight || "100px" }}
         />
       ) : type === "select" ? (
         <Select value={value} onValueChange={onChange}>
           <SelectTrigger
             id={id}
-            className="w-full bg-background/70 dark:bg-background/60 focus:border-primary text-sm"
+            className="w-full p-3 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-800 text-sm"
           >
             <SelectValue placeholder={placeholder || "Select an option"} />
           </SelectTrigger>
@@ -58,7 +58,7 @@ const BriefingFormField = ({
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="bg-background/70 dark:bg-background/60 placeholder:text-muted-foreground/80 focus:border-primary text-sm"
+          className="w-full p-3 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-800 placeholder-gray-400 text-sm"
         />
       )}
     </div>
