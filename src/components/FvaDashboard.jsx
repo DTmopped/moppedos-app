@@ -216,15 +216,21 @@ const renderLastMonthCards = () => {
   };
 
 const exportToCSV = () => {
+  const { spendPerGuest } = adminSettings;
+
   const formatCurrency = value =>
-    typeof value === "number" ? `$${value.toLocaleString()}` : "";
+    typeof value === "number" ? `$${value.toFixed(2)}` : "";
 
   const rows = [
     ["Date", "Forecasted Sales", "Actual Sales", "Food Cost %", "Bev Cost %", "Labor Cost %", "Alerts"],
     ...combinedData.map(d => {
+      const forecastSales = d.forecastSales * spendPerGuest;
+      const actualSales = d.hasActuals ? d.actualSales * spendPerGuest : null;
+
       const food = d.hasActuals ? `${(d.foodPct * 100).toFixed(1)}%` : "";
       const bev = d.hasActuals ? `${(d.bevPct * 100).toFixed(1)}%` : "";
       const labor = d.hasActuals ? `${(d.laborPct * 100).toFixed(1)}%` : "";
+
       const alert = d.hasActuals
         ? [
             d.foodPct > foodTarget ? "Food Over" : null,
@@ -235,8 +241,8 @@ const exportToCSV = () => {
 
       return [
         d.date,
-        formatCurrency(d.forecastSales),
-        d.hasActuals ? formatCurrency(d.actualSales) : "",
+        formatCurrency(forecastSales),
+        d.hasActuals ? formatCurrency(actualSales) : "",
         food,
         bev,
         labor,
@@ -247,8 +253,8 @@ const exportToCSV = () => {
 
   // Totals and averages
   const actualRows = combinedData.filter(d => d.hasActuals);
-  const totalForecast = combinedData.reduce((sum, d) => sum + (d.forecastSales || 0), 0);
-  const totalActual = actualRows.reduce((sum, d) => sum + d.actualSales, 0);
+  const totalForecast = combinedData.reduce((sum, d) => sum + (d.forecastSales * spendPerGuest || 0), 0);
+  const totalActual = actualRows.reduce((sum, d) => sum + d.actualSales * spendPerGuest, 0);
   const avgFoodPct = actualRows.length ? actualRows.reduce((sum, d) => sum + d.foodPct, 0) / actualRows.length : 0;
   const avgBevPct = actualRows.length ? actualRows.reduce((sum, d) => sum + d.bevPct, 0) / actualRows.length : 0;
   const avgLaborPct = actualRows.length ? actualRows.reduce((sum, d) => sum + d.laborPct, 0) / actualRows.length : 0;
@@ -274,14 +280,6 @@ const exportToCSV = () => {
   link.click();
   URL.revokeObjectURL(url);
 };
-
-  return (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.5 }}
-    className="space-y-6"
-  >
     {/* Top Control Bar */}
     <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
       <div className="flex items-center gap-2">
