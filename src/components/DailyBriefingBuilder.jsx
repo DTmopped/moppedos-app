@@ -43,13 +43,18 @@ const DailyBriefingBuilder = () => {
 
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold text-foreground mb-2">Daily Briefing Sheet</h1>
-      <p className="text-lg text-muted-foreground mb-6">
-        🌟 <strong>Align the team.</strong> 📈 <strong>Track progress.</strong> 💬 <strong>Share wins.</strong>
-      </p>
+      <div className="flex justify-between items-center mb-4">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Daily Briefing Sheet</h1>
+          <p className="text-lg text-muted-foreground">
+            🌟 <strong>Align the team.</strong> 📈 <strong>Track progress.</strong> 💬 <strong>Share wins.</strong>
+          </p>
+        </div>
+        <Button onClick={generateBriefing} className="h-10">✅ Generate Briefing</Button>
+      </div>
 
-      {/* Top Row: Date + MOD + Generate */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 items-end">
+      {/* Top Row: Date + MOD */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div>
           <Label>Date</Label>
           <Input
@@ -67,11 +72,6 @@ const DailyBriefingBuilder = () => {
             placeholder="Manager Name"
             className="rounded-md border border-gray-300 bg-white text-black placeholder:text-gray-400 shadow-inner"
           />
-        </div>
-        <div className="flex justify-start md:justify-end">
-          <Button onClick={generateBriefing} className="w-full md:w-auto">
-            ✅ Generate Briefing
-          </Button>
         </div>
       </div>
 
@@ -94,6 +94,12 @@ const DailyBriefingBuilder = () => {
               placeholder="🌙 Dinner (PM) — e.g. 120"
               className="rounded-md border-gray-300 bg-white text-black placeholder:text-gray-400 shadow-inner"
             />
+            <Input
+              value={forecastedSales}
+              onChange={(e) => setForecastedSales(e.target.value)}
+              placeholder="💰 Forecasted Sales ($)"
+              className="rounded-md border-gray-300 bg-white text-black placeholder:text-gray-400 shadow-inner"
+            />
             <Textarea
               value={forecastNotes}
               onChange={(e) => setForecastNotes(e.target.value)}
@@ -108,12 +114,6 @@ const DailyBriefingBuilder = () => {
             <CardTitle className="flex items-center gap-2 text-lg">📅 Yesterday’s Recap</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Input
-              value={forecastedSales}
-              onChange={(e) => setForecastedSales(e.target.value)}
-              placeholder="Forecasted Sales ($)"
-              className="rounded-md border-gray-300 bg-white text-black placeholder:text-gray-400 shadow-inner"
-            />
             <Input
               value={actualSales}
               onChange={(e) => setActualSales(e.target.value)}
