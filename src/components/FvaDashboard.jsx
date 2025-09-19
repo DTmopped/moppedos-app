@@ -219,28 +219,45 @@ const exportToCSV = () => {
   const formatCurrency = value =>
     typeof value === "number" ? `$${value.toLocaleString()}` : "";
 
+  const formatPercent = value =>
+    typeof value === "number" ? `${(value * 100).toFixed(1)}%` : "";
+
   const rows = [
-    ["Date", "Forecasted Sales", "Actual Sales", "Food Cost %", "Bev Cost %", "Labor Cost %", "Alerts"],
+    ["Date", "Forecasted Sales", "Actual Sales", "Variance ($)", "Variance (%)", "Food Cost %", "Bev Cost %", "Labor Cost %", "Alerts"],
     ...combinedData.map(d => {
+      const forecastSales = d.forecastSales;
+      const actualSales = d.hasActuals ? d.actualSales : null;
+
+      const variance = d.hasActuals ? actualSales - forecastSales : null;
+      const variancePct = d.hasActuals && forecastSales !== 0 ? (variance / forecastSales) : null;
+
+      const food = d.hasActuals ? formatPercent(d.foodPct) : "";
+      const bev = d.hasActuals ? formatPercent(d.bevPct) : "";
+      const labor = d.hasActuals ? formatPercent(d.laborPct) : "";
+
+      const alert = d.hasActuals
+        ? [
+            d.foodPct > foodTarget ? "Food Over" : null,
+            d.bevPct > bevTarget ? "Bev Over" : null,
+            d.laborPct > laborTarget ? "Labor Over" : null
+          ].filter(Boolean).join(", ") || "On Target"
+        : "No Actuals";
+
       return [
         d.date,
-        formatCurrency(d.forecastSales), // already in dollars
-        d.hasActuals ? formatCurrency(d.actualSales) : "",
-        d.hasActuals ? `${(d.foodPct * 100).toFixed(1)}%` : "",
-        d.hasActuals ? `${(d.bevPct * 100).toFixed(1)}%` : "",
-        d.hasActuals ? `${(d.laborPct * 100).toFixed(1)}%` : "",
-        d.hasActuals
-          ? [
-              d.foodPct > foodTarget ? "Food Over" : null,
-              d.bevPct > bevTarget ? "Bev Over" : null,
-              d.laborPct > laborTarget ? "Labor Over" : null,
-            ].filter(Boolean).join(", ") || "On Target"
-          : "No Actuals"
+        formatCurrency(forecastSales),
+        d.hasActuals ? formatCurrency(actualSales) : "",
+        d.hasActuals ? formatCurrency(variance) : "",
+        d.hasActuals ? `${(variancePct * 100).toFixed(1)}%` : "",
+        food,
+        bev,
+        labor,
+        alert
       ];
     })
   ];
 
-  // ⬇️ Add a TOTAL / AVG summary row
+  // Totals and averages row
   const actualRows = combinedData.filter(d => d.hasActuals);
   const totalForecast = combinedData.reduce((sum, d) => sum + (d.forecastSales || 0), 0);
   const totalActual = actualRows.reduce((sum, d) => sum + d.actualSales, 0);
@@ -248,26 +265,29 @@ const exportToCSV = () => {
   const avgBevPct = actualRows.length ? actualRows.reduce((sum, d) => sum + d.bevPct, 0) / actualRows.length : 0;
   const avgLaborPct = actualRows.length ? actualRows.reduce((sum, d) => sum + d.laborPct, 0) / actualRows.length : 0;
 
+  const totalVariance = totalActual - totalForecast;
+  const totalVariancePct = totalForecast !== 0 ? totalVariance / totalForecast : 0;
+
   rows.push([
     "TOTAL / AVG",
     formatCurrency(totalForecast),
     formatCurrency(totalActual),
-    `${(avgFoodPct * 100).toFixed(1)}%`,
-    `${(avgBevPct * 100).toFixed(1)}%`,
-    `${(avgLaborPct * 100).toFixed(1)}%`,
-    "",
+    formatCurrency(totalVariance),
+    `${(totalVariancePct * 100).toFixed(1)}%`,
+    formatPercent(avgFoodPct),
+    formatPercent(avgBevPct),
+    formatPercent(avgLaborPct),
+    ""
   ]);
 
-  // ⬇️ Convert to CSV and download
-  const today = new Date().toISOString().split("T")[0];
-  const csv = rows.map(row => row.join(",")).join("\n");
-  const blob = new Blob([csv], { type: "text/csv" });
+  // Download CSV
+  const csvContent = rows.map(e => e.join(",")).join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
-  link.href = url;
-  link.download = `fva-dashboard-${today}.csv`;
+  link.setAttribute("href", url);
+  link.setAttribute("download", `fva-dashboard-${new Date().toISOString().slice(0, 10)}.csv`);
   link.click();
-  URL.revokeObjectURL(url);
 };
   return (
   <motion.div
