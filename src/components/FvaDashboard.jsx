@@ -539,7 +539,6 @@ const exportToCSV = () => {
           </p>
         </CardContent>
       </Card>
-    </motion.div>
   );
 };
 
