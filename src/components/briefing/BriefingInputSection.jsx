@@ -39,7 +39,7 @@ const BriefingInputSection = ({
   const IconComponent = iconMap[icon] || Info;
 
   return (
-    <Card className="bg-white dark:bg-background border border-border/30 shadow-sm">
+    <Card className="bg-white border border-border/30 shadow-sm rounded-lg">
       <CardHeader>
         <CardTitle
           className={`text-lg text-foreground flex items-center gap-2 ${iconColor || "text-primary"}`}
@@ -53,26 +53,23 @@ const BriefingInputSection = ({
           </CardDescription>
         )}
       </CardHeader>
+
       <CardContent className="space-y-4">
-        {fields.map((field) =>
-          field.type === "textarea" ? (
-            <div key={field.id} className="space-y-1">
-              <label className="text-sm text-muted-foreground flex items-center gap-1">
-                ✏️ {field.label}
-              </label>
+        {fields.map((field) => (
+          <div key={field.id} className="space-y-1">
+            <label className="text-sm text-muted-foreground flex items-center gap-1">
+              <Pencil size={14} className="text-muted-foreground" />
+              {field.label}
+            </label>
+            {field.type === "textarea" ? (
               <Textarea
                 placeholder={field.placeholder}
                 value={field.value}
                 onChange={(e) => field.onChange(e.target.value)}
-                className="bg-transparent shadow-sm border border-border/40 rounded-md placeholder:text-muted-foreground text-sm focus:ring-1 focus:ring-primary focus:outline-none"
+                className="bg-white text-sm placeholder:text-muted-foreground border border-border/40 shadow-sm rounded-md focus:ring-1 focus:ring-primary focus:outline-none"
                 style={{ minHeight: field.minHeight || "80px" }}
               />
-            </div>
-          ) : (
-            <div key={field.id} className="space-y-1">
-              <label className="text-sm text-muted-foreground flex items-center gap-1">
-                ✏️ {field.label}
-              </label>
+            ) : (
               <Input
                 type={field.type}
                 placeholder={field.placeholder}
@@ -81,13 +78,11 @@ const BriefingInputSection = ({
                   field.isStatic ? undefined : (e) => field.onChange(e.target.value)
                 }
                 readOnly={field.readOnly}
-                className={`bg-transparent shadow-sm border border-border/40 rounded-md placeholder:text-muted-foreground text-sm focus:ring-1 focus:ring-primary focus:outline-none ${
-                  field.isStatic ? "text-muted-foreground" : ""
-                }`}
+                className="bg-white text-sm placeholder:text-muted-foreground border border-border/40 shadow-sm rounded-md focus:ring-1 focus:ring-primary focus:outline-none"
               />
-            </div>
-          )
-        )}
+            )}
+          </div>
+        ))}
       </CardContent>
     </Card>
   );
