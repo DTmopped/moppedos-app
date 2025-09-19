@@ -16,6 +16,7 @@ import {
   PartyPopper,
   Award,
   Info,
+  Pencil,
 } from "lucide-react";
 
 const iconMap = {
@@ -38,46 +39,53 @@ const BriefingInputSection = ({
   const IconComponent = iconMap[icon] || Info;
 
   return (
-    <Card className="bg-white border border-gray-200 shadow-sm rounded-lg">
+    <Card className="bg-white dark:bg-background border border-border/30 shadow-sm">
       <CardHeader>
         <CardTitle
-          className={`text-lg flex items-center gap-2 ${iconColor || "text-blue-600"}`}
+          className={`text-lg text-foreground flex items-center gap-2 ${iconColor || "text-primary"}`}
         >
-          <IconComponent size={20} />
+          <IconComponent size={20} className="mr-1" />
           {title}
         </CardTitle>
         {description && (
-          <CardDescription className="text-sm text-gray-500">
+          <CardDescription className="text-xs text-muted-foreground">
             {description}
           </CardDescription>
         )}
       </CardHeader>
-
       <CardContent className="space-y-4">
         {fields.map((field) =>
           field.type === "textarea" ? (
-            <Textarea
-              key={field.id}
-              placeholder={field.placeholder}
-              value={field.value}
-              onChange={(e) => field.onChange(e.target.value)}
-              className="w-full p-3 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-800 placeholder-gray-400 text-sm resize-none"
-              style={{ minHeight: field.minHeight || "100px" }}
-            />
+            <div key={field.id} className="space-y-1">
+              <label className="text-sm text-muted-foreground flex items-center gap-1">
+                ✏️ {field.label}
+              </label>
+              <Textarea
+                placeholder={field.placeholder}
+                value={field.value}
+                onChange={(e) => field.onChange(e.target.value)}
+                className="bg-transparent shadow-sm border border-border/40 rounded-md placeholder:text-muted-foreground text-sm focus:ring-1 focus:ring-primary focus:outline-none"
+                style={{ minHeight: field.minHeight || "80px" }}
+              />
+            </div>
           ) : (
-            <Input
-              key={field.id}
-              type={field.type}
-              placeholder={field.placeholder}
-              value={field.value}
-              onChange={
-                field.isStatic ? undefined : (e) => field.onChange(e.target.value)
-              }
-              readOnly={field.readOnly}
-              className={`w-full p-3 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800 placeholder-gray-400 text-sm ${
-                field.isStatic ? "text-gray-400" : ""
-              }`}
-            />
+            <div key={field.id} className="space-y-1">
+              <label className="text-sm text-muted-foreground flex items-center gap-1">
+                ✏️ {field.label}
+              </label>
+              <Input
+                type={field.type}
+                placeholder={field.placeholder}
+                value={field.value}
+                onChange={
+                  field.isStatic ? undefined : (e) => field.onChange(e.target.value)
+                }
+                readOnly={field.readOnly}
+                className={`bg-transparent shadow-sm border border-border/40 rounded-md placeholder:text-muted-foreground text-sm focus:ring-1 focus:ring-primary focus:outline-none ${
+                  field.isStatic ? "text-muted-foreground" : ""
+                }`}
+              />
+            </div>
           )
         )}
       </CardContent>
