@@ -25,7 +25,7 @@ export const DataProvider = ({ children }) => {
     localStorage.setItem("weeklyForecastResults", JSON.stringify(forecastData));
   }, [forecastData]);
 
-  const [isAdminMode, setIsAdminMode] = useState(() => {
+  const [isAdminMode, setIsAdminMode] = useState(false);
   const stored = localStorage.getItem('adminMode');
   // Default to false if nothing is stored
   return stored === null ? false : stored === 'true';
