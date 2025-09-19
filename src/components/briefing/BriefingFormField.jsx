@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Pencil } from "lucide-react";
 
 const BriefingFormField = ({
   id,
@@ -22,8 +23,8 @@ const BriefingFormField = ({
 }) => {
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id} className="text-sm font-medium text-gray-700">
-        {label}
+      <Label htmlFor={id} className="text-sm font-medium text-foreground/90 flex items-center gap-1">
+        ✏️ {label}
       </Label>
 
       {type === "textarea" ? (
@@ -32,14 +33,14 @@ const BriefingFormField = ({
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full p-3 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-800 placeholder-gray-400 text-sm resize-none"
-          style={{ minHeight: minHeight || "100px" }}
+          className="bg-transparent shadow-sm border border-border/40 rounded-md placeholder:text-muted-foreground text-sm focus:ring-1 focus:ring-primary focus:outline-none"
+          style={{ minHeight: minHeight || "80px" }}
         />
       ) : type === "select" ? (
         <Select value={value} onValueChange={onChange}>
           <SelectTrigger
             id={id}
-            className="w-full p-3 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-800 text-sm"
+            className="w-full bg-transparent shadow-sm border border-border/40 rounded-md text-sm focus:ring-1 focus:ring-primary"
           >
             <SelectValue placeholder={placeholder || "Select an option"} />
           </SelectTrigger>
@@ -58,7 +59,7 @@ const BriefingFormField = ({
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full p-3 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-800 placeholder-gray-400 text-sm"
+          className="bg-transparent shadow-sm border border-border/40 rounded-md placeholder:text-muted-foreground text-sm focus:ring-1 focus:ring-primary focus:outline-none"
         />
       )}
     </div>
