@@ -123,30 +123,34 @@ const PrintableFvaDashboard = ({ combinedData, printDate, targets, lastMonthSumm
         })}
       </div>
 
-      {lastMonthSummary && (
-        <div className="summary-row">
-          <div className="summary-cell">
-            <strong>Forecast Sales:</strong><br />
-            ${lastMonthSummary.total_forecast_sales.toLocaleString()}
-          </div>
-          <div className="summary-cell">
-            <strong>Actual Sales:</strong><br />
-            ${lastMonthSummary.total_actual_sales.toLocaleString()}
-          </div>
-          <div className="summary-cell">
-            <strong>Sales Variance %:</strong><br />
-            {salesVariance.toFixed(1)}%
-          </div>
-          <div className="summary-cell">
-            <strong>Avg Food Cost %:</strong><br />
-            {(lastMonthSummary.avg_food_cost_pct * 100).toFixed(1)}%
-          </div>
-          <div className="summary-cell">
-            <strong>Avg Labor Cost %:</strong><br />
-            {(lastMonthSummary.avg_labor_cost_pct * 100).toFixed(1)}%
-          </div>
-        </div>
-      )}
+     {lastMonthSummary && (
+  <div className="summary-row">
+    <div className="summary-cell">
+      <strong>Forecast Sales:</strong><br />
+      ${lastMonthSummary.total_forecast_sales.toLocaleString()}
+    </div>
+    <div className="summary-cell">
+      <strong>Actual Sales:</strong><br />
+      ${lastMonthSummary.total_actual_sales.toLocaleString()}
+    </div>
+    <div className="summary-cell">
+      <strong>Sales Variance %:</strong><br />
+      {salesVariance.toFixed(1)}%
+    </div>
+    <div className="summary-cell">
+      <strong>Avg Food Cost %:</strong><br />
+      {(lastMonthSummary.avg_food_cost_pct * 100).toFixed(1)}%
+    </div>
+    <div className="summary-cell">
+      <strong>Avg Bev Cost %:</strong><br />
+      {(lastMonthSummary.avg_bev_cost_pct * 100).toFixed(1)}%
+    </div>
+    <div className="summary-cell">
+      <strong>Avg Labor Cost %:</strong><br />
+      {(lastMonthSummary.avg_labor_cost_pct * 100).toFixed(1)}%
+    </div>
+  </div>
+)}
 
       <table>
         <thead>
