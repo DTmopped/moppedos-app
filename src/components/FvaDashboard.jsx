@@ -259,7 +259,6 @@ const exportToCSV = () => {
   const avgBevPct = actualRows.length ? actualRows.reduce((sum, d) => sum + d.bevPct, 0) / actualRows.length : 0;
   const avgLaborPct = actualRows.length ? actualRows.reduce((sum, d) => sum + d.laborPct, 0) / actualRows.length : 0;
 
-  // Final row
   rows.push([
     "TOTAL / AVG",
     formatCurrency(totalForecast),
@@ -270,48 +269,19 @@ const exportToCSV = () => {
     ""
   ]);
 
+  // ✅ Moved 'today' inside here for accurate timestamp
+  const today = new Date().toISOString().split("T")[0];
+
   // ✅ Download logic
   const csv = rows.map(row => row.join(",")).join("\n");
   const blob = new Blob([csv], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  const today = new Date().toISOString().split("T")[0]; // ✅ Added this
   link.download = `fva-dashboard-${today}.csv`;
   link.click();
   URL.revokeObjectURL(url);
 };
-    {/* Top Control Bar */}
-    <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-      <div className="flex items-center gap-2">
-        <Button
-          onClick={() => setIsAdminMode(prev => !prev)}
-          variant="outline"
-          className={cn(
-            "text-sm font-medium",
-            isAdminMode ? "bg-green-100 border-green-500 text-green-700" : "bg-slate-100 border-slate-300 text-slate-600"
-          )}
-        >
-          {isAdminMode ? "Admin Mode: ON" : "Admin Mode: OFF"}
-        </Button>
-
-        <Button
-          onClick={() => setShowYTD(prev => !prev)}
-          variant="outline"
-          className="text-sm border-gray-300 hover:bg-gray-100"
-        >
-          {showYTD ? "Hide YTD Metrics" : "Show YTD Metrics"}
-        </Button>
-
-        <Button
-          onClick={() => setShowLastMonth(prev => !prev)}
-          variant="outline"
-          className="text-sm border-gray-300 hover:bg-gray-100"
-        >
-          {showLastMonth ? "Hide Last Month Summary" : "Toggle Last Month Summary"}
-        </Button>
-      </div>
-    </div>
 
     {/* ✅ Render Last Month Cards if toggled */}
     {showLastMonth && renderLastMonthCards()}
