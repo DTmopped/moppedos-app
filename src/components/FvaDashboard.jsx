@@ -222,34 +222,25 @@ const exportToCSV = () => {
   const rows = [
     ["Date", "Forecasted Sales", "Actual Sales", "Food Cost %", "Bev Cost %", "Labor Cost %", "Alerts"],
     ...combinedData.map(d => {
-      const forecastSales = d.forecastSales; // ALREADY in dollars
-      const actualSales = d.hasActuals ? d.actualSales : null;
-
-      const food = d.hasActuals ? `${(d.foodPct * 100).toFixed(1)}%` : "";
-      const bev = d.hasActuals ? `${(d.bevPct * 100).toFixed(1)}%` : "";
-      const labor = d.hasActuals ? `${(d.laborPct * 100).toFixed(1)}%` : "";
-
-      const alert = d.hasActuals
-        ? [
-            d.foodPct > foodTarget ? "Food Over" : null,
-            d.bevPct > bevTarget ? "Bev Over" : null,
-            d.laborPct > laborTarget ? "Labor Over" : null
-          ].filter(Boolean).join(", ") || "On Target"
-        : "No Actuals";
-
       return [
         d.date,
-        formatCurrency(forecastSales),
-        d.hasActuals ? formatCurrency(actualSales) : "",
-        food,
-        bev,
-        labor,
-        alert
+        formatCurrency(d.forecastSales), // already in dollars
+        d.hasActuals ? formatCurrency(d.actualSales) : "",
+        d.hasActuals ? `${(d.foodPct * 100).toFixed(1)}%` : "",
+        d.hasActuals ? `${(d.bevPct * 100).toFixed(1)}%` : "",
+        d.hasActuals ? `${(d.laborPct * 100).toFixed(1)}%` : "",
+        d.hasActuals
+          ? [
+              d.foodPct > foodTarget ? "Food Over" : null,
+              d.bevPct > bevTarget ? "Bev Over" : null,
+              d.laborPct > laborTarget ? "Labor Over" : null,
+            ].filter(Boolean).join(", ") || "On Target"
+          : "No Actuals"
       ];
     })
   ];
 
-  // Totals and averages (also no multiplication)
+  // ⬇️ Add a TOTAL / AVG summary row
   const actualRows = combinedData.filter(d => d.hasActuals);
   const totalForecast = combinedData.reduce((sum, d) => sum + (d.forecastSales || 0), 0);
   const totalActual = actualRows.reduce((sum, d) => sum + d.actualSales, 0);
@@ -267,6 +258,7 @@ const exportToCSV = () => {
     "",
   ]);
 
+  // ⬇️ Convert to CSV and download
   const today = new Date().toISOString().split("T")[0];
   const csv = rows.map(row => row.join(",")).join("\n");
   const blob = new Blob([csv], { type: "text/csv" });
