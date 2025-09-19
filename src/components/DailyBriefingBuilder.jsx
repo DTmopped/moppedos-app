@@ -1,132 +1,154 @@
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Printer } from 'lucide-react';
-import { triggerPrint } from '@/components/prep/PrintUtils';
-import PrintableBriefingSheet from './PrintableBriefingSheet';
-import { supabase } from '@/supabaseClient';
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 
 const DailyBriefingBuilder = () => {
-  const [amGuests, setAmGuests] = useState('');
-  const [pmGuests, setPmGuests] = useState('');
-  const [forecasted, setForecasted] = useState('');
-  const [actual, setActual] = useState('');
-  const [varianceNotes, setVarianceNotes] = useState('');
-  const [shoutOut, setShoutOut] = useState('');
-  const [callOut, setCallOut] = useState('');
-  const [teamNote, setTeamNote] = useState('');
-  const [mod, setMod] = useState('');
-  const [date] = useState(new Date().toLocaleDateString('en-US', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-  }));
+  const [lunch, setLunch] = useState("");
+  const [dinner, setDinner] = useState("");
+  const [forecastedSales, setForecastedSales] = useState("");
+  const [actualSales, setActualSales] = useState("");
+  const [varianceNotes, setVarianceNotes] = useState("");
+  const [shoutout, setShoutout] = useState("");
+  const [reminders, setReminders] = useState("");
+  const [mindset, setMindset] = useState("");
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [manager, setManager] = useState("");
 
-  useEffect(() => {
-    const fetchForecast = async () => {
-      const todayKey = new Date().toISOString().slice(0, 10);
-      const { data, error } = await supabase
-        .from('forecasts')
-        .select('date, lunch_guests, dinner_guests, forecasted_sales')
-        .eq('date', todayKey)
-        .single();
-
-      if (!error && data) {
-        setAmGuests(data.lunch_guests?.toString() || '');
-        setPmGuests(data.dinner_guests?.toString() || '');
-        setForecasted(data.forecasted_sales?.toString() || '');
-      }
-    };
-    fetchForecast();
-  }, []);
-
-  const calculateVariance = (f, a) => {
-    const forecast = parseFloat(f);
-    const actualVal = parseFloat(a);
-    if (isNaN(forecast) || isNaN(actualVal) || forecast === 0) return 'N/A';
-    return `${(((actualVal - forecast) / forecast) * 100).toFixed(1)}%`;
-  };
-
-  const handleGenerate = () => {
-    const printData = {
-      lunch: amGuests,
-      dinner: pmGuests,
-      forecast: forecasted,
-      actual,
-      variance: calculateVariance(forecasted, actual),
+  const generateBriefing = () => {
+    const briefing = {
+      lunch,
+      dinner,
+      forecastedSales,
+      actualSales,
       varianceNotes,
-      manager: mod,
-      notes: teamNote,
-      shoutouts: shoutOut,
-      callouts: callOut,
+      shoutout,
+      reminders,
+      mindset,
       date,
+      manager,
     };
-
-    triggerPrint(
-      (props) => <PrintableBriefingSheet {...props} />, 
-      printData, 
-      'Daily Briefing Sheet'
-    );
+    console.log("Generated Briefing:", briefing);
+    // You can POST briefing to your backend or trigger download/print
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-foreground">Daily Briefing Sheet</h1>
-        <Button onClick={handleGenerate} className="btn-gradient">
-          <Printer className="mr-2 h-4 w-4" /> Generate Briefing
-        </Button>
-      </div>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold text-foreground mb-2">Daily Briefing Sheet</h1>
+      <p className="text-muted-foreground mb-6 text-sm">
+        ☀️ Align the team. 📈 Track progress. 💬 Share wins.
+      </p>
 
-      {/* Section 1: Forecast and Sales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="bg-card/80 border border-border/50 shadow-sm">
-          <CardHeader><CardTitle>📊 Forecasted Volume</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
-            <Input value={amGuests} onChange={(e) => setAmGuests(e.target.value)} placeholder="🌞 Lunch (AM)" type="number" />
-            <Input value={pmGuests} onChange={(e) => setPmGuests(e.target.value)} placeholder="🌙 Dinner (PM)" type="number" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              📊 Forecasted Volume
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Input
+              value={lunch}
+              onChange={(e) => setLunch(e.target.value)}
+              placeholder="🌞 Lunch (AM) — e.g. 150"
+            />
+            <Input
+              value={dinner}
+              onChange={(e) => setDinner(e.target.value)}
+              placeholder="🌙 Dinner (PM) — e.g. 120"
+            />
           </CardContent>
         </Card>
 
-        <Card className="bg-card/80 border border-border/50 shadow-sm">
-          <CardHeader><CardTitle>💰 Yesterday’s Forecast vs Actual</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
-            <Input value={forecasted} onChange={(e) => setForecasted(e.target.value)} placeholder="Forecasted Sales ($)" type="number" />
-            <Input value={actual} onChange={(e) => setActual(e.target.value)} placeholder="Actual Sales ($)" type="number" />
-            <Textarea value={varianceNotes} onChange={(e) => setVarianceNotes(e.target.value)} placeholder="Variance Notes (e.g. team issues, early start...)" />
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              💵 Yesterday's Forecast vs Actual
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Input
+              value={forecastedSales}
+              onChange={(e) => setForecastedSales(e.target.value)}
+              placeholder="Forecasted Sales ($)"
+            />
+            <Input
+              value={actualSales}
+              onChange={(e) => setActualSales(e.target.value)}
+              placeholder="Actual Sales ($)"
+            />
+            <Textarea
+              value={varianceNotes}
+              onChange={(e) => setVarianceNotes(e.target.value)}
+              placeholder="✏️ Variance Notes (e.g. team issues, early start…)"
+            />
           </CardContent>
         </Card>
       </div>
 
-      {/* Section 2: Team Messaging */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-card/80 border border-border/50 shadow-sm">
-          <CardHeader><CardTitle>🎉 Shout-Out</CardTitle></CardHeader>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              🎉 Shout-Out
+            </CardTitle>
+          </CardHeader>
           <CardContent>
-            <Textarea value={shoutOut} onChange={(e) => setShoutOut(e.target.value)} placeholder="Recognize a team member or win..." />
+            <Textarea
+              value={shoutout}
+              onChange={(e) => setShoutout(e.target.value)}
+              placeholder="Recognize a team member or win..."
+            />
           </CardContent>
         </Card>
 
-        <Card className="bg-card/80 border border-border/50 shadow-sm">
-          <CardHeader><CardTitle>📣 Team Reminders</CardTitle></CardHeader>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              📣 Team Reminders
+            </CardTitle>
+          </CardHeader>
           <CardContent>
-            <Textarea value={callOut} onChange={(e) => setCallOut(e.target.value)} placeholder="Important notes or operational callouts..." />
+            <Textarea
+              value={reminders}
+              onChange={(e) => setReminders(e.target.value)}
+              placeholder="Important notes or operational callouts..."
+            />
           </CardContent>
         </Card>
 
-        <Card className="bg-card/80 border border-border/50 shadow-sm">
-          <CardHeader><CardTitle>📝 Goals & Mindset</CardTitle></CardHeader>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              🎯 Goals & Mindset
+            </CardTitle>
+          </CardHeader>
           <CardContent>
-            <Textarea value={teamNote} onChange={(e) => setTeamNote(e.target.value)} placeholder="Today's message to the team..." />
+            <Textarea
+              value={mindset}
+              onChange={(e) => setMindset(e.target.value)}
+              placeholder="Today's message to the team..."
+            />
           </CardContent>
         </Card>
       </div>
 
-      {/* Section 3: Footer */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-        <Input value={date} readOnly placeholder="Date" />
-        <Input value={mod} onChange={(e) => setMod(e.target.value)} placeholder="🧑 MOD / Lead" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div>
+          <Label>Date</Label>
+          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        </div>
+        <div>
+          <Label>MOD / Lead</Label>
+          <Input value={manager} onChange={(e) => setManager(e.target.value)} placeholder="Manager Name" />
+        </div>
       </div>
+
+      <Button onClick={generateBriefing} className="w-full md:w-auto">
+        ✅ Generate Briefing
+      </Button>
     </div>
   );
 };
