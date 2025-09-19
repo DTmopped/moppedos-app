@@ -154,15 +154,9 @@ const PrintableFvaDashboard = ({ combinedData, printDate, targets, lastMonthSumm
             <th>Date</th>
             <th className="text-right">Forecasted Sales ($)</th>
             <th className="text-right">Actual Sales ($)</th>
-            <th className="text-right">
-              Food Cost % (T: {(targets.foodTarget * 100).toFixed(0)}%)
-            </th>
-            <th className="text-right">
-              Bev Cost % (T: {(targets.bevTarget * 100).toFixed(0)}%)
-            </th>
-            <th className="text-right">
-              Labor Cost % (T: {(targets.laborTarget * 100).toFixed(0)}%)
-            </th>
+            <th className="text-right">Food Cost (F / A / $)</th>
+            <th className="text-right">Bev Cost (F / A / $)</th>
+            <th className="text-right">Labor Cost (F / A / $)</th>
             <th>Alerts</th>
           </tr>
         </thead>
@@ -171,79 +165,40 @@ const PrintableFvaDashboard = ({ combinedData, printDate, targets, lastMonthSumm
             const alertsText = [];
 
             if (day.hasActuals) {
-              if (day.foodPct > targets.foodTarget)
-                alertsText.push({ text: "Food Over", type: "error" });
-              if (day.bevPct > targets.bevTarget)
-                alertsText.push({ text: "Bev Over", type: "error" });
-              if (day.laborPct > targets.laborTarget)
-                alertsText.push({ text: "Labor Over", type: "error" });
+              if (day.foodPct > targets.foodTarget) alertsText.push({ text: "Food Over", type: "error" });
+              if (day.bevPct > targets.bevTarget) alertsText.push({ text: "Bev Over", type: "error" });
+              if (day.laborPct > targets.laborTarget) alertsText.push({ text: "Labor Over", type: "error" });
             }
+
+            const renderPctLine = (forecast, actual, dollar, target) => {
+              if (!day.hasActuals) return <span className="alert-no-data">N/A</span>;
+              const className = getPrintClass(actual, target);
+              return (
+                <span className={`text-right ${className}`}>
+                  {(forecast * 100).toFixed(1)}% / {(actual * 100).toFixed(1)}% / ${dollar.toFixed(2)}
+                </span>
+              );
+            };
 
             return (
               <tr key={day.date + index}>
                 <td>{formatDateForPrint(day.date)}</td>
                 <td className="text-right">{day.forecastSales.toFixed(2)}</td>
                 <td className="text-right">
-                  {day.hasActuals ? (
-                    day.actualSales.toFixed(2)
-                  ) : (
-                    <span className="alert-no-data">N/A</span>
-                  )}
+                  {day.hasActuals ? day.actualSales.toFixed(2) : <span className="alert-no-data">N/A</span>}
                 </td>
-                <td
-                  className={`text-right ${
-                    day.hasActuals
-                      ? getPrintClass(day.foodPct, targets.foodTarget)
-                      : ""
-                  }`}
-                >
-                  {day.hasActuals ? (
-                    `${(day.foodPct * 100).toFixed(1)}%`
-                  ) : (
-                    <span className="alert-no-data">N/A</span>
-                  )}
-                </td>
-                <td
-                  className={`text-right ${
-                    day.hasActuals
-                      ? getPrintClass(day.bevPct, targets.bevTarget)
-                      : ""
-                  }`}
-                >
-                  {day.hasActuals ? (
-                    `${(day.bevPct * 100).toFixed(1)}%`
-                  ) : (
-                    <span className="alert-no-data">N/A</span>
-                  )}
-                </td>
-                <td
-                  className={`text-right ${
-                    day.hasActuals
-                      ? getPrintClass(day.laborPct, targets.laborTarget)
-                      : ""
-                  }`}
-                >
-                  {day.hasActuals ? (
-                    `${(day.laborPct * 100).toFixed(1)}%`
-                  ) : (
-                    <span className="alert-no-data">N/A</span>
-                  )}
-                </td>
+                <td>{renderPctLine(day.foodForecastPct, day.foodPct, day.foodDollar, targets.foodTarget)}</td>
+                <td>{renderPctLine(day.bevForecastPct, day.bevPct, day.bevDollar, targets.bevTarget)}</td>
+                <td>{renderPctLine(day.laborForecastPct, day.laborPct, day.laborDollar, targets.laborTarget)}</td>
                 <td>
                   {!day.hasActuals ? (
                     <span className="alert-no-data">No Actuals</span>
                   ) : alertsText.length === 0 ? (
-                    <span>
-                      <span className="alert-icon alert-success"></span>On Target
-                    </span>
+                    <span><span className="alert-icon alert-success"></span>On Target</span>
                   ) : (
                     alertsText.map((alert, i) => (
                       <span key={i} style={{ display: "block" }}>
-                        <span
-                          className={`alert-icon ${
-                            alert.type === "error" ? "alert-error" : ""
-                          }`}
-                        ></span>
+                        <span className={`alert-icon ${alert.type === "error" ? "alert-error" : ""}`}></span>
                         {alert.text}
                       </span>
                     ))
