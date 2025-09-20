@@ -175,6 +175,7 @@ useEffect(() => {
     )}
   </CardContent>
 </Card>
+        </div> 
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card className="rounded-2xl shadow-md">
