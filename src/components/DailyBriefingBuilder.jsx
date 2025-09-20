@@ -60,27 +60,16 @@ const DailyBriefingBuilder = () => {
 useEffect(() => {
   const getQuote = async () => {
     try {
-      // Try primary API (ZenQuotes)
-      const res = await fetch("https://zenquotes.io/api/random");
-      const data = await res.json();
-      if (data && data[0]) {
-        setQuote(`"${data[0].q}" — ${data[0].a}`);
-        return;
-      }
-    } catch (err) {
-      console.warn("ZenQuotes failed, falling back to type.fit");
-    }
+      const { data, error } = await supabase.functions.invoke("get-daily-quote");
 
-    try {
-      // Fallback API (no CORS issues)
-      const res = await fetch("https://type.fit/api/quotes");
-      const data = await res.json();
-      const random = data[Math.floor(Math.random() * data.length)];
-      if (random) {
-        setQuote(`"${random.text}" — ${random.author || "Unknown"}`);
+      if (error) throw error;
+
+      if (data) {
+        setQuote(`"${data.text}" — ${data.author}`);
       }
     } catch (err) {
-      console.error("Both quote APIs failed.");
+      console.error("Failed to fetch daily quote:", err);
+      setQuote("\"The best way to predict the future is to create it.\" — Peter Drucker");
     }
   };
 
