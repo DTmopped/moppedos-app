@@ -163,11 +163,17 @@ useEffect(() => {
             <CardTitle className="text-lg">📅 Yesterday’s Recap</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {renderInput(actualSales, setActualSales, "Actual Sales ($)")}
-            {renderTextarea(varianceNotes, setVarianceNotes, "⚠️ What affected results? Team issues? Weather?")}
-          </CardContent>
-        </Card>
-      </div>
+  {renderInput(actualSales, setActualSales, "Actual Sales ($)")}
+  {renderTextarea(varianceNotes, setVarianceNotes, "⚠️ What affected results? Team issues? Weather?")}
+
+  {quote && (
+    <div className="bg-gray-50 border border-gray-200 rounded-xl shadow p-4">
+      <p className="text-blue-700 italic font-medium text-center leading-relaxed text-base md:text-lg">
+        ✨ {quote}
+      </p>
+    </div>
+  )}
+</CardContent>
 
      {/* ✨ Inspirational Quote - Soft floating design */}
 {quote && (
