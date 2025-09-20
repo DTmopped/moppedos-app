@@ -9,14 +9,17 @@ import { useUserAndLocation } from "@/hooks/useUserAndLocation";
 
 const DailyBriefingBuilder = () => {
   const { userId, locationId } = useUserAndLocation();
+
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [manager, setManager] = useState("");
+
   const [lunch, setLunch] = useState("");
   const [dinner, setDinner] = useState("");
   const [forecastedSales, setForecastedSales] = useState("");
   const [forecastNotes, setForecastNotes] = useState("");
   const [actualSales, setActualSales] = useState("");
   const [varianceNotes, setVarianceNotes] = useState("");
+
   const [shoutout, setShoutout] = useState("");
   const [reminders, setReminders] = useState("");
   const [mindset, setMindset] = useState("");
@@ -24,8 +27,8 @@ const DailyBriefingBuilder = () => {
   const [beverageItems, setBeverageItems] = useState("");
   const [events, setEvents] = useState("");
   const [repairNotes, setRepairNotes] = useState("");
-  const [foodImage, setFoodImage] = useState(null);
-  const [beverageImage, setBeverageImage] = useState(null);
+
+  const [quote, setQuote] = useState(null);
 
   useEffect(() => {
     const fetchBriefing = async () => {
@@ -35,6 +38,7 @@ const DailyBriefingBuilder = () => {
         .eq("location_id", locationId)
         .eq("date", date)
         .single();
+
       if (data) {
         setLunch(data.lunch || "");
         setDinner(data.dinner || "");
@@ -53,7 +57,20 @@ const DailyBriefingBuilder = () => {
       }
     };
 
+    const fetchQuote = async () => {
+      try {
+        const res = await fetch("https://zenquotes.io/api/random");
+        const json = await res.json();
+        if (Array.isArray(json)) {
+          setQuote(`${json[0].q} — ${json[0].a}`);
+        }
+      } catch (error) {
+        console.error("Failed to fetch quote", error);
+      }
+    };
+
     fetchBriefing();
+    fetchQuote();
   }, [date, locationId]);
 
   const saveBriefing = async () => {
@@ -79,29 +96,24 @@ const DailyBriefingBuilder = () => {
     alert("✅ Briefing Saved");
   };
 
-  const handleImageChange = (e, setter) => {
-    const file = e.target.files[0];
-    if (file) {
-      setter(URL.createObjectURL(file));
-    }
-  };
-
-  const renderTextarea = (value, setter, placeholder) => (
-    <Textarea
-      value={value}
-      onChange={(e) => setter(e.target.value)}
-      placeholder={placeholder}
-      className="bg-gray-100 text-black rounded-md shadow-inner w-full min-h-[80px]"
-    />
-  );
-
-  const renderInput = (value, setter, placeholder) => (
-    <Input
-      value={value}
-      onChange={(e) => setter(e.target.value)}
-      placeholder={placeholder}
-      className="bg-gray-100 text-black rounded-md shadow-inner w-full"
-    />
+  const renderInputBlock = (label, value, setValue, placeholder, isText = false) => (
+    <div className="relative">
+      {isText ? (
+        <Textarea
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder={placeholder}
+          className="bg-gray-100 text-black rounded-md shadow-inner w-full min-h-[80px]"
+        />
+      ) : (
+        <Input
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder={placeholder}
+          className="bg-gray-100 text-black rounded-md shadow-inner w-full"
+        />
+      )}
+    </div>
   );
 
   return (
@@ -111,7 +123,7 @@ const DailyBriefingBuilder = () => {
         🌟 <strong>Align the team.</strong> 📈 <strong>Track progress.</strong> 💬 <strong>Share wins.</strong>
       </p>
 
-      {/* Top row */}
+      {/* Date + MOD */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 items-end">
         <div>
           <Label>Date</Label>
@@ -119,104 +131,71 @@ const DailyBriefingBuilder = () => {
         </div>
         <div>
           <Label>MOD / Lead</Label>
-          {renderInput(manager, setManager, "Manager Name")}
+          <Input value={manager} onChange={(e) => setManager(e.target.value)} placeholder="Manager Name" />
         </div>
         <div className="flex justify-start md:justify-end">
           <Button onClick={saveBriefing} className="w-full md:w-auto">✅ Save Briefing</Button>
         </div>
       </div>
 
-      {/* Forecast & Recap */}
+      {/* Forecast + Recap */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <Card className="rounded-2xl shadow-md">
+        <Card className="rounded-2xl">
           <CardHeader>
             <CardTitle className="text-lg">📊 Today’s Forecast</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {renderInput(lunch, setLunch, "😊 Lunch (AM) — e.g. 150")}
-            {renderInput(dinner, setDinner, "🌙 Dinner (PM) — e.g. 120")}
-            {renderInput(forecastedSales, setForecastedSales, "💰 Forecasted Sales ($)")}
-            {renderTextarea(forecastNotes, setForecastNotes, "📝 Notes about today’s volume forecast...")}
+            {renderInputBlock("Lunch", lunch, setLunch, "😊 Lunch (AM) — e.g. 150")}
+            {renderInputBlock("Dinner", dinner, setDinner, "🌙 Dinner (PM) — e.g. 120")}
+            {renderInputBlock("Forecasted Sales", forecastedSales, setForecastedSales, "💰 Forecasted Sales ($)")}
+            {renderInputBlock("Notes", forecastNotes, setForecastNotes, "📝 Notes about today’s volume forecast...", true)}
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl shadow-md">
+        <Card className="rounded-2xl">
           <CardHeader>
             <CardTitle className="text-lg">📅 Yesterday’s Recap</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {renderInput(actualSales, setActualSales, "Actual Sales ($)")}
-            {renderTextarea(varianceNotes, setVarianceNotes, "⚠️ What affected results? Team issues? Weather?")}
+            {renderInputBlock("Actual Sales", actualSales, setActualSales, "Actual Sales ($)")}
+            {renderInputBlock("Variance", varianceNotes, setVarianceNotes, "⚠️ What affected results? Team issues? Weather?", true)}
+
+            {/* Inspirational Quote */}
+            {quote && (
+              <div className="mt-6 p-4 text-center italic text-muted-foreground text-sm rounded-xl shadow-sm bg-white border border-gray-200">
+                “{quote}”
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Team Updates */}
+      {/* Shoutout / Reminders / Mindset */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card className="rounded-2xl shadow-md">
-          <CardHeader>
-            <CardTitle>🎉 Shout-Out</CardTitle>
-          </CardHeader>
-          <CardContent>{renderTextarea(shoutout, setShoutout, "✏️ Recognize a team member or win...")}</CardContent>
-        </Card>
-        <Card className="rounded-2xl shadow-md">
-          <CardHeader>
-            <CardTitle>📣 Team Reminders</CardTitle>
-          </CardHeader>
-          <CardContent>{renderTextarea(reminders, setReminders, "✏️ Important notes or operational callouts...")}</CardContent>
-        </Card>
-        <Card className="rounded-2xl shadow-md">
-          <CardHeader>
-            <CardTitle>🎯 Goals & Mindset</CardTitle>
-          </CardHeader>
-          <CardContent>{renderTextarea(mindset, setMindset, "✏️ Today's message to the team...")}</CardContent>
-        </Card>
+        {renderInputBlock("Shoutout", shoutout, setShoutout, "🎉 Recognize a team member or win...", true)}
+        {renderInputBlock("Reminders", reminders, setReminders, "📣 Important notes or operational callouts...", true)}
+        {renderInputBlock("Mindset", mindset, setMindset, "🎯 Today’s message to the team...", true)}
       </div>
 
-      {/* Ops Items */}
+      {/* Food / Bev / Events */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card className="rounded-2xl shadow-md">
-          <CardHeader>
-            <CardTitle>🥦 Food Items</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {renderTextarea(foodItems, setFoodItems, "✏️ New menu items or items running low...")}
-            <Label className="text-sm">📷 Upload Food Photo</Label>
-            <Input type="file" accept="image/*" onChange={(e) => handleImageChange(e, setFoodImage)} />
-            {foodImage && <img src={foodImage} alt="Food preview" className="mt-2 rounded-md h-24 object-cover" />}
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl shadow-md">
-          <CardHeader>
-            <CardTitle>🥤 Beverage Items</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {renderTextarea(beverageItems, setBeverageItems, "✏️ Call out new drinks or 86s...")}
-            <Label className="text-sm">📷 Upload Beverage Photo</Label>
-            <Input type="file" accept="image/*" onChange={(e) => handleImageChange(e, setBeverageImage)} />
-            {beverageImage && <img src={beverageImage} alt="Beverage preview" className="mt-2 rounded-md h-24 object-cover" />}
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl shadow-md">
-          <CardHeader>
-            <CardTitle>📅 Events & Holidays</CardTitle>
-          </CardHeader>
-          <CardContent>{renderTextarea(events, setEvents, "✏️ Catering, local events, school breaks...")}</CardContent>
-        </Card>
+        {renderInputBlock("Food Items", foodItems, setFoodItems, "🥦 New menu items or items running low...", true)}
+        {renderInputBlock("Beverage Items", beverageItems, setBeverageItems, "🥤 Call out new drinks or 86s...", true)}
+        {renderInputBlock("Events", events, setEvents, "📅 Catering, local events, school breaks...", true)}
       </div>
 
-      {/* Repair Notes */}
-      <Card className="rounded-2xl shadow-md mb-6">
-        <CardHeader>
-          <CardTitle>🛠️ Repair & Maintenance</CardTitle>
-          <p className="text-sm text-muted-foreground">Track any equipment or facility issues.</p>
-        </CardHeader>
-        <CardContent>
-          {renderTextarea(repairNotes, setRepairNotes, "✏️ Note any pending repairs or maintenance needs...")}
-        </CardContent>
-      </Card>
+      {/* Repairs */}
+      <div className="mb-6">
+        <Card className="rounded-2xl">
+          <CardHeader>
+            <CardTitle className="text-base">🛠️ Repair & Maintenance</CardTitle>
+            <p className="text-sm text-muted-foreground">Track any equipment or facility issues.</p>
+          </CardHeader>
+          <CardContent>
+            {renderInputBlock("Repair Notes", repairNotes, setRepairNotes, "🔧 Note any pending repairs or maintenance needs...", true)}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
