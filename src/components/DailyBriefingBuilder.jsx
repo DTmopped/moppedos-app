@@ -4,13 +4,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Upload } from "lucide-react";
 
 const DailyBriefingBuilder = () => {
   const [lunch, setLunch] = useState("");
   const [dinner, setDinner] = useState("");
-  const [forecastedSales, setForecastedSales] = useState("");
   const [forecastNotes, setForecastNotes] = useState("");
+  const [forecastedSales, setForecastedSales] = useState("");
   const [actualSales, setActualSales] = useState("");
   const [varianceNotes, setVarianceNotes] = useState("");
   const [shoutout, setShoutout] = useState("");
@@ -19,22 +18,24 @@ const DailyBriefingBuilder = () => {
   const [foodItems, setFoodItems] = useState("");
   const [beverageItems, setBeverageItems] = useState("");
   const [events, setEvents] = useState("");
-  const [foodImage, setFoodImage] = useState(null);
-  const [bevImage, setBevImage] = useState(null);
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [manager, setManager] = useState("");
+  const [foodImage, setFoodImage] = useState(null);
+  const [beverageImage, setBeverageImage] = useState(null);
 
   const handleImageChange = (e, setter) => {
     const file = e.target.files[0];
-    if (file) setter(URL.createObjectURL(file));
+    if (file) {
+      setter(URL.createObjectURL(file));
+    }
   };
 
   const generateBriefing = () => {
     const briefing = {
       lunch,
       dinner,
-      forecastedSales,
       forecastNotes,
+      forecastedSales,
       actualSales,
       varianceNotes,
       shoutout,
@@ -43,10 +44,10 @@ const DailyBriefingBuilder = () => {
       foodItems,
       beverageItems,
       events,
-      foodImage,
-      bevImage,
       date,
       manager,
+      foodImage,
+      beverageImage,
     };
     console.log("✅ Briefing Generated:", briefing);
   };
@@ -58,7 +59,7 @@ const DailyBriefingBuilder = () => {
         🌟 <strong>Align the team.</strong> 📈 <strong>Track progress.</strong> 💬 <strong>Share wins.</strong>
       </p>
 
-      {/* Top Row: Date + MOD + Generate */}
+      {/* Top Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 items-end">
         <div>
           <Label>Date</Label>
@@ -66,6 +67,7 @@ const DailyBriefingBuilder = () => {
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
+            className="rounded-md border border-gray-300 bg-white text-black placeholder:text-gray-400 shadow-inner"
           />
         </div>
         <div>
@@ -74,6 +76,7 @@ const DailyBriefingBuilder = () => {
             value={manager}
             onChange={(e) => setManager(e.target.value)}
             placeholder="Manager Name"
+            className="rounded-md border border-gray-300 bg-white text-black placeholder:text-gray-400 shadow-inner"
           />
         </div>
         <div className="flex justify-start md:justify-end">
@@ -83,67 +86,89 @@ const DailyBriefingBuilder = () => {
         </div>
       </div>
 
-      {/* Forecast + Recap */}
+      {/* Forecast & Recap */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <Card>
+        <Card className="shadow-sm rounded-2xl">
           <CardHeader>
-            <CardTitle>📊 Today’s Forecast</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-lg">📊 Today’s Forecast</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Input value={lunch} onChange={(e) => setLunch(e.target.value)} placeholder="😊 Lunch (AM) — e.g. 150" />
-            <Input value={dinner} onChange={(e) => setDinner(e.target.value)} placeholder="🌙 Dinner (PM) — e.g. 120" />
-            <Input value={forecastedSales} onChange={(e) => setForecastedSales(e.target.value)} placeholder="💰 Forecasted Sales ($)" />
+            <Input
+              value={lunch}
+              onChange={(e) => setLunch(e.target.value)}
+              placeholder="😊 Lunch (AM) — e.g. 150"
+              className="rounded-md border-gray-300 bg-white text-black placeholder:text-gray-400 shadow-inner"
+            />
+            <Input
+              value={dinner}
+              onChange={(e) => setDinner(e.target.value)}
+              placeholder="🌙 Dinner (PM) — e.g. 120"
+              className="rounded-md border-gray-300 bg-white text-black placeholder:text-gray-400 shadow-inner"
+            />
+            <Input
+              value={forecastedSales}
+              onChange={(e) => setForecastedSales(e.target.value)}
+              placeholder="💰 Forecasted Sales ($)"
+              className="rounded-md border-gray-300 bg-white text-black placeholder:text-gray-400 shadow-inner"
+            />
             <Textarea
               value={forecastNotes}
               onChange={(e) => setForecastNotes(e.target.value)}
               placeholder="📝 Notes about today’s volume forecast..."
-              className="min-h-[100px]"
+              className="rounded-md border-gray-300 bg-white text-black placeholder:text-gray-400 shadow-inner min-h-[100px]"
             />
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="shadow-sm rounded-2xl">
           <CardHeader>
-            <CardTitle>📅 Yesterday’s Recap</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-lg">📅 Yesterday’s Recap</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Input value={actualSales} onChange={(e) => setActualSales(e.target.value)} placeholder="Actual Sales ($)" />
+            <Input
+              value={actualSales}
+              onChange={(e) => setActualSales(e.target.value)}
+              placeholder="Actual Sales ($)"
+              className="rounded-md border-gray-300 bg-white text-black placeholder:text-gray-400 shadow-inner"
+            />
             <Textarea
               value={varianceNotes}
               onChange={(e) => setVarianceNotes(e.target.value)}
               placeholder="⚠️ What affected results? Team issues? Weather?"
-              className="min-h-[100px]"
+              className="rounded-md border-gray-300 bg-white text-black placeholder:text-gray-400 shadow-inner min-h-[100px]"
             />
           </CardContent>
         </Card>
       </div>
 
-      {/* Team Update Section */}
+      {/* Team Updates */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        {[{ label: "🎉 Shout-Out", value: shoutout, setter: setShoutout, ph: "Recognize a team member or win..." },
-          { label: "📣 Team Reminders", value: reminders, setter: setReminders, ph: "Important notes or operational callouts..." },
-          { label: "🎯 Goals & Mindset", value: mindset, setter: setMindset, ph: "Today's message to the team..." },
-        ].map((item, i) => (
-          <Card key={i}>
-            <CardHeader><CardTitle>{item.label}</CardTitle></CardHeader>
+        {[
+          { label: "🎉 Shout-Out", state: shoutout, setter: setShoutout, placeholder: "Recognize a team member or win..." },
+          { label: "📣 Team Reminders", state: reminders, setter: setReminders, placeholder: "Important notes or operational callouts..." },
+          { label: "🎯 Goals & Mindset", state: mindset, setter: setMindset, placeholder: "Today's message to the team..." },
+        ].map((item, idx) => (
+          <Card key={idx} className="shadow-sm rounded-2xl">
+            <CardHeader>
+              <CardTitle className="text-base">{item.label}</CardTitle>
+            </CardHeader>
             <CardContent>
               <Textarea
-                value={item.value}
+                value={item.state}
                 onChange={(e) => item.setter(e.target.value)}
-                placeholder={item.ph}
-                className="min-h-[80px]"
+                placeholder={item.placeholder}
+                className="rounded-md border-gray-300 bg-white text-black placeholder:text-gray-400 shadow-inner min-h-[80px]"
               />
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* Ops Section + Image Upload */}
+      {/* Ops Items */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Food Items */}
-        <Card>
+        <Card className="shadow-sm rounded-2xl">
           <CardHeader>
-            <CardTitle>🥦 Food Items</CardTitle>
+            <CardTitle className="text-base">🥦 Food Items</CardTitle>
             <p className="text-sm text-muted-foreground">New or low-stock food items to track today.</p>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -151,17 +176,17 @@ const DailyBriefingBuilder = () => {
               value={foodItems}
               onChange={(e) => setFoodItems(e.target.value)}
               placeholder="✏️ List new menu items or items running low..."
-              className="min-h-[80px]"
+              className="rounded-md border-gray-300 bg-white text-black placeholder:text-gray-400 shadow-inner min-h-[80px]"
             />
+            <Label className="text-sm">📷 Upload Food Photo</Label>
             <Input type="file" accept="image/*" onChange={(e) => handleImageChange(e, setFoodImage)} />
-            {foodImage && <img src={foodImage} alt="Food Upload" className="rounded-lg w-full" />}
+            {foodImage && <img src={foodImage} alt="Food preview" className="mt-2 rounded-md h-24 object-cover" />}
           </CardContent>
         </Card>
 
-        {/* Beverage Items */}
-        <Card>
+        <Card className="shadow-sm rounded-2xl">
           <CardHeader>
-            <CardTitle>🥤 Beverage Items</CardTitle>
+            <CardTitle className="text-base">🥤 Beverage Items</CardTitle>
             <p className="text-sm text-muted-foreground">New additions or low stock to flag.</p>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -169,17 +194,17 @@ const DailyBriefingBuilder = () => {
               value={beverageItems}
               onChange={(e) => setBeverageItems(e.target.value)}
               placeholder="✏️ Call out any new drinks or 86s..."
-              className="min-h-[80px]"
+              className="rounded-md border-gray-300 bg-white text-black placeholder:text-gray-400 shadow-inner min-h-[80px]"
             />
-            <Input type="file" accept="image/*" onChange={(e) => handleImageChange(e, setBevImage)} />
-            {bevImage && <img src={bevImage} alt="Beverage Upload" className="rounded-lg w-full" />}
+            <Label className="text-sm">📷 Upload Beverage Photo</Label>
+            <Input type="file" accept="image/*" onChange={(e) => handleImageChange(e, setBeverageImage)} />
+            {beverageImage && <img src={beverageImage} alt="Beverage preview" className="mt-2 rounded-md h-24 object-cover" />}
           </CardContent>
         </Card>
 
-        {/* Events & Holidays */}
-        <Card>
+        <Card className="shadow-sm rounded-2xl">
           <CardHeader>
-            <CardTitle>📅 Events & Holidays</CardTitle>
+            <CardTitle className="text-base">📅 Events & Holidays</CardTitle>
             <p className="text-sm text-muted-foreground">Anything coming up the team should know about.</p>
           </CardHeader>
           <CardContent>
@@ -187,7 +212,7 @@ const DailyBriefingBuilder = () => {
               value={events}
               onChange={(e) => setEvents(e.target.value)}
               placeholder="✏️ Catering, local events, school breaks..."
-              className="min-h-[80px]"
+              className="rounded-md border-gray-300 bg-white text-black placeholder:text-gray-400 shadow-inner min-h-[80px]"
             />
           </CardContent>
         </Card>
