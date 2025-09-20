@@ -171,9 +171,9 @@ useEffect(() => {
 
      {/* ✨ Inspirational Quote - Soft floating design */}
 {quote && (
-  <div className="max-w-4xl mx-auto -mt-4 mb-10 px-6">
-    <div className="bg-gray-100 rounded-lg shadow-md p-4">
-      <p className="text-blue-700 italic font-medium text-center leading-relaxed">
+  <div className="max-w-3xl mx-auto mt-8 mb-12 px-4">
+    <div className="bg-gray-50 border border-gray-200 rounded-xl shadow p-5">
+      <p className="text-blue-700 italic font-medium text-center leading-relaxed text-base md:text-lg">
         ✨ {quote}
       </p>
     </div>
