@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from '@/supabaseClient';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
