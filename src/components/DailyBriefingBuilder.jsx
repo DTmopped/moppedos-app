@@ -26,6 +26,7 @@ const DailyBriefingBuilder = () => {
   const [repairNotes, setRepairNotes] = useState("");
   const [foodImage, setFoodImage] = useState(null);
   const [beverageImage, setBeverageImage] = useState(null);
+  const [quote, setQuote] = useState("");
 
   useEffect(() => {
     const fetchBriefing = async () => {
@@ -55,6 +56,16 @@ const DailyBriefingBuilder = () => {
 
     fetchBriefing();
   }, [date, locationId]);
+
+  useEffect(() => {
+    fetch("https://zenquotes.io/api/random")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data[0]) {
+          setQuote(`"${data[0].q}" — ${data[0].a}`);
+        }
+      });
+  }, []);
 
   const saveBriefing = async () => {
     await supabase.from("daily_briefings").upsert({
@@ -111,7 +122,6 @@ const DailyBriefingBuilder = () => {
         🌟 <strong>Align the team.</strong> 📈 <strong>Track progress.</strong> 💬 <strong>Share wins.</strong>
       </p>
 
-      {/* Top row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 items-end">
         <div>
           <Label>Date</Label>
@@ -126,7 +136,6 @@ const DailyBriefingBuilder = () => {
         </div>
       </div>
 
-      {/* Forecast & Recap */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <Card className="rounded-2xl shadow-md">
           <CardHeader>
@@ -151,7 +160,15 @@ const DailyBriefingBuilder = () => {
         </Card>
       </div>
 
-      {/* Team Updates */}
+      {/* Quote box */}
+      {quote && (
+        <div className="max-w-4xl mx-auto mb-8 px-6">
+          <div className="bg-gray-50 rounded-xl p-4 shadow-sm border border-gray-200 italic text-center text-muted-foreground">
+            💡 <span className="text-gray-600">{quote}</span>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card className="rounded-2xl shadow-md">
           <CardHeader>
@@ -173,7 +190,6 @@ const DailyBriefingBuilder = () => {
         </Card>
       </div>
 
-      {/* Ops Items */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card className="rounded-2xl shadow-md">
           <CardHeader>
@@ -207,7 +223,6 @@ const DailyBriefingBuilder = () => {
         </Card>
       </div>
 
-      {/* Repair Notes */}
       <Card className="rounded-2xl shadow-md mb-6">
         <CardHeader>
           <CardTitle>🛠️ Repair & Maintenance</CardTitle>
