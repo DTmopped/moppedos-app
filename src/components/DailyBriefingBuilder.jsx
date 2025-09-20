@@ -57,15 +57,21 @@ const DailyBriefingBuilder = () => {
     fetchBriefing();
   }, [date, locationId]);
 
-  useEffect(() => {
-    fetch("https://zenquotes.io/api/random")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && data[0]) {
-          setQuote(`"${data[0].q}" — ${data[0].a}`);
-        }
-      });
-  }, []);
+ useEffect(() => {
+  fetch("https://zenquotes.io/api/random")
+    .then((res) => res.json())
+    .then((data) => {
+      console.log("💬 Quote API Response:", data); // 🔍 log response to browser console
+      if (data && data[0]) {
+        setQuote(`"${data[0].q}" — ${data[0].a}`);
+      } else {
+        console.warn("⚠️ Quote data not found or malformed:", data);
+      }
+    })
+    .catch((err) => {
+      console.error("❌ Failed to fetch quote:", err);
+    });
+}, []);
 
   const saveBriefing = async () => {
     await supabase.from("daily_briefings").upsert({
