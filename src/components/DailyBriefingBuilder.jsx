@@ -176,17 +176,6 @@ useEffect(() => {
   </CardContent>
 </Card>
 
-     {/* ✨ Inspirational Quote - Soft floating design */}
-{quote && (
-  <div className="max-w-3xl mx-auto mt-8 mb-12 px-4">
-    <div className="bg-gray-50 border border-gray-200 rounded-xl shadow p-5">
-      <p className="text-blue-700 italic font-medium text-center leading-relaxed text-base md:text-lg">
-        ✨ {quote}
-      </p>
-    </div>
-  </div>
-)}
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card className="rounded-2xl shadow-md">
           <CardHeader>
