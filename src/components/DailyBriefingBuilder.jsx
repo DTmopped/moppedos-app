@@ -160,14 +160,16 @@ const DailyBriefingBuilder = () => {
         </Card>
       </div>
 
-      {/* Quote box */}
-      {quote && (
-        <div className="max-w-4xl mx-auto mb-8 px-6">
-          <div className="bg-gray-50 rounded-xl p-4 shadow-sm border border-gray-200 italic text-center text-muted-foreground">
-            💡 <span className="text-gray-600">{quote}</span>
-          </div>
-        </div>
-      )}
+     {/* ✨ Inspirational Quote - Soft floating design */}
+{quote && (
+  <div className="max-w-4xl mx-auto -mt-4 mb-10 px-6">
+    <div className="bg-gray-100 rounded-lg shadow-md p-4">
+      <p className="text-blue-700 italic font-medium text-center leading-relaxed">
+        ✨ {quote}
+      </p>
+    </div>
+  </div>
+)}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card className="rounded-2xl shadow-md">
