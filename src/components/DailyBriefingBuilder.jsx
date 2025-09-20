@@ -58,15 +58,33 @@ const DailyBriefingBuilder = () => {
   }, [date, locationId]);
 
 useEffect(() => {
-  fetch("https://api.quotable.io/random")
-    .then((res) => res.json())
-    .then((data) => {
-      console.log("💬 Quotable Quote Response:", data);
-      setQuote(`"${data.content}" — ${data.author}`);
-    })
-    .catch((err) => {
-      console.error("❌ Failed to fetch quote:", err);
-    });
+  const getQuote = async () => {
+    try {
+      // Try primary API (ZenQuotes)
+      const res = await fetch("https://zenquotes.io/api/random");
+      const data = await res.json();
+      if (data && data[0]) {
+        setQuote(`"${data[0].q}" — ${data[0].a}`);
+        return;
+      }
+    } catch (err) {
+      console.warn("ZenQuotes failed, falling back to type.fit");
+    }
+
+    try {
+      // Fallback API (no CORS issues)
+      const res = await fetch("https://type.fit/api/quotes");
+      const data = await res.json();
+      const random = data[Math.floor(Math.random() * data.length)];
+      if (random) {
+        setQuote(`"${random.text}" — ${random.author || "Unknown"}`);
+      }
+    } catch (err) {
+      console.error("Both quote APIs failed.");
+    }
+  };
+
+  getQuote();
 }, []);
 
   const saveBriefing = async () => {
