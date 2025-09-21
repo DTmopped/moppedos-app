@@ -1,8 +1,18 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+
+// Only run on client
+const isClient = typeof window !== "undefined";
 
 const DailyBriefingPrintButton = () => {
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    if (isClient) {
+      setIsReady(true);
+    }
+  }, []);
+
   const handlePrint = async () => {
-    // Dynamically import html2pdf.js to avoid SSR issues
     const html2pdf = (await import("html2pdf.js")).default;
 
     const element = document.getElementById("briefing-content");
@@ -21,6 +31,8 @@ const DailyBriefingPrintButton = () => {
 
     html2pdf().set(opt).from(element).save();
   };
+
+  if (!isReady) return null;
 
   return (
     <button
