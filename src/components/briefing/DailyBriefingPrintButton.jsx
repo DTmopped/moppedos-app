@@ -1,18 +1,19 @@
-// components/DailyBriefingPrintButton.jsx
 import React from "react";
-import html2pdf from "html2pdf.js";
 
-const DailyBriefingPrintButton = ({ elementId = "briefing-content" }) => {
-  const handlePrint = () => {
-    const element = document.getElementById(elementId);
+const DailyBriefingPrintButton = () => {
+  const handlePrint = async () => {
+    // Dynamically import html2pdf.js to avoid SSR issues
+    const html2pdf = (await import("html2pdf.js")).default;
+
+    const element = document.getElementById("briefing-content");
     if (!element) {
-      console.error("Printable element not found");
+      alert("Briefing content not found.");
       return;
     }
 
     const opt = {
       margin: 0.5,
-      filename: `Mopped_Daily_Briefing_${new Date().toISOString().split("T")[0]}.pdf`,
+      filename: `DailyBriefing_${new Date().toISOString().split("T")[0]}.pdf`,
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: { scale: 2 },
       jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
@@ -24,7 +25,7 @@ const DailyBriefingPrintButton = ({ elementId = "briefing-content" }) => {
   return (
     <button
       onClick={handlePrint}
-      className="bg-black text-white px-4 py-2 rounded-md shadow hover:bg-gray-800 transition"
+      className="bg-black text-white px-4 py-2 rounded-md shadow hover:bg-gray-800"
     >
       🖨️ Generate PDF
     </button>
