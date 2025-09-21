@@ -256,26 +256,19 @@ useEffect(() => {
       </Card>
     </div>
 
-    {/* REPAIRS */}
-    <Card className="rounded-2xl shadow-md mb-6">
-      <CardHeader>
-        <CardTitle>🛠️ Repair & Maintenance</CardTitle>
-        <p className="text-sm text-muted-foreground">Track any equipment or facility issues.</p>
-      </CardHeader>
-      <CardContent>
-        {renderTextarea(repairNotes, setRepairNotes, "✏️ Note any pending repairs or maintenance needs...")}
-      </CardContent>
-    </Card>
+     {/* REPAIRS */}
+      <Card className="rounded-2xl shadow-md mb-6">
+        <CardHeader>
+          <CardTitle>🛠️ Repair & Maintenance</CardTitle>
+          <p className="text-sm text-muted-foreground">Track any equipment or facility issues.</p>
+        </CardHeader>
+        <CardContent>
+          {renderTextarea(repairNotes, setRepairNotes, "✏️ Note any pending repairs or maintenance needs...")}
+        </CardContent>
+      </Card>
 
-  </div> // This is the single closing tag for the entire component.
-);
+    </div> // This is the single closing tag for the entire component.
+  ); // ✅ THIS IS THE END OF THE RETURN STATEMENT.
+}; // ✅ THIS IS THE END OF THE COMPONENT.
 
-    {/* 📤 PDF Button */}
-    <div className="flex justify-end mt-6">
-      <DailyBriefingPrintButton />
-    </div>
-  </div>
-);
-};
-
-export default DailyBriefingBuilder;
+export default DailyBriefingBuilder; // ✅ THIS IS THE END OF THE FILE.
