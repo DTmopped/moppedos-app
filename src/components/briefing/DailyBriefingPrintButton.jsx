@@ -1,10 +1,12 @@
-// src/components/briefing/DailyBriefingPrintButton.jsx
 import React from "react";
-import html2pdf from "html2pdf.js";
 import { Button } from "@/components/ui/button";
 
 const DailyBriefingPrintButton = () => {
-  const handlePrint = () => {
+  const handlePrint = async () => {
+    if (typeof window === "undefined") return;
+
+    const html2pdf = (await import("html2pdf.js")).default;
+
     const element = document.getElementById("briefing-content");
     if (element) {
       html2pdf().from(element).set({
