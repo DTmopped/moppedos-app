@@ -127,139 +127,148 @@ useEffect(() => {
 
   return (
   <div className="p-6">
+    {/* --- HEADER --- */}
     <h1 className="text-3xl font-bold mb-1">Daily Briefing Sheet</h1>
     <p className="text-muted-foreground mb-6">
       🌟 <strong>Align the team.</strong> 📈 <strong>Track progress.</strong> 💬 <strong>Share wins.</strong>
     </p>
 
-    {/* Header Section */}
-<div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 items-end">
-  <div>
-    <Label>Date</Label>
-    <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-  </div>
-  <div>
-    <Label>MOD / Lead</Label>
-    {renderInput(manager, setManager, "Manager Name")}
-  </div>
-  <div className="flex justify-start md:justify-end">
-    <Button onClick={saveBriefing} className="w-full md:w-auto">
-      ✅ Save Briefing
-    </Button>
-  </div>
-</div>
-
-{/* ✅ START PRINTABLE SECTION */}
-<div id="briefing-content">
-  <PrintableBriefingSheet
-    date={date}
-    manager={manager}
-    lunch={lunch}
-    dinner={dinner}
-    forecastedSales={forecastedSales}
-    actualSales={actualSales}
-    varianceNotes={varianceNotes}
-    shoutout={shoutout}
-    reminders={reminders}
-    mindset={mindset}
-    foodItems={foodItems}
-    foodImage={foodImage}
-    beverageItems={beverageItems}
-    beverageImage={beverageImage}
-    events={events}
-    repairNotes={repairNotes}
-    quote={quote}
-    lastUpdated={lastUpdated}
-  />
-</div> {/* ✅ End of #briefing-content wrapper */}
-
-      {/* FORECAST & RECAP */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <Card className="rounded-2xl shadow-md">
-          <CardHeader>
-            <CardTitle className="text-lg">📊 Today’s Forecast</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {renderInput(lunch, setLunch, "😊 Lunch (AM) — e.g. 150")}
-            {renderInput(dinner, setDinner, "🌙 Dinner (PM) — e.g. 120")}
-            {renderInput(forecastedSales, setForecastedSales, "💰 Forecasted Sales ($)")}
-            {renderTextarea(forecastNotes, setForecastNotes, "📝 Notes about today’s volume forecast...")}
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl shadow-md">
-          <CardHeader>
-            <CardTitle className="text-lg">📅 Yesterday’s Recap</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {renderInput(actualSales, setActualSales, "Actual Sales ($)")}
-            {renderTextarea(varianceNotes, setVarianceNotes, "⚠️ What affected results? Team issues? Weather?")}
-            {quote && (
-              <div className="bg-gray-100 rounded-lg shadow p-4">
-                <p className="text-blue-700 italic font-medium text-center leading-relaxed text-base md:text-lg">
-                  ✨ {quote}
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+    {/* --- TOP ACTIONS (DATE, MANAGER, BUTTONS) --- */}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 items-end">
+      <div>
+        <Label>Date</Label>
+        <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
       </div>
-
-      {/* MID SECTION */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card className="rounded-2xl shadow-md">
-          <CardHeader><CardTitle>🎉 Shout-Out</CardTitle></CardHeader>
-          <CardContent>{renderTextarea(shoutout, setShoutout, "✏️ Recognize a team member or win...")}</CardContent>
-        </Card>
-        <Card className="rounded-2xl shadow-md">
-          <CardHeader><CardTitle>📣 Team Reminders</CardTitle></CardHeader>
-          <CardContent>{renderTextarea(reminders, setReminders, "✏️ Important notes or operational callouts...")}</CardContent>
-        </Card>
-        <Card className="rounded-2xl shadow-md">
-          <CardHeader><CardTitle>🎯 Goals & Mindset</CardTitle></CardHeader>
-          <CardContent>{renderTextarea(mindset, setMindset, "✏️ Today's message to the team...")}</CardContent>
-        </Card>
+      <div>
+        <Label>MOD / Lead</Label>
+        {renderInput(manager, setManager, "Manager Name")}
       </div>
-
-      {/* FOOD & BEV & EVENTS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card className="rounded-2xl shadow-md">
-          <CardHeader><CardTitle>🥦 Food Items</CardTitle></CardHeader>
-          <CardContent className="space-y-2">
-            {renderTextarea(foodItems, setFoodItems, "✏️ New menu items or items running low...")}
-            <Label className="text-sm">📷 Upload Food Photo</Label>
-            <Input type="file" accept="image/*" onChange={(e) => handleImageChange(e, setFoodImage)} />
-            {foodImage && <img src={foodImage} alt="Food preview" className="mt-2 rounded-md h-24 object-cover" />}
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl shadow-md">
-          <CardHeader><CardTitle>🥤 Beverage Items</CardTitle></CardHeader>
-          <CardContent className="space-y-2">
-            {renderTextarea(beverageItems, setBeverageItems, "✏️ Call out new drinks or 86s...")}
-            <Label className="text-sm">📷 Upload Beverage Photo</Label>
-            <Input type="file" accept="image/*" onChange={(e) => handleImageChange(e, setBeverageImage)} />
-            {beverageImage && <img src={beverageImage} alt="Beverage preview" className="mt-2 rounded-md h-24 object-cover" />}
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl shadow-md">
-          <CardHeader><CardTitle>📅 Events & Holidays</CardTitle></CardHeader>
-          <CardContent>{renderTextarea(events, setEvents, "✏️ Catering, local events, school breaks...")}</CardContent>
-        </Card>
+      <div className="flex justify-start md:justify-end gap-2">
+        <Button onClick={saveBriefing} className="w-full md:w-auto">
+          ✅ Save Briefing
+        </Button>
+        {/* ✅ PDF BUTTON MOVED HERE */}
+        <DailyBriefingPrintButton />
       </div>
+    </div>
 
-      {/* REPAIRS */}
-      <Card className="rounded-2xl shadow-md mb-6">
+    {/* --- HIDDEN PRINTABLE COMPONENT --- */}
+    {/* This component is now positioned off-screen so it doesn't affect your live layout. */}
+    {/* The PDF generator will still find it by its ID inside the component. */}
+    <div style={{ position: 'absolute', left: '-9999px', top: 0, width: '816px' }}>
+      <PrintableBriefingSheet
+        date={date}
+        manager={manager}
+        lunch={lunch}
+        dinner={dinner}
+        forecastedSales={forecastedSales}
+        actualSales={actualSales}
+        varianceNotes={varianceNotes}
+        shoutout={shoutout}
+        reminders={reminders}
+        mindset={mindset}
+        foodItems={foodItems}
+        foodImage={foodImage}
+        beverageItems={beverageItems}
+        beverageImage={beverageImage}
+        events={events}
+        repairNotes={repairNotes}
+        quote={quote}
+        // lastUpdated={lastUpdated} // This prop was not defined, so I've commented it out.
+      />
+    </div>
+
+    {/* --- LIVE FORM CARDS (What the user interacts with) --- */}
+
+    {/* FORECAST & RECAP */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <Card className="rounded-2xl shadow-md">
         <CardHeader>
-          <CardTitle>🛠️ Repair & Maintenance</CardTitle>
-          <p className="text-sm text-muted-foreground">Track any equipment or facility issues.</p>
+          <CardTitle className="text-lg">📊 Today’s Forecast</CardTitle>
         </CardHeader>
-        <CardContent>
-          {renderTextarea(repairNotes, setRepairNotes, "✏️ Note any pending repairs or maintenance needs...")}
+        <CardContent className="space-y-4">
+          {renderInput(lunch, setLunch, "😊 Lunch (AM) — e.g. 150")}
+          {renderInput(dinner, setDinner, "🌙 Dinner (PM) — e.g. 120")}
+          {renderInput(forecastedSales, setForecastedSales, "💰 Forecasted Sales ($)")}
+          {renderTextarea(forecastNotes, setForecastNotes, "📝 Notes about today’s volume forecast...")}
         </CardContent>
       </Card>
-    </div> {/* ✅ End of #briefing-content wrapper */}
+
+      <Card className="rounded-2xl shadow-md">
+        <CardHeader>
+          <CardTitle className="text-lg">📅 Yesterday’s Recap</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {renderInput(actualSales, setActualSales, "Actual Sales ($)")}
+          {renderTextarea(varianceNotes, setVarianceNotes, "⚠️ What affected results? Team issues? Weather?")}
+          {quote && (
+            <div className="bg-gray-100 rounded-lg shadow p-4">
+              <p className="text-blue-700 italic font-medium text-center leading-relaxed text-base md:text-lg">
+                ✨ {quote}
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+
+    {/* MID SECTION */}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <Card className="rounded-2xl shadow-md">
+        <CardHeader><CardTitle>🎉 Shout-Out</CardTitle></CardHeader>
+        <CardContent>{renderTextarea(shoutout, setShoutout, "✏️ Recognize a team member or win...")}</CardContent>
+      </Card>
+      <Card className="rounded-2xl shadow-md">
+        <CardHeader><CardTitle>📣 Team Reminders</CardTitle></CardHeader>
+        <CardContent>{renderTextarea(reminders, setReminders, "✏️ Important notes or operational callouts...")}</CardContent>
+      </Card>
+      <Card className="rounded-2xl shadow-md">
+        <CardHeader><CardTitle>🎯 Goals & Mindset</CardTitle></CardHeader>
+        <CardContent>{renderTextarea(mindset, setMindset, "✏️ Today's message to the team...")}</CardContent>
+      </Card>
+    </div>
+
+    {/* FOOD & BEV & EVENTS */}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <Card className="rounded-2xl shadow-md">
+        <CardHeader><CardTitle>🥦 Food Items</CardTitle></CardHeader>
+        <CardContent className="space-y-2">
+          {renderTextarea(foodItems, setFoodItems, "✏️ New menu items or items running low...")}
+          <Label className="text-sm">📷 Upload Food Photo</Label>
+          <Input type="file" accept="image/*" onChange={(e) => handleImageChange(e, setFoodImage)} />
+          {foodImage && <img src={foodImage} alt="Food preview" className="mt-2 rounded-md h-24 object-cover" />}
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-2xl shadow-md">
+        <CardHeader><CardTitle>🥤 Beverage Items</CardTitle></CardHeader>
+        <CardContent className="space-y-2">
+          {renderTextarea(beverageItems, setBeverageItems, "✏️ Call out new drinks or 86s...")}
+          <Label className="text-sm">📷 Upload Beverage Photo</Label>
+          <Input type="file" accept="image/*" onChange={(e) => handleImageChange(e, setBeverageImage)} />
+          {beverageImage && <img src={beverageImage} alt="Beverage preview" className="mt-2 rounded-md h-24 object-cover" />}
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-2xl shadow-md">
+        <CardHeader><CardTitle>📅 Events & Holidays</CardTitle></CardHeader>
+        <CardContent>{renderTextarea(events, setEvents, "✏️ Catering, local events, school breaks...")}</CardContent>
+      </Card>
+    </div>
+
+    {/* REPAIRS */}
+    <Card className="rounded-2xl shadow-md mb-6">
+      <CardHeader>
+        <CardTitle>🛠️ Repair & Maintenance</CardTitle>
+        <p className="text-sm text-muted-foreground">Track any equipment or facility issues.</p>
+      </CardHeader>
+      <CardContent>
+        {renderTextarea(repairNotes, setRepairNotes, "✏️ Note any pending repairs or maintenance needs...")}
+      </CardContent>
+    </Card>
+
+  </div> // This is the single closing tag for the entire component.
+);
 
     {/* 📤 PDF Button */}
     <div className="flex justify-end mt-6">
