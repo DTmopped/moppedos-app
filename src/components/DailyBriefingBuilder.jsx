@@ -31,33 +31,43 @@ const DailyBriefingBuilder = () => {
   const [quote, setQuote] = useState("");
 
   useEffect(() => {
-    const fetchBriefing = async () => {
-      const { data } = await supabase
-        .from("daily_briefings")
-        .select("*")
-        .eq("location_id", locationId)
-        .eq("date", date)
-        .single();
-      if (data) {
-        setLunch(data.lunch || "");
-        setDinner(data.dinner || "");
-        setForecastedSales(data.forecasted_sales || "");
-        setForecastNotes(data.forecast_notes || "");
-        setActualSales(data.actual_sales || "");
-        setVarianceNotes(data.variance_notes || "");
-        setShoutout(data.shoutout || "");
-        setReminders(data.reminders || "");
-        setMindset(data.mindset || "");
-        setFoodItems(data.food_items || "");
-        setBeverageItems(data.beverage_items || "");
-        setEvents(data.events || "");
-        setRepairNotes(data.repair_notes || "");
-        setManager(data.manager || "");
-      }
-    };
+  if (!locationId || !date) return;
 
-    fetchBriefing();
-  }, [date, locationId]);
+  const fetchBriefing = async () => {
+    console.log("🔍 Fetching briefing for:", { locationId, date });
+
+    const { data, error } = await supabase
+      .from("daily_briefings")
+      .select("*")
+      .eq("location_id", locationId)
+      .eq("date", date)
+      .maybeSingle(); // ✅ avoids throwing if no record
+
+    if (error) {
+      console.error("❌ daily_briefings error:", error);
+      return;
+    }
+
+    if (data) {
+      setLunch(data.lunch || "");
+      setDinner(data.dinner || "");
+      setForecastedSales(data.forecasted_sales || "");
+      setForecastNotes(data.forecast_notes || "");
+      setActualSales(data.actual_sales || "");
+      setVarianceNotes(data.variance_notes || "");
+      setShoutout(data.shoutout || "");
+      setReminders(data.reminders || "");
+      setMindset(data.mindset || "");
+      setFoodItems(data.food_items || "");
+      setBeverageItems(data.beverage_items || "");
+      setEvents(data.events || "");
+      setRepairNotes(data.repair_notes || "");
+      setManager(data.manager || "");
+    }
+  };
+
+  fetchBriefing();
+}, [date, locationId]);
 
 useEffect(() => {
   const getQuote = async () => {
