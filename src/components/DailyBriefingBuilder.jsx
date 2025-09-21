@@ -132,7 +132,7 @@ useEffect(() => {
       🌟 <strong>Align the team.</strong> 📈 <strong>Track progress.</strong> 💬 <strong>Share wins.</strong>
     </p>
 
-    {/* Header fields + Save (not printable) */}
+    {/* Header Section */}
 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 items-end">
   <div>
     <Label>Date</Label>
@@ -149,7 +149,7 @@ useEffect(() => {
   </div>
 </div>
 
-{/* ✅ Printable content begins here */}
+{/* ✅ START PRINTABLE SECTION */}
 <div id="briefing-content">
   <PrintableBriefingSheet
     date={date}
@@ -171,7 +171,7 @@ useEffect(() => {
     quote={quote}
     lastUpdated={lastUpdated}
   />
-</div>
+</div> {/* ✅ End of #briefing-content wrapper */}
 
       {/* FORECAST & RECAP */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
