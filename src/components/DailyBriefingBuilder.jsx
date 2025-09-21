@@ -132,22 +132,46 @@ useEffect(() => {
       🌟 <strong>Align the team.</strong> 📈 <strong>Track progress.</strong> 💬 <strong>Share wins.</strong>
     </p>
 
-    {/* 🟩 Wrap everything you want to print in this div */}
-   <div id="briefing-content" className="bg-white p-6 text-black">
-      {/* HEADER FIELDS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 items-end">
-        <div>
-          <Label>Date</Label>
-          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-        </div>
-        <div>
-          <Label>MOD / Lead</Label>
-          {renderInput(manager, setManager, "Manager Name")}
-        </div>
-        <div className="flex justify-start md:justify-end">
-          <Button onClick={saveBriefing} className="w-full md:w-auto">✅ Save Briefing</Button>
-        </div>
-      </div>
+    {/* Header fields + Save (not printable) */}
+<div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 items-end">
+  <div>
+    <Label>Date</Label>
+    <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+  </div>
+  <div>
+    <Label>MOD / Lead</Label>
+    {renderInput(manager, setManager, "Manager Name")}
+  </div>
+  <div className="flex justify-start md:justify-end">
+    <Button onClick={saveBriefing} className="w-full md:w-auto">
+      ✅ Save Briefing
+    </Button>
+  </div>
+</div>
+
+{/* ✅ Printable content begins here */}
+<div id="briefing-content">
+  <PrintableBriefingSheet
+    date={date}
+    manager={manager}
+    lunch={lunch}
+    dinner={dinner}
+    forecastedSales={forecastedSales}
+    actualSales={actualSales}
+    varianceNotes={varianceNotes}
+    shoutout={shoutout}
+    reminders={reminders}
+    mindset={mindset}
+    foodItems={foodItems}
+    foodImage={foodImage}
+    beverageItems={beverageItems}
+    beverageImage={beverageImage}
+    events={events}
+    repairNotes={repairNotes}
+    quote={quote}
+    lastUpdated={lastUpdated}
+  />
+</div>
 
       {/* FORECAST & RECAP */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
