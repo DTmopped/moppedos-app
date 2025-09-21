@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/supabaseClient";
 import { useUserAndLocation } from "@/hooks/useUserAndLocation";
-import DailyBriefingPrintButton from "@/components/DailyBriefingPrintButton";
+import DailyBriefingPrintButton from "@/components/briefing/DailyBriefingPrintButton";
 
 const DailyBriefingBuilder = () => {
   const { userId, locationId } = useUserAndLocation();
