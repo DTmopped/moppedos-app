@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/supabaseClient";
 import { useUserAndLocation } from "@/hooks/useUserAndLocation";
 import DailyBriefingPrintButton from "@/components/briefing/DailyBriefingPrintButton";
-import PrintableBriefingSheet from "@/components/briefing/PrintableBriefingSheet";
+import PrintableBriefingSheet from "@/components/PrintableBriefingSheet";
 
 const DailyBriefingBuilder = () => {
   const { userId, locationId } = useUserAndLocation();
