@@ -1,63 +1,116 @@
-import React from 'react';
+import React from "react";
 
-const PrintableBriefingSheet = (props) => {
-  const {
-    lunch,
-    dinner,
-    forecast,
-    actual,
-    variance,
-    varianceNotes,
-    manager,
-    notes,
-    shoutouts,
-    callouts,
-    date,
-  } = props;
-
-  const displayValue = (val, suffix = '') =>
-    val && val.toString().trim() !== '' ? `${val}${suffix}` : '—';
+const PrintableBriefingSheet = ({
+  date,
+  manager,
+  lunch,
+  dinner,
+  forecastedSales,
+  actualSales,
+  varianceNotes,
+  shoutout,
+  reminders,
+  mindset,
+  foodItems,
+  foodImage,
+  beverageItems,
+  beverageImage,
+  events,
+  repairNotes,
+  quote,
+  lastUpdated,
+}) => {
+  const displayValue = (val, suffix = "") =>
+    val && val.toString().trim() !== "" ? `${val}${suffix}` : "—";
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', padding: '2rem' }}>
-      <h1 style={{ textAlign: 'center', marginBottom: '0.5rem' }}>📋 Daily Briefing Sheet</h1>
-      <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-        <p><strong>Date:</strong> {date || '—'}</p>
-        <p><strong>Manager on Duty:</strong> {manager || '—'}</p>
+    <div className="p-8 font-sans text-black print:p-4">
+      <h1 className="text-3xl font-bold text-center mb-2">📋 Daily Briefing Sheet</h1>
+      <p className="text-center text-sm mb-6 text-muted-foreground">
+        🌟 Align the team • 📈 Track progress • 💬 Share wins
+      </p>
+
+      <div className="flex justify-between text-sm mb-6">
+        <p><strong>Date:</strong> {displayValue(date)}</p>
+        <p><strong>Manager:</strong> {displayValue(manager)}</p>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-        <section style={{ width: '48%' }}>
-          <h2>📊 Forecasted Volume</h2>
-          <p><strong>🌞 Lunch (AM):</strong> {displayValue(lunch, ' guests')}</p>
-          <p><strong>🌙 Dinner (PM):</strong> {displayValue(dinner, ' guests')}</p>
-        </section>
-
-        <section style={{ width: '48%' }}>
-          <h2>💰 Forecast vs Actual</h2>
-          <p><strong>Forecasted Sales:</strong> {displayValue(forecast, '$')}</p>
-          <p><strong>Actual Sales:</strong> {displayValue(actual, '$')}</p>
-          <p><strong>Variance:</strong> {variance || 'N/A'}</p>
-          <p><strong>Variance Notes:</strong> {varianceNotes || '—'}</p>
-        </section>
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="border p-4 rounded-xl">
+          <h2 className="font-semibold mb-2">📊 Today’s Forecast</h2>
+          <p><strong>🌞 Lunch:</strong> {displayValue(lunch, " guests")}</p>
+          <p><strong>🌙 Dinner:</strong> {displayValue(dinner, " guests")}</p>
+          <p><strong>💰 Forecasted Sales:</strong> {displayValue(forecastedSales, "$")}</p>
+        </div>
+        <div className="border p-4 rounded-xl">
+          <h2 className="font-semibold mb-2">📅 Yesterday’s Recap</h2>
+          <p><strong>Actual Sales:</strong> {displayValue(actualSales, "$")}</p>
+          <p><strong>⚠️ Variance Notes:</strong> {displayValue(varianceNotes)}</p>
+        </div>
       </div>
 
-      <hr style={{ margin: '1.5rem 0' }} />
+      {quote && (
+        <div className="bg-gray-100 rounded-lg shadow-sm p-4 text-center italic mb-6">
+          ✨ {quote}
+        </div>
+      )}
 
-      <section>
-        <h2>🎉 Team Shout-Out</h2>
-        <p><strong>Shout-Out:</strong> {shoutouts || '—'}</p>
-      </section>
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="border p-4 rounded-xl">
+          <h2 className="font-semibold mb-2">🎉 Shout-Out</h2>
+          <p>{displayValue(shoutout)}</p>
+        </div>
+        <div className="border p-4 rounded-xl">
+          <h2 className="font-semibold mb-2">📣 Reminders</h2>
+          <p>{displayValue(reminders)}</p>
+        </div>
+        <div className="border p-4 rounded-xl">
+          <h2 className="font-semibold mb-2">🎯 Goals & Mindset</h2>
+          <p>{displayValue(mindset)}</p>
+        </div>
+      </div>
 
-      <section>
-        <h2>📣 Team Call-Out</h2>
-        <p><strong>Call-Out:</strong> {callouts || '—'}</p>
-      </section>
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="border p-4 rounded-xl">
+          <h2 className="font-semibold mb-2">🥦 Food Items</h2>
+          <p>{displayValue(foodItems)}</p>
+          {foodImage && (
+            <img
+              src={foodImage}
+              alt="Food Preview"
+              className="mt-2 rounded-md h-24 object-cover"
+            />
+          )}
+        </div>
+        <div className="border p-4 rounded-xl">
+          <h2 className="font-semibold mb-2">🥤 Beverage Items</h2>
+          <p>{displayValue(beverageItems)}</p>
+          {beverageImage && (
+            <img
+              src={beverageImage}
+              alt="Beverage Preview"
+              className="mt-2 rounded-md h-24 object-cover"
+            />
+          )}
+        </div>
+      </div>
 
-      <section>
-        <h2>📝 Notes to Team</h2>
-        <p><strong>Notes:</strong> {notes || '—'}</p>
-      </section>
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="border p-4 rounded-xl">
+          <h2 className="font-semibold mb-2">📅 Events & Holidays</h2>
+          <p>{displayValue(events)}</p>
+        </div>
+        <div className="border p-4 rounded-xl">
+          <h2 className="font-semibold mb-2">🛠️ Repairs & Maintenance</h2>
+          <p>{displayValue(repairNotes)}</p>
+        </div>
+      </div>
+
+      {lastUpdated && (
+        <p className="text-xs text-muted-foreground text-right italic mt-4">
+          🕓 Last updated: {new Date(lastUpdated).toLocaleString()}
+        </p>
+      )}
     </div>
   );
 };
