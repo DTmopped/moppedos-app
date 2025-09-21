@@ -18,25 +18,31 @@ const DailyBriefingPrintButton = () => {
     element.style.width = "816px"; // 8.5 inches at 96dpi = 816px
     element.style.padding = "24px"; // for nice margins in PDF
 
-    const opt = {
-      margin: 0,
-      filename: `daily_briefing_${new Date().toISOString().split("T")[0]}.pdf`,
-      html2canvas: {
-        scale: 2,           // Adjusted to balance quality & performance
-        useCORS: true,
-        logging: false,
-        windowWidth: 1200,  // helps preserve responsive styles
-      },
-      jsPDF: {
-        unit: "pt",
-        format: "letter",
-        orientation: "portrait",
-      },
-      pagebreak: {
-        mode: ["avoid-all", "css", "legacy"],
-        before: ".pagebreak", // Optional manual control
-      },
-    };
+    // In DailyBriefingPrintButton.jsx
+
+const opt = {
+  margin: [0.5, 0.5], // Margin in inches [top, left, bottom, right] - better than 0
+  filename: `daily_briefing_${new Date().toISOString().split("T")[0]}.pdf`,
+  image: { type: 'jpeg', quality: 0.98 }, // Explicitly set image quality
+  html2canvas: {
+    scale: 2,
+    useCORS: true,
+    logging: false,
+    dpi: 192, // Increase DPI for better quality
+    letterRendering: true,
+  },
+  jsPDF: {
+    unit: "in", // Use inches for margin consistency
+    format: "letter",
+    orientation: "portrait",
+    hotfixes: ["px_scaling"], // ✅ CRITICAL FIX: Helps with modern CSS units
+  },
+  // The pagebreak option is good, we'll keep it.
+  pagebreak: {
+    mode: ["avoid-all", "css", "legacy"],
+  },
+};
+
 
     window.html2pdf().set(opt).from(element).save();
   };
