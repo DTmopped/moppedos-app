@@ -19,13 +19,17 @@ const DailyBriefingPrintButton = () => {
       filename: `daily_briefing_${new Date().toISOString().slice(0, 10)}.pdf`,
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: {
-        scale: 3,
+        scale: 3, // 🔍 Higher DPI for better quality
         useCORS: true,
       },
       jsPDF: {
         unit: "in",
         format: "letter",
         orientation: "portrait",
+      },
+      pagebreak: {
+        mode: ['avoid-all'], // 🧠 Prevent mid-section breaks
+        before: '.page-break', // Optional: for forcing breaks
       },
     };
 
