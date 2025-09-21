@@ -133,7 +133,7 @@ useEffect(() => {
     </p>
 
     {/* 🟩 Wrap everything you want to print in this div */}
-    <div id="briefing-content">
+   <div id="briefing-content" className="bg-white p-6 text-black">
       {/* HEADER FIELDS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 items-end">
         <div>
