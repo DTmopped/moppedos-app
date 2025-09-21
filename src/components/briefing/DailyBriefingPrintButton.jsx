@@ -9,19 +9,27 @@ const DailyBriefingPrintButton = () => {
     }
 
     const element = document.getElementById("briefing-content");
-    if (element) {
-      window.html2pdf()
-        .from(element)
-        .set({
-          margin: 0.5,
-          filename: `daily_briefing_${new Date().toISOString().split("T")[0]}.pdf`,
-          html2canvas: { scale: 2 },
-          jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
-        })
-        .save();
-    } else {
+    if (!element) {
       alert("No content found to print.");
+      return;
     }
+
+    const opt = {
+      margin: 0.5,
+      filename: `daily_briefing_${new Date().toISOString().slice(0, 10)}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: {
+        scale: 3,
+        useCORS: true,
+      },
+      jsPDF: {
+        unit: "in",
+        format: "letter",
+        orientation: "portrait",
+      },
+    };
+
+    window.html2pdf().set(opt).from(element).save();
   };
 
   return (
