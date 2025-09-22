@@ -31,7 +31,6 @@ const ForecastEmailParserBot = () => {
   const [error, setError] = useState("");
   const { toast } = useToast();
 
-  // Simplified effect to only set the date, preventing crashes from data fetching.
   useEffect(() => {
     const dateString = `Date: ${activeWeekStartDate.toISOString().split('T')[0]}`;
     setEmailInput(dateString + "\nMonday: \nTuesday: \nWednesday: \nThursday: \nFriday: \nSaturday: \nSunday: ");
@@ -60,13 +59,13 @@ const ForecastEmailParserBot = () => {
 
       lines.forEach(line => {
         const match = line.match(/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday):\s*([0-9,]+)/i);
-        if (!match || !match[2]) return; // Skip if no number is present
+        if (!match || !match[2]) return;
 
-        const day = match[1];
+        const dayName = match[1];
         const pax = parseInt(match[2].replace(/,/g, ''), 10);
-        if (isNaN(pax)) return; // Skip if parsing fails
+        if (isNaN(pax)) return;
 
-        const dayIndex = DAY_ORDER.indexOf(day);
+        const dayIndex = DAY_ORDER.indexOf(dayName);
         if (dayIndex === -1) return;
 
         const forecastDate = new Date(baseDate);
@@ -75,33 +74,33 @@ const ForecastEmailParserBot = () => {
         const guests = Math.round(pax * captureRate);
         const sales = guests * spendPerGuest;
 
+        // This object now perfectly matches the confirmed schema of fva_daily_history
         recordsToUpsert.push({
           location_id: locationId,
           date: forecastDate.toISOString().split('T')[0],
-          day: day,
           pax: pax,
           forecast_sales: sales,
           food_cost_pct: foodCostGoal,
           bev_cost_pct: bevCostGoal,
           labor_cost_pct: laborCostGoal,
+          // We DO NOT include the 'day' column, as it does not exist.
         });
       });
 
-      if (recordsToUpsert.length === 0) throw new Error("No valid day data found to process. Please ensure days have numbers after them.");
+      if (recordsToUpsert.length === 0) throw new Error("No valid day data found to process.");
 
       const { error: upsertError } = await supabase
         .from('fva_daily_history')
         .upsert(recordsToUpsert, { onConflict: 'location_id, date' }); 
 
       if (upsertError) {
-        // Provide a more specific error message for RLS issues
-        if (upsertError.message.includes("new row violates row-level security policy")) {
-            throw new Error("Permission Denied. You do not have the required permissions to save data to the forecast history. Please contact your administrator about Row-Level Security policies.");
+        if (upsertError.message.includes("violates row-level security policy")) {
+            throw new Error("Permission Denied: Your user role does not have permission to save this data. Please contact your administrator to check the Row-Level Security policies on the 'fva_daily_history' table.");
         }
         throw upsertError;
       }
 
-      toast({ title: "Forecast Saved!", description: `Forecast data has been saved. The FVA dashboard will now reflect these numbers.` });
+      toast({ title: "Forecast Saved!", description: `Your forecast has been saved and the FVA dashboard has been updated.` });
       
       if (refreshData) {
         refreshData();
@@ -131,7 +130,7 @@ const ForecastEmailParserBot = () => {
             <div>
               <CardTitle className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-600">Forecast Center</CardTitle>
               <CardDescription className="text-gray-500">
-                Select a week, paste forecast data, and save.
+                Select a week, input daily traffic, and save your forecast.
               </CardDescription>
             </div>
           </div>
@@ -152,7 +151,7 @@ const ForecastEmailParserBot = () => {
           </div>
 
           <div className="space-y-2 mb-6">
-            <Label htmlFor="emailInput" className="text-sm font-medium text-gray-700">Weekly Forecast Data</Label>
+            <Label htmlFor="emailInput" className="text-sm font-medium text-gray-700">Weekly Traffic Data</Label>
             <Textarea
               id="emailInput"
               value={emailInput}
@@ -185,6 +184,7 @@ const ForecastEmailParserBot = () => {
 };
 
 export default ForecastEmailParserBot;
+
 
 
 
