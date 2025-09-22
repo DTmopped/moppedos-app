@@ -29,7 +29,7 @@ const ForecastEmailParserBot = () => {
   const {
     captureRate,
     spendPerGuest,
-    amSplit, // We will use this to pass down
+    amSplit,
     foodCostGoal,
     bevCostGoal,
     laborCostGoal,
@@ -43,7 +43,7 @@ const ForecastEmailParserBot = () => {
   const { toast } = useToast();
   const [openAccordion, setOpenAccordion] = useState(null);
 
-  // Fetch data
+  // Fetch data for the CURRENT location
   useEffect(() => {
     const fetchAllForecasts = async () => {
       if (!locationId) {
@@ -58,20 +58,20 @@ const ForecastEmailParserBot = () => {
 
       if (error) {
         setError("Could not load forecast history.");
-        console.error(error);
+        console.error("Supabase fetch error:", error);
       } else {
         setAllForecasts(data || []);
-        if (!openAccordion) {
-            const activeWeekId = getStartOfWeek(activeWeekStartDate).toISOString().split('T')[0];
-            setOpenAccordion(activeWeekId);
-        }
+        // Set the accordion for the currently active week to be open by default on load
+        const activeWeekId = getStartOfWeek(activeWeekStartDate).toISOString().split('T')[0];
+        setOpenAccordion(activeWeekId);
       }
       setIsLoading(false);
     };
     fetchAllForecasts();
-  }, [locationId]);
+    // *** FIX: Add all dependencies that the effect relies on ***
+  }, [locationId, activeWeekStartDate]);
 
-  // Update text area
+  // Effect to update textarea when the active week or data changes
   useEffect(() => {
     const weekData = allForecasts.filter(f => {
       const forecastDate = new Date(f.date);
@@ -89,7 +89,7 @@ const ForecastEmailParserBot = () => {
     }
   }, [activeWeekStartDate, allForecasts]);
 
-  // Week navigation
+  // Week navigation handlers
   const handleWeekChange = (direction) => {
     setActiveWeekStartDate(prevDate => {
       const newDate = new Date(prevDate);
@@ -98,7 +98,7 @@ const ForecastEmailParserBot = () => {
     });
   };
 
-  // Save function
+  // Updated save/generate function
   const parseAndSaveForecast = useCallback(async () => {
     if (!locationId) {
         setError("No location selected. Cannot save forecast.");
@@ -127,14 +127,12 @@ const ForecastEmailParserBot = () => {
         const forecastDate = new Date(baseDate);
         forecastDate.setDate(forecastDate.getDate() + dayIndex);
 
-        // Calculations are done here, but only raw data is saved
         const guests = Math.round(pax * captureRate);
         const sales = guests * spendPerGuest;
         const food = sales * foodCostGoal;
         const bev = sales * bevCostGoal;
         const labor = sales * laborCostGoal;
 
-        // *** LOGIC FIX: Only include columns that exist in the database ***
         recordsToUpsert.push({
           location_id: locationId,
           date: forecastDate.toISOString().split('T')[0],
@@ -175,7 +173,7 @@ const ForecastEmailParserBot = () => {
     }
   }, [ emailInput, toast, locationId, captureRate, spendPerGuest, foodCostGoal, bevCostGoal, laborCostGoal ]);
 
-  // Group data for display
+  // Group data for accordion display
   const groupedForecasts = useMemo(() => {
     const groups = {};
     allForecasts.forEach(forecast => {
@@ -202,17 +200,80 @@ const ForecastEmailParserBot = () => {
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-      {/* ... Admin Toggle and Panel ... */}
-      <div className="flex justify-end"> <AdminModeToggle /> </div>
+      <div className="flex justify-end">
+        <AdminModeToggle />
+      </div>
+
       {isAdminMode && <AdminPanel />}
 
-      {/* ... Main Card ... */}
+      {/* *** FIX: Restored the main card UI *** */}
       <Card className="shadow-lg border-gray-200 bg-white">
-        <CardHeader> {/* ... */} </CardHeader>
-        <CardContent> {/* ... */} </CardContent>
+        <CardHeader className="pb-4">
+          <div className="flex items-center space-x-4">
+            <div className="p-3 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 shadow-lg">
+              <MailCheck className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-600">Forecast Center</CardTitle>
+              <CardDescription className="text-gray-500">
+                Select a week, paste forecast data, and save. View all saved forecasts below.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent>
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-6 border">
+              <Button variant="outline" onClick={() => handleWeekChange('prev')} className="bg-white border-gray-300 text-gray-700 hover:bg-gray-100">
+                  <ChevronLeft className="h-4 w-4 mr-2" /> Previous
+              </Button>
+              <div className="text-center font-semibold text-gray-700">
+                  <p>Editing Forecast For</p>
+                  <p className="text-blue-600 font-semibold">{activeWeekStartDate.toLocaleDateString()}</p>
+              </div>
+              <Button variant="outline" onClick={() => handleWeekChange('next')} className="bg-white border-gray-300 text-gray-700 hover:bg-gray-100">
+                  Next <ChevronRight className="h-4 w-4 ml-2" />
+              </Button>
+          </div>
+
+          <div className="space-y-2 mb-6">
+            <Label htmlFor="emailInput" className="text-sm font-medium text-gray-700">Weekly Forecast Data</Label>
+            <Textarea
+              id="emailInput"
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
+              placeholder="Date: YYYY-MM-DD&#10;Monday: 12345&#10;Tuesday: 16000"
+              className="min-h-[180px] text-sm font-mono bg-gray-50 border-gray-300 text-gray-900 focus:border-blue-500"
+            />
+          </div>
+          
+          {!isAdminMode && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-sm font-medium text-gray-700 p-4 bg-gray-50 rounded-lg border">
+                <div>Capture Rate: <span className="font-bold text-blue-600">{(captureRate * 100).toFixed(1)}%</span></div>
+                <div>Spend per Guest: <span className="font-bold text-blue-600">${spendPerGuest.toFixed(2)}</span></div>
+                <div>AM/PM Split: <span className="font-bold text-blue-600">{(amSplit * 100).toFixed(0)}% / {( (1-amSplit) * 100).toFixed(0)}%</span></div>
+            </div>
+          )}
+
+          <motion.div whileTap={{ scale: 0.98 }}>
+            <Button onClick={parseAndSaveForecast} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 text-base shadow-md hover:shadow-lg transition-all duration-300">
+              <TrendingUp className="mr-2 h-4 w-4" /> 
+              {isLoading ? "Saving..." : "Parse & Save Forecast"}
+            </Button>
+          </motion.div>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-4 text-sm text-red-700 bg-red-50 p-3 rounded-md border border-red-200 flex items-start"
+            >
+              <AlertTriangle size={18} className="mr-2 mt-0.5 text-red-600 flex-shrink-0" /> 
+              <span>{error}</span>
+            </motion.div>
+          )}
+        </CardContent>
       </Card>
 
-      {/* ... Saved Forecasts Section ... */}
       <div className="mt-8">
         <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-600 mb-4">
             Saved Forecasts
@@ -231,7 +292,7 @@ const ForecastEmailParserBot = () => {
               <ForecastWeekAccordion 
                   key={week.startDate} 
                   week={week}
-                  amSplit={amSplit} // *** LOGIC FIX: Pass amSplit down ***
+                  amSplit={amSplit}
               />
           ))}
         </Accordion>
@@ -241,6 +302,7 @@ const ForecastEmailParserBot = () => {
 };
 
 export default ForecastEmailParserBot;
+
 
 
 
