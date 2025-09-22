@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "components/ui/table.jsx";
 import { ChevronDown } from 'lucide-react';
 
-// A simplified table just for the accordion content
+// A self-contained table for displaying results within the accordion
 const AccordionTable = ({ weekData }) => (
   <Table>
     <TableHeader>
@@ -53,4 +53,5 @@ const ForecastWeekAccordion = ({ week, isInitiallyOpen = false }) => {
 };
 
 export default ForecastWeekAccordion;
+
 
