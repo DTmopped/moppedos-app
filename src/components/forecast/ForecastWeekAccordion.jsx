@@ -7,16 +7,15 @@ import {
 } from "@/components/ui/accordion";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-const ForecastWeekAccordion = ({ week, isInitiallyOpen }) => {
+const ForecastWeekAccordion = ({ week, isOpen, onToggle }) => {
   const totalSales = week.results.find(r => r.isTotal)?.sales || 0;
-
-  // Define a consistent value for the accordion item to ensure it can be controlled
-  const accordionValue = `week-${week.startDate}`;
+  const accordionValue = week.startDate; // Use the unique start date as the value
 
   return (
-    <Accordion type="single" collapsible defaultValue={isInitiallyOpen ? accordionValue : undefined}>
+    // The Accordion's value is now controlled by the parent's state.
+    // onValueChange calls the onToggle function passed from the parent.
+    <Accordion type="single" collapsible value={isOpen ? accordionValue : ""} onValueChange={onToggle}>
       <AccordionItem value={accordionValue} className="border-none mb-4">
-        {/* The main container div now handles the background, rounding, and shadow */}
         <div className="bg-white rounded-lg shadow-md transition-shadow hover:shadow-lg">
           <AccordionTrigger className="px-6 py-4 text-base font-medium text-gray-900 hover:no-underline rounded-t-lg data-[state=open]:rounded-b-none">
             <div className="flex justify-between w-full items-center">
@@ -29,7 +28,6 @@ const ForecastWeekAccordion = ({ week, isInitiallyOpen }) => {
             </div>
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4 bg-white rounded-b-lg">
-            {/* The table container has a top border to separate it from the trigger */}
             <div className="overflow-x-auto border-t">
               <Table>
                 <TableHeader>
@@ -68,6 +66,7 @@ const ForecastWeekAccordion = ({ week, isInitiallyOpen }) => {
 };
 
 export default ForecastWeekAccordion;
+
 
 
 
