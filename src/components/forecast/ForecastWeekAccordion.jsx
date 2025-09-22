@@ -1,4 +1,3 @@
-// src/components/forecast/ForecastWeekAccordion.jsx
 import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "components/ui/table.jsx";
 import { ChevronDown } from 'lucide-react';
@@ -18,8 +17,8 @@ const AccordionTable = ({ weekData }) => (
       {weekData.map((row, idx) => (
         <TableRow key={idx} className={row.isTotal ? "font-bold bg-slate-700/50" : ""}>
           <TableCell>{row.day}</TableCell>
-          <TableCell className="text-right">${row.sales.toLocaleString()}</TableCell>
-          <TableCell className="text-right">{row.guests.toLocaleString()}</TableCell>
+          <TableCell className="text-right">${row.sales.toLocaleString(undefined, {maximumFractionDigits: 0})}</TableCell>
+          <TableCell className="text-right">{Math.round(row.guests).toLocaleString()}</TableCell>
           <TableCell className="text-right">{row.pax.toLocaleString()}</TableCell>
         </TableRow>
       ))}
@@ -54,3 +53,4 @@ const ForecastWeekAccordion = ({ week, isInitiallyOpen = false }) => {
 };
 
 export default ForecastWeekAccordion;
+
