@@ -2,17 +2,17 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/supabaseClient";
 import { Button } from "components/ui/button.jsx";
-import { Input } from "components/ui/input.jsx";
 import { Textarea } from "components/ui/textarea.jsx";
 import { Label } from "components/ui/label.jsx";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "components/ui/card.jsx";
-import { MailCheck, TrendingUp, Info, AlertTriangle, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { MailCheck, TrendingUp, AlertTriangle, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "components/ui/use-toast.jsx";
 import ForecastWeekAccordion from "./forecast/ForecastWeekAccordion.jsx";
 import { useUserAndLocation } from "@/hooks/useUserAndLocation";
 import { useData } from "@/contexts/DataContext";
 import AdminPanel from "./forecast/AdminPanel.jsx";
 import AdminModeToggle from "@/components/ui/AdminModeToggle";
+import { Accordion } from "@/components/ui/accordion"; // *** IMPORT Accordion ***
 
 // Helper functions
 const getStartOfWeek = (date) => {
@@ -42,18 +42,7 @@ const ForecastEmailParserBot = () => {
   const [error, setError] = useState("");
   const { toast } = useToast();
 
-  // *** NEW STATE: To control which accordion is open ***
   const [openAccordion, setOpenAccordion] = useState(null);
-
-  // These states now just hold the string representation for the input fields
-  const [captureRateInput, setCaptureRateInput] = useState((captureRate * 100).toFixed(1));
-  const [avgSpendInput, setAvgSpendInput] = useState(spendPerGuest.toFixed(0));
-
-  // Sync local input state with global adminSettings
-  useEffect(() => {
-    setCaptureRateInput((captureRate * 100).toFixed(1));
-    setAvgSpendInput(spendPerGuest.toFixed(0));
-  }, [captureRate, spendPerGuest]);
 
   // Fetch data for the CURRENT location
   useEffect(() => {
@@ -73,7 +62,6 @@ const ForecastEmailParserBot = () => {
         console.error(error);
       } else {
         setAllForecasts(data || []);
-        // *** MODIFIED: Set the newly edited week to be open by default ***
         const activeWeekId = getStartOfWeek(activeWeekStartDate).toISOString().split('T')[0];
         setOpenAccordion(activeWeekId);
       }
@@ -92,7 +80,8 @@ const ForecastEmailParserBot = () => {
 
     const dateString = `Date: ${activeWeekStartDate.toISOString().split('T')[0]}`;
     if (weekData.length > 0) {
-      const paxData = weekData.map(day => `${day.day}: ${day.pax}`).join('\n');
+      const sortedWeekData = weekData.sort((a, b) => DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day));
+      const paxData = sortedWeekData.map(day => `${day.day}: ${day.pax}`).join('\n');
       setEmailInput(`${dateString}\n${paxData}`);
     } else {
       setEmailInput(dateString);
@@ -110,6 +99,7 @@ const ForecastEmailParserBot = () => {
 
   // Updated save/generate function
   const parseAndSaveForecast = useCallback(async () => {
+    // ... (rest of the function is unchanged)
     if (!locationId) {
         setError("No location selected. Cannot save forecast.");
         return;
@@ -170,7 +160,6 @@ const ForecastEmailParserBot = () => {
           return [...updated, ...recordsToUpsert].sort((a, b) => new Date(a.date) - new Date(b.date));
       });
       
-      // *** MODIFIED: Set the newly saved week to be open ***
       const weekId = getStartOfWeek(baseDate).toISOString().split('T')[0];
       setOpenAccordion(weekId);
 
@@ -232,6 +221,7 @@ const ForecastEmailParserBot = () => {
       {isAdminMode && <AdminPanel />}
 
       <Card className="shadow-lg border-gray-200 bg-white">
+        {/* ... CardHeader and CardContent are unchanged ... */}
         <CardHeader className="pb-4">
           <div className="flex items-center space-x-4">
             <div className="p-3 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 shadow-lg">
@@ -304,21 +294,29 @@ const ForecastEmailParserBot = () => {
         </h3>
         {isLoading && allForecasts.length === 0 && <p className="text-gray-500">Loading history...</p>}
         {!isLoading && groupedForecasts.length === 0 && <p className="text-gray-500">No saved forecasts found.</p>}
-        {/* *** MODIFIED: Pass state and handler to each accordion *** */}
-        {groupedForecasts.map(week => (
-            <ForecastWeekAccordion 
-                key={week.startDate} 
-                week={week}
-                isOpen={openAccordion === week.startDate}
-                onToggle={() => setOpenAccordion(openAccordion === week.startDate ? null : week.startDate)}
-            />
-        ))}
+        
+        {/* *** CRITICAL CHANGE HERE *** */}
+        <Accordion 
+          type="single" 
+          collapsible 
+          value={openAccordion} 
+          onValueChange={setOpenAccordion}
+          className="space-y-4"
+        >
+          {groupedForecasts.map(week => (
+              <ForecastWeekAccordion 
+                  key={week.startDate} 
+                  week={week}
+              />
+          ))}
+        </Accordion>
       </div>
     </motion.div>
   );
 };
 
 export default ForecastEmailParserBot;
+
 
 
 
