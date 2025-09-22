@@ -12,12 +12,12 @@ export const views = [
     isDefault: true, 
   },
   {
-    id: 'WEEKLY_FORECAST_PARSER',
-    path: '/weekly-forecast',
-    label: 'Weekly Forecast',
-    componentName: 'WeeklyForecastParser',
-    icon: <Calculator size={20} strokeWidth={2.5} />,
-    showInNav: true,
+    id: 'WEEKLY_FORECAST_CENTER', // It's good practice to update the ID as well
+  path: '/weekly-forecast',
+  label: 'Forecast Center', // A new name for a new, more powerful page
+  componentName: 'ForecastCenter', // ✅ THIS IS THE FIX
+  icon: <MailCheck size={20} strokeWidth={2.5} />, // A more fitting icon
+  showInNav: true,
   },
   {
     id: 'PERFORMANCE_ANALYZER',
