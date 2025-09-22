@@ -5,7 +5,7 @@ import { Button } from "components/ui/button.jsx";
 import { Textarea } from "components/ui/textarea.jsx";
 import { Label } from "components/ui/label.jsx";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "components/ui/card.jsx";
-import { MailCheck, TrendingUp, AlertTriangle, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { MailCheck, TrendingUp, AlertTriangle, CheckCircle, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useToast } from "components/ui/use-toast.jsx";
 import { useUserAndLocation } from "@/hooks/useUserAndLocation";
 import { useData } from "@/contexts/DataContext";
@@ -26,27 +26,20 @@ const ForecastEmailParserBot = () => {
   const { captureRate, spendPerGuest, foodCostGoal, bevCostGoal, laborCostGoal } = adminSettings;
 
   const [activeWeekStartDate, setActiveWeekStartDate] = useState(getStartOfWeek(new Date()));
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // For the save operation
   const [emailInput, setEmailInput] = useState("");
   const [error, setError] = useState("");
   const { toast } = useToast();
 
-  // A new state to explicitly track if the locationId is valid
-  const [isLocationIdValid, setIsLocationIdValid] = useState(false);
+  // This is the key change: check if the locationId is loaded.
+  const isLocationReady = locationId && typeof locationId === 'string' && locationId.length > 1;
 
   useEffect(() => {
-    // This effect now validates the locationId whenever it changes.
-    if (locationId && typeof locationId === 'string' && locationId.length > 1) {
-        setIsLocationIdValid(true);
-    } else {
-        setIsLocationIdValid(false);
+    if (isLocationReady) {
+      const dateString = `Date: ${activeWeekStartDate.toISOString().split('T')[0]}`;
+      setEmailInput(dateString + "\nMonday: \nTuesday: \nWednesday: \nThursday: \nFriday: \nSaturday: \nSunday: ");
     }
-  }, [locationId]);
-
-  useEffect(() => {
-    const dateString = `Date: ${activeWeekStartDate.toISOString().split('T')[0]}`;
-    setEmailInput(dateString + "\nMonday: \nTuesday: \nWednesday: \nThursday: \nFriday: \nSaturday: \nSunday: ");
-  }, [activeWeekStartDate]);
+  }, [activeWeekStartDate, isLocationReady]);
 
   const handleWeekChange = (direction) => {
     setActiveWeekStartDate(prevDate => {
@@ -57,14 +50,15 @@ const ForecastEmailParserBot = () => {
   };
 
   const parseAndSaveForecast = useCallback(async () => {
-    if (!isLocationIdValid) { 
-      setError("Location ID is not yet available. Please wait a moment and try again."); 
+    if (!isLocationReady) { 
+      setError("Location is not available. Please wait or refresh the page."); 
       return; 
     }
     setError("");
     setIsLoading(true);
 
     try {
+      // ... (The entire try/catch block for parsing and saving remains exactly the same)
       const lines = emailInput.trim().split("\n");
       const dateLine = lines.find(line => /date:/i.test(line));
       if (!dateLine) throw new Error("Date: YYYY-MM-DD line is missing.");
@@ -129,8 +123,22 @@ const ForecastEmailParserBot = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [ emailInput, toast, locationId, isLocationIdValid, captureRate, spendPerGuest, foodCostGoal, bevCostGoal, laborCostGoal, refreshData ]);
+  }, [ emailInput, toast, locationId, isLocationReady, captureRate, spendPerGuest, foodCostGoal, bevCostGoal, laborCostGoal, refreshData ]);
 
+  // *** THE RENDER LOGIC FIX ***
+  // If the location isn't ready, show a loading state for the whole component.
+  if (!isLocationReady) {
+    return (
+      <Card className="shadow-lg border-gray-200 bg-white flex items-center justify-center p-10">
+        <div className="flex flex-col items-center text-gray-500">
+          <Loader2 className="h-8 w-8 animate-spin mb-2" />
+          <span className="font-semibold">Loading Location Data...</span>
+        </div>
+      </Card>
+    );
+  }
+
+  // If location IS ready, render the full component.
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
       <div className="flex justify-end">
@@ -140,26 +148,63 @@ const ForecastEmailParserBot = () => {
       {isAdminMode && <AdminPanel />}
 
       <Card className="shadow-lg border-gray-200 bg-white">
-        <CardHeader>
-            {/* ... Card Header UI ... */}
+        <CardHeader className="pb-4">
+          <div className="flex items-center space-x-4">
+            <div className="p-3 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 shadow-lg">
+              <MailCheck className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-600">Forecast Center</CardTitle>
+              <CardDescription className="text-gray-500">
+                Select a week, input daily traffic, and save your forecast.
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
+
         <CardContent>
-            {/* ... Week Navigation and Textarea UI ... */}
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-6 border">
+              <Button variant="outline" onClick={() => handleWeekChange('prev')} className="bg-white border-gray-300 text-gray-700 hover:bg-gray-100">
+                  <ChevronLeft className="h-4 w-4 mr-2" /> Previous
+              </Button>
+              <div className="text-center font-semibold text-gray-700">
+                  <p>Editing Forecast For</p>
+                  <p className="text-blue-600 font-semibold">{activeWeekStartDate.toLocaleDateString()}</p>
+              </div>
+              <Button variant="outline" onClick={() => handleWeekChange('next')} className="bg-white border-gray-300 text-gray-700 hover:bg-gray-100">
+                  Next <ChevronRight className="h-4 w-4 ml-2" />
+              </Button>
+          </div>
+
+          <div className="space-y-2 mb-6">
+            <Label htmlFor="emailInput" className="text-sm font-medium text-gray-700">Weekly Traffic Data</Label>
+            <Textarea
+              id="emailInput"
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
+              placeholder="Date: YYYY-MM-DD&#10;Monday: 12345&#10;Tuesday: 16000"
+              className="min-h-[180px] text-sm font-mono bg-gray-50 border-gray-300 text-gray-900 focus:border-blue-500"
+            />
+          </div>
           
           <motion.div whileTap={{ scale: 0.98 }}>
             <Button 
               onClick={parseAndSaveForecast} 
-              // Disable the button if locationId is not valid OR if it's already loading
-              disabled={!isLocationIdValid || isLoading} 
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 text-base shadow-md hover:shadow-lg transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              disabled={isLoading} 
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 text-base shadow-md hover:shadow-lg transition-all duration-300 disabled:bg-gray-400"
             >
               <TrendingUp className="mr-2 h-4 w-4" /> 
-              {isLoading ? "Saving..." : (isLocationIdValid ? "Parse & Save Forecast" : "Loading Location...")}
+              {isLoading ? "Saving..." : "Parse & Save Forecast"}
             </Button>
           </motion.div>
           {error && (
-            <motion.div>
-                {/* ... Error Display UI ... */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-4 text-sm text-red-700 bg-red-50 p-3 rounded-md border border-red-200 flex items-start"
+            >
+              <AlertTriangle size={18} className="mr-2 mt-0.5 text-red-600 flex-shrink-0" /> 
+              <span>{error}</span>
             </motion.div>
           )}
         </CardContent>
@@ -169,6 +214,7 @@ const ForecastEmailParserBot = () => {
 };
 
 export default ForecastEmailParserBot;
+
 
 
 
