@@ -1,62 +1,54 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
-import { supabase } from "@/supabaseClient"; // Ensure this path is correct
+import { supabase } from "@/supabaseClient"; // --- NEW --- Ensure this path is correct
 import { Button } from "components/ui/button.jsx";
 import { Input } from "components/ui/input.jsx";
 import { Textarea } from "components/ui/textarea.jsx";
 import { Label } from "components/ui/label.jsx";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "components/ui/card.jsx";
-import { MailCheck, TrendingUp, Info, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { MailCheck, TrendingUp, Info, AlertTriangle, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "components/ui/use-toast.jsx";
-import ForecastWeekAccordion from "./ForecastWeekAccordion.jsx"; // Import the new component
+import ForecastWeekAccordion from "./ForecastWeekAccordion.jsx"; // --- NEW --- Import the accordion
 
-// --- HELPER FUNCTIONS ---
+// --- NEW --- Helper functions
 const getStartOfWeek = (date) => {
   const d = new Date(date);
   const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
-  return new Date(d.setDate(diff));
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  return new Date(new Date(d.setDate(diff)).setHours(0, 0, 0, 0));
 };
-const formatDate = (date) => date.toISOString().split('T')[0];
 const DAY_ORDER = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 const ForecastEmailParserBot = () => {
-  // --- STATE MANAGEMENT ---
+  // --- NEW --- State for multi-week functionality
   const [activeWeekStartDate, setActiveWeekStartDate] = useState(getStartOfWeek(new Date()));
   const [allForecasts, setAllForecasts] = useState([]);
-  const [emailInput, setEmailInput] = useState("");
-  const [captureRate, setCaptureRate] = useState("8.0");
-  const [avgSpend, setAvgSpend] = useState("40");
-  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+
+  // --- Existing State ---
+  const [emailInput, setEmailInput] = useState("");
+  const [captureRateInput, setCaptureRateInput] = useState("8.0");
+  const [avgSpendInput, setAvgSpendInput] = useState("40");
+  const [error, setError] = useState("");
   const { toast } = useToast();
 
-  // --- DATA FETCHING from Supabase ---
+  // --- NEW --- Fetch all data from Supabase on initial load
   useEffect(() => {
-    const fetchForecasts = async () => {
+    const fetchAllForecasts = async () => {
       setIsLoading(true);
-      const fromDate = new Date(new Date().setDate(new Date().getDate() - 28));
-      const toDate = new Date(new Date().setDate(new Date().getDate() + 56));
-
-      const { data, error } = await supabase
-        .from('weekly_forecasts') // Ensure this is your table name
-        .select('*')
-        .gte('date', formatDate(fromDate))
-        .lte('date', formatDate(toDate))
-        .order('date', { ascending: true });
-
+      const { data, error } = await supabase.from('weekly_forecasts').select('*'); // Use your table name
       if (error) {
-        setError("Could not fetch forecast history.");
-        console.error("Supabase fetch error:", error);
+        setError("Could not load forecast history.");
+        console.error(error);
       } else {
         setAllForecasts(data || []);
       }
       setIsLoading(false);
     };
-    fetchForecasts();
+    fetchAllForecasts();
   }, []);
 
-  // --- LOGIC to update input text when week changes ---
+  // --- NEW --- Effect to update the textarea when the active week or data changes
   useEffect(() => {
     const weekData = allForecasts.filter(f => {
       const forecastDate = new Date(f.date);
@@ -64,85 +56,16 @@ const ForecastEmailParserBot = () => {
       return startOfWeek.getTime() === activeWeekStartDate.getTime();
     });
 
-    const text = `Date: ${formatDate(activeWeekStartDate)}\n` +
-      (weekData.length > 0 ? weekData.map(day => `${day.day}: ${day.pax}`).join('\n') : "");
-    setEmailInput(text);
+    const dateString = `Date: ${activeWeekStartDate.toISOString().split('T')[0]}`;
+    if (weekData.length > 0) {
+      const paxData = weekData.map(day => `${day.day}: ${day.pax}`).join('\n');
+      setEmailInput(`${dateString}\n${paxData}`);
+    } else {
+      setEmailInput(dateString);
+    }
   }, [activeWeekStartDate, allForecasts]);
 
-  // --- SAVE LOGIC (UPDATED) ---
-  const parseAndSaveForecast = useCallback(async () => {
-    setError("");
-    setIsLoading(true);
-
-    const capture = parseFloat(captureRate) / 100;
-    const spend = parseFloat(avgSpend);
-    if (isNaN(capture) || isNaN(spend) || capture <= 0 || spend <= 0) {
-        setError("Invalid Capture Rate or Average Spend.");
-        setIsLoading(false);
-        return;
-    }
-
-    try {
-        const lines = emailInput.trim().split("\n");
-        const recordsToUpsert = [];
-        let baseDate = null;
-
-        const dateLine = lines.find(line => /^date:/i.test(line.trim()));
-        if (dateLine) baseDate = new Date(dateLine.split(":")[1].trim());
-        if (!baseDate || isNaN(baseDate.getTime())) throw new Error("A valid 'Date: YYYY-MM-DD' line is required.");
-
-        const dayData = {};
-        lines.forEach(line => {
-            const match = line.match(/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday):\s*([0-9,]+)/i);
-            if (match) dayData[match[1]] = parseInt(match[2].replace(/,/g, ''));
-        });
-
-        for (let i = 0; i < 7; i++) {
-            const currentDate = new Date(baseDate);
-            currentDate.setDate(currentDate.getDate() + i);
-            const dayName = DAY_ORDER[currentDate.getDay() === 0 ? 6 : currentDate.getDay() - 1];
-            
-            const pax = dayData[dayName] || 0;
-            const guests = pax * capture;
-            const sales = guests * spend;
-
-            recordsToUpsert.push({
-                date: formatDate(currentDate),
-                day: dayName,
-                pax,
-                guests,
-                sales,
-                // Add other cost columns if needed
-            });
-        }
-
-        const { error: upsertError } = await supabase
-            .from('weekly_forecasts')
-            .upsert(recordsToUpsert, { onConflict: 'date' });
-
-        if (upsertError) throw upsertError;
-
-        toast({
-            title: "Forecast Saved!",
-            description: `Forecast for the week of ${formatDate(baseDate)} has been saved successfully.`,
-            action: <CheckCircle className="text-green-500" />,
-        });
-
-        // Refresh local state
-        setAllForecasts(prev => {
-            const updated = [...prev.filter(p => !recordsToUpsert.some(r => r.date === p.date))];
-            return [...updated, ...recordsToUpsert].sort((a, b) => new Date(a.date) - new Date(b.date));
-        });
-
-    } catch (err) {
-        setError(`Failed to save forecast: ${err.message}`);
-        console.error("Save Error:", err);
-    } finally {
-        setIsLoading(false);
-    }
-  }, [emailInput, captureRate, avgSpend, toast]);
-
-  // --- WEEK NAVIGATION ---
+  // --- NEW --- Week navigation handlers
   const handleWeekChange = (direction) => {
     setActiveWeekStartDate(prevDate => {
       const newDate = new Date(prevDate);
@@ -151,52 +74,113 @@ const ForecastEmailParserBot = () => {
     });
   };
 
-  // --- DATA GROUPING for display ---
+  // --- NEW --- Updated save/generate function
+  const parseAndSaveForecast = useCallback(async () => {
+    setError("");
+    setIsLoading(true);
+
+    const capture = parseFloat(captureRateInput) / 100;
+    const spend = parseFloat(avgSpendInput);
+    if (isNaN(capture) || isNaN(spend) || !emailInput.trim()) {
+      setError("Invalid inputs. Check capture rate, spend, and traffic data.");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const lines = emailInput.trim().split("\n");
+      const dateLine = lines.find(line => /date:/i.test(line));
+      if (!dateLine) throw new Error("Date: YYYY-MM-DD line is missing.");
+      
+      const baseDate = new Date(dateLine.split(":")[1].trim());
+      const recordsToUpsert = [];
+
+      lines.forEach(line => {
+        const match = line.match(/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday):\s*([0-9,]+)/i);
+        if (!match) return;
+
+        const day = match[1];
+        const pax = parseInt(match[2].replace(/,/g, ''), 10);
+        const dayIndex = DAY_ORDER.indexOf(day);
+        if (dayIndex === -1) return;
+
+        const forecastDate = new Date(baseDate);
+        forecastDate.setDate(forecastDate.getDate() + dayIndex);
+
+        const guests = Math.round(pax * capture);
+        const sales = guests * spend;
+
+        recordsToUpsert.push({
+          date: forecastDate.toISOString().split('T')[0],
+          day,
+          pax,
+          guests,
+          sales,
+          // Add other cost fields if your table has them
+        });
+      });
+
+      if (recordsToUpsert.length === 0) throw new Error("No valid day data found to process.");
+
+      const { error: upsertError } = await supabase.from('weekly_forecasts').upsert(recordsToUpsert, { onConflict: 'date' });
+      if (upsertError) throw upsertError;
+
+      setAllForecasts(prev => {
+          const updated = prev.filter(p => !recordsToUpsert.some(nr => nr.date === p.date));
+          return [...updated, ...recordsToUpsert].sort((a, b) => new Date(a.date) - new Date(b.date));
+      });
+
+      toast({
+        title: "Forecast Saved!",
+        description: `${recordsToUpsert.length} days for week starting ${baseDate.toLocaleDateString()} have been saved.`,
+        action: <CheckCircle className="text-green-500" />,
+      });
+
+    } catch (e) {
+      setError(`Error: ${e.message}`);
+      console.error("Forecast generation error:", e);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [emailInput, captureRateInput, avgSpendInput, toast]);
+
+  // --- NEW --- Group data for accordion display
   const groupedForecasts = useMemo(() => {
     const groups = {};
     allForecasts.forEach(forecast => {
       const startOfWeek = getStartOfWeek(new Date(forecast.date));
-      const key = formatDate(startOfWeek);
+      const key = startOfWeek.toISOString().split('T')[0];
       if (!groups[key]) groups[key] = { startDate: key, results: [] };
       groups[key].results.push(forecast);
     });
 
     Object.values(groups).forEach(group => {
         const totals = group.results.reduce((acc, row) => ({
-            guests: acc.guests + row.guests,
-            sales: acc.sales + row.sales,
-        }), { guests: 0, sales: 0 });
+            pax: acc.pax + (row.pax || 0),
+            guests: acc.guests + (row.guests || 0),
+            sales: acc.sales + (row.sales || 0),
+        }), { pax: 0, guests: 0, sales: 0 });
         group.results.push({ ...totals, day: 'Total', isTotal: true });
     });
 
-    return Object.values(groups).sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+    return Object.values(groups).sort((a, b) => new Date(b.startDate) - new Date(a.startDate)); // Show newest first
   }, [allForecasts]);
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
       <Card className="shadow-xl border-slate-700 bg-slate-800/70 backdrop-blur-sm">
-        <CardHeader className="pb-4">
-          <div className="flex items-center space-x-4">
-            <div className="p-3 rounded-full bg-gradient-to-tr from-teal-500 to-cyan-600 shadow-lg">
-              <MailCheck className="h-8 w-8 text-white" />
-            </div>
-            <div>
-              <CardTitle className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-cyan-500">Forecast Center</CardTitle>
-              <CardDescription className="text-slate-400">
-                Select a week, paste forecast data, and save. View all weekly forecasts below.
-              </CardDescription>
-            </div>
-          </div>
+        <CardHeader>
+            {/* ... Your existing CardHeader content ... */}
         </CardHeader>
         <CardContent>
-          {/* --- NEW: Week Selector UI --- */}
-          <div className="flex items-center justify-between p-3 bg-slate-900 rounded-lg mb-6">
+          {/* --- NEW --- Week Selector */}
+          <div className="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg mb-6">
               <Button variant="outline" onClick={() => handleWeekChange('prev')} className="bg-slate-700 border-slate-600">
                   <ChevronLeft className="h-4 w-4 mr-2" /> Previous
               </Button>
               <div className="text-center font-semibold text-slate-200">
                   <p>Editing Forecast For</p>
-                  <p className="text-teal-400">{formatDate(activeWeekStartDate)}</p>
+                  <p className="text-teal-400">{activeWeekStartDate.toLocaleDateString()}</p>
               </div>
               <Button variant="outline" onClick={() => handleWeekChange('next')} className="bg-slate-700 border-slate-600">
                   Next <ChevronRight className="h-4 w-4 ml-2" />
@@ -205,40 +189,45 @@ const ForecastEmailParserBot = () => {
 
           <div className="space-y-2 mb-6">
             <Label htmlFor="emailInput" className="text-sm font-medium text-slate-300">Weekly Forecast Data</Label>
-            <Textarea id="emailInput" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} className="min-h-[180px] font-mono" />
+            <Textarea
+              id="emailInput"
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
+              className="min-h-[180px] text-sm font-mono bg-slate-800 border-slate-600"
+            />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div className="space-y-2"><Label>Capture Rate (%)</Label><Input type="number" value={captureRate} onChange={(e) => setCaptureRate(e.target.value)} /></div>
-            <div className="space-y-2"><Label>Spend per Guest ($)</Label><Input type="number" value={avgSpend} onChange={(e) => setAvgSpend(e.target.value)} /></div>
+            {/* ... Your Capture Rate and Spend Inputs ... */}
           </div>
           <motion.div whileTap={{ scale: 0.98 }}>
-            <Button onClick={parseAndSaveForecast} disabled={isLoading} className="w-full bg-gradient-to-r from-teal-500 to-cyan-600 text-white py-3 text-base">
-              <TrendingUp className="mr-2 h-4 w-4" /> {isLoading ? "Saving..." : "Parse & Save Forecast"}
+            <Button onClick={parseAndSaveForecast} className="w-full bg-gradient-to-r from-teal-500 to-cyan-600 ...">
+              <TrendingUp className="mr-2 h-4 w-4" /> 
+              {isLoading ? "Saving..." : "Parse & Save Forecast"}
             </Button>
           </motion.div>
-          {error && <p className="mt-4 text-sm text-red-400"><Info size={18} className="mr-2 inline" />{error}</p>}
+          {error && ( /* ... Your error display ... */ )}
         </CardContent>
       </Card>
 
-      {/* --- NEW: Collapsible Results Section --- */}
+      {/* --- NEW --- Collapsible Results Section */}
       <div className="mt-8">
-        <h3 className="text-teal-400 font-semibold text-lg mb-3">Saved Forecasts</h3>
-        {isLoading && allForecasts.length === 0 && <p className="text-slate-400">Loading saved forecasts...</p>}
-        {!isLoading && groupedForecasts.length > 0 ? (
-            groupedForecasts.map(week => (
-                <ForecastWeekAccordion 
-                    key={week.startDate} 
-                    week={week}
-                    isInitiallyOpen={getStartOfWeek(new Date(week.startDate)).getTime() === activeWeekStartDate.getTime()}
-                />
-            ))
-        ) : (
-            !isLoading && <p className="text-slate-400">No forecast data found for this period.</p>
-        )}
+        <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-cyan-500 mb-4">
+            Saved Forecasts
+        </h3>
+        {isLoading && allForecasts.length === 0 && <p className="text-slate-400">Loading history...</p>}
+        {!isLoading && groupedForecasts.length === 0 && <p className="text-slate-400">No saved forecasts found.</p>}
+        {groupedForecasts.map(week => (
+            <ForecastWeekAccordion 
+                key={week.startDate} 
+                week={week}
+                isInitiallyOpen={getStartOfWeek(new Date(week.startDate)).getTime() === activeWeekStartDate.getTime()}
+            />
+        ))}
       </div>
     </motion.div>
   );
 };
 
-export
+export default ForecastEmailParserBot;
+
 
