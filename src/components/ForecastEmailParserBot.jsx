@@ -62,8 +62,8 @@ const ForecastEmailParserBot = () => {
         if (!match || !match[2]) return;
 
         const dayName = match[1];
-        const pax = parseInt(match[2].replace(/,/g, ''), 10);
-        if (isNaN(pax)) return;
+        const paxValue = parseInt(match[2].replace(/,/g, ''), 10);
+        if (isNaN(paxValue)) return;
 
         const dayIndex = DAY_ORDER.indexOf(dayName);
         if (dayIndex === -1) return;
@@ -71,19 +71,18 @@ const ForecastEmailParserBot = () => {
         const forecastDate = new Date(baseDate);
         forecastDate.setDate(forecastDate.getDate() + dayIndex);
 
-        const guests = Math.round(pax * captureRate);
+        const guests = Math.round(paxValue * captureRate);
         const sales = guests * spendPerGuest;
 
-        // This object now perfectly matches the confirmed schema of fva_daily_history
+        // This object now perfectly matches the confirmed lean schema of fva_daily_history
         recordsToUpsert.push({
           location_id: locationId,
           date: forecastDate.toISOString().split('T')[0],
-          pax: pax,
           forecast_sales: sales,
           food_cost_pct: foodCostGoal,
           bev_cost_pct: bevCostGoal,
           labor_cost_pct: laborCostGoal,
-          // We DO NOT include the 'day' column, as it does not exist.
+          // We DO NOT include 'day' or 'pax' as they do not exist in the target table.
         });
       });
 
@@ -184,6 +183,7 @@ const ForecastEmailParserBot = () => {
 };
 
 export default ForecastEmailParserBot;
+
 
 
 
