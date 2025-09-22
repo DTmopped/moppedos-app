@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/supabaseClient";
 import { Button } from "components/ui/button.jsx";
@@ -21,7 +21,8 @@ const getStartOfWeek = (date) => {
 const DAY_ORDER = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 const ForecastEmailParserBot = () => {
-  const { locationId } = useUserAndLocation();
+  // This hook provides the correct UUID for the location.
+  const { locationId } = useUserAndLocation(); 
   const { isAdminMode, adminSettings, refreshData } = useData();
   const { captureRate, spendPerGuest, foodCostGoal, bevCostGoal, laborCostGoal } = adminSettings;
 
@@ -45,7 +46,11 @@ const ForecastEmailParserBot = () => {
   };
 
   const parseAndSaveForecast = useCallback(async () => {
-    if (!locationId) { setError("No location selected."); return; }
+    // Critical Check: Ensure locationId is a valid UUID before proceeding.
+    if (!locationId || typeof locationId !== 'string' || locationId.length < 36) { 
+      setError("Invalid or missing Location ID. Cannot save forecast."); 
+      return; 
+    }
     setError("");
     setIsLoading(true);
 
@@ -78,7 +83,7 @@ const ForecastEmailParserBot = () => {
         const sales = guests * spendPerGuest;
 
         recordsToInsert.push({
-          location_id: locationId,
+          location_id: locationId, // Use the UUID from the hook
           date: dateString,
           forecast_sales: sales,
           food_cost_pct: foodCostGoal,
@@ -89,26 +94,21 @@ const ForecastEmailParserBot = () => {
 
       if (recordsToInsert.length === 0) throw new Error("No valid day data found to process.");
 
-      // Step 1: Delete existing records for the dates we are about to insert.
+      // Step 1: Delete using the correct UUID.
       const { error: deleteError } = await supabase
         .from('fva_daily_history')
         .delete()
-        .eq('location_id', locationId)
+        .eq('location_id', locationId) // Pass the UUID here
         .in('date', datesToDelete);
 
       if (deleteError) throw deleteError;
 
-      // Step 2: Insert the new records. This is now a simple insert, not an upsert.
+      // Step 2: Insert using the correct UUID.
       const { error: insertError } = await supabase
         .from('fva_daily_history')
         .insert(recordsToInsert);
 
-      if (insertError) {
-        if (insertError.message.includes("violates row-level security policy")) {
-            throw new Error("Permission Denied: Your user role does not have permission to save this data. Please contact your administrator to check the Row-Level Security policies on the 'fva_daily_history' table.");
-        }
-        throw insertError;
-      }
+      if (insertError) throw insertError;
 
       toast({ title: "Forecast Saved!", description: `Your forecast has been saved and the FVA dashboard has been updated.` });
       
@@ -194,6 +194,7 @@ const ForecastEmailParserBot = () => {
 };
 
 export default ForecastEmailParserBot;
+
 
 
 
