@@ -26,12 +26,11 @@ const ForecastEmailParserBot = () => {
   const { captureRate, spendPerGuest, foodCostGoal, bevCostGoal, laborCostGoal } = adminSettings;
 
   const [activeWeekStartDate, setActiveWeekStartDate] = useState(getStartOfWeek(new Date()));
-  const [isLoading, setIsLoading] = useState(false); // For the save operation
+  const [isLoading, setIsLoading] = useState(false);
   const [emailInput, setEmailInput] = useState("");
   const [error, setError] = useState("");
   const { toast } = useToast();
 
-  // This is the key change: check if the locationId is loaded.
   const isLocationReady = locationId && typeof locationId === 'string' && locationId.length > 1;
 
   useEffect(() => {
@@ -58,7 +57,6 @@ const ForecastEmailParserBot = () => {
     setIsLoading(true);
 
     try {
-      // ... (The entire try/catch block for parsing and saving remains exactly the same)
       const lines = emailInput.trim().split("\n");
       const dateLine = lines.find(line => /date:/i.test(line));
       if (!dateLine) throw new Error("Date: YYYY-MM-DD line is missing.");
@@ -98,6 +96,7 @@ const ForecastEmailParserBot = () => {
 
       if (recordsToInsert.length === 0) throw new Error("No valid day data found to process.");
 
+      // Step 1: Delete existing records for this location and date range.
       const { error: deleteError } = await supabase
         .from('fva_daily_history')
         .delete()
@@ -106,6 +105,7 @@ const ForecastEmailParserBot = () => {
 
       if (deleteError) throw deleteError;
 
+      // Step 2: Insert the new, clean records.
       const { error: insertError } = await supabase
         .from('fva_daily_history')
         .insert(recordsToInsert);
@@ -125,8 +125,6 @@ const ForecastEmailParserBot = () => {
     }
   }, [ emailInput, toast, locationId, isLocationReady, captureRate, spendPerGuest, foodCostGoal, bevCostGoal, laborCostGoal, refreshData ]);
 
-  // *** THE RENDER LOGIC FIX ***
-  // If the location isn't ready, show a loading state for the whole component.
   if (!isLocationReady) {
     return (
       <Card className="shadow-lg border-gray-200 bg-white flex items-center justify-center p-10">
@@ -138,7 +136,6 @@ const ForecastEmailParserBot = () => {
     );
   }
 
-  // If location IS ready, render the full component.
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
       <div className="flex justify-end">
@@ -214,6 +211,7 @@ const ForecastEmailParserBot = () => {
 };
 
 export default ForecastEmailParserBot;
+
 
 
 
