@@ -1,5 +1,6 @@
 import React from 'react';
-import { Home, FileText, Users, ShoppingBasket, BarChartBig, Calculator, ClipboardList } from 'lucide-react';
+// ✅ 1. Add MailCheck to this import list
+import { Home, FileText, Users, ShoppingBasket, BarChartBig, Calculator, ClipboardList, MailCheck } from 'lucide-react';
 
 export const views = [
   {
@@ -9,15 +10,16 @@ export const views = [
     componentName: 'FvaDashboard',
     icon: <Home size={20} strokeWidth={2.5} />,
     showInNav: true,
-    isDefault: true, 
+    isDefault: true,
   },
   {
-    id: 'WEEKLY_FORECAST_CENTER', // It's good practice to update the ID as well
-  path: '/weekly-forecast',
-  label: 'Forecast Center', // A new name for a new, more powerful page
-  componentName: 'ForecastCenter', // ✅ THIS IS THE FIX
-  icon: <MailCheck size={20} strokeWidth={2.5} />, // A more fitting icon
-  showInNav: true,
+    // ✅ 2. This block is now correct and will work because MailCheck is imported.
+    id: 'WEEKLY_FORECAST_CENTER',
+    path: '/weekly-forecast',
+    label: 'Forecast Center',
+    componentName: 'ForecastCenter',
+    icon: <MailCheck size={20} strokeWidth={2.5} />,
+    showInNav: true,
   },
   {
     id: 'PERFORMANCE_ANALYZER',
@@ -65,9 +67,10 @@ export const views = [
     label: 'Full Prep Guide',
     componentName: 'SmartPrepGuide',
     icon: <ShoppingBasket size={20} strokeWidth={2.5} />,
-    showInNav: false, 
+    showInNav: false,
   },
 ];
 
 export const defaultViewId = views.find(v => v.isDefault)?.id || (views.length > 0 ? views[0].id : null);
 export const defaultViewPath = views.find(v => v.isDefault)?.path || (views.length > 0 ? views[0].path : "/");
+
