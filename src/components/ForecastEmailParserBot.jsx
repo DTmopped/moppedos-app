@@ -1,7 +1,3 @@
-// Remove the import for the broken hook. We no longer need it.
-// import { useUserAndLocation } from "@/hooks/useUserAndLocation";
-
-// All other imports remain the same...
 import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/supabaseClient";
@@ -11,7 +7,7 @@ import { Label } from "components/ui/label.jsx";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "components/ui/card.jsx";
 import { MailCheck, TrendingUp, AlertTriangle, CheckCircle, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useToast } from "components/ui/use-toast.jsx";
-import { useData } from "@/contexts/DataContext"; // This is the one true source
+import { useData } from "@/contexts/DataContext";
 import AdminPanel from "./forecast/AdminPanel.jsx";
 import AdminModeToggle from "@/components/ui/AdminModeToggle";
 
@@ -24,10 +20,10 @@ const getStartOfWeek = (date) => {
 const DAY_ORDER = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 const ForecastEmailParserBot = () => {
-  // Get EVERYTHING from useData, which is connected to our working DataContext
+  // --- ALL HOOKS ARE CALLED AT THE TOP LEVEL ---
   const { 
     locationId, 
-    loadingLocation, // Use the loading state from the context
+    loadingLocation,
     isAdminMode, 
     adminSettings, 
     refreshData 
@@ -36,34 +32,27 @@ const ForecastEmailParserBot = () => {
   const { captureRate, spendPerGuest, foodCostGoal, bevCostGoal, laborCostGoal } = adminSettings;
 
   const [activeWeekStartDate, setActiveWeekStartDate] = useState(getStartOfWeek(new Date()));
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false); // Renamed from isLoading to avoid confusion
   const [emailInput, setEmailInput] = useState("");
   const [error, setError] = useState("");
   const { toast } = useToast();
 
-  // The loading condition now uses the state from the context
-  if (loadingLocation) {
-    return (
-      <Card className="shadow-lg border-gray-200 bg-white flex items-center justify-center p-10">
-        <div className="flex flex-col items-center text-gray-500">
-          <Loader2 className="h-8 w-8 animate-spin mb-2" />
-          <span className="font-semibold">Loading Location Data...</span>
-        </div>
-      </Card>
-    );
-  }
+  // --- EFFECTS ARE ALSO HOOKS, CALLED AT THE TOP ---
+  useEffect(() => {
+    if (!loadingLocation && locationId) {
+        const dateString = `Date: ${activeWeekStartDate.toISOString().split('T')[0]}`;
+        setEmailInput(dateString + "\nMonday: \nTuesday: \nWednesday: \nThursday: \nFriday: \nSaturday: \nSunday: ");
+    }
+  }, [activeWeekStartDate, loadingLocation, locationId]);
 
-  // The rest of the component remains the same, as its logic was already sound.
-  // ... (handleWeekChange, parseAndSaveForecast, and the return JSX) ...
-  // NOTE: I am including the full component code below for completeness.
-  
-  const handleWeekChange = (direction) => {
+  // --- CALLBACKS ARE ALSO HOOKS, CALLED AT THE TOP ---
+  const handleWeekChange = useCallback((direction) => {
     setActiveWeekStartDate(prevDate => {
       const newDate = new Date(prevDate);
       newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
       return newDate;
     });
-  };
+  }, []);
 
   const parseAndSaveForecast = useCallback(async () => {
     if (!locationId) { 
@@ -71,7 +60,7 @@ const ForecastEmailParserBot = () => {
       return; 
     }
     setError("");
-    setIsLoading(true);
+    setIsSaving(true);
 
     try {
       const lines = emailInput.trim().split("\n");
@@ -113,32 +102,34 @@ const ForecastEmailParserBot = () => {
 
       if (recordsToInsert.length === 0) throw new Error("No valid day data found to process.");
 
-      const { error: deleteError } = await supabase
-        .from('fva_daily_history')
-        .delete()
-        .eq('location_id', locationId)
-        .in('date', datesToDelete);
-
+      const { error: deleteError } = await supabase.from('fva_daily_history').delete().eq('location_id', locationId).in('date', datesToDelete);
       if (deleteError) throw deleteError;
 
-      const { error: insertError } = await supabase
-        .from('fva_daily_history')
-        .insert(recordsToInsert);
-
+      const { error: insertError } = await supabase.from('fva_daily_history').insert(recordsToInsert);
       if (insertError) throw insertError;
 
       toast({ title: "Forecast Saved!", description: `Your forecast has been saved and the FVA dashboard has been updated.` });
       
-      if (refreshData) {
-        refreshData();
-      }
+      if (refreshData) refreshData();
       
     } catch (e) {
       setError(`Error: ${e.message}`);
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   }, [ emailInput, toast, locationId, captureRate, spendPerGuest, foodCostGoal, bevCostGoal, laborCostGoal, refreshData ]);
+
+  // --- CONDITIONAL RENDERING HAPPENS LAST ---
+  if (loadingLocation) {
+    return (
+      <Card className="shadow-lg border-gray-200 bg-white flex items-center justify-center p-10">
+        <div className="flex flex-col items-center text-gray-500">
+          <Loader2 className="h-8 w-8 animate-spin mb-2" />
+          <span className="font-semibold">Loading Location Data...</span>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
@@ -165,14 +156,14 @@ const ForecastEmailParserBot = () => {
 
         <CardContent>
           <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-6 border">
-              <Button variant="outline" onClick={() => handleWeekChange('prev')} className="bg-white border-gray-300 text-gray-700 hover:bg-gray-100">
+              <Button variant="outline" onClick={handleWeekChange} className="bg-white border-gray-300 text-gray-700 hover:bg-gray-100">
                   <ChevronLeft className="h-4 w-4 mr-2" /> Previous
               </Button>
               <div className="text-center font-semibold text-gray-700">
                   <p>Editing Forecast For</p>
                   <p className="text-blue-600 font-semibold">{activeWeekStartDate.toLocaleDateString()}</p>
               </div>
-              <Button variant="outline" onClick={() => handleWeekChange('next')} className="bg-white border-gray-300 text-gray-700 hover:bg-gray-100">
+              <Button variant="outline" onClick={handleWeekChange} className="bg-white border-gray-300 text-gray-700 hover:bg-gray-100">
                   Next <ChevronRight className="h-4 w-4 ml-2" />
               </Button>
           </div>
@@ -191,11 +182,11 @@ const ForecastEmailParserBot = () => {
           <motion.div whileTap={{ scale: 0.98 }}>
             <Button 
               onClick={parseAndSaveForecast} 
-              disabled={isLoading} 
+              disabled={isSaving} 
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 text-base shadow-md hover:shadow-lg transition-all duration-300 disabled:bg-gray-400"
             >
               <TrendingUp className="mr-2 h-4 w-4" /> 
-              {isLoading ? "Saving..." : "Parse & Save Forecast"}
+              {isSaving ? "Saving..." : "Parse & Save Forecast"}
             </Button>
           </motion.div>
           {error && (
@@ -215,6 +206,7 @@ const ForecastEmailParserBot = () => {
 };
 
 export default ForecastEmailParserBot;
+
 
 
 
