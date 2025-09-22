@@ -42,6 +42,9 @@ const ForecastEmailParserBot = () => {
   const [error, setError] = useState("");
   const { toast } = useToast();
 
+  // *** NEW STATE: To control which accordion is open ***
+  const [openAccordion, setOpenAccordion] = useState(null);
+
   // These states now just hold the string representation for the input fields
   const [captureRateInput, setCaptureRateInput] = useState((captureRate * 100).toFixed(1));
   const [avgSpendInput, setAvgSpendInput] = useState(spendPerGuest.toFixed(0));
@@ -70,6 +73,9 @@ const ForecastEmailParserBot = () => {
         console.error(error);
       } else {
         setAllForecasts(data || []);
+        // *** MODIFIED: Set the newly edited week to be open by default ***
+        const activeWeekId = getStartOfWeek(activeWeekStartDate).toISOString().split('T')[0];
+        setOpenAccordion(activeWeekId);
       }
       setIsLoading(false);
     };
@@ -163,6 +169,10 @@ const ForecastEmailParserBot = () => {
           const updated = prev.filter(p => !recordsToUpsert.some(nr => nr.date === p.date && p.location_id === nr.location_id));
           return [...updated, ...recordsToUpsert].sort((a, b) => new Date(a.date) - new Date(b.date));
       });
+      
+      // *** MODIFIED: Set the newly saved week to be open ***
+      const weekId = getStartOfWeek(baseDate).toISOString().split('T')[0];
+      setOpenAccordion(weekId);
 
       toast({
         title: "Forecast Saved!",
@@ -294,11 +304,13 @@ const ForecastEmailParserBot = () => {
         </h3>
         {isLoading && allForecasts.length === 0 && <p className="text-gray-500">Loading history...</p>}
         {!isLoading && groupedForecasts.length === 0 && <p className="text-gray-500">No saved forecasts found.</p>}
+        {/* *** MODIFIED: Pass state and handler to each accordion *** */}
         {groupedForecasts.map(week => (
             <ForecastWeekAccordion 
                 key={week.startDate} 
                 week={week}
-                isInitiallyOpen={getStartOfWeek(new Date(week.startDate)).getTime() === activeWeekStartDate.getTime()}
+                isOpen={openAccordion === week.startDate}
+                onToggle={() => setOpenAccordion(openAccordion === week.startDate ? null : week.startDate)}
             />
         ))}
       </div>
@@ -307,6 +319,7 @@ const ForecastEmailParserBot = () => {
 };
 
 export default ForecastEmailParserBot;
+
 
 
 
