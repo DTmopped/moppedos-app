@@ -7,12 +7,10 @@ import { Label } from "components/ui/label.jsx";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "components/ui/card.jsx";
 import { MailCheck, TrendingUp, AlertTriangle, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "components/ui/use-toast.jsx";
-import ForecastWeekAccordion from "./forecast/ForecastWeekAccordion.jsx";
 import { useUserAndLocation } from "@/hooks/useUserAndLocation";
 import { useData } from "@/contexts/DataContext";
 import AdminPanel from "./forecast/AdminPanel.jsx";
 import AdminModeToggle from "@/components/ui/AdminModeToggle";
-import { Accordion } from "@/components/ui/accordion";
 
 const getStartOfWeek = (date) => {
   const d = new Date(date);
@@ -24,47 +22,28 @@ const DAY_ORDER = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Satu
 
 const ForecastEmailParserBot = () => {
   const { locationId } = useUserAndLocation();
-  const { isAdminMode, adminSettings, refreshData } = useData(); // Assuming refreshData exists in your context to refetch FVA data
+  const { isAdminMode, adminSettings, refreshData } = useData();
   const { captureRate, spendPerGuest, foodCostGoal, bevCostGoal, laborCostGoal } = adminSettings;
 
   const [activeWeekStartDate, setActiveWeekStartDate] = useState(getStartOfWeek(new Date()));
-  const [allForecasts, setAllForecasts] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [emailInput, setEmailInput] = useState("");
   const [error, setError] = useState("");
   const { toast } = useToast();
-  const [openAccordion, setOpenAccordion] = useState(null);
 
-  // This useEffect should now fetch from fva_daily_history to show existing forecasts
+  // Simplified effect to only set the date, preventing crashes from data fetching.
   useEffect(() => {
-    const fetchForecastsForEditor = async () => {
-      if (!locationId) return;
-      const { data, error } = await supabase
-        .from('fva_daily_history')
-        .select('date, day, pax, forecast_sales') // Select only what's needed for the editor
-        .eq('location_id', locationId);
-      
-      if (error) {
-        console.error("Error fetching forecast history for editor:", error);
-      } else {
-        setAllForecasts(data || []);
-      }
-    };
-    fetchForecastsForEditor();
-  }, [locationId]);
-
-  useEffect(() => {
-    const weekData = allForecasts.filter(f => getStartOfWeek(new Date(f.date)).getTime() === activeWeekStartDate.getTime());
     const dateString = `Date: ${activeWeekStartDate.toISOString().split('T')[0]}`;
-    if (weekData.length > 0) {
-      const sortedWeekData = weekData.sort((a, b) => DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day));
-      // Assuming 'pax' exists in fva_daily_history. If not, this needs adjustment.
-      const paxData = sortedWeekData.map(day => `${day.day}: ${day.pax || Math.round(day.forecast_sales / spendPerGuest / captureRate)}`).join('\n');
-      setEmailInput(`${dateString}\n${paxData}`);
-    } else {
-      setEmailInput(dateString);
-    }
-  }, [activeWeekStartDate, allForecasts, spendPerGuest, captureRate]);
+    setEmailInput(dateString + "\nMonday: \nTuesday: \nWednesday: \nThursday: \nFriday: \nSaturday: \nSunday: ");
+  }, [activeWeekStartDate]);
+
+  const handleWeekChange = (direction) => {
+    setActiveWeekStartDate(prevDate => {
+      const newDate = new Date(prevDate);
+      newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
+      return newDate;
+    });
+  };
 
   const parseAndSaveForecast = useCallback(async () => {
     if (!locationId) { setError("No location selected."); return; }
@@ -81,10 +60,12 @@ const ForecastEmailParserBot = () => {
 
       lines.forEach(line => {
         const match = line.match(/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday):\s*([0-9,]+)/i);
-        if (!match) return;
+        if (!match || !match[2]) return; // Skip if no number is present
 
         const day = match[1];
         const pax = parseInt(match[2].replace(/,/g, ''), 10);
+        if (isNaN(pax)) return; // Skip if parsing fails
+
         const dayIndex = DAY_ORDER.indexOf(day);
         if (dayIndex === -1) return;
 
@@ -106,17 +87,22 @@ const ForecastEmailParserBot = () => {
         });
       });
 
-      if (recordsToUpsert.length === 0) throw new Error("No valid day data found to process.");
+      if (recordsToUpsert.length === 0) throw new Error("No valid day data found to process. Please ensure days have numbers after them.");
 
       const { error: upsertError } = await supabase
         .from('fva_daily_history')
         .upsert(recordsToUpsert, { onConflict: 'location_id, date' }); 
 
-      if (upsertError) throw upsertError;
+      if (upsertError) {
+        // Provide a more specific error message for RLS issues
+        if (upsertError.message.includes("new row violates row-level security policy")) {
+            throw new Error("Permission Denied. You do not have the required permissions to save data to the forecast history. Please contact your administrator about Row-Level Security policies.");
+        }
+        throw upsertError;
+      }
 
       toast({ title: "Forecast Saved!", description: `Forecast data has been saved. The FVA dashboard will now reflect these numbers.` });
       
-      // Trigger a refresh of the app's main data context so the FVA dashboard updates
       if (refreshData) {
         refreshData();
       }
@@ -128,24 +114,78 @@ const ForecastEmailParserBot = () => {
     }
   }, [ emailInput, toast, locationId, captureRate, spendPerGuest, foodCostGoal, bevCostGoal, laborCostGoal, refreshData ]);
 
-  // The accordion display can be simplified or removed, as the main FVA dashboard is the source of truth
-  // For now, we'll leave it to show what was just saved.
-  const groupedForecasts = useMemo(() => {
-    // This grouping logic would need to be adapted if we still want to show accordions
-    // based on the data now being saved to fva_daily_history.
-    return []; // Simplified for now.
-  }, []);
-
   return (
-    <motion.div>
-        {/* ... Your UI for parsing and saving ... */}
-        {/* The "Saved Forecasts" accordion section is now redundant, as the main FVA dashboard serves this purpose.
-            You can choose to remove it or adapt it to read from the fva_daily_history table. */}
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+      <div className="flex justify-end">
+        <AdminModeToggle />
+      </div>
+
+      {isAdminMode && <AdminPanel />}
+
+      <Card className="shadow-lg border-gray-200 bg-white">
+        <CardHeader className="pb-4">
+          <div className="flex items-center space-x-4">
+            <div className="p-3 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 shadow-lg">
+              <MailCheck className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-600">Forecast Center</CardTitle>
+              <CardDescription className="text-gray-500">
+                Select a week, paste forecast data, and save.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent>
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-6 border">
+              <Button variant="outline" onClick={() => handleWeekChange('prev')} className="bg-white border-gray-300 text-gray-700 hover:bg-gray-100">
+                  <ChevronLeft className="h-4 w-4 mr-2" /> Previous
+              </Button>
+              <div className="text-center font-semibold text-gray-700">
+                  <p>Editing Forecast For</p>
+                  <p className="text-blue-600 font-semibold">{activeWeekStartDate.toLocaleDateString()}</p>
+              </div>
+              <Button variant="outline" onClick={() => handleWeekChange('next')} className="bg-white border-gray-300 text-gray-700 hover:bg-gray-100">
+                  Next <ChevronRight className="h-4 w-4 ml-2" />
+              </Button>
+          </div>
+
+          <div className="space-y-2 mb-6">
+            <Label htmlFor="emailInput" className="text-sm font-medium text-gray-700">Weekly Forecast Data</Label>
+            <Textarea
+              id="emailInput"
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
+              placeholder="Date: YYYY-MM-DD&#10;Monday: 12345&#10;Tuesday: 16000"
+              className="min-h-[180px] text-sm font-mono bg-gray-50 border-gray-300 text-gray-900 focus:border-blue-500"
+            />
+          </div>
+          
+          <motion.div whileTap={{ scale: 0.98 }}>
+            <Button onClick={parseAndSaveForecast} disabled={isLoading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 text-base shadow-md hover:shadow-lg transition-all duration-300">
+              <TrendingUp className="mr-2 h-4 w-4" /> 
+              {isLoading ? "Saving..." : "Parse & Save Forecast"}
+            </Button>
+          </motion.div>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-4 text-sm text-red-700 bg-red-50 p-3 rounded-md border border-red-200 flex items-start"
+            >
+              <AlertTriangle size={18} className="mr-2 mt-0.5 text-red-600 flex-shrink-0" /> 
+              <span>{error}</span>
+            </motion.div>
+          )}
+        </CardContent>
+      </Card>
     </motion.div>
   );
 };
 
 export default ForecastEmailParserBot;
+
 
 
 
