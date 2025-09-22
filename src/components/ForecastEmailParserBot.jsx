@@ -55,7 +55,8 @@ const ForecastEmailParserBot = () => {
       if (!dateLine) throw new Error("Date: YYYY-MM-DD line is missing.");
       
       const baseDate = new Date(dateLine.split(":")[1].trim());
-      const recordsToUpsert = [];
+      const recordsToInsert = [];
+      const datesToDelete = [];
 
       lines.forEach(line => {
         const match = line.match(/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday):\s*([0-9,]+)/i);
@@ -70,33 +71,43 @@ const ForecastEmailParserBot = () => {
 
         const forecastDate = new Date(baseDate);
         forecastDate.setDate(forecastDate.getDate() + dayIndex);
+        const dateString = forecastDate.toISOString().split('T')[0];
+        datesToDelete.push(dateString);
 
         const guests = Math.round(paxValue * captureRate);
         const sales = guests * spendPerGuest;
 
-        // This object now perfectly matches the confirmed lean schema of fva_daily_history
-        recordsToUpsert.push({
+        recordsToInsert.push({
           location_id: locationId,
-          date: forecastDate.toISOString().split('T')[0],
+          date: dateString,
           forecast_sales: sales,
           food_cost_pct: foodCostGoal,
           bev_cost_pct: bevCostGoal,
           labor_cost_pct: laborCostGoal,
-          // We DO NOT include 'day' or 'pax' as they do not exist in the target table.
         });
       });
 
-      if (recordsToUpsert.length === 0) throw new Error("No valid day data found to process.");
+      if (recordsToInsert.length === 0) throw new Error("No valid day data found to process.");
 
-      const { error: upsertError } = await supabase
+      // Step 1: Delete existing records for the dates we are about to insert.
+      const { error: deleteError } = await supabase
         .from('fva_daily_history')
-        .upsert(recordsToUpsert, { onConflict: 'location_id, date' }); 
+        .delete()
+        .eq('location_id', locationId)
+        .in('date', datesToDelete);
 
-      if (upsertError) {
-        if (upsertError.message.includes("violates row-level security policy")) {
+      if (deleteError) throw deleteError;
+
+      // Step 2: Insert the new records. This is now a simple insert, not an upsert.
+      const { error: insertError } = await supabase
+        .from('fva_daily_history')
+        .insert(recordsToInsert);
+
+      if (insertError) {
+        if (insertError.message.includes("violates row-level security policy")) {
             throw new Error("Permission Denied: Your user role does not have permission to save this data. Please contact your administrator to check the Row-Level Security policies on the 'fva_daily_history' table.");
         }
-        throw upsertError;
+        throw insertError;
       }
 
       toast({ title: "Forecast Saved!", description: `Your forecast has been saved and the FVA dashboard has been updated.` });
@@ -183,6 +194,7 @@ const ForecastEmailParserBot = () => {
 };
 
 export default ForecastEmailParserBot;
+
 
 
 
