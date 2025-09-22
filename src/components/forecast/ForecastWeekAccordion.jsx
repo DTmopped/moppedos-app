@@ -6,7 +6,8 @@ import {
 } from "@/components/ui/accordion";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-const ForecastWeekAccordion = ({ week }) => {
+// *** LOGIC FIX: amSplit is now a prop ***
+const ForecastWeekAccordion = ({ week, amSplit }) => { 
   const totalSales = week.results.find(r => r.isTotal)?.sales || 0;
 
   return (
@@ -27,44 +28,37 @@ const ForecastWeekAccordion = ({ week }) => {
             <Table>
               <TableHeader>
                 <TableRow className="border-b bg-gray-50">
-                  <TableHead className="py-3 px-4 font-semibold text-gray-600">Day</TableHead>
-                  <TableHead className="py-3 px-4 text-right font-semibold text-gray-600">Pax</TableHead>
-                  <TableHead className="py-3 px-4 text-right font-semibold text-gray-600">Guests</TableHead>
-                  <TableHead className="py-3 px-4 text-right font-semibold text-gray-600">AM/PM</TableHead>
-                  <TableHead className="py-3 px-4 text-right font-semibold text-gray-600">Sales</TableHead>
-                  <TableHead className="py-3 px-4 text-right font-semibold text-gray-600">Food</TableHead>
-                  <TableHead className="py-3 px-4 text-right font-semibold text-gray-600">Bev</TableHead>
-                  <TableHead className="py-3 px-4 text-right font-semibold text-gray-600">Labor</TableHead>
+                  <TableHead>Day</TableHead>
+                  <TableHead className="text-right">Pax</TableHead>
+                  <TableHead className="text-right">Guests</TableHead>
+                  <TableHead className="text-right">AM/PM</TableHead> {/* It's back! */}
+                  <TableHead className="text-right">Sales</TableHead>
+                  <TableHead className="text-right">Food</TableHead>
+
+                  <TableHead className="text-right">Bev</TableHead>
+                  <TableHead className="text-right">Labor</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {week.results.map((row, index) => (
-                  !row.isTotal && ( // Don't render the total row in the main list
-                    <TableRow key={index} className="border-0 hover:bg-gray-50">
-                      <TableCell className="py-3 px-4 font-medium">{row.day}</TableCell>
-                      <TableCell className="py-3 px-4 text-right">{row.pax?.toLocaleString()}</TableCell>
-                      <TableCell className="py-3 px-4 text-right">{row.guests?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</TableCell>
-                      <TableCell className="py-3 px-4 text-right">{row.amGuests !== undefined ? `${row.amGuests}/${row.pmGuests}` : '—'}</TableCell>
-                      <TableCell className="py-3 px-4 text-right font-semibold text-green-700">${row.sales?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</TableCell>
-                      <TableCell className="py-3 px-4 text-right">${row.food?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</TableCell>
-                      <TableCell className="py-3 px-4 text-right">${row.bev?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</TableCell>
-                      <TableCell className="py-3 px-4 text-right">${row.labor?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</TableCell>
+                {week.results.map((row, index) => {
+                  // *** LOGIC FIX: Calculate AM/PM guests on the fly ***
+                  const amGuests = Math.round((row.guests || 0) * amSplit);
+                  const pmGuests = (row.guests || 0) - amGuests;
+
+                  return (
+                    <TableRow key={index} className={`border-0 ${row.isTotal ? "bg-slate-100 font-bold" : "hover:bg-gray-50"}`}>
+                      <TableCell className="font-medium">{row.day}</TableCell>
+                      <TableCell className="text-right">{row.pax?.toLocaleString()}</TableCell>
+                      <TableCell className="text-right">{row.guests?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</TableCell>
+                      {/* Display the calculated split, or '—' for the total row */}
+                      <TableCell className="text-right">{row.isTotal ? '—' : `${amGuests}/${pmGuests}`}</TableCell>
+                      <TableCell className="text-right font-semibold text-green-700">${row.sales?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</TableCell>
+                      <TableCell className="text-right">${row.food?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</TableCell>
+                      <TableCell className="text-right">${row.bev?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</TableCell>
+                      <TableCell className="text-right">${row.labor?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</TableCell>
                     </TableRow>
-                  )
-                ))}
-                 {/* Render the total row separately at the end */}
-                {week.results.filter(row => row.isTotal).map((row, index) => (
-                    <TableRow key={`total-${index}`} className="border-t bg-slate-100 font-bold">
-                      <TableCell className="py-3 px-4">{row.day}</TableCell>
-                      <TableCell className="py-3 px-4 text-right">{row.pax?.toLocaleString()}</TableCell>
-                      <TableCell className="py-3 px-4 text-right">{row.guests?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</TableCell>
-                      <TableCell className="py-3 px-4 text-right">—</TableCell>
-                      <TableCell className="py-3 px-4 text-right font-semibold text-green-700">${row.sales?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</TableCell>
-                      <TableCell className="py-3 px-4 text-right">${row.food?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</TableCell>
-                      <TableCell className="py-3 px-4 text-right">${row.bev?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</TableCell>
-                      <TableCell className="py-3 px-4 text-right">${row.labor?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</TableCell>
-                    </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
@@ -75,6 +69,7 @@ const ForecastWeekAccordion = ({ week }) => {
 };
 
 export default ForecastWeekAccordion;
+
 
 
 
