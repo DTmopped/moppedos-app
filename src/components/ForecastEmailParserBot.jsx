@@ -8,7 +8,7 @@ import { Label } from "components/ui/label.jsx";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "components/ui/card.jsx";
 import { MailCheck, TrendingUp, Info, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "components/ui/use-toast.jsx";
-import ForecastWeekAccordion from "./ForecastWeekAccordion.jsx";
+import ForecastWeekAccordion from "./forecast/ForecastWeekAccordion.jsx";
 import { useUserAndLocation } from "@/hooks/useUserAndLocation"; // ✅ 1. Import the hook to get locationId
 
 // --- Helper functions ---
