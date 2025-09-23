@@ -10,7 +10,7 @@ import { useData } from "@/contexts/DataContext";
 import AdminPanel from "./forecast/AdminPanel.jsx";
 import AdminModeToggle from "@/components/ui/AdminModeToggle";
 import ForecastWeekAccordion from "./forecast/ForecastWeekAccordion.jsx";
-import { saveForecastToSupabase } from "@/utils/saveForecast"; // Import the save function
+import { saveForecastToSupabase } from "./forecast/saveForecast";
 
 const getStartOfWeekUTC = (date) => {
   const d = new Date(date);
