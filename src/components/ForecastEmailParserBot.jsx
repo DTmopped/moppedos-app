@@ -1,19 +1,15 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { supabase } from "@/supabaseClient";
 import { Button } from "components/ui/button.jsx";
 import { Textarea } from "components/ui/textarea.jsx";
 import { Label } from "components/ui/label.jsx";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "components/ui/card.jsx";
-import { MailCheck, TrendingUp, AlertTriangle, CheckCircle, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
-import { useToast } from "components/ui/use-toast.jsx";
+import { MailCheck, TrendingUp, AlertTriangle, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useData } from "@/contexts/DataContext";
 import AdminPanel from "./forecast/AdminPanel.jsx";
 import AdminModeToggle from "@/components/ui/AdminModeToggle";
-import { Accordion } from "@/components/ui/accordion"; // This is correct
-import ForecastWeekAccordion from "./forecast/ForecastWeekAccordion.jsx"; // This is correct
+import ForecastResultsTable from "./forecast/ForecastResultsTable.jsx"; // The new display component
 
-// ... (all the helper functions and hooks at the top are correct)
 const getStartOfWeekUTC = (date) => {
   const d = new Date(date);
   const day = d.getUTCDay();
@@ -22,89 +18,21 @@ const getStartOfWeekUTC = (date) => {
 };
 const DAY_ORDER = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
-
 const ForecastEmailParserBot = () => {
-  // ... (all the state and effects are correct)
-  const { locationId, loadingLocation, isAdminMode, adminSettings, refreshData } = useData();
-  const { captureRate, spendPerGuest, foodCostGoal, bevCostGoal, laborCostGoal, amSplit } = adminSettings;
+  const { loadingLocation, isAdminMode, adminSettings } = useData();
+  const { captureRate, spendPerGuest, amSplit, foodCostGoal, bevCostGoal, laborCostGoal } = adminSettings;
+  
   const [activeWeekStartDate, setActiveWeekStartDate] = useState(getStartOfWeekUTC(new Date()));
-  const [isSaving, setIsSaving] = useState(false);
   const [emailInput, setEmailInput] = useState("");
   const [error, setError] = useState("");
-  const { toast } = useToast();
-  const [savedForecasts, setSavedForecasts] = useState([]);
-  const [loadingHistory, setLoadingHistory] = useState(true);
+  const [forecastDataUI, setForecastDataUI] = useState([]); // State to hold the temporary forecast
 
   useEffect(() => {
-    if (!loadingLocation && locationId) {
+    if (!loadingLocation) {
       const dateString = `${activeWeekStartDate.getUTCFullYear()}-${String(activeWeekStartDate.getUTCMonth() + 1).padStart(2, '0')}-${String(activeWeekStartDate.getUTCDate()).padStart(2, '0')}`;
       setEmailInput(`Date: ${dateString}\nMonday:\nTuesday:\nWednesday:\nThursday:\nFriday:\nSaturday:\nSunday:`);
     }
-  }, [activeWeekStartDate, loadingLocation, locationId]);
-
-  useEffect(() => {
-    const fetchHistory = async () => {
-      if (!locationId) return;
-      setLoadingHistory(true);
-      const { data, error } = await supabase
-        .from('fva_daily_history')
-        .select('*')
-        .eq('location_id', locationId)
-        .order('date', { ascending: false });
-
-      if (error) {
-        console.error("Error fetching forecast history:", error);
-        setError("Could not load saved forecasts.");
-      } else {
-        setSavedForecasts(data);
-      }
-      setLoadingHistory(false);
-    };
-    fetchHistory();
-  }, [locationId, refreshData]);
-
-  const groupedForecasts = useMemo(() => {
-    const groups = {};
-    savedForecasts.forEach(forecast => {
-      const forecastDate = new Date(`${forecast.date}T00:00:00Z`);
-      const startOfWeek = getStartOfWeekUTC(forecastDate);
-      const key = startOfWeek.toISOString().split('T')[0];
-
-      if (!groups[key]) {
-        groups[key] = { startDate: key, results: [] };
-      }
-      
-      const dayIndex = forecastDate.getUTCDay();
-      const dayName = DAY_ORDER[dayIndex === 0 ? 6 : dayIndex - 1];
-
-      groups[key].results.push({
-        day: dayName,
-        date: forecast.date,
-        sales: forecast.forecast_sales,
-        food: forecast.forecast_sales * forecast.food_cost_pct,
-        bev: forecast.forecast_sales * forecast.bev_cost_pct,
-        labor: forecast.forecast_sales * forecast.labor_cost_pct,
-        pax: Math.round(forecast.forecast_sales / spendPerGuest / captureRate),
-        guests: Math.round(forecast.forecast_sales / spendPerGuest),
-      });
-    });
-
-    Object.values(groups).forEach(group => {
-        group.results.sort((a, b) => DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day));
-        const totals = group.results.reduce((acc, row) => {
-            acc.sales += row.sales || 0;
-            acc.food += row.food || 0;
-            acc.bev += row.bev || 0;
-            acc.labor += row.labor || 0;
-            acc.pax += row.pax || 0;
-            acc.guests += row.guests || 0;
-            return acc;
-        }, { sales: 0, food: 0, bev: 0, labor: 0, pax: 0, guests: 0 });
-        group.results.push({ ...totals, day: 'Total', isTotal: true });
-    });
-
-    return Object.values(groups).sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
-  }, [savedForecasts, spendPerGuest, captureRate]);
+  }, [activeWeekStartDate, loadingLocation]);
 
   const handleWeekChange = useCallback((direction) => {
     setActiveWeekStartDate(prevDate => {
@@ -114,14 +42,9 @@ const ForecastEmailParserBot = () => {
     });
   }, []);
 
-  const parseAndSaveForecast = useCallback(async () => {
-    // ... (This function is correct)
-    if (!locationId) {
-      setError("Location is not available. Please wait or refresh the page.");
-      return;
-    }
+  const generateForecast = useCallback(() => {
     setError("");
-    setIsSaving(true);
+    setForecastDataUI([]);
 
     try {
       const lines = emailInput.split('\n').map(l => l.trim()).filter(Boolean);
@@ -132,9 +55,7 @@ const ForecastEmailParserBot = () => {
       const baseDate = new Date(`${baseDateStr}T00:00:00Z`);
       if (isNaN(baseDate.getTime())) throw new Error("Invalid date format. Use YYYY-MM-DD.");
 
-      const recordsToInsert = [];
-      const datesToDelete = [];
-      
+      const results = [];
       const dayRegex = /^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\s*:\s*([0-9][0-9,]*)$/i;
 
       for (const line of lines) {
@@ -150,44 +71,47 @@ const ForecastEmailParserBot = () => {
 
         const forecastDate = new Date(baseDate);
         forecastDate.setUTCDate(forecastDate.getUTCDate() + dayIndex);
-        const dateString = forecastDate.toISOString().split('T')[0];
         
-        datesToDelete.push(dateString);
-
         const guests = Math.round(paxValue * captureRate);
         const sales = guests * spendPerGuest;
+        const amGuests = Math.round(guests * amSplit);
+        const pmGuests = guests - amGuests;
 
-        recordsToInsert.push({
-          location_id: locationId,
-          date: dateString,
-          forecast_sales: sales,
-          food_cost_pct: foodCostGoal,
-          bev_cost_pct: bevCostGoal,
-          labor_cost_pct: laborCostGoal,
+        results.push({
+          day: dayName,
+          date: forecastDate.toISOString().split('T')[0],
+          pax: paxValue,
+          guests,
+          amGuests,
+          pmGuests,
+          sales,
+          food: sales * foodCostGoal,
+          bev: sales * bevCostGoal,
+          labor: sales * laborCostGoal,
         });
       }
 
-      if (recordsToInsert.length === 0) throw new Error("No valid day data found to process.");
-
-      const { error: deleteError } = await supabase.from('fva_daily_history').delete().eq('location_id', locationId).in('date', datesToDelete);
-      if (deleteError) throw deleteError;
-
-      const { error: insertError } = await supabase.from('fva_daily_history').insert(recordsToInsert);
-      if (insertError) throw insertError;
-
-      toast({ title: "Forecast Saved!", description: `Your forecast for week of ${baseDate.toLocaleDateString('en-US', {timeZone: 'UTC'})} has been saved.` });
+      if (results.length === 0) throw new Error("No valid day data found to process.");
       
-      if (refreshData) refreshData();
-      
+      const totals = results.reduce((acc, row) => {
+          acc.pax += row.pax;
+          acc.guests += row.guests;
+          acc.sales += row.sales;
+          acc.food += row.food;
+          acc.bev += row.bev;
+          acc.labor += row.labor;
+          return acc;
+      }, { pax: 0, guests: 0, sales: 0, food: 0, bev: 0, labor: 0 });
+
+      results.push({ day: "Total", ...totals, isTotal: true });
+
+      setForecastDataUI(results);
+
     } catch (e) {
       setError(`Error: ${e.message}`);
-    } finally {
-      setIsSaving(false);
     }
-  }, [ emailInput, toast, locationId, captureRate, spendPerGuest, foodCostGoal, bevCostGoal, laborCostGoal, refreshData ]);
+  }, [emailInput, captureRate, spendPerGuest, amSplit, foodCostGoal, bevCostGoal, laborCostGoal]);
 
-
-  // --- RENDER LOGIC ---
   if (loadingLocation) {
     return (
       <Card className="shadow-lg border-gray-200 bg-white flex items-center justify-center p-10">
@@ -201,7 +125,6 @@ const ForecastEmailParserBot = () => {
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-      {/* ... (The top part of the return is correct) ... */}
       <div className="flex justify-end">
         <AdminModeToggle />
       </div>
@@ -217,7 +140,7 @@ const ForecastEmailParserBot = () => {
                 <div>
                 <CardTitle className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-600">Forecast Center</CardTitle>
                 <CardDescription className="text-gray-500">
-                    Select a week, input daily traffic, and save your forecast.
+                    Select a week, input daily traffic, and generate a forecast.
                 </CardDescription>
                 </div>
             </div>
@@ -247,12 +170,11 @@ const ForecastEmailParserBot = () => {
           </div>
           <motion.div whileTap={{ scale: 0.98 }}>
             <Button 
-              onClick={parseAndSaveForecast} 
-              disabled={isSaving} 
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 text-base shadow-md hover:shadow-lg transition-all duration-300 disabled:bg-gray-400"
+              onClick={generateForecast} 
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 text-base shadow-md hover:shadow-lg transition-all duration-300"
             >
               <TrendingUp className="mr-2 h-4 w-4" /> 
-              {isSaving ? "Saving..." : "Parse & Save Forecast"}
+              Generate Forecast
             </Button>
           </motion.div>
           {error && (
@@ -268,34 +190,16 @@ const ForecastEmailParserBot = () => {
         </CardContent>
       </Card>
 
-      {/* --- THIS IS THE CORRECTED STRUCTURE --- */}
-      <div className="mt-8 space-y-4">
-        <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-600">
-            Saved Forecasts
-        </h3>
-        {loadingHistory ? (
-            <p className="text-gray-500">Loading history...</p>
-        ) : groupedForecasts.length === 0 ? (
-            <p className="text-gray-500">No saved forecasts found for this location.</p>
-        ) : (
-            // The <Accordion> component MUST be OUTSIDE the map
-            <Accordion type="single" collapsible className="w-full space-y-3">
-                {groupedForecasts.map(week => (
-                    // The child component is just the item itself
-                    <ForecastWeekAccordion 
-                        key={week.startDate} 
-                        week={week}
-                        amSplit={amSplit}
-                    />
-                ))}
-            </Accordion>
-        )}
-      </div>
+      {/* Display the generated forecast results in a table */}
+      {forecastDataUI.length > 0 && (
+        <ForecastResultsTable forecastDataUI={forecastDataUI} />
+      )}
     </motion.div>
   );
 };
 
 export default ForecastEmailParserBot;
+
 
 
 
