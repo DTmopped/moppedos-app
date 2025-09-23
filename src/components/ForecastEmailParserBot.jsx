@@ -397,14 +397,14 @@ const ForecastEmailParserBot = () => {
           </h3>
           <Accordion type="multiple" className="w-full space-y-2">
   {Object.entries(savedForecasts)
-    .sort(([a], [b]) => new Date(b) - new Date(a)) // Most recent first
-    .map(([startDate, results]) => (
-      <ForecastWeekAccordion 
-        key={startDate}
-        week={{ startDate, results: results }}  // ✅ FIX: Explicitly set results property
-        amSplit={amSplit}
-      />
-    ))}
+  .sort(([a], [b]) => new Date(a) - new Date(b)) // ✅ Oldest first (ascending)
+  .map(([startDate, results]) => (
+    <ForecastWeekAccordion 
+      key={startDate}
+      week={{ startDate, results: results }}
+      amSplit={amSplit}
+    />
+  ))}
 </Accordion>
 
         </div>
