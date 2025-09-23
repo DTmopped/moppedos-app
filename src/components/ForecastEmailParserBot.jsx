@@ -10,40 +10,40 @@ import { useToast } from "components/ui/use-toast.jsx";
 import { useData } from "@/contexts/DataContext";
 import AdminPanel from "./forecast/AdminPanel.jsx";
 import AdminModeToggle from "@/components/ui/AdminModeToggle";
-import { Accordion } from "@/components/ui/accordion"; // <-- IMPORT ACCORDION
-import ForecastWeekAccordion from "./forecast/ForecastWeekAccordion.jsx"; // <-- IMPORT THE WEEK ACCORDION
+import { Accordion } from "@/components/ui/accordion";
+import ForecastWeekAccordion from "./forecast/ForecastWeekAccordion.jsx";
 
-const getStartOfWeek = (date) => {
+// --- TIMEZONE-SAFE DATE HELPER ---
+const getStartOfWeekUTC = (date) => {
   const d = new Date(date);
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  return new Date(new Date(d.setDate(diff)).setHours(0, 0, 0, 0));
+  // Use UTC methods to avoid timezone shifts
+  const day = d.getUTCDay();
+  const diff = d.getUTCDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), diff));
 };
+
 const DAY_ORDER = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 const ForecastEmailParserBot = () => {
   // --- HOOKS ---
   const { locationId, loadingLocation, isAdminMode, adminSettings, refreshData } = useData();
   const { captureRate, spendPerGuest, foodCostGoal, bevCostGoal, laborCostGoal, amSplit } = adminSettings;
-  const [activeWeekStartDate, setActiveWeekStartDate] = useState(getStartOfWeek(new Date()));
+  const [activeWeekStartDate, setActiveWeekStartDate] = useState(getStartOfWeekUTC(new Date()));
   const [isSaving, setIsSaving] = useState(false);
   const [emailInput, setEmailInput] = useState("");
   const [error, setError] = useState("");
   const { toast } = useToast();
-  
-  // --- NEW STATE FOR SAVED FORECASTS ---
   const [savedForecasts, setSavedForecasts] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
 
   // --- EFFECTS ---
   useEffect(() => {
     if (!loadingLocation && locationId) {
-      const dateString = `Date: ${activeWeekStartDate.toISOString().split('T')[0]}`;
-      setEmailInput(`${dateString}\nMonday:\nTuesday:\nWednesday:\nThursday:\nFriday:\nSaturday:\nSunday:`);
+      const dateString = `${activeWeekStartDate.getUTCFullYear()}-${String(activeWeekStartDate.getUTCMonth() + 1).padStart(2, '0')}-${String(activeWeekStartDate.getUTCDate()).padStart(2, '0')}`;
+      setEmailInput(`Date: ${dateString}\nMonday:\nTuesday:\nWednesday:\nThursday:\nFriday:\nSaturday:\nSunday:`);
     }
   }, [activeWeekStartDate, loadingLocation, locationId]);
 
-  // --- NEW EFFECT TO FETCH SAVED FORECASTS ---
   useEffect(() => {
     const fetchHistory = async () => {
       if (!locationId) return;
@@ -63,20 +63,25 @@ const ForecastEmailParserBot = () => {
       setLoadingHistory(false);
     };
     fetchHistory();
-  }, [locationId, refreshData]); // Re-fetch when location changes or after a save
+  }, [locationId, refreshData]);
 
-  // --- DATA GROUPING FOR ACCORDION ---
+  // --- DATA GROUPING ---
   const groupedForecasts = useMemo(() => {
     const groups = {};
     savedForecasts.forEach(forecast => {
-      const forecastDate = new Date(forecast.date + 'T00:00:00'); // Ensure correct date parsing
-      const startOfWeek = getStartOfWeek(forecastDate);
+      // Create date object in UTC to avoid timezone shifts
+      const forecastDate = new Date(`${forecast.date}T00:00:00Z`);
+      const startOfWeek = getStartOfWeekUTC(forecastDate);
       const key = startOfWeek.toISOString().split('T')[0];
+
       if (!groups[key]) {
         groups[key] = { startDate: key, results: [] };
       }
-      // Re-create the structure that ForecastWeekAccordion expects
-      const dayName = DAY_ORDER[forecastDate.getDay() -1] || 'Sunday';
+      
+      // Correctly get day of week in UTC
+      const dayIndex = forecastDate.getUTCDay();
+      const dayName = DAY_ORDER[dayIndex === 0 ? 6 : dayIndex - 1]; // Adjust for Sunday (0)
+
       groups[key].results.push({
         day: dayName,
         date: forecast.date,
@@ -84,41 +89,40 @@ const ForecastEmailParserBot = () => {
         food: forecast.forecast_sales * forecast.food_cost_pct,
         bev: forecast.forecast_sales * forecast.bev_cost_pct,
         labor: forecast.forecast_sales * forecast.labor_cost_pct,
-        // pax and guests are not stored, so we derive them or show 'N/A'
         pax: Math.round(forecast.forecast_sales / spendPerGuest / captureRate),
         guests: Math.round(forecast.forecast_sales / spendPerGuest),
       });
     });
 
-    // Add total rows to each group
     Object.values(groups).forEach(group => {
-      const totals = group.results.reduce((acc, row) => {
-        acc.sales += row.sales || 0;
-        acc.food += row.food || 0;
-        acc.bev += row.bev || 0;
-        acc.labor += row.labor || 0;
-        acc.pax += row.pax || 0;
-        acc.guests += row.guests || 0;
-        return acc;
-      }, { sales: 0, food: 0, bev: 0, labor: 0, pax: 0, guests: 0 });
-      group.results.push({ ...totals, day: 'Total', isTotal: true });
+        // Sort days within the week correctly
+        group.results.sort((a, b) => DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day));
+        const totals = group.results.reduce((acc, row) => {
+            acc.sales += row.sales || 0;
+            acc.food += row.food || 0;
+            acc.bev += row.bev || 0;
+            acc.labor += row.labor || 0;
+            acc.pax += row.pax || 0;
+            acc.guests += row.guests || 0;
+            return acc;
+        }, { sales: 0, food: 0, bev: 0, labor: 0, pax: 0, guests: 0 });
+        group.results.push({ ...totals, day: 'Total', isTotal: true });
     });
 
     return Object.values(groups).sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
   }, [savedForecasts, spendPerGuest, captureRate]);
 
-
   // --- HANDLERS ---
   const handleWeekChange = useCallback((direction) => {
     setActiveWeekStartDate(prevDate => {
       const newDate = new Date(prevDate);
-      newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
+      newDate.setUTCDate(newDate.getUTCDate() + (direction === 'next' ? 7 : -7));
       return newDate;
     });
   }, []);
 
   const parseAndSaveForecast = useCallback(async () => {
-    // ... (This function is correct and does not need changes)
+    // ... (This function is correct)
     if (!locationId) {
       setError("Location is not available. Please wait or refresh the page.");
       return;
@@ -132,7 +136,7 @@ const ForecastEmailParserBot = () => {
       if (!dateLine) throw new Error("Date: YYYY-MM-DD line is missing.");
 
       const baseDateStr = dateLine.split(':')[1]?.trim();
-      const baseDate = new Date(baseDateStr);
+      const baseDate = new Date(`${baseDateStr}T00:00:00Z`); // Treat as UTC
       if (isNaN(baseDate.getTime())) throw new Error("Invalid date format. Use YYYY-MM-DD.");
 
       const recordsToInsert = [];
@@ -152,7 +156,7 @@ const ForecastEmailParserBot = () => {
         if (dayIndex === -1) continue;
 
         const forecastDate = new Date(baseDate);
-        forecastDate.setDate(forecastDate.getDate() + dayIndex);
+        forecastDate.setUTCDate(forecastDate.getUTCDate() + dayIndex);
         const dateString = forecastDate.toISOString().split('T')[0];
         
         datesToDelete.push(dateString);
@@ -178,7 +182,7 @@ const ForecastEmailParserBot = () => {
       const { error: insertError } = await supabase.from('fva_daily_history').insert(recordsToInsert);
       if (insertError) throw insertError;
 
-      toast({ title: "Forecast Saved!", description: `Your forecast for week of ${baseDate.toLocaleDateString()} has been saved.` });
+      toast({ title: "Forecast Saved!", description: `Your forecast for week of ${baseDate.toLocaleDateString('en-US', {timeZone: 'UTC'})} has been saved.` });
       
       if (refreshData) refreshData();
       
@@ -230,7 +234,7 @@ const ForecastEmailParserBot = () => {
               </Button>
               <div className="text-center font-semibold text-gray-700">
                   <p>Editing Forecast For</p>
-                  <p className="text-blue-600 font-semibold">{activeWeekStartDate.toLocaleDateString()}</p>
+                  <p className="text-blue-600 font-semibold">{activeWeekStartDate.toLocaleDateString('en-US', {timeZone: 'UTC'})}</p>
               </div>
               <Button variant="outline" onClick={() => handleWeekChange('next')} className="bg-white border-gray-300 text-gray-700 hover:bg-gray-100">
                   Next <ChevronRight className="h-4 w-4 ml-2" />
@@ -269,7 +273,6 @@ const ForecastEmailParserBot = () => {
         </CardContent>
       </Card>
 
-      {/* --- THIS IS THE MISSING PIECE --- */}
       <div className="mt-8 space-y-4">
         <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-600">
             Saved Forecasts
@@ -284,7 +287,7 @@ const ForecastEmailParserBot = () => {
                     <ForecastWeekAccordion 
                         key={week.startDate} 
                         week={week}
-                        amSplit={amSplit} // Pass the amSplit from adminSettings
+                        amSplit={amSplit}
                     />
                 ))}
             </Accordion>
@@ -295,6 +298,7 @@ const ForecastEmailParserBot = () => {
 };
 
 export default ForecastEmailParserBot;
+
 
 
 
