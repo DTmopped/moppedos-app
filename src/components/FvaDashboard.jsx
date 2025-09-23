@@ -620,64 +620,58 @@ const FvaDashboard = () => {
         </Card>
       </div>
 
-      {/* YTD Metrics */}
-     {showYTD && (
-  ytd ? (
-    // Show YTD cards
-  ) : (
-    <p className="text-slate-500 mt-4">No YTD data available yet.</p>
-  )
+    {/* YTD Metrics */}
+{showYTD && (
+  <>
+    <h3 className="text-lg font-semibold text-slate-700 mt-8 mb-2">Year-to-Date Metrics</h3>
+    <div className="grid grid-cols-4 gap-4">
+      <Card>
+        <CardContent className="p-4">
+          <p className="text-sm text-slate-500">
+            YTD Actual Sales <span title="Total actual sales year-to-date for this location." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+          </p>
+          <p className="text-lg font-semibold text-slate-800">
+            ${ytd?.total_sales?.toLocaleString() || 0}
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-4">
+          <p className="text-sm text-slate-500">
+            YTD Food Cost % <span title="Average food cost as a % of actual sales YTD." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+          </p>
+          <p className={`text-lg font-semibold ${ytd?.avg_food_cost_pct > foodTarget ? 'text-red-600' : 'text-green-600'}`}>
+            {ytd?.avg_food_cost_pct ? (ytd.avg_food_cost_pct * 100).toFixed(1) : '0.0'}%
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-4">
+          <p className="text-sm text-slate-500">
+            YTD Beverage Cost % <span title="Average beverage cost as a % of actual sales YTD." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+          </p>
+          <p className={`text-lg font-semibold ${ytd?.avg_bev_cost_pct > bevTarget ? 'text-red-600' : 'text-green-600'}`}>
+            {ytd?.avg_bev_cost_pct ? (ytd.avg_bev_cost_pct * 100).toFixed(1) : '0.0'}%
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-4">
+          <p className="text-sm text-slate-500">
+            YTD Labor Cost % <span title="Average labor cost as a % of actual sales YTD." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+          </p>
+          <p className={`text-lg font-semibold ${ytd?.avg_labor_cost_pct > laborTarget ? 'text-red-600' : 'text-green-600'}`}>
+            {ytd?.avg_labor_cost_pct ? (ytd.avg_labor_cost_pct * 100).toFixed(1) : '0.0'}%
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  </>
 )}
 
-        <>
-          <h3 className="text-lg font-semibold text-slate-700 mt-8 mb-2">Year-to-Date Metrics</h3>
-          <div className="grid grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-sm text-slate-500">
-                  YTD Actual Sales <span title="Total actual sales year-to-date for this location." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
-                </p>
-                <p className="text-lg font-semibold text-slate-800">
-                  ${ytd.total_sales?.toLocaleString() || 0}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-sm text-slate-500">
-                  YTD Food Cost % <span title="Average food cost as a % of actual sales YTD." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
-                </p>
-                <p className={`text-lg font-semibold ${ytd.avg_food_cost_pct > foodTarget ? 'text-red-600' : 'text-green-600'}`}>
-                  {(ytd.avg_food_cost_pct * 100).toFixed(1)}%
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-sm text-slate-500">
-                  YTD Beverage Cost % <span title="Average beverage cost as a % of actual sales YTD." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
-                </p>
-                <p className={`text-lg font-semibold ${ytd.avg_bev_cost_pct > bevTarget ? 'text-red-600' : 'text-green-600'}`}>
-                  {(ytd.avg_bev_cost_pct * 100).toFixed(1)}%
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-sm text-slate-500">
-                  YTD Labor Cost % <span title="Average labor cost as a % of actual sales YTD." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
-                </p>
-                <p className={`text-lg font-semibold ${ytd.avg_labor_cost_pct > laborTarget ? 'text-red-600' : 'text-green-600'}`}>
-                  {(ytd.avg_labor_cost_pct * 100).toFixed(1)}%
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </>
-      )}
 
       {/* Last Month Summary */}
       {showLastMonth && lastMonthSummary && (
