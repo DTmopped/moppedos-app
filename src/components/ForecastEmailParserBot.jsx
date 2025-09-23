@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/supabaseClient";
 import { Button } from "components/ui/button.jsx";
@@ -10,6 +10,8 @@ import { useToast } from "components/ui/use-toast.jsx";
 import { useData } from "@/contexts/DataContext";
 import AdminPanel from "./forecast/AdminPanel.jsx";
 import AdminModeToggle from "@/components/ui/AdminModeToggle";
+import { Accordion } from "@/components/ui/accordion"; // <-- IMPORT ACCORDION
+import ForecastWeekAccordion from "./forecast/ForecastWeekAccordion.jsx"; // <-- IMPORT THE WEEK ACCORDION
 
 const getStartOfWeek = (date) => {
   const d = new Date(date);
@@ -22,23 +24,89 @@ const DAY_ORDER = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Satu
 const ForecastEmailParserBot = () => {
   // --- HOOKS ---
   const { locationId, loadingLocation, isAdminMode, adminSettings, refreshData } = useData();
-  const { captureRate, spendPerGuest, foodCostGoal, bevCostGoal, laborCostGoal } = adminSettings;
+  const { captureRate, spendPerGuest, foodCostGoal, bevCostGoal, laborCostGoal, amSplit } = adminSettings;
   const [activeWeekStartDate, setActiveWeekStartDate] = useState(getStartOfWeek(new Date()));
   const [isSaving, setIsSaving] = useState(false);
   const [emailInput, setEmailInput] = useState("");
   const [error, setError] = useState("");
   const { toast } = useToast();
+  
+  // --- NEW STATE FOR SAVED FORECASTS ---
+  const [savedForecasts, setSavedForecasts] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
 
   // --- EFFECTS ---
   useEffect(() => {
     if (!loadingLocation && locationId) {
-      // AI Patch: Remove trailing spaces for cleaner input
       const dateString = `Date: ${activeWeekStartDate.toISOString().split('T')[0]}`;
-      setEmailInput(
-        `${dateString}\nMonday:\nTuesday:\nWednesday:\nThursday:\nFriday:\nSaturday:\nSunday:`
-      );
+      setEmailInput(`${dateString}\nMonday:\nTuesday:\nWednesday:\nThursday:\nFriday:\nSaturday:\nSunday:`);
     }
   }, [activeWeekStartDate, loadingLocation, locationId]);
+
+  // --- NEW EFFECT TO FETCH SAVED FORECASTS ---
+  useEffect(() => {
+    const fetchHistory = async () => {
+      if (!locationId) return;
+      setLoadingHistory(true);
+      const { data, error } = await supabase
+        .from('fva_daily_history')
+        .select('*')
+        .eq('location_id', locationId)
+        .order('date', { ascending: false });
+
+      if (error) {
+        console.error("Error fetching forecast history:", error);
+        setError("Could not load saved forecasts.");
+      } else {
+        setSavedForecasts(data);
+      }
+      setLoadingHistory(false);
+    };
+    fetchHistory();
+  }, [locationId, refreshData]); // Re-fetch when location changes or after a save
+
+  // --- DATA GROUPING FOR ACCORDION ---
+  const groupedForecasts = useMemo(() => {
+    const groups = {};
+    savedForecasts.forEach(forecast => {
+      const forecastDate = new Date(forecast.date + 'T00:00:00'); // Ensure correct date parsing
+      const startOfWeek = getStartOfWeek(forecastDate);
+      const key = startOfWeek.toISOString().split('T')[0];
+      if (!groups[key]) {
+        groups[key] = { startDate: key, results: [] };
+      }
+      // Re-create the structure that ForecastWeekAccordion expects
+      const dayName = DAY_ORDER[forecastDate.getDay() -1] || 'Sunday';
+      groups[key].results.push({
+        day: dayName,
+        date: forecast.date,
+        sales: forecast.forecast_sales,
+        food: forecast.forecast_sales * forecast.food_cost_pct,
+        bev: forecast.forecast_sales * forecast.bev_cost_pct,
+        labor: forecast.forecast_sales * forecast.labor_cost_pct,
+        // pax and guests are not stored, so we derive them or show 'N/A'
+        pax: Math.round(forecast.forecast_sales / spendPerGuest / captureRate),
+        guests: Math.round(forecast.forecast_sales / spendPerGuest),
+      });
+    });
+
+    // Add total rows to each group
+    Object.values(groups).forEach(group => {
+      const totals = group.results.reduce((acc, row) => {
+        acc.sales += row.sales || 0;
+        acc.food += row.food || 0;
+        acc.bev += row.bev || 0;
+        acc.labor += row.labor || 0;
+        acc.pax += row.pax || 0;
+        acc.guests += row.guests || 0;
+        return acc;
+      }, { sales: 0, food: 0, bev: 0, labor: 0, pax: 0, guests: 0 });
+      group.results.push({ ...totals, day: 'Total', isTotal: true });
+    });
+
+    return Object.values(groups).sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+  }, [savedForecasts, spendPerGuest, captureRate]);
+
 
   // --- HANDLERS ---
   const handleWeekChange = useCallback((direction) => {
@@ -50,6 +118,7 @@ const ForecastEmailParserBot = () => {
   }, []);
 
   const parseAndSaveForecast = useCallback(async () => {
+    // ... (This function is correct and does not need changes)
     if (!locationId) {
       setError("Location is not available. Please wait or refresh the page.");
       return;
@@ -58,7 +127,6 @@ const ForecastEmailParserBot = () => {
     setIsSaving(true);
 
     try {
-      // AI Patch: More robust line parsing
       const lines = emailInput.split('\n').map(l => l.trim()).filter(Boolean);
       const dateLine = lines.find(line => /^date\s*:/i.test(line));
       if (!dateLine) throw new Error("Date: YYYY-MM-DD line is missing.");
@@ -70,7 +138,6 @@ const ForecastEmailParserBot = () => {
       const recordsToInsert = [];
       const datesToDelete = [];
       
-      // AI Patch: More tolerant regex
       const dayRegex = /^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\s*:\s*([0-9][0-9,]*)$/i;
 
       for (const line of lines) {
@@ -84,7 +151,6 @@ const ForecastEmailParserBot = () => {
         const dayIndex = DAY_ORDER.indexOf(dayName);
         if (dayIndex === -1) continue;
 
-        // AI Patch: Correctly calculate date based on the parsed baseDate
         const forecastDate = new Date(baseDate);
         forecastDate.setDate(forecastDate.getDate() + dayIndex);
         const dateString = forecastDate.toISOString().split('T')[0];
@@ -145,11 +211,20 @@ const ForecastEmailParserBot = () => {
 
       <Card className="shadow-lg border-gray-200 bg-white">
         <CardHeader>
-          {/* ... CardHeader content ... */}
+            <div className="flex items-center space-x-4">
+                <div className="p-3 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 shadow-lg">
+                <MailCheck className="h-8 w-8 text-white" />
+                </div>
+                <div>
+                <CardTitle className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-600">Forecast Center</CardTitle>
+                <CardDescription className="text-gray-500">
+                    Select a week, input daily traffic, and save your forecast.
+                </CardDescription>
+                </div>
+            </div>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-6 border">
-              {/* AI Patch: Pass direction to handleWeekChange */}
               <Button variant="outline" onClick={() => handleWeekChange('prev')} className="bg-white border-gray-300 text-gray-700 hover:bg-gray-100">
                   <ChevronLeft className="h-4 w-4 mr-2" /> Previous
               </Button>
@@ -161,7 +236,6 @@ const ForecastEmailParserBot = () => {
                   Next <ChevronRight className="h-4 w-4 ml-2" />
               </Button>
           </div>
-          {/* ... Rest of the JSX ... */}
           <div className="space-y-2 mb-6">
             <Label htmlFor="emailInput" className="text-sm font-medium text-gray-700">Weekly Traffic Data</Label>
             <Textarea
@@ -194,6 +268,28 @@ const ForecastEmailParserBot = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* --- THIS IS THE MISSING PIECE --- */}
+      <div className="mt-8 space-y-4">
+        <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-600">
+            Saved Forecasts
+        </h3>
+        {loadingHistory ? (
+            <p className="text-gray-500">Loading history...</p>
+        ) : groupedForecasts.length === 0 ? (
+            <p className="text-gray-500">No saved forecasts found for this location.</p>
+        ) : (
+            <Accordion type="single" collapsible className="w-full space-y-3">
+                {groupedForecasts.map(week => (
+                    <ForecastWeekAccordion 
+                        key={week.startDate} 
+                        week={week}
+                        amSplit={amSplit} // Pass the amSplit from adminSettings
+                    />
+                ))}
+            </Accordion>
+        )}
+      </div>
     </motion.div>
   );
 };
