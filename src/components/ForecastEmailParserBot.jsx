@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "compo
 import { Accordion } from "@/components/ui/accordion";
 import { MailCheck, TrendingUp, AlertTriangle, ChevronLeft, ChevronRight, Loader2, CheckCircle } from "lucide-react";
 import { useData } from "@/contexts/DataContext";
+import { supabase } from "@/supabaseClient"; // Import supabase directly
 import AdminPanel from "./forecast/AdminPanel.jsx";
 import AdminModeToggle from "@/components/ui/AdminModeToggle";
 import ForecastWeekAccordion from "./forecast/ForecastWeekAccordion.jsx";
@@ -25,8 +26,7 @@ const ForecastEmailParserBot = () => {
     loadingLocation, 
     isAdminMode, 
     adminSettings,
-    supabase, // Assuming supabase client is available in your DataContext
-    currentLocationId // Assuming you have current location ID in context
+    locationId // ✅ Correct variable name from DataContext
   } = useData();
   
   const { captureRate, spendPerGuest, amSplit, foodCostGoal, bevCostGoal, laborCostGoal } = adminSettings;
@@ -34,29 +34,48 @@ const ForecastEmailParserBot = () => {
   const [activeWeekStartDate, setActiveWeekStartDate] = useState(getStartOfWeekUTC(new Date()));
   const [emailInput, setEmailInput] = useState("");
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(""); // Add success message state
+  const [success, setSuccess] = useState("");
   const [forecastDataUI, setForecastDataUI] = useState([]);
   const [savedForecasts, setSavedForecasts] = useState({});
   const [isLoadingForecasts, setIsLoadingForecasts] = useState(false);
-  const [isSaving, setIsSaving] = useState(false); // Add saving state
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Debug logging for production troubleshooting
+  useEffect(() => {
+    if (!loadingLocation) {
+      console.log('DataContext locationId:', locationId);
+      console.log('Loading location complete:', !loadingLocation);
+    }
+  }, [loadingLocation, locationId]);
 
   // Function to load existing forecasts from Supabase
   const loadExistingForecasts = useCallback(async () => {
-    if (!supabase || !currentLocationId) return;
+    // ✅ Guard: Don't load if still loading location or no locationId
+    if (loadingLocation || !locationId) {
+      console.log('Skipping forecast load - loadingLocation:', loadingLocation, 'locationId:', locationId);
+      return;
+    }
     
     setIsLoadingForecasts(true);
     try {
+      console.log('Loading forecasts for locationId:', locationId);
+      
       const { data, error } = await supabase
         .from('fva_daily_history')
         .select('*')
-        .eq('location_id', currentLocationId)
+        .eq('location_id', locationId)
         .order('date', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase query error:', error);
+        throw error;
+      }
+
+      console.log('Loaded forecast data:', data?.length || 0, 'records');
 
       // Group by week
       const groupedByWeek = {};
-      data.forEach(row => {
+      data?.forEach(row => {
         const date = new Date(row.date + 'T00:00:00Z'); // Ensure UTC
         const weekStart = getStartOfWeekUTC(date).toISOString().split('T')[0];
         
@@ -116,18 +135,18 @@ const ForecastEmailParserBot = () => {
     } finally {
       setIsLoadingForecasts(false);
     }
-  }, [supabase, currentLocationId, captureRate, spendPerGuest, amSplit]);
+  }, [locationId, loadingLocation, captureRate, spendPerGuest, amSplit]);
 
-  // Load existing forecasts when component mounts or location changes
+  // ✅ Only load forecasts when location is ready
   useEffect(() => {
-    if (!loadingLocation && currentLocationId) {
+    if (!loadingLocation && locationId) {
       loadExistingForecasts();
     }
-  }, [loadingLocation, currentLocationId, loadExistingForecasts]);
+  }, [loadingLocation, locationId, loadExistingForecasts]);
 
   // Load existing data for the active week into the textarea
   useEffect(() => {
-    if (!loadingLocation) {
+    if (!loadingLocation && locationId) {
       const activeWeekKey = activeWeekStartDate.toISOString().split('T')[0];
       const existingWeekData = savedForecasts[activeWeekKey];
       
@@ -147,7 +166,7 @@ const ForecastEmailParserBot = () => {
         setEmailInput(`Date: ${dateString}\nMonday:\nTuesday:\nWednesday:\nThursday:\nFriday:\nSaturday:\nSunday:`);
       }
     }
-  }, [activeWeekStartDate, loadingLocation, savedForecasts]);
+  }, [activeWeekStartDate, loadingLocation, locationId, savedForecasts]);
 
   const handleWeekChange = useCallback((direction) => {
     setActiveWeekStartDate(prevDate => {
@@ -161,12 +180,26 @@ const ForecastEmailParserBot = () => {
   }, []);
 
   const generateForecast = useCallback(async () => {
+    // ✅ Guard: Check if location is still loading
+    if (loadingLocation) {
+      setError("Please wait for location data to load.");
+      return;
+    }
+
+    // ✅ Guard: Check if locationId is available
+    if (!locationId) {
+      setError("Missing location ID. Please ensure you're properly logged in.");
+      return;
+    }
+
     setError("");
     setSuccess("");
     setForecastDataUI([]);
     setIsSaving(true);
 
     try {
+      console.log('Starting forecast generation for locationId:', locationId);
+
       const lines = emailInput.split('\n').map(l => l.trim()).filter(Boolean);
       const dateLine = lines.find(line => /^date\s*:/i.test(line));
       if (!dateLine) throw new Error("Date: YYYY-MM-DD line is missing.");
@@ -190,10 +223,13 @@ const ForecastEmailParserBot = () => {
 
       if (Object.keys(days).length === 0) throw new Error("No valid day data found to process.");
 
+      console.log('Parsed days:', days);
+      console.log('Saving with locationId:', locationId);
+
       // Save to Supabase using the provided function
       const result = await saveForecastToSupabase({
         supabase,
-        locationId: currentLocationId,
+        locationId, // ✅ Using correct variable name
         baseDate,
         days,
         captureRate,
@@ -202,6 +238,8 @@ const ForecastEmailParserBot = () => {
         bevCostGoal,
         laborCostGoal
       });
+
+      console.log('Save result:', result);
 
       // Show success message
       setSuccess(`Successfully saved forecast for ${result.count} days!`);
@@ -213,12 +251,14 @@ const ForecastEmailParserBot = () => {
       setForecastDataUI([]);
 
     } catch (e) {
+      console.error('Forecast generation error:', e);
       setError(`Error: ${e.message}`);
     } finally {
       setIsSaving(false);
     }
-  }, [emailInput, supabase, currentLocationId, captureRate, spendPerGuest, foodCostGoal, bevCostGoal, laborCostGoal, loadExistingForecasts]);
+  }, [emailInput, locationId, loadingLocation, captureRate, spendPerGuest, foodCostGoal, bevCostGoal, laborCostGoal, loadExistingForecasts]);
 
+  // ✅ Show loading state until location is ready
   if (loadingLocation) {
     return (
       <Card className="shadow-lg border-gray-200 bg-white flex items-center justify-center p-10">
@@ -226,6 +266,21 @@ const ForecastEmailParserBot = () => {
           <Loader2 className="h-8 w-8 animate-spin mb-2" />
           <span className="font-semibold">Loading Location Data...</span>
         </div>
+      </Card>
+    );
+  }
+
+  // ✅ Show error if no location ID after loading
+  if (!locationId) {
+    return (
+      <Card className="shadow-lg border-gray-200 bg-white">
+        <CardContent className="text-center py-10">
+          <div className="text-red-500">
+            <AlertTriangle className="h-12 w-12 mx-auto mb-4" />
+            <p className="text-lg font-medium mb-2">Location Not Found</p>
+            <p className="text-sm">Please ensure you're properly logged in and have a location assigned.</p>
+          </div>
+        </CardContent>
       </Card>
     );
   }
@@ -284,7 +339,7 @@ const ForecastEmailParserBot = () => {
           <motion.div whileTap={{ scale: 0.98 }}>
             <Button 
               onClick={generateForecast} 
-              disabled={isSaving}
+              disabled={isSaving || loadingLocation || !locationId}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 text-base shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50"
             >
               {isSaving ? (
