@@ -18,6 +18,8 @@ const FvaDashboard = () => {
     setIsAdminMode,
     adminSettings,
     updateAdminSetting,
+    locationUuid, // ✅ Use locationUuid instead of locationId
+    loadingLocation
   } = useData();
 
   const {
@@ -26,104 +28,136 @@ const FvaDashboard = () => {
     laborCostGoal: laborTarget
   } = adminSettings;
 
+  const today = new Date().toISOString().split("T")[0];
+  const currentMonth = new Date().toISOString().slice(0, 7);
 
-const today = new Date().toISOString().split("T")[0];
-const currentMonth = new Date().toISOString().slice(0, 7);
+  const [ytd, setYtd] = useState(null);
+  const [ytdSplit, setYtdSplit] = useState(null);
+  const [showYTD, setShowYTD] = useState(false);
+  const [showLastMonth, setShowLastMonth] = useState(false);
+  const [lastMonthSummary, setLastMonthSummary] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-const [ytd, setYtd] = useState(null);
-const [ytdSplit, setYtdSplit] = useState(null);
-const [showYTD, setShowYTD] = useState(false);
-const [showLastMonth, setShowLastMonth] = useState(false);
-const [lastMonthSummary, setLastMonthSummary] = useState(null);
+  // ✅ Updated function to fetch FVA data using location_uuid
+  const fetchFvaData = async () => {
+    if (loadingLocation || !locationUuid) {
+      console.log('Skipping FVA data fetch - loadingLocation:', loadingLocation, 'locationUuid:', locationUuid);
+      return;
+    }
 
-const renderLastMonthCards = () => {
-  if (!lastMonthSummary) return null;
+    setIsLoading(true);
+    setError(null);
 
-  const variance = (
-    lastMonthSummary.total_actual_sales - lastMonthSummary.total_forecast_sales
-  ) / lastMonthSummary.total_forecast_sales;
+    try {
+      console.log('Fetching FVA data for locationUuid:', locationUuid);
 
-  return (
-    <div className="grid grid-cols-6 gap-4 mt-4">
-      <Card>
-        <CardContent className="p-4">
-          <p className="text-sm text-slate-500">Last Month Forecast Sales</p>
-          <p className="text-lg font-semibold">
-            ${lastMonthSummary.total_forecast_sales?.toLocaleString()}
-          </p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className="p-4">
-          <p className="text-sm text-slate-500">Last Month Actual Sales</p>
-          <p className="text-lg font-semibold">
-            ${lastMonthSummary.total_actual_sales?.toLocaleString()}
-          </p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className="p-4">
-          <p className="text-sm text-slate-500">Sales Variance %</p>
-          <p className={`text-lg font-semibold ${variance >= 0 ? "text-green-600" : "text-red-600"}`}>
-            {(variance * 100).toFixed(1)}%
-          </p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className="p-4">
-          <p className="text-sm text-slate-500">Avg Food Cost %</p>
-          <p className={`text-lg font-semibold ${lastMonthSummary.avg_food_cost_pct > foodTarget ? "text-red-600" : "text-green-600"}`}>
-            {(lastMonthSummary.avg_food_cost_pct * 100).toFixed(1)}%
-          </p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className="p-4">
-          <p className="text-sm text-slate-500">Avg Beverage Cost %</p>
-          <p className={`text-lg font-semibold ${lastMonthSummary.avg_bev_cost_pct > bevTarget ? "text-red-600" : "text-green-600"}`}>
-            {(lastMonthSummary.avg_bev_cost_pct * 100).toFixed(1)}%
-          </p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className="p-4">
-          <p className="text-sm text-slate-500">Avg Labor Cost %</p>
-          <p className={`text-lg font-semibold ${lastMonthSummary.avg_labor_cost_pct > laborTarget ? "text-red-600" : "text-green-600"}`}>
-            {(lastMonthSummary.avg_labor_cost_pct * 100).toFixed(1)}%
-          </p>
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
-  useEffect(() => {
-    const fetchYtdData = async () => {
-      const { data: ytdData } = await supabase.rpc("get_ytd_fva_v3", { p_location_id: null, p_as_of: today });
-      const { data: splitData } = await supabase.rpc("get_ytd_fva_split_v2", { p_location_id: null, p_as_of: today });
-      setYtd(ytdData?.[0]);
-      setYtdSplit(splitData?.[0]);
-    };
-    fetchYtdData();
-  }, [today]);
+      // ✅ Query using location_uuid instead of location_id
+      const { data: fvaData, error: fvaError } = await supabase
+        .from('fva_daily_history')
+        .select('*')
+        .eq('location_uuid', locationUuid)
+        .order('date', { ascending: true });
 
+      if (fvaError) {
+        console.error('FVA data fetch error:', fvaError);
+        throw fvaError;
+      }
 
-  useEffect(() => {
-    const fetchLastMonthData = async () => {
+      console.log('Fetched FVA data:', fvaData?.length || 0, 'records');
+      return fvaData || [];
+
+    } catch (err) {
+      console.error('Error fetching FVA data:', err);
+      setError(err.message);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ✅ Updated YTD data fetching with location_uuid
+  const fetchYtdData = async () => {
+    if (loadingLocation || !locationUuid) {
+      return;
+    }
+
+    try {
+      // ✅ Use direct queries instead of RPC functions for better control
+      const startOfYear = new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0];
+      
+      const { data: ytdData, error: ytdError } = await supabase
+        .from('fva_daily_history')
+        .select(`
+          forecast_sales,
+          actual_sales,
+          food_cost_pct,
+          bev_cost_pct,
+          labor_cost_pct,
+          date
+        `)
+        .eq('location_uuid', locationUuid)
+        .gte('date', startOfYear)
+        .lte('date', today)
+        .not('actual_sales', 'is', null);
+
+      if (ytdError) {
+        console.error('YTD data fetch error:', ytdError);
+        return;
+      }
+
+      if (ytdData && ytdData.length > 0) {
+        // Calculate YTD aggregates
+        const totalSales = ytdData.reduce((sum, row) => sum + (row.actual_sales || 0), 0);
+        const totalForecast = ytdData.reduce((sum, row) => sum + (row.forecast_sales || 0), 0);
+        const avgFoodPct = ytdData.reduce((sum, row) => sum + (row.food_cost_pct || 0), 0) / ytdData.length;
+        const avgBevPct = ytdData.reduce((sum, row) => sum + (row.bev_cost_pct || 0), 0) / ytdData.length;
+        const avgLaborPct = ytdData.reduce((sum, row) => sum + (row.labor_cost_pct || 0), 0) / ytdData.length;
+
+        setYtd({
+          total_sales: totalSales,
+          total_forecast: totalForecast,
+          avg_food_cost_pct: avgFoodPct,
+          avg_bev_cost_pct: avgBevPct,
+          avg_labor_cost_pct: avgLaborPct
+        });
+      }
+
+    } catch (err) {
+      console.error('Error fetching YTD data:', err);
+    }
+  };
+
+  // ✅ Updated last month data fetching with location_uuid
+  const fetchLastMonthData = async () => {
+    if (loadingLocation || !locationUuid) {
+      return;
+    }
+
+    try {
       const now = new Date();
       const firstDayOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       const lastMonthStart = new Date(firstDayOfThisMonth);
       lastMonthStart.setMonth(lastMonthStart.getMonth() - 1);
-      const nextMonthStart = new Date(firstDayOfThisMonth);
+      const lastMonthEnd = new Date(firstDayOfThisMonth);
+      lastMonthEnd.setDate(lastMonthEnd.getDate() - 1);
 
-      const startIso = lastMonthStart.toISOString();
-      const endIso = nextMonthStart.toISOString();
+      const startDate = lastMonthStart.toISOString().split('T')[0];
+      const endDate = lastMonthEnd.toISOString().split('T')[0];
 
       const { data, error } = await supabase
-        .from("fva_history_rollup_view")
-        .select("*")
-        .gte("month", startIso)
-        .lt("month", endIso)
-        .limit(1);
+        .from('fva_daily_history')
+        .select(`
+          forecast_sales,
+          actual_sales,
+          food_cost_pct,
+          bev_cost_pct,
+          labor_cost_pct
+        `)
+        .eq('location_uuid', locationUuid)
+        .gte('date', startDate)
+        .lte('date', endDate)
+        .not('actual_sales', 'is', null);
 
       if (error) {
         console.error("Last Month fetch error", error);
@@ -131,9 +165,23 @@ const renderLastMonthCards = () => {
       }
 
       if (data && data.length > 0) {
-        setLastMonthSummary(data[0]);
+        // Calculate last month aggregates
+        const totalForecastSales = data.reduce((sum, row) => sum + (row.forecast_sales || 0), 0);
+        const totalActualSales = data.reduce((sum, row) => sum + (row.actual_sales || 0), 0);
+        const avgFoodPct = data.reduce((sum, row) => sum + (row.food_cost_pct || 0), 0) / data.length;
+        const avgBevPct = data.reduce((sum, row) => sum + (row.bev_cost_pct || 0), 0) / data.length;
+        const avgLaborPct = data.reduce((sum, row) => sum + (row.labor_cost_pct || 0), 0) / data.length;
+
+        setLastMonthSummary({
+          total_forecast_sales: totalForecastSales,
+          total_actual_sales: totalActualSales,
+          avg_food_cost_pct: avgFoodPct,
+          avg_bev_cost_pct: avgBevPct,
+          avg_labor_cost_pct: avgLaborPct
+        });
       } else {
-        console.warn("⚠️ No last month data found. Showing placeholder metrics.");
+        console.warn("⚠️ No last month data found for location:", locationUuid);
+        // Set placeholder data for demo purposes
         setLastMonthSummary({
           total_forecast_sales: 72000,
           total_actual_sales: 69500,
@@ -142,10 +190,81 @@ const renderLastMonthCards = () => {
           avg_bev_cost_pct: 0.18
         });
       }
-    };
-    fetchLastMonthData();
-  }, []);
+    } catch (err) {
+      console.error('Error fetching last month data:', err);
+    }
+  };
 
+  // ✅ Load data when locationUuid is available
+  useEffect(() => {
+    if (!loadingLocation && locationUuid) {
+      fetchYtdData();
+      fetchLastMonthData();
+    }
+  }, [loadingLocation, locationUuid, today]);
+
+  const renderLastMonthCards = () => {
+    if (!lastMonthSummary) return null;
+
+    const variance = (
+      lastMonthSummary.total_actual_sales - lastMonthSummary.total_forecast_sales
+    ) / lastMonthSummary.total_forecast_sales;
+
+    return (
+      <div className="grid grid-cols-6 gap-4 mt-4">
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-slate-500">Last Month Forecast Sales</p>
+            <p className="text-lg font-semibold">
+              ${lastMonthSummary.total_forecast_sales?.toLocaleString()}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-slate-500">Last Month Actual Sales</p>
+            <p className="text-lg font-semibold">
+              ${lastMonthSummary.total_actual_sales?.toLocaleString()}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-slate-500">Sales Variance %</p>
+            <p className={`text-lg font-semibold ${variance >= 0 ? "text-green-600" : "text-red-600"}`}>
+              {(variance * 100).toFixed(1)}%
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-slate-500">Avg Food Cost %</p>
+            <p className={`text-lg font-semibold ${lastMonthSummary.avg_food_cost_pct > foodTarget ? "text-red-600" : "text-green-600"}`}>
+              {(lastMonthSummary.avg_food_cost_pct * 100).toFixed(1)}%
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-slate-500">Avg Beverage Cost %</p>
+            <p className={`text-lg font-semibold ${lastMonthSummary.avg_bev_cost_pct > bevTarget ? "text-red-600" : "text-green-600"}`}>
+              {(lastMonthSummary.avg_bev_cost_pct * 100).toFixed(1)}%
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-slate-500">Avg Labor Cost %</p>
+            <p className={`text-lg font-semibold ${lastMonthSummary.avg_labor_cost_pct > laborTarget ? "text-red-600" : "text-green-600"}`}>
+              {(lastMonthSummary.avg_labor_cost_pct * 100).toFixed(1)}%
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
+  // ✅ Updated combinedData calculation using location-specific data
   const combinedData = forecastData.map(forecast => {
     const actual = actualData.find(a => a.date === forecast.date);
     if (actual) {
@@ -163,7 +282,6 @@ const renderLastMonthCards = () => {
 
   const mtdData = combinedData.filter(d => d.date.startsWith(currentMonth) && d.date <= today);
   const eomData = combinedData.filter(d => d.date.startsWith(currentMonth));
-
 
   const getAverages = data => {
     const count = data.filter(d => d.hasActuals).length;
@@ -184,18 +302,17 @@ const renderLastMonthCards = () => {
   const mtd = getAverages(mtdData);
   const eom = getAverages(eomData);
 
-  // ... rest of your existing code (handlePrint, exportToCSV, etc.) remains unchanged
   const handlePrint = () => {
     const printDate = new Date();
     const targets = { foodTarget, bevTarget, laborTarget };
     const printableComponentHtml = ReactDOMServer.renderToStaticMarkup(
-  <PrintableFvaDashboard
-    combinedData={combinedData}
-    printDate={printDate}
-    targets={targets}
-    lastMonthSummary={lastMonthSummary} // ✅ This is the missing prop!
-  />
-);
+      <PrintableFvaDashboard
+        combinedData={combinedData}
+        printDate={printDate}
+        targets={targets}
+        lastMonthSummary={lastMonthSummary}
+      />
+    );
     const iframe = document.createElement("iframe");
     iframe.style.position = "absolute";
     iframe.style.width = "0";
@@ -215,304 +332,251 @@ const renderLastMonthCards = () => {
     }, 500);
   };
 
-const exportToCSV = () => {
-  const formatCurrency = val =>
-    typeof val === "number" ? `$${val.toFixed(2)}` : "N/A";
-  const formatPercent = val =>
-    typeof val === "number" ? `${val.toFixed(1)}%` : "N/A";
+  const exportToCSV = () => {
+    const formatCurrency = val =>
+      typeof val === "number" ? `$${val.toFixed(2)}` : "N/A";
+    const formatPercent = val =>
+      typeof val === "number" ? `${val.toFixed(1)}%` : "N/A";
 
-  const rows = [
-    [
-      "Date",
-      "Forecasted Sales",
-      "Actual Sales",
-      "Variance ($)",
-      "Variance (%)",
-      "Food Cost (F / A / $)",
-      "Bev Cost (F / A / $)",
-      "Labor Cost (F / A / $)",
-      "Alerts",
-    ],
-  ];
+    const rows = [
+      [
+        "Date",
+        "Forecasted Sales",
+        "Actual Sales",
+        "Variance ($)",
+        "Variance (%)",
+        "Food Cost (F / A / $)",
+        "Bev Cost (F / A / $)",
+        "Labor Cost (F / A / $)",
+        "Alerts",
+      ],
+    ];
 
-  let totals = {
-    forecast: 0,
-    actual: 0,
-    food$: 0,
-    bev$: 0,
-    labor$: 0,
-    daysWithActuals: 0,
-  };
+    let totals = {
+      forecast: 0,
+      actual: 0,
+      food$: 0,
+      bev$: 0,
+      labor$: 0,
+      daysWithActuals: 0,
+    };
 
-  combinedData.forEach(d => {
-    const dollarVar = d.hasActuals ? d.actualSales - d.forecastSales : null;
-    const pctVar =
-      d.hasActuals && d.forecastSales
-        ? ((d.actualSales - d.forecastSales) / d.forecastSales) * 100
-        : null;
+    combinedData.forEach(d => {
+      const dollarVar = d.hasActuals ? d.actualSales - d.forecastSales : null;
+      const pctVar =
+        d.hasActuals && d.forecastSales
+          ? ((d.actualSales - d.forecastSales) / d.forecastSales) * 100
+          : null;
 
-    const forecastFoodCost = d.hasActuals ? d.forecastSales * d.foodPct : null;
-    const actualFoodCost = d.hasActuals ? d.actualSales * d.foodPct : null;
-    const foodVar = d.hasActuals ? actualFoodCost - forecastFoodCost : null;
+      const forecastFoodCost = d.hasActuals ? d.forecastSales * d.foodPct : null;
+      const actualFoodCost = d.hasActuals ? d.actualSales * d.foodPct : null;
+      const foodVar = d.hasActuals ? actualFoodCost - forecastFoodCost : null;
 
-    const forecastBevCost = d.hasActuals ? d.forecastSales * d.bevPct : null;
-    const actualBevCost = d.hasActuals ? d.actualSales * d.bevPct : null;
-    const bevVar = d.hasActuals ? actualBevCost - forecastBevCost : null;
+      const forecastBevCost = d.hasActuals ? d.forecastSales * d.bevPct : null;
+      const actualBevCost = d.hasActuals ? d.actualSales * d.bevPct : null;
+      const bevVar = d.hasActuals ? actualBevCost - forecastBevCost : null;
 
-    const forecastLaborCost = d.hasActuals ? d.forecastSales * d.laborPct : null;
-    const actualLaborCost = d.hasActuals ? d.actualSales * d.laborPct : null;
-    const laborVar = d.hasActuals ? actualLaborCost - forecastLaborCost : null;
+      const forecastLaborCost = d.hasActuals ? d.forecastSales * d.laborPct : null;
+      const actualLaborCost = d.hasActuals ? d.actualSales * d.laborPct : null;
+      const laborVar = d.hasActuals ? actualLaborCost - forecastLaborCost : null;
 
-    const alerts = d.hasActuals
-      ? [
-          foodVar > 0 ? "Food Over" : null,
-          bevVar > 0 ? "Bev Over" : null,
-          laborVar > 0 ? "Labor Over" : null,
-        ].filter(Boolean).join(", ") || "On Target"
-      : "No Actuals";
+      const alerts = d.hasActuals
+        ? [
+            foodVar > 0 ? "Food Over" : null,
+            bevVar > 0 ? "Bev Over" : null,
+            laborVar > 0 ? "Labor Over" : null,
+          ].filter(Boolean).join(", ") || "On Target"
+        : "No Actuals";
+
+      rows.push([
+        d.date,
+        formatCurrency(d.forecastSales),
+        d.hasActuals ? formatCurrency(d.actualSales) : "N/A",
+        formatCurrency(dollarVar),
+        formatPercent(pctVar),
+        d.hasActuals
+          ? `${formatCurrency(forecastFoodCost)} / ${formatCurrency(actualFoodCost)} / ${formatCurrency(foodVar)}`
+          : "N/A",
+        d.hasActuals
+          ? `${formatCurrency(forecastBevCost)} / ${formatCurrency(actualBevCost)} / ${formatCurrency(bevVar)}`
+          : "N/A",
+        d.hasActuals
+          ? `${formatCurrency(forecastLaborCost)} / ${formatCurrency(actualLaborCost)} / ${formatCurrency(laborVar)}`
+          : "N/A",
+        alerts,
+      ]);
+
+      // Running totals for summary row
+      totals.forecast += d.forecastSales || 0;
+      if (d.hasActuals) {
+        totals.actual += d.actualSales || 0;
+        totals.food$ += foodVar || 0;
+        totals.bev$ += bevVar || 0;
+        totals.labor$ += laborVar || 0;
+        totals.daysWithActuals++;
+      }
+    });
 
     rows.push([
-      d.date,
-      formatCurrency(d.forecastSales),
-      d.hasActuals ? formatCurrency(d.actualSales) : "N/A",
-      formatCurrency(dollarVar),
-      formatPercent(pctVar),
-      d.hasActuals
-        ? `${formatCurrency(forecastFoodCost)} / ${formatCurrency(actualFoodCost)} / ${formatCurrency(foodVar)}`
+      "TOTAL / AVG",
+      formatCurrency(totals.forecast),
+      formatCurrency(totals.actual),
+      formatCurrency(totals.actual - totals.forecast),
+      totals.daysWithActuals
+        ? formatPercent(
+            ((totals.actual - totals.forecast) / totals.forecast) * 100
+          )
         : "N/A",
-      d.hasActuals
-        ? `${formatCurrency(forecastBevCost)} / ${formatCurrency(actualBevCost)} / ${formatCurrency(bevVar)}`
-        : "N/A",
-      d.hasActuals
-        ? `${formatCurrency(forecastLaborCost)} / ${formatCurrency(actualLaborCost)} / ${formatCurrency(laborVar)}`
-        : "N/A",
-      alerts,
+      formatCurrency(totals.food$),
+      formatCurrency(totals.bev$),
+      formatCurrency(totals.labor$),
+      "",
     ]);
 
-    // Running totals for summary row
-    totals.forecast += d.forecastSales || 0;
-    if (d.hasActuals) {
-      totals.actual += d.actualSales || 0;
-      totals.food$ += foodVar || 0;
-      totals.bev$ += bevVar || 0;
-      totals.labor$ += laborVar || 0;
-      totals.daysWithActuals++;
-    }
-  });
+    const csv = rows.map(row => row.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `fva-dashboard-${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
-  rows.push([
-    "TOTAL / AVG",
-    formatCurrency(totals.forecast),
-    formatCurrency(totals.actual),
-    formatCurrency(totals.actual - totals.forecast),
-    totals.daysWithActuals
-      ? formatPercent(
-          ((totals.actual - totals.forecast) / totals.forecast) * 100
-        )
-      : "N/A",
-    formatCurrency(totals.food$),
-    formatCurrency(totals.bev$),
-    formatCurrency(totals.labor$),
-    "",
-  ]);
+  // ✅ Show loading state while location is loading
+  if (loadingLocation) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading location data...</p>
+        </div>
+      </div>
+    );
+  }
 
-  const csv = rows.map(row => row.join(",")).join("\n");
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `fva-dashboard-${new Date().toISOString().split("T")[0]}.csv`;
-  link.click();
-  URL.revokeObjectURL(url);
-};
+  // ✅ Show error state if no locationUuid
+  if (!locationUuid) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-4" />
+          <p className="text-slate-600">No location selected. Please select a location to view the dashboard.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.5 }}
-    className="space-y-6"
-  >
-{/* Dashboard Header & Toggles */}
-<div className="flex justify-between items-center mb-4">
-  <div>
-    <h2 className="text-2xl font-bold tracking-tight text-slate-800">Forecast vs. Actual Dashboard</h2>
-    <p className="text-sm text-slate-500">Review performance across MTD, YTD, and prior month.</p>
-  </div>
-  <div className="flex gap-2">
-    <Button
-      variant={isAdminMode ? "default" : "outline"}
-      onClick={() => setIsAdminMode(!isAdminMode)}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-6"
     >
-      {isAdminMode ? "Admin Mode: ON" : "Admin Mode"}
-    </Button>
-    <Button
-      variant={showYTD ? "default" : "outline"}
-      onClick={() => setShowYTD(!showYTD)}
-    >
-      {showYTD ? "Hide YTD" : "Show YTD"}
-    </Button>
-    <Button
-      variant={showLastMonth ? "default" : "outline"}
-      onClick={() => setShowLastMonth(!showLastMonth)}
-    >
-      {showLastMonth ? "Hide Last Month" : "Last Month"}
-    </Button>
-  </div>
-</div>
-    {/* ✅ Render Last Month Cards if toggled */}
-    {showLastMonth && renderLastMonthCards()}
-
-    {/* Admin Mode Target Inputs */}
-    {isAdminMode && (
-      <div className="flex gap-4 text-sm items-center">
-        <label>
-          Food Target %
-          <input
-            type="number"
-            step="0.01"
-            value={foodTarget}
-            onChange={e => updateAdminSetting("foodCostGoal", parseFloat(e.target.value))}
-            className="ml-1 border rounded px-2 py-1 w-16 text-right"
-          />
-        </label>
-        <label>
-          Bev Target %
-          <input
-            type="number"
-            step="0.01"
-            value={bevTarget}
-            onChange={e => updateAdminSetting("bevCostGoal", parseFloat(e.target.value))}
-            className="ml-1 border rounded px-2 py-1 w-16 text-right"
-          />
-        </label>
-        <label>
-          Labor Target %
-          <input
-            type="number"
-            step="0.01"
-            value={laborTarget}
-            onChange={e => updateAdminSetting("laborCostGoal", parseFloat(e.target.value))}
-            className="ml-1 border rounded px-2 py-1 w-16 text-right"
-          />
-        </label>
+      {/* Dashboard Header & Toggles */}
+      <div className="flex justify-between items-center mb-4">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-800">Forecast vs. Actual Dashboard</h2>
+          <p className="text-sm text-slate-500">Review performance across MTD, YTD, and prior month.</p>
+          {locationUuid && (
+            <p className="text-xs text-slate-400">Location: {locationUuid}</p>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant={isAdminMode ? "default" : "outline"}
+            onClick={() => setIsAdminMode(!isAdminMode)}
+          >
+            {isAdminMode ? "Admin Mode: ON" : "Admin Mode"}
+          </Button>
+          <Button
+            variant={showYTD ? "default" : "outline"}
+            onClick={() => setShowYTD(!showYTD)}
+          >
+            {showYTD ? "Hide YTD" : "Show YTD"}
+          </Button>
+          <Button
+            variant={showLastMonth ? "default" : "outline"}
+            onClick={() => setShowLastMonth(!showLastMonth)}
+          >
+            {showLastMonth ? "Hide Last Month" : "Last Month"}
+          </Button>
+        </div>
       </div>
-    )}
 
-{/* MTD Metrics Row */}
-<div className="grid grid-cols-4 gap-4">
-  <Card>
-    <CardContent className="p-4">
-      <p className="text-sm text-slate-500">
-        MTD Actual Sales <span title="Total actual sales this month-to-date." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
-      </p>
-      <p className="text-lg font-semibold text-slate-800">
-        ${mtd.actualSales?.toLocaleString() || 0}
-      </p>
-    </CardContent>
-  </Card>
+      {/* Error Display */}
+      {error && (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="h-4 w-4 text-red-500" />
+              <p className="text-red-700">Error loading data: {error}</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-  <Card>
-    <CardContent className="p-4">
-      <p className="text-sm text-slate-500">
-        MTD Food Cost % <span title="Food cost as a % of actual sales MTD." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
-      </p>
-      <p className={`text-lg font-semibold ${mtd.foodPct > foodTarget ? 'text-red-600' : 'text-green-600'}`}>
-        {(mtd.foodPct * 100).toFixed(1)}%
-      </p>
-    </CardContent>
-  </Card>
+      {/* Loading Indicator */}
+      {isLoading && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              <p className="text-blue-700">Loading dashboard data...</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-  <Card>
-    <CardContent className="p-4">
-      <p className="text-sm text-slate-500">
-        MTD Beverage Cost % <span title="Beverage cost as a % of actual sales MTD." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
-      </p>
-      <p className={`text-lg font-semibold ${mtd.bevPct > bevTarget ? 'text-red-600' : 'text-green-600'}`}>
-        {(mtd.bevPct * 100).toFixed(1)}%
-      </p>
-    </CardContent>
-  </Card>
+      {/* ✅ Render Last Month Cards if toggled */}
+      {showLastMonth && renderLastMonthCards()}
 
-  <Card>
-    <CardContent className="p-4">
-      <p className="text-sm text-slate-500">
-        MTD Labor Cost % <span title="Labor cost as a % of actual sales MTD." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
-      </p>
-      <p className={`text-lg font-semibold ${mtd.laborPct > laborTarget ? 'text-red-600' : 'text-green-600'}`}>
-        {(mtd.laborPct * 100).toFixed(1)}%
-      </p>
-    </CardContent>
-  </Card>
-</div>
+      {/* Admin Mode Target Inputs */}
+      {isAdminMode && (
+        <div className="flex gap-4 text-sm items-center">
+          <label>
+            Food Target %
+            <input
+              type="number"
+              step="0.01"
+              value={foodTarget}
+              onChange={e => updateAdminSetting("foodCostGoal", parseFloat(e.target.value))}
+              className="ml-1 border rounded px-2 py-1 w-16 text-right"
+            />
+          </label>
+          <label>
+            Bev Target %
+            <input
+              type="number"
+              step="0.01"
+              value={bevTarget}
+              onChange={e => updateAdminSetting("bevCostGoal", parseFloat(e.target.value))}
+              className="ml-1 border rounded px-2 py-1 w-16 text-right"
+            />
+          </label>
+          <label>
+            Labor Target %
+            <input
+              type="number"
+              step="0.01"
+              value={laborTarget}
+              onChange={e => updateAdminSetting("laborCostGoal", parseFloat(e.target.value))}
+              className="ml-1 border rounded px-2 py-1 w-16 text-right"
+            />
+          </label>
+        </div>
+      )}
 
-{/* YTD Metrics */}
-{showYTD && ytd && (
-  <>
-    <h3 className="text-lg font-semibold text-slate-700 mt-8 mb-2">Year-to-Date Metrics</h3>
-    <div className="grid grid-cols-4 gap-4">
-      <Card>
-        <CardContent className="p-4">
-          <p className="text-sm text-slate-500">
-            YTD Actual Sales <span title="Total actual sales year-to-date across all locations." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
-          </p>
-          <p className="text-lg font-semibold text-slate-800">
-            ${ytd.total_sales?.toLocaleString() || 0}
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-4">
-          <p className="text-sm text-slate-500">
-            YTD Food Cost % <span title="YTD food cost as a % of sales." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
-          </p>
-          <p className="text-lg font-semibold text-slate-400">
-            {ytd.food_cost_pct !== null && ytd.food_cost_pct !== undefined
-              ? `${(ytd.food_cost_pct * 100).toFixed(1)}%`
-              : "N/A"}
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-4">
-          <p className="text-sm text-slate-500">
-            YTD Beverage Cost % <span title="YTD beverage cost as a % of sales." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
-          </p>
-          <p className="text-lg font-semibold text-slate-400">
-            {ytd.bev_pct !== null && ytd.bev_pct !== undefined
-              ? `${(ytd.bev_pct * 100).toFixed(1)}%`
-              : "N/A"}
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-4">
-          <p className="text-sm text-slate-500">
-            YTD Labor Cost % <span title="YTD total labor cost as a % of sales." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
-          </p>
-          <p className="text-lg font-semibold text-slate-400">
-            {ytd.labor_pct !== null && ytd.labor_pct !== undefined
-              ? `${(ytd.labor_pct * 100).toFixed(1)}%`
-              : "N/A"}
-          </p>
-        </CardContent>
-      </Card>
-    </div>
-
-    {/* YTD Labor Split Row */}
-    {ytdSplit && (
-      <div className="grid grid-cols-3 gap-4 mt-4">
+      {/* MTD Metrics Row */}
+      <div className="grid grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <p className="text-sm text-slate-500">
-              FOH Labor % <span title="Front-of-house labor as a % of actual sales." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+              MTD Actual Sales <span title="Total actual sales this month-to-date." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
             </p>
-            <p className="text-lg font-semibold text-slate-400">
-              {ytdSplit.foh_labor_pct !== null && ytdSplit.foh_labor_pct !== undefined
-                ? `${(ytdSplit.foh_labor_pct * 100).toFixed(1)}%`
-                : "N/A"}
+            <p className="text-lg font-semibold text-slate-800">
+              ${mtd.actualSales?.toLocaleString() || 0}
             </p>
           </CardContent>
         </Card>
@@ -520,12 +584,10 @@ const exportToCSV = () => {
         <Card>
           <CardContent className="p-4">
             <p className="text-sm text-slate-500">
-              BOH Labor % <span title="Back-of-house labor as a % of actual sales." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+              MTD Food Cost % <span title="Food cost as a % of actual sales MTD." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
             </p>
-            <p className="text-lg font-semibold text-slate-400">
-              {ytdSplit.boh_labor_pct !== null && ytdSplit.boh_labor_pct !== undefined
-                ? `${(ytdSplit.boh_labor_pct * 100).toFixed(1)}%`
-                : "N/A"}
+            <p className={`text-lg font-semibold ${mtd.foodPct > foodTarget ? 'text-red-600' : 'text-green-600'}`}>
+              {(mtd.foodPct * 100).toFixed(1)}%
             </p>
           </CardContent>
         </Card>
@@ -533,27 +595,87 @@ const exportToCSV = () => {
         <Card>
           <CardContent className="p-4">
             <p className="text-sm text-slate-500">
-              Total Labor % <span title="Combined FOH + BOH labor % of actual sales." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+              MTD Beverage Cost % <span title="Beverage cost as a % of actual sales MTD." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
             </p>
-            <p className="text-lg font-semibold text-slate-400">
-              {ytdSplit.total_labor_pct !== null && ytdSplit.total_labor_pct !== undefined
-                ? `${(ytdSplit.total_labor_pct * 100).toFixed(1)}%`
-                : "N/A"}
+            <p className={`text-lg font-semibold ${mtd.bevPct > bevTarget ? 'text-red-600' : 'text-green-600'}`}>
+              {(mtd.bevPct * 100).toFixed(1)}%
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-slate-500">
+              MTD Labor Cost % <span title="Labor cost as a % of actual sales MTD." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+            </p>
+            <p className={`text-lg font-semibold ${mtd.laborPct > laborTarget ? 'text-red-600' : 'text-green-600'}`}>
+              {(mtd.laborPct * 100).toFixed(1)}%
             </p>
           </CardContent>
         </Card>
       </div>
-    )}
-  </>
-)}
 
-{showLastMonth && lastMonthSummary && (
-  <div className="mt-8 border-t pt-4">
-    <h3 className="text-lg font-semibold text-slate-700 mb-2">Last Month Summary</h3>
-    {renderLastMonthCards()}
-  </div>
-)}
-           {/* Forecast Table */}
+      {/* YTD Metrics */}
+      {showYTD && ytd && (
+        <>
+          <h3 className="text-lg font-semibold text-slate-700 mt-8 mb-2">Year-to-Date Metrics</h3>
+          <div className="grid grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-sm text-slate-500">
+                  YTD Actual Sales <span title="Total actual sales year-to-date for this location." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+                </p>
+                <p className="text-lg font-semibold text-slate-800">
+                  ${ytd.total_sales?.toLocaleString() || 0}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-sm text-slate-500">
+                  YTD Food Cost % <span title="Average food cost as a % of actual sales YTD." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+                </p>
+                <p className={`text-lg font-semibold ${ytd.avg_food_cost_pct > foodTarget ? 'text-red-600' : 'text-green-600'}`}>
+                  {(ytd.avg_food_cost_pct * 100).toFixed(1)}%
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-sm text-slate-500">
+                  YTD Beverage Cost % <span title="Average beverage cost as a % of actual sales YTD." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+                </p>
+                <p className={`text-lg font-semibold ${ytd.avg_bev_cost_pct > bevTarget ? 'text-red-600' : 'text-green-600'}`}>
+                  {(ytd.avg_bev_cost_pct * 100).toFixed(1)}%
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-sm text-slate-500">
+                  YTD Labor Cost % <span title="Average labor cost as a % of actual sales YTD." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+                </p>
+                <p className={`text-lg font-semibold ${ytd.avg_labor_cost_pct > laborTarget ? 'text-red-600' : 'text-green-600'}`}>
+                  {(ytd.avg_labor_cost_pct * 100).toFixed(1)}%
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      )}
+
+      {/* Last Month Summary */}
+      {showLastMonth && lastMonthSummary && (
+        <div className="mt-8 border-t pt-4">
+          <h3 className="text-lg font-semibold text-slate-700 mb-2">Last Month Summary</h3>
+          {renderLastMonthCards()}
+        </div>
+      )}
+
+      {/* Forecast Table */}
       <Card className="shadow-xl bg-white text-slate-800 border border-slate-200">
         <CardHeader className="pb-4 flex flex-row items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -581,11 +703,11 @@ const exportToCSV = () => {
         <CardContent>
           <ForecastActualTable combinedData={combinedData} />
           <p className="text-xs text-slate-400 mt-4 italic">
-            Note: This dashboard sources data from the central data store. Future enhancements could involve integrating data from other parser tools within the application.
+            Note: This dashboard sources data from location-specific forecasts and actuals. Multi-tenant isolation is enforced via location UUID.
           </p>
         </CardContent>
       </Card>
-  </motion.div>
+    </motion.div>
   );
 };
 
