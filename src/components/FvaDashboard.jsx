@@ -622,6 +622,12 @@ const FvaDashboard = () => {
 
       {/* YTD Metrics */}
      {showYTD && (
+  ytd ? (
+    // Show YTD cards
+  ) : (
+    <p className="text-slate-500 mt-4">No YTD data available yet.</p>
+  )
+)}
 
         <>
           <h3 className="text-lg font-semibold text-slate-700 mt-8 mb-2">Year-to-Date Metrics</h3>
