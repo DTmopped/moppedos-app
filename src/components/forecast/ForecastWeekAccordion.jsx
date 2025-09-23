@@ -7,9 +7,11 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const ForecastWeekAccordion = ({ week, amSplit }) => { 
+  console.log('Accordion week data:', week); // ← ADD THIS LINE
   const totalSales = week.results.find(r => r.isTotal)?.sales || 0;
 
   return (
+
     // The AccordionItem is the main container for each week
     <AccordionItem value={week.startDate} className="border bg-white rounded-lg shadow-sm mb-2 transition-shadow hover:shadow-md">
       <AccordionTrigger className="px-4 py-3 text-sm font-semibold text-gray-800 hover:no-underline rounded-lg data-[state=open]:rounded-b-none">
