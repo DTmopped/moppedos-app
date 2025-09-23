@@ -10,22 +10,21 @@ import { useToast } from "components/ui/use-toast.jsx";
 import { useData } from "@/contexts/DataContext";
 import AdminPanel from "./forecast/AdminPanel.jsx";
 import AdminModeToggle from "@/components/ui/AdminModeToggle";
-import { Accordion } from "@/components/ui/accordion";
-import ForecastWeekAccordion from "./forecast/ForecastWeekAccordion.jsx";
+import { Accordion } from "@/components/ui/accordion"; // This is correct
+import ForecastWeekAccordion from "./forecast/ForecastWeekAccordion.jsx"; // This is correct
 
-// --- TIMEZONE-SAFE DATE HELPER ---
+// ... (all the helper functions and hooks at the top are correct)
 const getStartOfWeekUTC = (date) => {
   const d = new Date(date);
-  // Use UTC methods to avoid timezone shifts
   const day = d.getUTCDay();
-  const diff = d.getUTCDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+  const diff = d.getUTCDate() - day + (day === 0 ? -6 : 1);
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), diff));
 };
-
 const DAY_ORDER = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
+
 const ForecastEmailParserBot = () => {
-  // --- HOOKS ---
+  // ... (all the state and effects are correct)
   const { locationId, loadingLocation, isAdminMode, adminSettings, refreshData } = useData();
   const { captureRate, spendPerGuest, foodCostGoal, bevCostGoal, laborCostGoal, amSplit } = adminSettings;
   const [activeWeekStartDate, setActiveWeekStartDate] = useState(getStartOfWeekUTC(new Date()));
@@ -36,7 +35,6 @@ const ForecastEmailParserBot = () => {
   const [savedForecasts, setSavedForecasts] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
 
-  // --- EFFECTS ---
   useEffect(() => {
     if (!loadingLocation && locationId) {
       const dateString = `${activeWeekStartDate.getUTCFullYear()}-${String(activeWeekStartDate.getUTCMonth() + 1).padStart(2, '0')}-${String(activeWeekStartDate.getUTCDate()).padStart(2, '0')}`;
@@ -65,11 +63,9 @@ const ForecastEmailParserBot = () => {
     fetchHistory();
   }, [locationId, refreshData]);
 
-  // --- DATA GROUPING ---
   const groupedForecasts = useMemo(() => {
     const groups = {};
     savedForecasts.forEach(forecast => {
-      // Create date object in UTC to avoid timezone shifts
       const forecastDate = new Date(`${forecast.date}T00:00:00Z`);
       const startOfWeek = getStartOfWeekUTC(forecastDate);
       const key = startOfWeek.toISOString().split('T')[0];
@@ -78,9 +74,8 @@ const ForecastEmailParserBot = () => {
         groups[key] = { startDate: key, results: [] };
       }
       
-      // Correctly get day of week in UTC
       const dayIndex = forecastDate.getUTCDay();
-      const dayName = DAY_ORDER[dayIndex === 0 ? 6 : dayIndex - 1]; // Adjust for Sunday (0)
+      const dayName = DAY_ORDER[dayIndex === 0 ? 6 : dayIndex - 1];
 
       groups[key].results.push({
         day: dayName,
@@ -95,7 +90,6 @@ const ForecastEmailParserBot = () => {
     });
 
     Object.values(groups).forEach(group => {
-        // Sort days within the week correctly
         group.results.sort((a, b) => DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day));
         const totals = group.results.reduce((acc, row) => {
             acc.sales += row.sales || 0;
@@ -112,7 +106,6 @@ const ForecastEmailParserBot = () => {
     return Object.values(groups).sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
   }, [savedForecasts, spendPerGuest, captureRate]);
 
-  // --- HANDLERS ---
   const handleWeekChange = useCallback((direction) => {
     setActiveWeekStartDate(prevDate => {
       const newDate = new Date(prevDate);
@@ -136,7 +129,7 @@ const ForecastEmailParserBot = () => {
       if (!dateLine) throw new Error("Date: YYYY-MM-DD line is missing.");
 
       const baseDateStr = dateLine.split(':')[1]?.trim();
-      const baseDate = new Date(`${baseDateStr}T00:00:00Z`); // Treat as UTC
+      const baseDate = new Date(`${baseDateStr}T00:00:00Z`);
       if (isNaN(baseDate.getTime())) throw new Error("Invalid date format. Use YYYY-MM-DD.");
 
       const recordsToInsert = [];
@@ -193,6 +186,7 @@ const ForecastEmailParserBot = () => {
     }
   }, [ emailInput, toast, locationId, captureRate, spendPerGuest, foodCostGoal, bevCostGoal, laborCostGoal, refreshData ]);
 
+
   // --- RENDER LOGIC ---
   if (loadingLocation) {
     return (
@@ -207,6 +201,7 @@ const ForecastEmailParserBot = () => {
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+      {/* ... (The top part of the return is correct) ... */}
       <div className="flex justify-end">
         <AdminModeToggle />
       </div>
@@ -273,6 +268,7 @@ const ForecastEmailParserBot = () => {
         </CardContent>
       </Card>
 
+      {/* --- THIS IS THE CORRECTED STRUCTURE --- */}
       <div className="mt-8 space-y-4">
         <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-600">
             Saved Forecasts
@@ -282,8 +278,10 @@ const ForecastEmailParserBot = () => {
         ) : groupedForecasts.length === 0 ? (
             <p className="text-gray-500">No saved forecasts found for this location.</p>
         ) : (
+            // The <Accordion> component MUST be OUTSIDE the map
             <Accordion type="single" collapsible className="w-full space-y-3">
                 {groupedForecasts.map(week => (
+                    // The child component is just the item itself
                     <ForecastWeekAccordion 
                         key={week.startDate} 
                         week={week}
@@ -298,6 +296,7 @@ const ForecastEmailParserBot = () => {
 };
 
 export default ForecastEmailParserBot;
+
 
 
 
