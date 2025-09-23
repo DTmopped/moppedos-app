@@ -621,7 +621,8 @@ const FvaDashboard = () => {
       </div>
 
       {/* YTD Metrics */}
-      {showYTD && ytd && (
+     {showYTD && (
+
         <>
           <h3 className="text-lg font-semibold text-slate-700 mt-8 mb-2">Year-to-Date Metrics</h3>
           <div className="grid grid-cols-4 gap-4">
