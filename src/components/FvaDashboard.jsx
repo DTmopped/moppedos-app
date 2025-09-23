@@ -491,11 +491,16 @@ const FvaDashboard = () => {
             {isAdminMode ? "Admin Mode: ON" : "Admin Mode"}
           </Button>
           <Button
-            variant={showYTD ? "default" : "outline"}
-            onClick={() => setShowYTD(!showYTD)}
-          >
-            {showYTD ? "Hide YTD" : "Show YTD"}
-          </Button>
+  variant="outline"
+  onClick={() => {
+    setShowYTD(!showYTD);
+    if (!showYTD && !ytd) {
+      fetchYtdData(); // Call the function when showing YTD for first time
+    }
+  }}
+>
+  Show YTD
+</Button>
           <Button
             variant={showLastMonth ? "default" : "outline"}
             onClick={() => setShowLastMonth(!showLastMonth)}
