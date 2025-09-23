@@ -72,7 +72,7 @@ const ForecastEmailParserBot = () => {
       const datesToDelete = [];
 
       lines.forEach(line => {
-        const match = line.match(/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday):\s*([0-9,]+)/i);
+        const match = line.match(/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\s*:\s*([0-9,]+)/i);
         if (!match || !match[2]) return;
 
         const dayName = match[1];
