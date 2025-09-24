@@ -254,4 +254,4 @@ const FinalDailyBriefing = () => {
   );
 };
 
-export default FinalDailyBriefing;
+export default DailyBriefingBuilder; 
