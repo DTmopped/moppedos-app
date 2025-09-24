@@ -42,8 +42,7 @@ const DailyBriefingBuilder = () => {
   // Events & Special Occasions
   const [events, setEvents] = useState("");
 
-  // Weekly Specials
-  const [weeklySpecials, setWeeklySpecials] = useState("");
+
 
   // Maintenance & Repairs
   const [repairNotes, setRepairNotes] = useState("");
@@ -90,7 +89,6 @@ const DailyBriefingBuilder = () => {
         setFoodItems(existingBriefing.food_items || "");
         setBeverageItems(existingBriefing.beverage_items || "");
         setEvents(existingBriefing.events || "");
-        setWeeklySpecials(existingBriefing.weekly_specials || "");
         setRepairNotes(existingBriefing.repair_notes || "");
         setFoodImage(existingBriefing.food_image_url || null);
         setBeverageImage(existingBriefing.beverage_image_url || null);
@@ -140,7 +138,13 @@ const DailyBriefingBuilder = () => {
           }
           
           if (forecastData.forecast_sales) {
-            setForecastedSales(forecastData.forecast_sales.toString());
+            // Format as currency: $9,000.00
+            const formattedSales = new Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: 'USD',
+              minimumFractionDigits: 2
+            }).format(forecastData.forecast_sales);
+            setForecastedSales(formattedSales);
             hasAutoPopulated = true;
           }
           
@@ -167,13 +171,19 @@ const DailyBriefingBuilder = () => {
           .maybeSingle();
 
         if (!yesterdayError && yesterdayData?.actual_sales) {
-          setActualSales(yesterdayData.actual_sales.toString());
+          // Format as currency: $X,XXX.XX
+          const formattedActualSales = new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 2
+          }).format(yesterdayData.actual_sales);
+          setActualSales(formattedActualSales);
         }
 
         // 3. Fetch yesterday's briefing for auto-population
         const { data: yesterdayBriefing, error: yesterdayBriefingError } = await supabase
           .from("daily_briefings")
-          .select("reminders, food_items, beverage_items, events, manager, repair_notes, weekly_specials")
+          .select("reminders, food_items, beverage_items, events, manager, repair_notes")
           .eq("location_id", locationIdString)
           .eq("date", yesterdayStr)
           .maybeSingle();
@@ -194,10 +204,6 @@ const DailyBriefingBuilder = () => {
           }
           if (yesterdayBriefing.events) {
             setEvents(yesterdayBriefing.events);
-            hasCopiedFromYesterday = true;
-          }
-          if (yesterdayBriefing.weekly_specials) {
-            setWeeklySpecials(yesterdayBriefing.weekly_specials);
             hasCopiedFromYesterday = true;
           }
           if (yesterdayBriefing.manager) {
@@ -261,7 +267,6 @@ const DailyBriefingBuilder = () => {
         food_items: foodItems,
         beverage_items: beverageItems,
         events,
-        weekly_specials: weeklySpecials,
         repair_notes: repairNotes,
         food_image_url: foodImage,
         beverage_image_url: beverageImage,
@@ -369,11 +374,11 @@ const DailyBriefingBuilder = () => {
             />
           </div>
           
-          <div className="flex gap-2">
-            <Button onClick={saveBriefing} className="bg-blue-600 hover:bg-blue-700">
+          <div className="flex items-center gap-2">
+            <Button onClick={saveBriefing} className="bg-blue-500 hover:bg-blue-600 h-10">
               💾 Save Briefing
             </Button>
-            <DailyBriefingPrintButton className="bg-gray-600 hover:bg-gray-700">
+            <DailyBriefingPrintButton className="bg-gray-600 hover:bg-gray-700 h-10">
               🖨️ Generate PDF
             </DailyBriefingPrintButton>
           </div>
@@ -569,15 +574,7 @@ const DailyBriefingBuilder = () => {
         </CardContent>
       </Card>
 
-      {/* Weekly Specials */}
-      <Card className="rounded-2xl shadow-md">
-        <CardHeader>
-          <CardTitle>⭐ Weekly Specials</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {renderTextarea(weeklySpecials, setWeeklySpecials, "🌟 This week's special offers and promotions...", copiedFromYesterday && !!weeklySpecials)}
-        </CardContent>
-      </Card>
+
 
       {/* Maintenance & Repairs */}
       <Card className="rounded-2xl shadow-md">
@@ -606,7 +603,6 @@ const DailyBriefingBuilder = () => {
           foodItems={foodItems}
           beverageItems={beverageItems}
           events={events}
-          weeklySpecials={weeklySpecials}
           repairNotes={repairNotes}
           foodImage={foodImage}
           beverageImage={beverageImage}
