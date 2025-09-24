@@ -38,6 +38,7 @@ const FvaDashboard = () => {
   const [lastMonthSummary, setLastMonthSummary] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [localAdminMode, setLocalAdminMode] = useState(false); // ✅ Local admin mode state
 
   // Smart date range controls
   const [viewMode, setViewMode] = useState("current_plus_4");
@@ -62,7 +63,7 @@ const FvaDashboard = () => {
     Object.keys(localAdminSettings).forEach(key => {
       updateAdminSetting(key, localAdminSettings[key]);
     });
-    setIsAdminMode(false);
+    setLocalAdminMode(false);
   };
 
   // Fetch all FVA data from Supabase
@@ -232,6 +233,20 @@ const FvaDashboard = () => {
     return { forecastSales: sumSales, actualSales: sumActual, foodPct: count ? foodPct / count : 0, bevPct: count ? bevPct / count : 0, laborPct: count ? laborPct / count : 0, recordCount: count };
   };
 
+  // ✅ Helper function for goal vs actual color coding
+  const getGoalColor = (actual, goal, tolerance = 0.005) => {
+    if (actual === 0) return "text-slate-500"; // No data
+    const diff = Math.abs(actual - goal);
+    if (diff <= tolerance) return "text-blue-600"; // On target (within 0.5%)
+    return actual > goal ? "text-red-600" : "text-green-600"; // Over goal (red) or under goal (green)
+  };
+
+  const formatGoalDisplay = (actual, goal) => {
+    const actualPct = (actual * 100).toFixed(1);
+    const goalPct = (goal * 100).toFixed(1);
+    return `${actualPct}% / ${goalPct}%`;
+  };
+
   const periodMetrics = getAverages(filteredData);
   const mtdData = combinedData.filter(d => d.date.startsWith(currentMonth) && d.date <= today);
   const mtdMetrics = getAverages(mtdData);
@@ -246,9 +261,9 @@ const FvaDashboard = () => {
           <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Last Month Forecast Sales</p><p className="text-lg font-semibold">${lastMonthSummary.total_forecast_sales?.toLocaleString()}</p></CardContent></Card>
           <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Last Month Actual Sales</p><p className="text-lg font-semibold">${lastMonthSummary.total_actual_sales?.toLocaleString()}</p></CardContent></Card>
           <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Sales Variance %</p><p className={`text-lg font-semibold ${variance >= 0 ? "text-green-600" : "text-red-600"}`}>{(variance * 100).toFixed(1)}%</p></CardContent></Card>
-          <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Avg Food Cost %</p><p className={`text-lg font-semibold ${lastMonthSummary.avg_food_cost_pct > foodTarget ? "text-red-600" : "text-green-600"}`}>{(lastMonthSummary.avg_food_cost_pct * 100).toFixed(1)}%</p></CardContent></Card>
-          <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Avg Beverage Cost %</p><p className={`text-lg font-semibold ${lastMonthSummary.avg_bev_cost_pct > bevTarget ? "text-red-600" : "text-green-600"}`}>{(lastMonthSummary.avg_bev_cost_pct * 100).toFixed(1)}%</p></CardContent></Card>
-          <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Avg Labor Cost %</p><p className={`text-lg font-semibold ${lastMonthSummary.avg_labor_cost_pct > laborTarget ? "text-red-600" : "text-green-600"}`}>{(lastMonthSummary.avg_labor_cost_pct * 100).toFixed(1)}%</p></CardContent></Card>
+          <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Avg Food Cost (Actual / Goal)</p><p className={`text-lg font-semibold ${getGoalColor(lastMonthSummary.avg_food_cost_pct, foodTarget)}`}>{formatGoalDisplay(lastMonthSummary.avg_food_cost_pct, foodTarget)}</p></CardContent></Card>
+          <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Avg Beverage Cost (Actual / Goal)</p><p className={`text-lg font-semibold ${getGoalColor(lastMonthSummary.avg_bev_cost_pct, bevTarget)}`}>{formatGoalDisplay(lastMonthSummary.avg_bev_cost_pct, bevTarget)}</p></CardContent></Card>
+          <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Avg Labor Cost (Actual / Goal)</p><p className={`text-lg font-semibold ${getGoalColor(lastMonthSummary.avg_labor_cost_pct, laborTarget)}`}>{formatGoalDisplay(lastMonthSummary.avg_labor_cost_pct, laborTarget)}</p></CardContent></Card>
         </div>
       </div>
     );
@@ -303,11 +318,11 @@ const FvaDashboard = () => {
           <Button variant={showMTD ? "default" : "outline"} onClick={() => setShowMTD(!showMTD)}>Show MTD</Button>
           <Button variant={showYTD ? "default" : "outline"} onClick={() => { setShowYTD(!showYTD); if (!showYTD && !ytd) fetchYtdData(); }}>Show YTD</Button>
           <Button variant={showLastMonth ? "default" : "outline"} onClick={() => setShowLastMonth(!showLastMonth)}>Last Month</Button>
-          <Button variant="outline" onClick={() => setIsAdminMode(!isAdminMode)}><Settings className="mr-2 h-4 w-4" /> Admin</Button>
+          <Button variant="outline" onClick={() => setLocalAdminMode(!localAdminMode)}><Settings className="mr-2 h-4 w-4" /> Admin</Button>
         </div>
       </div>
 
-      {isAdminMode && (
+      {localAdminMode && (
         <Card className="bg-slate-800 text-white">
           <CardHeader>
             <CardTitle>Admin Mode Settings</CardTitle>
@@ -329,7 +344,7 @@ const FvaDashboard = () => {
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsAdminMode(false)}>Cancel</Button>
+              <Button variant="outline" onClick={() => setLocalAdminMode(false)}>Cancel</Button>
               <Button onClick={handleSaveAdminSettings}>Save Settings</Button>
             </div>
           </CardContent>
@@ -343,9 +358,9 @@ const FvaDashboard = () => {
           <h3 className="text-lg font-semibold text-slate-700 mt-8 mb-2">Month-to-Date Metrics</h3>
           <div className="grid grid-cols-4 gap-4">
             <Card><CardContent className="p-4"><p className="text-sm text-slate-500">MTD Actual Sales</p><p className="text-lg font-semibold text-slate-800">${mtdMetrics.actualSales?.toLocaleString() || 0}</p><p className="text-xs text-slate-400">{mtdMetrics.recordCount} records</p></CardContent></Card>
-            <Card><CardContent className="p-4"><p className="text-sm text-slate-500">MTD Food Cost %</p><p className={`text-lg font-semibold ${mtdMetrics.foodPct > foodTarget ? "text-red-600" : "text-green-600"}`}>{(mtdMetrics.foodPct * 100).toFixed(1)}%</p></CardContent></Card>
-            <Card><CardContent className="p-4"><p className="text-sm text-slate-500">MTD Beverage Cost %</p><p className={`text-lg font-semibold ${mtdMetrics.bevPct > bevTarget ? "text-red-600" : "text-green-600"}`}>{(mtdMetrics.bevPct * 100).toFixed(1)}%</p></CardContent></Card>
-            <Card><CardContent className="p-4"><p className="text-sm text-slate-500">MTD Labor Cost %</p><p className={`text-lg font-semibold ${mtdMetrics.laborPct > laborTarget ? "text-red-600" : "text-green-600"}`}>{(mtdMetrics.laborPct * 100).toFixed(1)}%</p></CardContent></Card>
+            <Card><CardContent className="p-4"><p className="text-sm text-slate-500">MTD Food Cost (Actual / Goal)</p><p className={`text-lg font-semibold ${getGoalColor(mtdMetrics.foodPct, foodTarget)}`}>{formatGoalDisplay(mtdMetrics.foodPct, foodTarget)}</p></CardContent></Card>
+            <Card><CardContent className="p-4"><p className="text-sm text-slate-500">MTD Beverage Cost (Actual / Goal)</p><p className={`text-lg font-semibold ${getGoalColor(mtdMetrics.bevPct, bevTarget)}`}>{formatGoalDisplay(mtdMetrics.bevPct, bevTarget)}</p></CardContent></Card>
+            <Card><CardContent className="p-4"><p className="text-sm text-slate-500">MTD Labor Cost (Actual / Goal)</p><p className={`text-lg font-semibold ${getGoalColor(mtdMetrics.laborPct, laborTarget)}`}>{formatGoalDisplay(mtdMetrics.laborPct, laborTarget)}</p></CardContent></Card>
           </div>
         </>
       )}
@@ -356,9 +371,9 @@ const FvaDashboard = () => {
           {ytd ? (
             <div className="grid grid-cols-4 gap-4">
               <Card><CardContent className="p-4"><p className="text-sm text-slate-500">YTD Actual Sales</p><p className="text-lg font-semibold text-slate-800">${ytd?.total_sales?.toLocaleString() || 0}</p><p className="text-xs text-slate-400">{ytd.record_count} records</p></CardContent></Card>
-              <Card><CardContent className="p-4"><p className="text-sm text-slate-500">YTD Food Cost %</p><p className={`text-lg font-semibold ${ytd?.avg_food_cost_pct > foodTarget ? "text-red-600" : "text-green-600"}`}>{(ytd?.avg_food_cost_pct * 100).toFixed(1)}%</p></CardContent></Card>
-              <Card><CardContent className="p-4"><p className="text-sm text-slate-500">YTD Beverage Cost %</p><p className={`text-lg font-semibold ${ytd?.avg_bev_cost_pct > bevTarget ? "text-red-600" : "text-green-600"}`}>{(ytd?.avg_bev_cost_pct * 100).toFixed(1)}%</p></CardContent></Card>
-              <Card><CardContent className="p-4"><p className="text-sm text-slate-500">YTD Labor Cost %</p><p className={`text-lg font-semibold ${ytd?.avg_labor_cost_pct > laborTarget ? "text-red-600" : "text-green-600"}`}>{(ytd?.avg_labor_cost_pct * 100).toFixed(1)}%</p></CardContent></Card>
+              <Card><CardContent className="p-4"><p className="text-sm text-slate-500">YTD Food Cost (Actual / Goal)</p><p className={`text-lg font-semibold ${getGoalColor(ytd?.avg_food_cost_pct || 0, foodTarget)}`}>{formatGoalDisplay(ytd?.avg_food_cost_pct || 0, foodTarget)}</p></CardContent></Card>
+              <Card><CardContent className="p-4"><p className="text-sm text-slate-500">YTD Beverage Cost (Actual / Goal)</p><p className={`text-lg font-semibold ${getGoalColor(ytd?.avg_bev_cost_pct || 0, bevTarget)}`}>{formatGoalDisplay(ytd?.avg_bev_cost_pct || 0, bevTarget)}</p></CardContent></Card>
+              <Card><CardContent className="p-4"><p className="text-sm text-slate-500">YTD Labor Cost (Actual / Goal)</p><p className={`text-lg font-semibold ${getGoalColor(ytd?.avg_labor_cost_pct || 0, laborTarget)}`}>{formatGoalDisplay(ytd?.avg_labor_cost_pct || 0, laborTarget)}</p></CardContent></Card>
             </div>
           ) : <div className="bg-gray-50 border border-gray-200 rounded-lg p-4"><p className="text-gray-600">No YTD data available for this location.</p></div>}
         </>
@@ -373,9 +388,9 @@ const FvaDashboard = () => {
 
       <div className="grid grid-cols-4 gap-4">
         <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Week Actual Sales</p><p className="text-lg font-semibold text-slate-800">${periodMetrics.actualSales?.toLocaleString() || 0}</p></CardContent></Card>
-        <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Week Food Cost %</p><p className={`text-lg font-semibold ${periodMetrics.foodPct > foodTarget ? "text-red-600" : "text-green-600"}`}>{(periodMetrics.foodPct * 100).toFixed(1)}%</p></CardContent></Card>
-        <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Week Beverage Cost %</p><p className={`text-lg font-semibold ${periodMetrics.bevPct > bevTarget ? "text-red-600" : "text-green-600"}`}>{(periodMetrics.bevPct * 100).toFixed(1)}%</p></CardContent></Card>
-        <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Week Labor Cost %</p><p className={`text-lg font-semibold ${periodMetrics.laborPct > laborTarget ? "text-red-600" : "text-green-600"}`}>{(periodMetrics.laborPct * 100).toFixed(1)}%</p></CardContent></Card>
+        <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Week Food Cost (Actual / Goal)</p><p className={`text-lg font-semibold ${getGoalColor(periodMetrics.foodPct, foodTarget)}`}>{formatGoalDisplay(periodMetrics.foodPct, foodTarget)}</p></CardContent></Card>
+        <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Week Beverage Cost (Actual / Goal)</p><p className={`text-lg font-semibold ${getGoalColor(periodMetrics.bevPct, bevTarget)}`}>{formatGoalDisplay(periodMetrics.bevPct, bevTarget)}</p></CardContent></Card>
+        <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Week Labor Cost (Actual / Goal)</p><p className={`text-lg font-semibold ${getGoalColor(periodMetrics.laborPct, laborTarget)}`}>{formatGoalDisplay(periodMetrics.laborPct, laborTarget)}</p></CardContent></Card>
       </div>
 
       <Card className="shadow-xl bg-white text-slate-800 border border-slate-200">
