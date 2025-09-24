@@ -33,17 +33,19 @@ const FvaDashboard = () => {
   const [fvaData, setFvaData] = useState([]);
   const [ytd, setYtd] = useState(null);
   const [showYTD, setShowYTD] = useState(false);
+  const [showMTD, setShowMTD] = useState(false);
   const [showLastMonth, setShowLastMonth] = useState(false);
   const [lastMonthSummary, setLastMonthSummary] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // ✅ NEW: Month selector and date range state
+  // ✅ NEW: Date range controls state
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [showCustomRange, setShowCustomRange] = useState(false);
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
   const [expandedWeeks, setExpandedWeeks] = useState(new Set());
+  const [showDateDropdown, setShowDateDropdown] = useState(false);
 
   // ✅ Fetch real FVA data from database
   const fetchRealFvaData = async () => {
@@ -156,17 +158,37 @@ const FvaDashboard = () => {
   const weeklyData = groupDataByWeeks(filteredData);
   const availableMonths = getAvailableMonths();
 
+  // ✅ NEW: Get current week key for proper ordering
+  const getCurrentWeekKey = () => {
+    const today = new Date();
+    const monday = new Date(today);
+    const day = today.getDay();
+    const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+    monday.setDate(diff);
+    return monday.toISOString().split('T')[0];
+  };
+
+  // ✅ NEW: Sort weeks with current week first, then future weeks
+  const getSortedWeekKeys = () => {
+    const currentWeekKey = getCurrentWeekKey();
+    const weekKeys = Object.keys(weeklyData);
+    
+    // Separate current/past weeks from future weeks
+    const currentAndPastWeeks = weekKeys.filter(key => key <= currentWeekKey).sort((a, b) => b.localeCompare(a));
+    const futureWeeks = weekKeys.filter(key => key > currentWeekKey).sort((a, b) => a.localeCompare(b));
+    
+    return [...currentAndPastWeeks, ...futureWeeks];
+  };
+
   // Auto-expand current week
   useEffect(() => {
-    const currentWeekData = groupDataByWeeks(combinedData.filter(d => d.date <= today));
-    const currentWeekKeys = Object.keys(currentWeekData).sort();
-    if (currentWeekKeys.length > 0) {
-      const latestWeek = currentWeekKeys[currentWeekKeys.length - 1];
-      setExpandedWeeks(new Set([latestWeek]));
+    const currentWeekKey = getCurrentWeekKey();
+    if (weeklyData[currentWeekKey]) {
+      setExpandedWeeks(new Set([currentWeekKey]));
     }
   }, [combinedData, today]);
 
-  // ✅ YTD and Last Month functions (unchanged)
+  // ✅ YTD and Last Month functions
   const fetchYtdData = async () => {
     if (loadingLocation || !locationUuid) return;
 
@@ -273,7 +295,7 @@ const FvaDashboard = () => {
     }
   }, [loadingLocation, locationUuid, today]);
 
-  // ✅ Calculate metrics for filtered data
+  // ✅ Calculate metrics for different periods
   const getAverages = data => {
     const count = data.filter(d => d.hasActuals).length;
     const sumSales = data.reduce((acc, d) => acc + (d.forecastSales || 0), 0);
@@ -291,14 +313,16 @@ const FvaDashboard = () => {
   };
 
   const periodMetrics = getAverages(filteredData);
+  const mtdData = combinedData.filter(d => d.date.startsWith(currentMonth) && d.date <= today);
+  const mtdMetrics = getAverages(mtdData);
 
   // ✅ Render functions
   const renderLastMonthCards = () => {
     if (!lastMonthSummary) return null;
 
-    const variance = (
+    const variance = lastMonthSummary.total_forecast_sales > 0 ? (
       lastMonthSummary.total_actual_sales - lastMonthSummary.total_forecast_sales
-    ) / lastMonthSummary.total_forecast_sales;
+    ) / lastMonthSummary.total_forecast_sales : 0;
 
     return (
       <div className="grid grid-cols-6 gap-4 mt-4">
@@ -354,7 +378,7 @@ const FvaDashboard = () => {
     );
   };
 
-  // ✅ Export and print functions (simplified for filtered data)
+  // ✅ Export and print functions
   const handlePrint = () => {
     const printDate = new Date();
     const targets = { foodTarget, bevTarget, laborTarget };
@@ -461,24 +485,37 @@ const FvaDashboard = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="space-y-6 p-6 bg-gradient-to-br from-slate-50 to-indigo-50 min-h-screen"
+      className="space-y-6"
     >
-      {/* Header */}
-      <div className="flex justify-between items-center">
+      {/* Dashboard Header & Toggles */}
+      <div className="flex justify-between items-center mb-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">Forecast vs. Actual Dashboard</h1>
-          <p className="text-slate-600">Review performance across MTD, YTD, and prior month.</p>
-          <p className="text-sm text-slate-500">Location: {locationUuid?.slice(0, 8)}...</p>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-800">Forecast vs. Actual Dashboard</h2>
+          <p className="text-sm text-slate-500">Review performance across MTD, YTD, and prior month.</p>
+          {locationUuid && (
+            <p className="text-xs text-slate-400">Location: {locationUuid.slice(0, 8)}...</p>
+          )}
         </div>
-        <div className="flex space-x-2">
+        <div className="flex gap-2">
           <Button
-            variant="outline"
-            onClick={() => setShowYTD(!showYTD)}
+            variant={showMTD ? "default" : "outline"}
+            onClick={() => setShowMTD(!showMTD)}
+          >
+            Show MTD
+          </Button>
+          <Button
+            variant={showYTD ? "default" : "outline"}
+            onClick={() => {
+              setShowYTD(!showYTD);
+              if (!showYTD && !ytd) {
+                fetchYtdData();
+              }
+            }}
           >
             Show YTD
           </Button>
           <Button
-            variant="outline"
+            variant={showLastMonth ? "default" : "outline"}
             onClick={() => setShowLastMonth(!showLastMonth)}
           >
             Last Month
@@ -486,138 +523,60 @@ const FvaDashboard = () => {
         </div>
       </div>
 
-      {/* ✅ NEW: Month Selector and Date Range Controls */}
-      <Card className="bg-white border border-slate-200">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <Calendar className="h-4 w-4 text-slate-500" />
-                <span className="text-sm font-medium text-slate-700">View Period:</span>
-              </div>
-              
-              {!showCustomRange ? (
-                <select
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(e.target.value)}
-                  className="px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  {availableMonths.map(month => (
-                    <option key={month} value={month}>
-                      {new Date(month + '-01').toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="date"
-                    value={customStartDate}
-                    onChange={(e) => setCustomStartDate(e.target.value)}
-                    className="px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                  <span className="text-slate-500">to</span>
-                  <input
-                    type="date"
-                    value={customEndDate}
-                    onChange={(e) => setCustomEndDate(e.target.value)}
-                    className="px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-              )}
-            </div>
+      {/* MTD Metrics */}
+      {showMTD && (
+        <>
+          <h3 className="text-lg font-semibold text-slate-700 mt-8 mb-2">Month-to-Date Metrics</h3>
+          <div className="grid grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-sm text-slate-500">
+                  MTD Actual Sales <span title="Total actual sales this month-to-date." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+                </p>
+                <p className="text-lg font-semibold text-slate-800">
+                  ${mtdMetrics.actualSales?.toLocaleString() || 0}
+                </p>
+              </CardContent>
+            </Card>
 
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowCustomRange(!showCustomRange)}
-              >
-                {showCustomRange ? 'Month View' : 'Custom Range'}
-              </Button>
-              {(showCustomRange || selectedMonth !== currentMonth) && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setShowCustomRange(false);
-                    setSelectedMonth(currentMonth);
-                    setCustomStartDate('');
-                    setCustomEndDate('');
-                  }}
-                >
-                  Reset
-                </Button>
-              )}
-            </div>
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-sm text-slate-500">
+                  MTD Food Cost % <span title="Average food cost as a % of actual sales MTD." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+                </p>
+                <p className={`text-lg font-semibold ${mtdMetrics.foodPct > foodTarget ? 'text-red-600' : 'text-green-600'}`}>
+                  {(mtdMetrics.foodPct * 100).toFixed(1)}%
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-sm text-slate-500">
+                  MTD Beverage Cost % <span title="Average beverage cost as a % of actual sales MTD." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+                </p>
+                <p className={`text-lg font-semibold ${mtdMetrics.bevPct > bevTarget ? 'text-red-600' : 'text-green-600'}`}>
+                  {(mtdMetrics.bevPct * 100).toFixed(1)}%
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-sm text-slate-500">
+                  MTD Labor Cost % <span title="Average labor cost as a % of actual sales MTD." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+                </p>
+                <p className={`text-lg font-semibold ${mtdMetrics.laborPct > laborTarget ? 'text-red-600' : 'text-green-600'}`}>
+                  {(mtdMetrics.laborPct * 100).toFixed(1)}%
+                </p>
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Admin Mode Toggle */}
-      {isAdminMode && (
-        <div className="flex items-center justify-between bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <span className="text-yellow-800 font-medium">Admin Mode Active</span>
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={isAdminMode}
-              onChange={(e) => setIsAdminMode(e.target.checked)}
-              className="mr-2"
-            />
-          </label>
-        </div>
+        </>
       )}
 
-      {/* Period Metrics */}
-      <div className="grid grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-slate-500">
-              Period Actual Sales <span title="Total actual sales for selected period." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
-            </p>
-            <p className="text-lg font-semibold text-slate-800">
-              ${periodMetrics.actualSales?.toLocaleString() || 0}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-slate-500">
-              Period Food Cost % <span title="Food cost as a % of actual sales for period." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
-            </p>
-            <p className={`text-lg font-semibold ${periodMetrics.foodPct > foodTarget ? 'text-red-600' : 'text-green-600'}`}>
-              {(periodMetrics.foodPct * 100).toFixed(1)}%
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-slate-500">
-              Period Beverage Cost % <span title="Beverage cost as a % of actual sales for period." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
-            </p>
-            <p className={`text-lg font-semibold ${periodMetrics.bevPct > bevTarget ? 'text-red-600' : 'text-green-600'}`}>
-              {(periodMetrics.bevPct * 100).toFixed(1)}%
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-slate-500">
-              Period Labor Cost % <span title="Labor cost as a % of actual sales for period." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
-            </p>
-            <p className={`text-lg font-semibold ${periodMetrics.laborPct > laborTarget ? 'text-red-600' : 'text-green-600'}`}>
-              {(periodMetrics.laborPct * 100).toFixed(1)}%
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* YTD Metrics */}
-      {showYTD && (
+      {showYTD && ytd && (
         <>
           <h3 className="text-lg font-semibold text-slate-700 mt-8 mb-2">Year-to-Date Metrics</h3>
           <div className="grid grid-cols-4 gap-4">
@@ -676,6 +635,53 @@ const FvaDashboard = () => {
         </div>
       )}
 
+      {/* Period Metrics */}
+      <div className="grid grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-slate-500">
+              Period Actual Sales <span title="Total actual sales for selected period." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+            </p>
+            <p className="text-lg font-semibold text-slate-800">
+              ${periodMetrics.actualSales?.toLocaleString() || 0}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-slate-500">
+              Period Food Cost % <span title="Food cost as a % of actual sales for period." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+            </p>
+            <p className={`text-lg font-semibold ${periodMetrics.foodPct > foodTarget ? 'text-red-600' : 'text-green-600'}`}>
+              {(periodMetrics.foodPct * 100).toFixed(1)}%
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-slate-500">
+              Period Beverage Cost % <span title="Beverage cost as a % of actual sales for period." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+            </p>
+            <p className={`text-lg font-semibold ${periodMetrics.bevPct > bevTarget ? 'text-red-600' : 'text-green-600'}`}>
+              {(periodMetrics.bevPct * 100).toFixed(1)}%
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-slate-500">
+              Period Labor Cost % <span title="Labor cost as a % of actual sales for period." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+            </p>
+            <p className={`text-lg font-semibold ${periodMetrics.laborPct > laborTarget ? 'text-red-600' : 'text-green-600'}`}>
+              {(periodMetrics.laborPct * 100).toFixed(1)}%
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* ✅ NEW: Weekly Accordion View */}
       <Card className="shadow-xl bg-white text-slate-800 border border-slate-200">
         <CardHeader className="pb-4 flex flex-row items-center justify-between">
@@ -693,6 +699,90 @@ const FvaDashboard = () => {
             </div>
           </div>
           <div className="flex space-x-2">
+            {/* ✅ NEW: Date Range Dropdown */}
+            <div className="relative">
+              <Button 
+                onClick={() => setShowDateDropdown(!showDateDropdown)} 
+                variant="outline" 
+                className="border-purple-500 text-purple-500 hover:bg-purple-100"
+              >
+                <Calendar className="mr-2 h-4 w-4" /> 
+                {showCustomRange ? 'Custom Range' : new Date(selectedMonth + '-01').toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}
+                <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+              
+              {showDateDropdown && (
+                <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-lg shadow-lg z-50">
+                  <div className="p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-sm font-medium text-slate-700">View Period:</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowCustomRange(!showCustomRange)}
+                      >
+                        {showCustomRange ? 'Month View' : 'Custom Range'}
+                      </Button>
+                    </div>
+                    
+                    {!showCustomRange ? (
+                      <select
+                        value={selectedMonth}
+                        onChange={(e) => setSelectedMonth(e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      >
+                        {availableMonths.map(month => (
+                          <option key={month} value={month}>
+                            {new Date(month + '-01').toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="date"
+                            value={customStartDate}
+                            onChange={(e) => setCustomStartDate(e.target.value)}
+                            className="flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                          <span className="text-slate-500">to</span>
+                          <input
+                            type="date"
+                            value={customEndDate}
+                            onChange={(e) => setCustomEndDate(e.target.value)}
+                            className="flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between mt-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setShowCustomRange(false);
+                          setSelectedMonth(currentMonth);
+                          setCustomStartDate('');
+                          setCustomEndDate('');
+                          setShowDateDropdown(false);
+                        }}
+                      >
+                        Reset
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => setShowDateDropdown(false)}
+                      >
+                        Apply
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            
             <Button onClick={handlePrint} variant="outline" className="border-indigo-500 text-indigo-500 hover:bg-indigo-100">
               <Printer className="mr-2 h-4 w-4" /> Print Report
             </Button>
@@ -709,42 +799,45 @@ const FvaDashboard = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {Object.keys(weeklyData)
-                .sort((a, b) => b.localeCompare(a)) // Most recent first
-                .map(weekKey => {
-                  const weekData = weeklyData[weekKey];
-                  const isExpanded = expandedWeeks.has(weekKey);
-                  const weekRange = formatWeekRange(weekKey);
-                  
-                  return (
-                    <div key={weekKey} className="border border-slate-200 rounded-lg">
-                      <button
-                        onClick={() => toggleWeek(weekKey)}
-                        className="w-full px-4 py-3 flex items-center justify-between bg-slate-50 hover:bg-slate-100 rounded-t-lg transition-colors"
-                      >
-                        <div className="flex items-center space-x-3">
-                          <span className="font-medium text-slate-700">
-                            Week of {weekRange}
-                          </span>
-                          <span className="text-sm text-slate-500">
-                            ({weekData.length} days)
-                          </span>
-                        </div>
-                        {isExpanded ? (
-                          <ChevronUp className="h-4 w-4 text-slate-500" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4 text-slate-500" />
-                        )}
-                      </button>
-                      
-                      {isExpanded && (
-                        <div className="p-4 border-t border-slate-200">
-                          <ForecastActualTable combinedData={weekData} />
-                        </div>
+              {getSortedWeekKeys().map(weekKey => {
+                const weekData = weeklyData[weekKey];
+                const isExpanded = expandedWeeks.has(weekKey);
+                const weekRange = formatWeekRange(weekKey);
+                const isCurrentWeek = weekKey === getCurrentWeekKey();
+                
+                return (
+                  <div key={weekKey} className={`border rounded-lg ${isCurrentWeek ? 'border-indigo-300 bg-indigo-50' : 'border-slate-200'}`}>
+                    <button
+                      onClick={() => toggleWeek(weekKey)}
+                      className={`w-full px-4 py-3 flex items-center justify-between rounded-t-lg transition-colors ${
+                        isCurrentWeek 
+                          ? 'bg-indigo-100 hover:bg-indigo-200' 
+                          : 'bg-slate-50 hover:bg-slate-100'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <span className={`font-medium ${isCurrentWeek ? 'text-indigo-800' : 'text-slate-700'}`}>
+                          Week of {weekRange} {isCurrentWeek && '(Current)'}
+                        </span>
+                        <span className="text-sm text-slate-500">
+                          ({weekData.length} days)
+                        </span>
+                      </div>
+                      {isExpanded ? (
+                        <ChevronUp className="h-4 w-4 text-slate-500" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-slate-500" />
                       )}
-                    </div>
-                  );
-                })}
+                    </button>
+                    
+                    {isExpanded && (
+                      <div className="p-4 border-t border-slate-200">
+                        <ForecastActualTable combinedData={weekData} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
           
