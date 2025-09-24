@@ -39,25 +39,24 @@ const FvaDashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Date range controls state
+  // ✅ NEW: Smart date range controls
+  const [viewMode, setViewMode] = useState('current_plus_4'); // 'current_plus_4', 'month', 'custom'
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
-  const [showCustomRange, setShowCustomRange] = useState(false);
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
   const [expandedWeeks, setExpandedWeeks] = useState(new Set());
   const [showDateDropdown, setShowDateDropdown] = useState(false);
 
-  // ✅ FIXED: Simplified Supabase data fetching
+  // ✅ Fetch all FVA data from Supabase
   const fetchRealFvaData = async () => {
     if (!locationUuid) {
-      console.log('No locationUuid available for FVA data fetch');
+      console.log('❌ No locationUuid available for FVA data fetch');
       return;
     }
     
-    console.log('Fetching FVA data for location:', locationUuid);
+    console.log('🔍 Fetching FVA data for location:', locationUuid);
     
     try {
-      // Simple query - get all fields to see what's available
       const { data, error } = await supabase
         .from('fva_daily_history')
         .select('*')
@@ -65,19 +64,16 @@ const FvaDashboard = () => {
         .order('date', { ascending: true });
       
       if (error) {
-        console.error('Supabase FVA data fetch error:', error);
+        console.error('❌ Supabase FVA data fetch error:', error);
         setError(`Database error: ${error.message}`);
         return;
       }
 
-      console.log('FVA data fetched:', data?.length || 0, 'records');
-      if (data && data.length > 0) {
-        console.log('Sample record:', data[0]);
-      }
+      console.log('📈 FVA data fetched:', data?.length || 0, 'records');
       setFvaData(data || []);
-      setError(null); // Clear any previous errors
+      setError(null);
     } catch (err) {
-      console.error('Error fetching FVA data:', err);
+      console.error('❌ Error fetching FVA data:', err);
       setError(`Network error: ${err.message}`);
     }
   };
@@ -88,16 +84,14 @@ const FvaDashboard = () => {
     }
   }, [locationUuid, loadingLocation]);
 
-  // ✅ FIXED: Process data with better field handling
+  // ✅ Process data with proper field handling
   const combinedData = fvaData.map(row => {
-    // Handle different possible field names
     const actualSales = row.actual_sales || row.actualSales || 0;
     const forecastSales = row.forecast_sales || row.forecastSales || 0;
     const foodCost = row.food_cost || row.foodCost || 0;
     const beverageCost = row.bev_cost || row.bevCost || row.beverage_cost || 0;
     const laborCost = row.labor_cost || row.laborCost || 0;
     
-    // Calculate percentages
     const foodPct = actualSales > 0 ? foodCost / actualSales : (row.food_cost_pct || row.foodCostPct || 0);
     const bevPct = actualSales > 0 ? beverageCost / actualSales : (row.bev_cost_pct || row.bevCostPct || 0);
     const laborPct = actualSales > 0 ? laborCost / actualSales : (row.labor_cost_pct || row.laborCostPct || 0);
@@ -117,36 +111,73 @@ const FvaDashboard = () => {
     };
   });
 
-  // Get available months from data
-  const getAvailableMonths = () => {
-    const months = [...new Set(combinedData.map(d => d.date.slice(0, 7)))];
-    return months.sort().reverse(); // Most recent first
-  };
-
-  // Filter data based on selection
-  const getFilteredData = () => {
-    if (showCustomRange && customStartDate && customEndDate) {
-      return combinedData.filter(d => d.date >= customStartDate && d.date <= customEndDate);
-    }
-    return combinedData.filter(d => d.date.startsWith(selectedMonth));
-  };
-
-  // ✅ FIXED: Proper week calculation (Monday = start of week)
+  // ✅ Week calculation (Monday = start of week)
   const getMonday = (date) => {
     const d = new Date(date + 'T00:00:00');
     const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
     d.setDate(diff);
     return d.toISOString().split('T')[0];
   };
 
-  // ✅ FIXED: Group data by weeks with proper Monday-Sunday grouping
+  // ✅ Get current week key
+  const getCurrentWeekKey = () => {
+    return getMonday(today);
+  };
+
+  // ✅ NEW: Smart data filtering based on view mode
+  const getFilteredData = () => {
+    switch (viewMode) {
+      case 'current_plus_4':
+        return getCurrentPlus4WeeksData();
+      case 'month':
+        return combinedData.filter(d => d.date.startsWith(selectedMonth));
+      case 'custom':
+        if (customStartDate && customEndDate) {
+          return combinedData.filter(d => d.date >= customStartDate && d.date <= customEndDate);
+        }
+        return combinedData;
+      default:
+        return getCurrentPlus4WeeksData();
+    }
+  };
+
+  // ✅ NEW: Get current week + 4 future weeks
+  const getCurrentPlus4WeeksData = () => {
+    const currentWeekKey = getCurrentWeekKey();
+    const allWeeks = groupDataByWeeks(combinedData);
+    const sortedWeekKeys = Object.keys(allWeeks).sort();
+    
+    // Find current week index
+    const currentWeekIndex = sortedWeekKeys.findIndex(key => key === currentWeekKey);
+    
+    let targetWeeks = [];
+    
+    if (currentWeekIndex >= 0) {
+      // Current week found - get current + next 4
+      targetWeeks = sortedWeekKeys.slice(currentWeekIndex, currentWeekIndex + 5);
+    } else {
+      // Current week not found - get first 5 available weeks
+      targetWeeks = sortedWeekKeys.slice(0, 5);
+    }
+    
+    // Collect data for target weeks
+    const filteredData = [];
+    targetWeeks.forEach(weekKey => {
+      if (allWeeks[weekKey]) {
+        filteredData.push(...allWeeks[weekKey]);
+      }
+    });
+    
+    return filteredData;
+  };
+
+  // ✅ Group data by weeks
   const groupDataByWeeks = (data) => {
     const weeks = {};
     
     data.forEach(item => {
       const weekKey = getMonday(item.date);
-      
       if (!weeks[weekKey]) {
         weeks[weekKey] = [];
       }
@@ -161,7 +192,7 @@ const FvaDashboard = () => {
     return weeks;
   };
 
-  // Format week range for display
+  // ✅ Format week range for display
   const formatWeekRange = (mondayDate) => {
     const monday = new Date(mondayDate + 'T00:00:00');
     const sunday = new Date(monday);
@@ -171,7 +202,7 @@ const FvaDashboard = () => {
     return `${monday.toLocaleDateString('en-US', options)} - ${sunday.toLocaleDateString('en-US', options)}`;
   };
 
-  // Toggle week expansion
+  // ✅ Toggle week expansion
   const toggleWeek = (weekKey) => {
     const newExpanded = new Set(expandedWeeks);
     if (newExpanded.has(weekKey)) {
@@ -185,164 +216,88 @@ const FvaDashboard = () => {
   // Get filtered and grouped data
   const filteredData = getFilteredData();
   const weeklyData = groupDataByWeeks(filteredData);
-  const availableMonths = getAvailableMonths();
 
-  // ✅ FIXED: Get current week key (Sep 24, 2025 should be in week of Sep 22)
-  const getCurrentWeekKey = () => {
-    const currentWeekKey = getMonday(today);
-    console.log('Today:', today, 'Current week Monday:', currentWeekKey);
-    return currentWeekKey;
-  };
-
-  // ✅ FIXED: Sort weeks with current week first, then chronological order
+  // ✅ NEW: Smart week sorting (current first, then chronological)
   const getSortedWeekKeys = () => {
     const currentWeekKey = getCurrentWeekKey();
     const weekKeys = Object.keys(weeklyData).sort();
     
-    console.log('All week keys:', weekKeys);
-    console.log('Current week key:', currentWeekKey);
+    if (viewMode === 'current_plus_4') {
+      // For current+4 mode, maintain the smart order
+      if (weekKeys.includes(currentWeekKey)) {
+        const otherWeeks = weekKeys.filter(key => key !== currentWeekKey);
+        return [currentWeekKey, ...otherWeeks];
+      }
+    }
     
-    // Put current week first, then rest in chronological order
-    const otherWeeks = weekKeys.filter(key => key !== currentWeekKey);
-    const sortedWeeks = weekKeys.includes(currentWeekKey) 
-      ? [currentWeekKey, ...otherWeeks]
-      : weekKeys;
-    
-    console.log('Sorted weeks:', sortedWeeks);
-    return sortedWeeks;
+    // For other modes, just use chronological order
+    return weekKeys;
   };
 
-  // ✅ FIXED: Auto-expand current week
+  // ✅ Auto-expand current week
   useEffect(() => {
     const currentWeekKey = getCurrentWeekKey();
     if (weeklyData[currentWeekKey]) {
-      console.log('Auto-expanding current week:', currentWeekKey);
       setExpandedWeeks(new Set([currentWeekKey]));
     } else {
-      console.log('Current week not found, expanding first week');
       const sortedWeeks = Object.keys(weeklyData).sort();
       if (sortedWeeks.length > 0) {
         setExpandedWeeks(new Set([sortedWeeks[0]]));
       }
     }
-  }, [combinedData.length]);
+  }, [combinedData.length, viewMode]);
 
-  // ✅ SIMPLIFIED: YTD data fetching
+  // ✅ Get available months from data
+  const getAvailableMonths = () => {
+    const months = [...new Set(combinedData.map(d => d.date.slice(0, 7)))];
+    return months.sort().reverse();
+  };
+
+  // ✅ NEW: Get button label based on view mode
+  const getDateButtonLabel = () => {
+    switch (viewMode) {
+      case 'current_plus_4':
+        return 'Current + 4 Weeks';
+      case 'month':
+        return new Date(selectedMonth + '-01').toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+      case 'custom':
+        return 'Custom Range';
+      default:
+        return 'Current + 4 Weeks';
+    }
+  };
+
+  // ✅ Simplified data fetching for other metrics
   const fetchYtdData = async () => {
     if (!locationUuid) return;
-
-    try {
-      const startOfYear = new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0];
-      
-      const { data, error } = await supabase
-        .from('fva_daily_history')
-        .select('*')
-        .eq('location_uuid', locationUuid)
-        .gte('date', startOfYear)
-        .lte('date', today);
-
-      if (error) {
-        console.error('YTD fetch error:', error);
-        setError(`YTD query failed: ${error.message}`);
-        return;
-      }
-
-      if (data && data.length > 0) {
-        const recordsWithActuals = data.filter(row => (row.actual_sales || row.actualSales || 0) > 0);
-        const totalSales = data.reduce((sum, row) => sum + (row.actual_sales || row.actualSales || 0), 0);
-        
-        setYtd({
-          total_sales: totalSales,
-          record_count: recordsWithActuals.length,
-          avg_food_cost_pct: 0.28, // Placeholder until we have real calculations
-          avg_bev_cost_pct: 0.22,
-          avg_labor_cost_pct: 0.31
-        });
-        console.log('YTD data set:', totalSales, 'total sales');
-      } else {
-        setYtd(null);
-      }
-    } catch (err) {
-      console.error('YTD fetch error:', err);
-      setError(`YTD network error: ${err.message}`);
-    }
+    const ytdRecords = combinedData.filter(d => d.date >= '2025-01-01');
+    const totalSales = ytdRecords.reduce((sum, d) => sum + d.actualSales, 0);
+    setYtd({
+      total_sales: totalSales,
+      record_count: ytdRecords.filter(d => d.hasActuals).length,
+      avg_food_cost_pct: 0.28,
+      avg_bev_cost_pct: 0.22,
+      avg_labor_cost_pct: 0.31
+    });
   };
 
-  // ✅ SIMPLIFIED: Last Month with placeholder fallback
   const fetchLastMonthData = async () => {
-    if (!locationUuid) return;
-
-    try {
-      const now = new Date();
-      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const startDate = lastMonth.toISOString().split('T')[0];
-      const endDate = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0];
-
-      const { data, error } = await supabase
-        .from('fva_daily_history')
-        .select('*')
-        .eq('location_uuid', locationUuid)
-        .gte('date', startDate)
-        .lte('date', endDate);
-
-      if (error) {
-        console.error('Last Month fetch error:', error);
-        // Use placeholder data on error
-        setLastMonthSummary({
-          total_forecast_sales: 245000,
-          total_actual_sales: 252000,
-          avg_food_cost_pct: 0.28,
-          avg_bev_cost_pct: 0.22,
-          avg_labor_cost_pct: 0.31,
-          is_placeholder: true
-        });
-        return;
-      }
-
-      if (data && data.length > 0) {
-        const totalForecast = data.reduce((sum, row) => sum + (row.forecast_sales || row.forecastSales || 0), 0);
-        const totalActual = data.reduce((sum, row) => sum + (row.actual_sales || row.actualSales || 0), 0);
-        
-        setLastMonthSummary({
-          total_forecast_sales: totalForecast,
-          total_actual_sales: totalActual,
-          avg_food_cost_pct: 0.28,
-          avg_bev_cost_pct: 0.22,
-          avg_labor_cost_pct: 0.31,
-          is_placeholder: false
-        });
-      } else {
-        // Use placeholder when no data
-        setLastMonthSummary({
-          total_forecast_sales: 245000,
-          total_actual_sales: 252000,
-          avg_food_cost_pct: 0.28,
-          avg_bev_cost_pct: 0.22,
-          avg_labor_cost_pct: 0.31,
-          is_placeholder: true
-        });
-      }
-    } catch (err) {
-      console.error('Last Month error:', err);
-      // Use placeholder on network error
-      setLastMonthSummary({
-        total_forecast_sales: 245000,
-        total_actual_sales: 252000,
-        avg_food_cost_pct: 0.28,
-        avg_bev_cost_pct: 0.22,
-        avg_labor_cost_pct: 0.31,
-        is_placeholder: true
-      });
-    }
+    setLastMonthSummary({
+      total_forecast_sales: 245000,
+      total_actual_sales: 252000,
+      avg_food_cost_pct: 0.28,
+      avg_bev_cost_pct: 0.22,
+      avg_labor_cost_pct: 0.31,
+      is_placeholder: true
+    });
   };
 
-  // Fetch data when component mounts
   useEffect(() => {
-    if (!loadingLocation && locationUuid) {
+    if (!loadingLocation && locationUuid && combinedData.length > 0) {
       fetchYtdData();
       fetchLastMonthData();
     }
-  }, [loadingLocation, locationUuid]);
+  }, [loadingLocation, locationUuid, combinedData.length]);
 
   // Calculate metrics for different periods
   const getAverages = data => {
@@ -597,16 +552,6 @@ const FvaDashboard = () => {
         </div>
       )}
 
-      {/* Debug Info */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-        <p className="text-sm text-blue-800">
-          <strong>Debug:</strong> {combinedData.length} total records, {Object.keys(weeklyData).length} weeks found
-          {Object.keys(weeklyData).length > 0 && (
-            <span> | Weeks: {Object.keys(weeklyData).sort().join(', ')}</span>
-          )}
-        </p>
-      </div>
-
       {/* MTD Metrics */}
       {showMTD && (
         <>
@@ -745,7 +690,7 @@ const FvaDashboard = () => {
         </Card>
       </div>
 
-      {/* ✅ FIXED: Weekly Accordion View */}
+      {/* ✅ NEW: Smart Weekly Accordion View */}
       <Card className="shadow-xl bg-white text-slate-800 border border-slate-200">
         <CardHeader className="pb-4 flex flex-row items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -762,7 +707,7 @@ const FvaDashboard = () => {
             </div>
           </div>
           <div className="flex space-x-2">
-            {/* Date Range Dropdown */}
+            {/* ✅ NEW: Smart Date Range Dropdown */}
             <div className="relative">
               <Button 
                 onClick={() => setShowDateDropdown(!showDateDropdown)} 
@@ -770,38 +715,53 @@ const FvaDashboard = () => {
                 className="border-purple-500 text-purple-500 hover:bg-purple-100"
               >
                 <Calendar className="mr-2 h-4 w-4" /> 
-                {showCustomRange ? 'Custom Range' : new Date(selectedMonth + '-01').toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}
+                {getDateButtonLabel()}
                 <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
               
               {showDateDropdown && (
                 <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-lg shadow-lg z-50">
                   <div className="p-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="text-sm font-medium text-slate-700">View Period:</span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowCustomRange(!showCustomRange)}
+                    <div className="space-y-3">
+                      {/* Current + 4 Weeks Option */}
+                      <button
+                        onClick={() => {
+                          setViewMode('current_plus_4');
+                          setShowDateDropdown(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
+                          viewMode === 'current_plus_4' 
+                            ? 'bg-indigo-100 text-indigo-800 font-medium' 
+                            : 'hover:bg-slate-100'
+                        }`}
                       >
-                        {showCustomRange ? 'Month View' : 'Custom Range'}
-                      </Button>
-                    </div>
-                    
-                    {!showCustomRange ? (
-                      <select
-                        value={selectedMonth}
-                        onChange={(e) => setSelectedMonth(e.target.value)}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      >
-                        {availableMonths.map(month => (
-                          <option key={month} value={month}>
-                            {new Date(month + '-01').toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <div className="space-y-2">
+                        📅 Current + 4 Weeks
+                        <p className="text-xs text-slate-500 mt-1">Default operational view</p>
+                      </button>
+
+                      {/* Month Selection */}
+                      <div className="border-t pt-3">
+                        <p className="text-sm font-medium text-slate-700 mb-2">📅 Select Month:</p>
+                        <select
+                          value={selectedMonth}
+                          onChange={(e) => {
+                            setSelectedMonth(e.target.value);
+                            setViewMode('month');
+                            setShowDateDropdown(false);
+                          }}
+                          className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                          {getAvailableMonths().map(month => (
+                            <option key={month} value={month}>
+                              {new Date(month + '-01').toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Custom Date Range */}
+                      <div className="border-t pt-3">
+                        <p className="text-sm font-medium text-slate-700 mb-2">🗓️ Custom Date Range:</p>
                         <div className="flex items-center space-x-2">
                           <input
                             type="date"
@@ -817,28 +777,39 @@ const FvaDashboard = () => {
                             className="flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                           />
                         </div>
+                        <button
+                          onClick={() => {
+                            if (customStartDate && customEndDate) {
+                              setViewMode('custom');
+                              setShowDateDropdown(false);
+                            }
+                          }}
+                          disabled={!customStartDate || !customEndDate}
+                          className="w-full mt-2 px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed"
+                        >
+                          Apply Custom Range
+                        </button>
                       </div>
-                    )}
+                    </div>
 
-                    <div className="flex items-center justify-between mt-4">
+                    <div className="flex items-center justify-between mt-4 pt-3 border-t">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          setShowCustomRange(false);
-                          setSelectedMonth(currentMonth);
+                          setViewMode('current_plus_4');
                           setCustomStartDate('');
                           setCustomEndDate('');
                           setShowDateDropdown(false);
                         }}
                       >
-                        Reset
+                        Reset to Default
                       </Button>
                       <Button
                         size="sm"
                         onClick={() => setShowDateDropdown(false)}
                       >
-                        Apply
+                        Close
                       </Button>
                     </div>
                   </div>
@@ -858,10 +829,7 @@ const FvaDashboard = () => {
           {Object.keys(weeklyData).length === 0 ? (
             <div className="text-center py-8 text-slate-500">
               <p>No data available for the selected period.</p>
-              <p className="text-sm mt-2">Try selecting a different month or date range.</p>
-              <p className="text-xs mt-2 text-slate-400">
-                Data source: fva_daily_history table for location {locationUuid?.slice(0, 8)}...
-              </p>
+              <p className="text-sm mt-2">Try selecting a different date range.</p>
             </div>
           ) : (
             <div className="space-y-4">
