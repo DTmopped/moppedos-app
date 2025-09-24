@@ -25,6 +25,7 @@ const DailyBriefingBuilder = () => {
   const [foodItems, setFoodItems] = useState("");
   const [beverageItems, setBeverageItems] = useState("");
   const [events, setEvents] = useState("");
+  const [weeklySpecials, setWeeklySpecials] = useState("");
   const [repairNotes, setRepairNotes] = useState("");
   const [foodImage, setFoodImage] = useState(null);
   const [beverageImage, setBeverageImage] = useState(null);
@@ -41,14 +42,13 @@ const DailyBriefingBuilder = () => {
     setAutoPopulated(false);
     setCopiedFromYesterday(false);
 
-    try {
-      // Check if briefing already exists
-      const { data: existingBriefing, error } = await supabase
+    tr      // 4. Fetch existing briefing for this date
+      const { data: existingBriefing, error: existingError } = await supabase
         .from("daily_briefings")
         .select("*")
-        .eq("location_id", locationId)
+        .eq("location_id", locationIdString)
         .eq("date", date)
-        .maybeSingle(); // avoids throwing if no record
+        .maybeSingle(); if no record
 
       if (error && error.code !== 'PGRST116') {
         throw error;
@@ -69,6 +69,7 @@ const DailyBriefingBuilder = () => {
         setFoodItems(existingBriefing.food_items || "");
         setBeverageItems(existingBriefing.beverage_items || "");
         setEvents(existingBriefing.events || "");
+        setWeeklySpecials(existingBriefing.weekly_specials || "");
         setRepairNotes(existingBriefing.repair_notes || "");
       } else {
         // Create new briefing with smart auto-population
@@ -81,68 +82,81 @@ const DailyBriefingBuilder = () => {
     }
   };
 
-  // Smart auto-population logic
-  const performSmartAutoPopulation = async () => {
+  // Smart auto-populat  const fetchBriefing = async () => {
+    if (!locationId || !date) return;
+
+    // Ensure we use the same UUID for both tables (convert to string to avoid bigint issues)
+    const locationUuidString = String(locationUuid || locationId);
+    const locationIdString = String(locationId);
+
     let hasAutoPopulated = false;
     let hasCopiedFromYesterday = false;
 
     try {
       // 1. Fetch forecast data for today from fva_daily_history
-      if (locationUuid) {
+      if (locationUuidString) {
         const { data: forecastData, error: forecastError } = await supabase
           .from("fva_daily_history")
-          .select("am_guests, pm_guests, forecast_sales")
-          .eq("location_uuid", locationUuid)
+          .select("am_guests, pm_guests, forecast_sales, forecast_guests, forecast_pax")
+          .eq("location_uuid", locationUuidString)
           .eq("date", date)
-          .maybeSingle();
-
-        if (!forecastError && forecastData) {
+          .maybeSingle();orecastError && forecastData) {
+          // Use calculated AM/PM guest splits from your app logic
           if (forecastData.am_guests) {
             setLunch(forecastData.am_guests.toString());
             hasAutoPopulated = true;
           }
+          
           if (forecastData.pm_guests) {
             setDinner(forecastData.pm_guests.toString());
             hasAutoPopulated = true;
           }
+          
+          // Fallback: if AM/PM splits aren't calculated yet, use total guests
+          if (!forecastData.am_guests && !forecastData.pm_guests && forecastData.forecast_guests) {
+            setLunch(forecastData.forecast_guests.toString());
+            setDinner(""); // Leave dinner empty if no split available
+            hasAutoPopulated = true;
+          }
+          
           if (forecastData.forecast_sales) {
             setForecastedSales(forecastData.forecast_sales.toString());
             hasAutoPopulated = true;
           }
+          
           if (hasAutoPopulated) {
-            setForecastNotes("Auto-populated from forecast data.");
+            const amPmNote = (forecastData.am_guests && forecastData.pm_guests) 
+              ? "Auto-populated with calculated AM/PM guest splits."
+              : "Auto-populated from forecast data (AM/PM calculation pending).";
+            setForecastNotes(amPmNote);
           }
         } else {
           setForecastNotes("No forecast data available for this date.");
-        }
-
-        // 2. Fetch yesterday's actual sales for variance analysis
+              // 2. Fetch yesterday's actual sales for variance analysis
         const yesterday = new Date(date);
         yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayString = yesterday.toISOString().split('T')[0];
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
 
-        const { data: yesterdayActuals, error: actualsError } = await supabase
+        const { data: yesterdayData, error: yesterdayError } = await supabase
           .from("fva_daily_history")
           .select("actual_sales")
-          .eq("location_uuid", locationUuid)
-          .eq("date", yesterdayString)
+          .eq("location_uuid", locationUuidString)
+          .eq("date", yesterdayStr)
           .maybeSingle();
 
-        if (!actualsError && yesterdayActuals && yesterdayActuals.actual_sales) {
-          setActualSales(yesterdayActuals.actual_sales.toString());
-          hasAutoPopulated = true;
+        if (!yesterdayError && yesterdayData?.actual_sales) {
+          setActualSales(yesterdayData.actual_sales.toString());
         }
-      }
 
-      // 3. Fetch yesterday's briefing for repetitive content
-      if (locationId) {
-        const yesterday = new Date(date);
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayString = yesterday.toISOString().split('T')[0];
-
-        const { data: yesterdayBriefing, error: briefingError } = await supabase
+        // 3. Fetch yesterday's briefing for auto-population
+        const { data: yesterdayBriefing, error: yesterdayBriefingError } = await supabase
           .from("daily_briefings")
-          .select("reminders, food_items, beverage_items, events, manager, repair_notes")
+          .select("reminders, food_items, beverage_items, events, manager, repair_notes, weekly_specials")
+          .eq("location_id", locationIdString)
+          .eq("date", yesterdayStr)
+          .maybeSingle(); await supabase
+          .from("daily_briefings")
+          .select("reminders, food_items, beverage_items, events, weekly_specials, manager, repair_notes")
           .eq("location_id", locationId)
           .eq("date", yesterdayString)
           .maybeSingle();
@@ -166,6 +180,11 @@ const DailyBriefingBuilder = () => {
           
           if (yesterdayBriefing.events && yesterdayBriefing.events.trim()) {
             setEvents(yesterdayBriefing.events);
+            hasCopiedFromYesterday = true;
+          }
+          
+          if (yesterdayBriefing.weekly_specials && yesterdayBriefing.weekly_specials.trim()) {
+            setWeeklySpecials(yesterdayBriefing.weekly_specials);
             hasCopiedFromYesterday = true;
           }
           
@@ -222,7 +241,7 @@ const DailyBriefingBuilder = () => {
 
     try {
       const briefingData = {
-        location_id: locationId,
+        location_id: String(locationId),
         created_by: userId,
         date,
         manager,
@@ -238,6 +257,7 @@ const DailyBriefingBuilder = () => {
         food_items: foodItems,
         beverage_items: beverageItems,
         events,
+        weekly_specials: weeklySpecials,
         repair_notes: repairNotes,
         food_image_url: foodImage,
         beverage_image_url: beverageImage,
@@ -376,6 +396,7 @@ const DailyBriefingBuilder = () => {
           foodItems={foodItems}
           beverageItems={beverageItems}
           events={events}
+          weeklySpecials={weeklySpecials}
           repairNotes={repairNotes}
           foodImage={foodImage}
           beverageImage={beverageImage}
@@ -495,6 +516,16 @@ const DailyBriefingBuilder = () => {
           </CardHeader>
           <CardContent>
             {renderTextarea(events, setEvents, "🎊 Special events, holidays, promotions...", copiedFromYesterday && !!events)}
+          </CardContent>
+        </Card>
+
+        {/* Weekly Specials */}
+        <Card className="rounded-2xl shadow-md">
+          <CardHeader>
+            <CardTitle>⭐ Weekly Specials</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {renderTextarea(weeklySpecials, setWeeklySpecials, "🌟 This week's special offers and promotions...", copiedFromYesterday && !!weeklySpecials)}
           </CardContent>
         </Card>
 
