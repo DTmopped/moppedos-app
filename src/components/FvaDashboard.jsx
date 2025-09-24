@@ -265,20 +265,50 @@ const FvaDashboard = () => {
   };
 
   // ✅ Updated combinedData calculation using location-specific data
-  const combinedData = forecastData.map(forecast => {
-    const actual = actualData.find(a => a.date === forecast.date);
-    if (actual) {
-      const actualSales = actual.actual_total || 0;
-      const foodCost = actual.food_cost || 0;
-      const beverageCost = actual.bev_cost || 0;
-      const laborCost = actual.labor_cost || 0;
-      const foodPct = actualSales > 0 ? foodCost / actualSales : 0;
-      const bevPct = actualSales > 0 ? beverageCost / actualSales : 0;
-      const laborPct = actualSales > 0 ? laborCost / actualSales : 0;
-      return { ...forecast, actualSales, foodCost, beverageCost, laborCost, foodPct, bevPct, laborPct, hasActuals: true };
-    }
-    return { ...forecast, actualSales: 0, foodCost: 0, beverageCost: 0, laborCost: 0, foodPct: 0, bevPct: 0, laborPct: 0, hasActuals: false };
-  });
+  // ✅ Use real database data instead of DataContext
+const [fvaData, setFvaData] = useState([]);
+
+useEffect(() => {
+  fetchRealFvaData();
+}, [locationUuid]);
+
+const fetchRealFvaData = async () => {
+  if (!locationUuid) return;
+  
+  const { data } = await supabase
+    .from('fva_daily_history')
+    .select('*')
+    .eq('location_uuid', locationUuid)
+    .order('date', { ascending: true });
+  
+  setFvaData(data || []);
+};
+
+const combinedData = fvaData.map(row => {
+  const actualSales = row.actual_sales || 0;
+  const forecastSales = row.forecast_sales || 0;
+  const foodCost = row.food_cost || 0;
+  const beverageCost = row.bev_cost || 0;
+  const laborCost = row.labor_cost || 0;
+  const foodPct = actualSales > 0 ? foodCost / actualSales : (row.food_cost_pct || 0);
+  const bevPct = actualSales > 0 ? beverageCost / actualSales : (row.bev_cost_pct || 0);
+  const laborPct = actualSales > 0 ? laborCost / actualSales : (row.labor_cost_pct || 0);
+  const hasActuals = actualSales > 0;
+  
+  return {
+    date: row.date,
+    forecastSales,
+    actualSales,
+    foodCost,
+    beverageCost,
+    laborCost,
+    foodPct,
+    bevPct,
+    laborPct,
+    hasActuals
+  };
+});
+
 
   const mtdData = combinedData.filter(d => d.date.startsWith(currentMonth) && d.date <= today);
   const eomData = combinedData.filter(d => d.date.startsWith(currentMonth));
