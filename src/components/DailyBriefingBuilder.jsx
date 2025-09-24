@@ -1,57 +1,78 @@
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/supabaseClient";
+import { Button } from "@/components/ui/button";
 import { useUserAndLocation } from "@/hooks/useUserAndLocation";
+import { supabase } from "@/supabaseClient";
 import DailyBriefingPrintButton from "@/components/briefing/DailyBriefingPrintButton";
 import PrintableBriefingSheet from "@/components/PrintableBriefingSheet";
 
 const DailyBriefingBuilder = () => {
   const { userId, locationId, locationUuid } = useUserAndLocation();
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-  const [manager, setManager] = useState("");
-  const [lunch, setLunch] = useState("");
-  const [dinner, setDinner] = useState("");
-  const [forecastedSales, setForecastedSales] = useState("");
-  const [forecastNotes, setForecastNotes] = useState("");
-  const [actualSales, setActualSales] = useState("");
-  const [varianceNotes, setVarianceNotes] = useState("");
-  const [shoutout, setShoutout] = useState("");
-  const [reminders, setReminders] = useState("");
-  const [mindset, setMindset] = useState("");
-  const [foodItems, setFoodItems] = useState("");
-  const [beverageItems, setBeverageItems] = useState("");
-  const [events, setEvents] = useState("");
-  const [weeklySpecials, setWeeklySpecials] = useState("");
-  const [repairNotes, setRepairNotes] = useState("");
-  const [foodImage, setFoodImage] = useState(null);
-  const [beverageImage, setBeverageImage] = useState(null);
-  const [quote, setQuote] = useState("");
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
   const [autoPopulated, setAutoPopulated] = useState(false);
   const [copiedFromYesterday, setCopiedFromYesterday] = useState(false);
 
-  // Enhanced fetch briefing with smart auto-population
+  // Today's Forecast
+  const [lunch, setLunch] = useState("");
+  const [dinner, setDinner] = useState("");
+  const [forecastedSales, setForecastedSales] = useState("");
+  const [forecastNotes, setForecastNotes] = useState("");
+
+  // Yesterday's Recap
+  const [actualSales, setActualSales] = useState("");
+  const [varianceNotes, setVarianceNotes] = useState("");
+
+  // Team & Leadership
+  const [manager, setManager] = useState("");
+  const [shoutout, setShoutout] = useState("");
+  const [mindset, setMindset] = useState("");
+
+  // Team Reminders
+  const [reminders, setReminders] = useState("");
+
+  // Food & Beverage Focus
+  const [foodItems, setFoodItems] = useState("");
+  const [beverageItems, setBeverageItems] = useState("");
+  const [foodImage, setFoodImage] = useState(null);
+  const [beverageImage, setBeverageImage] = useState(null);
+
+  // Events & Special Occasions
+  const [events, setEvents] = useState("");
+
+  // Weekly Specials
+  const [weeklySpecials, setWeeklySpecials] = useState("");
+
+  // Maintenance & Repairs
+  const [repairNotes, setRepairNotes] = useState("");
+
+  // Inspirational Quote
+  const [quote, setQuote] = useState("");
+
   const fetchBriefing = async () => {
     if (!locationId || !date) return;
-    
+
+    // Ensure we use the same UUID for both tables (convert to string to avoid bigint issues)
+    const locationUuidString = String(locationUuid || locationId);
+    const locationIdString = String(locationId);
+
     setLoading(true);
     setAutoPopulated(false);
     setCopiedFromYesterday(false);
 
-    tr      // 4. Fetch existing briefing for this date
+    try {
+      // 1. Fetch existing briefing for this date
       const { data: existingBriefing, error: existingError } = await supabase
         .from("daily_briefings")
         .select("*")
         .eq("location_id", locationIdString)
         .eq("date", date)
-        .maybeSingle(); // Returns null if no record
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
-        throw error;
+      if (existingError && existingError.code !== 'PGRST116') {
+        throw existingError;
       }
 
       if (existingBriefing) {
@@ -71,9 +92,11 @@ const DailyBriefingBuilder = () => {
         setEvents(existingBriefing.events || "");
         setWeeklySpecials(existingBriefing.weekly_specials || "");
         setRepairNotes(existingBriefing.repair_notes || "");
+        setFoodImage(existingBriefing.food_image_url || null);
+        setBeverageImage(existingBriefing.beverage_image_url || null);
       } else {
-        // Create new briefing with smart auto-population
-        await performSmartAutoPopulation();
+        // No existing briefing, perform smart auto-population
+        await performSmartAutoPopulation(locationUuidString, locationIdString);
       }
     } catch (err) {
       console.error("Error fetching briefing:", err);
@@ -82,13 +105,8 @@ const DailyBriefingBuilder = () => {
     }
   };
 
-  // Smart auto-populat  const fetchBriefing = async () => {
-    if (!locationId || !date) return;
-
-    // Ensure we use the same UUID for both tables (convert to string to avoid bigint issues)
-    const locationUuidString = String(locationUuid || locationId);
-    const locationIdString = String(locationId);
-
+  // Smart auto-population function
+  const performSmartAutoPopulation = async (locationUuidString, locationIdString) => {
     let hasAutoPopulated = false;
     let hasCopiedFromYesterday = false;
 
@@ -100,7 +118,9 @@ const DailyBriefingBuilder = () => {
           .select("am_guests, pm_guests, forecast_sales, forecast_guests, forecast_pax")
           .eq("location_uuid", locationUuidString)
           .eq("date", date)
-          .maybeSingle();orecastError && forecastData) {
+          .maybeSingle();
+
+        if (!forecastError && forecastData) {
           // Use calculated AM/PM guest splits from your app logic
           if (forecastData.am_guests) {
             setLunch(forecastData.am_guests.toString());
@@ -132,7 +152,9 @@ const DailyBriefingBuilder = () => {
           }
         } else {
           setForecastNotes("No forecast data available for this date.");
-              // 2. Fetch yesterday's actual sales for variance analysis
+        }
+
+        // 2. Fetch yesterday's actual sales for variance analysis
         const yesterday = new Date(date);
         yesterday.setDate(yesterday.getDate() - 1);
         const yesterdayStr = yesterday.toISOString().split('T')[0];
@@ -154,69 +176,51 @@ const DailyBriefingBuilder = () => {
           .select("reminders, food_items, beverage_items, events, manager, repair_notes, weekly_specials")
           .eq("location_id", locationIdString)
           .eq("date", yesterdayStr)
-          .maybeSingle(); await supabase
-          .from("daily_briefings")
-          .select("reminders, food_items, beverage_items, events, weekly_specials, manager, repair_notes")
-          .eq("location_id", locationId)
-          .eq("date", yesterdayString)
           .maybeSingle();
 
-        if (!briefingError && yesterdayBriefing) {
-          // Copy repetitive operational notes
-          if (yesterdayBriefing.reminders && yesterdayBriefing.reminders.trim()) {
+        if (!yesterdayBriefingError && yesterdayBriefing) {
+          // Copy repetitive content from yesterday
+          if (yesterdayBriefing.reminders) {
             setReminders(yesterdayBriefing.reminders);
             hasCopiedFromYesterday = true;
           }
-          
-          if (yesterdayBriefing.food_items && yesterdayBriefing.food_items.trim()) {
+          if (yesterdayBriefing.food_items) {
             setFoodItems(yesterdayBriefing.food_items);
             hasCopiedFromYesterday = true;
           }
-          
-          if (yesterdayBriefing.beverage_items && yesterdayBriefing.beverage_items.trim()) {
+          if (yesterdayBriefing.beverage_items) {
             setBeverageItems(yesterdayBriefing.beverage_items);
             hasCopiedFromYesterday = true;
           }
-          
-          if (yesterdayBriefing.events && yesterdayBriefing.events.trim()) {
+          if (yesterdayBriefing.events) {
             setEvents(yesterdayBriefing.events);
             hasCopiedFromYesterday = true;
           }
-          
-          if (yesterdayBriefing.weekly_specials && yesterdayBriefing.weekly_specials.trim()) {
+          if (yesterdayBriefing.weekly_specials) {
             setWeeklySpecials(yesterdayBriefing.weekly_specials);
             hasCopiedFromYesterday = true;
           }
-          
-          if (yesterdayBriefing.manager && yesterdayBriefing.manager.trim()) {
+          if (yesterdayBriefing.manager) {
             setManager(yesterdayBriefing.manager);
             hasCopiedFromYesterday = true;
           }
-          
-          if (yesterdayBriefing.repair_notes && yesterdayBriefing.repair_notes.trim()) {
+          if (yesterdayBriefing.repair_notes) {
             setRepairNotes(yesterdayBriefing.repair_notes);
             hasCopiedFromYesterday = true;
           }
         }
       }
 
-      // Clear fields that should always be fresh
-      setShoutout("");
-      setMindset("");
-      setVarianceNotes("");
-
       setAutoPopulated(hasAutoPopulated);
       setCopiedFromYesterday(hasCopiedFromYesterday);
-
-    } catch (error) {
-      console.error("Error in smart auto-population:", error);
-      setForecastNotes("Error occurred during auto-population. Please enter data manually.");
+    } catch (err) {
+      console.error("Error during auto-population:", err);
     }
   };
 
   useEffect(() => {
     fetchBriefing();
-  }, [date, locationId, locationUuid]);
+  }, [locationId, date]);
 
   // DO NOT TOUCH - Inspirational Quote Feature
   useEffect(() => {
@@ -280,107 +284,313 @@ const DailyBriefingBuilder = () => {
     }
   };
 
-  const handleImageChange = (e, setter) => {
-    const file = e.target.files[0];
+  const handleImageUpload = (file, type) => {
     if (file) {
       const reader = new FileReader();
-      reader.onload = (event) => {
-        setter(event.target.result);
+      reader.onload = (e) => {
+        if (type === 'food') {
+          setFoodImage(e.target.result);
+        } else {
+          setBeverageImage(e.target.result);
+        }
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const renderInput = (value, setter, placeholder, isAuto = false, isCopied = false) => (
-    <div className="relative">
-      <Input
-        value={value}
-        onChange={(e) => setter(e.target.value)}
-        placeholder={placeholder}
-        className={`bg-gray-100 text-black rounded-md shadow-inner w-full ${
-          isAuto ? 'border-blue-300 bg-blue-50' : ''
-        } ${
-          isCopied ? 'border-purple-300 bg-purple-50' : ''
-        }`}
-        disabled={loading}
-      />
-      {isAuto && <div className="absolute -top-2 right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">Auto-filled</div>}
-      {isCopied && <div className="absolute -top-2 right-2 bg-purple-500 text-white text-xs px-2 py-1 rounded">From Yesterday</div>}
-    </div>
-  );
+  const renderTextarea = (value, setValue, placeholder, showFromYesterday = false) => {
+    return (
+      <div className="space-y-2">
+        <textarea
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder={placeholder}
+          className="w-full p-3 border border-gray-300 rounded-lg resize-none h-24 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+        {showFromYesterday && (
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+              From Yesterday
+            </span>
+          </div>
+        )}
+      </div>
+    );
+  };
 
-  const renderTextarea = (value, setter, placeholder, isCopied = false) => (
-    <div className="relative">
-      <Textarea
-        value={value}
-        onChange={(e) => setter(e.target.value)}
-        placeholder={placeholder}
-        className={`bg-gray-100 text-black rounded-md shadow-inner w-full min-h-[80px] ${
-          isCopied ? 'border-purple-300 bg-purple-50' : ''
-        }`}
-        disabled={loading}
-      />
-      {isCopied && <div className="absolute -top-2 right-2 bg-purple-500 text-white text-xs px-2 py-1 rounded">From Yesterday</div>}
-    </div>
-  );
+  const renderInput = (value, setValue, placeholder, showAutoFilled = false) => {
+    return (
+      <div className="space-y-2">
+        <Input
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder={placeholder}
+          className="w-full"
+        />
+        {showAutoFilled && (
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              Auto-filled
+            </span>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading briefing data...</p>
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg">Loading briefing...</div>
       </div>
     );
   }
 
   return (
-    <div className="p-6">
+    <div className="max-w-7xl mx-auto p-6 space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">📋 Daily Briefing Builder</h1>
-          <p className="text-gray-600">Create and manage your daily operational briefing</p>
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+            📋 Daily Briefing Builder
+          </h1>
+          <p className="text-gray-600 mt-1">Create and manage your daily operational briefing</p>
         </div>
-        <div className="flex items-center space-x-4">
-          <div>
-            <Label htmlFor="date" className="text-sm font-medium text-gray-700">Date</Label>
+        
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="date" className="text-sm font-medium">Date</Label>
             <Input
               id="date"
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="mt-1"
-              disabled={loading}
+              className="w-auto"
             />
+          </div>
+          
+          <div className="flex gap-2">
+            <Button onClick={saveBriefing} className="bg-blue-600 hover:bg-blue-700">
+              💾 Save Briefing
+            </Button>
+            <DailyBriefingPrintButton className="bg-gray-600 hover:bg-gray-700">
+              🖨️ Generate PDF
+            </DailyBriefingPrintButton>
           </div>
         </div>
       </div>
 
-      {/* Status indicators */}
+      {/* Status Messages */}
       {autoPopulated && (
-        <div className="bg-blue-50 border-blue-200 p-4 mb-6 rounded-lg">
-          <p className="text-blue-800">✨ Today's forecast data has been auto-populated from your FVA system.</p>
-        </div>
-      )}
-      
-      {copiedFromYesterday && (
-        <div className="bg-purple-50 border-purple-200 p-4 mb-6 rounded-lg">
-          <p className="text-purple-800">📝 Repetitive operational notes have been copied from yesterday's briefing.</p>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center gap-2">
+            <span className="text-blue-600">ℹ️</span>
+            <span className="text-blue-800 font-medium">Auto-populated forecast data from FVA system</span>
+          </div>
         </div>
       )}
 
-      {/* Top Actions */}
-      <div className="flex space-x-3 mb-6">
-        <Button onClick={saveBriefing} className="bg-blue-600 hover:bg-blue-700 text-white">
-          💾 Save Briefing
-        </Button>
-        <DailyBriefingPrintButton />
+      {copiedFromYesterday && (
+        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+          <div className="flex items-center gap-2">
+            <span className="text-purple-600">📋</span>
+            <span className="text-purple-800 font-medium">Copied repetitive content from yesterday's briefing</span>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Today's Forecast */}
+        <Card className="rounded-2xl shadow-md">
+          <CardHeader>
+            <CardTitle>📊 Today's Forecast</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="lunch">🍽️ Lunch (AM)</Label>
+              {renderInput(lunch, setLunch, "", autoPopulated && !!lunch)}
+            </div>
+            <div>
+              <Label htmlFor="dinner">🌙 Dinner (PM)</Label>
+              {renderInput(dinner, setDinner, "", autoPopulated && !!dinner)}
+            </div>
+            <div>
+              <Label htmlFor="forecasted-sales">💰 Forecasted Sales ($)</Label>
+              {renderInput(forecastedSales, setForecastedSales, "", autoPopulated && !!forecastedSales)}
+            </div>
+            <div>
+              <Label htmlFor="forecast-notes">📝 Notes...</Label>
+              <textarea
+                id="forecast-notes"
+                value={forecastNotes}
+                onChange={(e) => setForecastNotes(e.target.value)}
+                placeholder="📝 Notes..."
+                className="w-full p-3 border border-gray-300 rounded-lg resize-none h-24 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Yesterday's Recap */}
+        <Card className="rounded-2xl shadow-md">
+          <CardHeader>
+            <CardTitle>📅 Yesterday's Recap</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="actual-sales">Actual Sales ($)</Label>
+              <Input
+                id="actual-sales"
+                value={actualSales}
+                onChange={(e) => setActualSales(e.target.value)}
+                placeholder=""
+              />
+            </div>
+            <div>
+              <Label htmlFor="variance-notes">⚠️ What affected results?</Label>
+              <textarea
+                id="variance-notes"
+                value={varianceNotes}
+                onChange={(e) => setVarianceNotes(e.target.value)}
+                placeholder=""
+                className="w-full p-3 border border-gray-300 rounded-lg resize-none h-24 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <div className="text-sm text-blue-800 italic">
+                ⭐ {quote}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Team & Leadership */}
+        <Card className="rounded-2xl shadow-md">
+          <CardHeader>
+            <CardTitle>👥 Team & Leadership</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="manager">👤 Manager on Duty</Label>
+              {renderInput(manager, setManager, "", copiedFromYesterday && !!manager)}
+            </div>
+            <div>
+              <Label htmlFor="shoutout">🎉 Team Shoutouts</Label>
+              <textarea
+                id="shoutout"
+                value={shoutout}
+                onChange={(e) => setShoutout(e.target.value)}
+                placeholder=""
+                className="w-full p-3 border border-gray-300 rounded-lg resize-none h-24 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <Label htmlFor="mindset">❤️ Today's Mindset</Label>
+              <textarea
+                id="mindset"
+                value={mindset}
+                onChange={(e) => setMindset(e.target.value)}
+                placeholder=""
+                className="w-full p-3 border border-gray-300 rounded-lg resize-none h-24 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Team Reminders */}
+        <Card className="rounded-2xl shadow-md">
+          <CardHeader>
+            <CardTitle>📝 Team Reminders</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {renderTextarea(reminders, setReminders, "📝 Important notes...", copiedFromYesterday && !!reminders)}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Food & Beverage Focus */}
+      <Card className="rounded-2xl shadow-md lg:col-span-2">
+        <CardHeader>
+          <CardTitle>🍽️ Food & Beverage Focus</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">🍕 Food Items</h3>
+              {renderTextarea(foodItems, setFoodItems, "Today's food specials and features...", copiedFromYesterday && !!foodItems)}
+              <div>
+                <Label htmlFor="food-image">📷 Food Image</Label>
+                <input
+                  id="food-image"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleImageUpload(e.target.files[0], 'food')}
+                  className="w-full p-2 border border-gray-300 rounded-lg"
+                />
+                {foodImage && (
+                  <div className="mt-2">
+                    <img src={foodImage} alt="Food" className="w-32 h-32 object-cover rounded-lg" />
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">🍹 Beverage Items</h3>
+              {renderTextarea(beverageItems, setBeverageItems, "Today's beverage specials and features...", copiedFromYesterday && !!beverageItems)}
+              <div>
+                <Label htmlFor="beverage-image">📷 Beverage Image</Label>
+                <input
+                  id="beverage-image"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleImageUpload(e.target.files[0], 'beverage')}
+                  className="w-full p-2 border border-gray-300 rounded-lg"
+                />
+                {beverageImage && (
+                  <div className="mt-2">
+                    <img src={beverageImage} alt="Beverage" className="w-32 h-32 object-cover rounded-lg" />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Events & Special Occasions */}
+      <Card className="rounded-2xl shadow-md">
+        <CardHeader>
+          <CardTitle>🎉 Events & Special Occasions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {renderTextarea(events, setEvents, "🎊 Special events, holidays, promotions...", copiedFromYesterday && !!events)}
+        </CardContent>
+      </Card>
+
+      {/* Weekly Specials */}
+      <Card className="rounded-2xl shadow-md">
+        <CardHeader>
+          <CardTitle>⭐ Weekly Specials</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {renderTextarea(weeklySpecials, setWeeklySpecials, "🌟 This week's special offers and promotions...", copiedFromYesterday && !!weeklySpecials)}
+        </CardContent>
+      </Card>
+
+      {/* Maintenance & Repairs */}
+      <Card className="rounded-2xl shadow-md">
+        <CardHeader>
+          <CardTitle>🔧 Maintenance & Repairs</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {renderTextarea(repairNotes, setRepairNotes, "🔨 Equipment issues, repairs needed...", copiedFromYesterday && !!repairNotes)}
+        </CardContent>
+      </Card>
+
       {/* Hidden Printable Component */}
-      <div style={{ display: "none" }}>
+      <div style={{ display: 'none' }}>
         <PrintableBriefingSheet
           date={date}
           manager={manager}
@@ -402,142 +612,6 @@ const DailyBriefingBuilder = () => {
           beverageImage={beverageImage}
           quote={quote}
         />
-      </div>
-
-      {/* Live Form Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Today's Forecast */}
-        <Card className="rounded-2xl shadow-md">
-          <CardHeader>
-            <CardTitle>📊 Today's Forecast</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {renderInput(lunch, setLunch, "😊 Lunch (AM)", autoPopulated && !!lunch)}
-            {renderInput(dinner, setDinner, "🌙 Dinner (PM)", autoPopulated && !!dinner)}
-            {renderInput(forecastedSales, setForecastedSales, "💰 Forecasted Sales ($)", autoPopulated && !!forecastedSales)}
-            {renderTextarea(forecastNotes, setForecastNotes, "📝 Notes...")}
-          </CardContent>
-        </Card>
-
-        {/* Yesterday's Recap */}
-        <Card className="rounded-2xl shadow-md">
-          <CardHeader>
-            <CardTitle>📅 Yesterday's Recap</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {renderInput(actualSales, setActualSales, "Actual Sales ($)", autoPopulated && !!actualSales)}
-            {renderTextarea(varianceNotes, setVarianceNotes, "⚠️ What affected results?")}
-            
-            {/* Inspirational Quote */}
-            {quote && (
-              <div className="bg-gray-100 p-4 rounded-lg shadow">
-                <p className="text-blue-700 italic font-medium text-center">✨ {quote}</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Team & Leadership */}
-        <Card className="rounded-2xl shadow-md">
-          <CardHeader>
-            <CardTitle>👥 Team & Leadership</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {renderInput(manager, setManager, "👨‍💼 Manager on Duty", false, copiedFromYesterday && !!manager)}
-            {renderTextarea(shoutout, setShoutout, "🎉 Team Shoutouts")}
-            {renderTextarea(mindset, setMindset, "🧠 Today's Mindset")}
-          </CardContent>
-        </Card>
-
-        {/* Team Reminders */}
-        <Card className="rounded-2xl shadow-md">
-          <CardHeader>
-            <CardTitle>📣 Team Reminders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {renderTextarea(reminders, setReminders, "✏️ Important notes...", copiedFromYesterday && !!reminders)}
-          </CardContent>
-        </Card>
-
-        {/* Food & Beverage */}
-        <Card className="rounded-2xl shadow-md lg:col-span-2">
-          <CardHeader>
-            <CardTitle>🍽️ Food & Beverage Focus</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <Label className="text-sm font-medium text-gray-700">🍕 Food Items</Label>
-              {renderTextarea(foodItems, setFoodItems, "Today's food specials and features...", copiedFromYesterday && !!foodItems)}
-              
-              <div>
-                <Label className="text-sm font-medium text-gray-700 mb-2 block">📸 Food Image</Label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleImageChange(e, setFoodImage)}
-                  className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                  disabled={loading}
-                />
-                {foodImage && (
-                  <div className="mt-2">
-                    <img src={foodImage} alt="Food preview" className="w-full h-32 object-cover rounded-lg" />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <Label className="text-sm font-medium text-gray-700">🍹 Beverage Items</Label>
-              {renderTextarea(beverageItems, setBeverageItems, "Today's beverage specials and features...", copiedFromYesterday && !!beverageItems)}
-              
-              <div>
-                <Label className="text-sm font-medium text-gray-700 mb-2 block">📸 Beverage Image</Label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleImageChange(e, setBeverageImage)}
-                  className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
-                  disabled={loading}
-                />
-                {beverageImage && (
-                  <div className="mt-2">
-                    <img src={beverageImage} alt="Beverage preview" className="w-full h-32 object-cover rounded-lg" />
-                  </div>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Events & Special Occasions */}
-        <Card className="rounded-2xl shadow-md">
-          <CardHeader>
-            <CardTitle>🎉 Events & Special Occasions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {renderTextarea(events, setEvents, "🎊 Special events, holidays, promotions...", copiedFromYesterday && !!events)}
-          </CardContent>
-        </Card>
-
-        {/* Weekly Specials */}
-        <Card className="rounded-2xl shadow-md">
-          <CardHeader>
-            <CardTitle>⭐ Weekly Specials</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {renderTextarea(weeklySpecials, setWeeklySpecials, "🌟 This week's special offers and promotions...", copiedFromYesterday && !!weeklySpecials)}
-          </CardContent>
-        </Card>
-
-        {/* Maintenance & Repairs */}
-        <Card className="rounded-2xl shadow-md">
-          <CardHeader>
-            <CardTitle>🔧 Maintenance & Repairs</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {renderTextarea(repairNotes, setRepairNotes, "🛠️ Equipment issues, repairs needed...", copiedFromYesterday && !!repairNotes)}
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
