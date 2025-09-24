@@ -4,6 +4,7 @@ import { supabase } from '@/supabaseClient';
 export function useUserAndLocation() {
   const [user, setUser] = useState(null);
   const [locationId, setLocationId] = useState(null);
+  const [locationUuid, setLocationUuid] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,17 +22,22 @@ export function useUserAndLocation() {
 
       setUser(user);
 
-      // Fetch user_locations table to get the assigned location
+      // Fetch user_locations with location UUID
       const { data: locationData, error: locationError } = await supabase
         .from('user_locations')
-        .select('location_id')
+        .select(`
+          location_id,
+          locations!inner(uuid)
+        `)
         .eq('user_id', user.id)
         .maybeSingle();
 
       if (locationError) {
         console.error('Failed to get location:', locationError);
-      } else {
-        setLocationId(locationData?.location_id || null);
+      } else if (locationData) {
+        const locationUuid = locationData.locations.uuid;
+        setLocationId(String(locationUuid));     // Both return the same UUID
+        setLocationUuid(String(locationUuid));   // Both return the same UUID
       }
 
       setLoading(false);
@@ -40,5 +46,6 @@ export function useUserAndLocation() {
     fetchUserAndLocation();
   }, []);
 
-  return { user, locationId, loading };
+  return { user, userId: user?.id, locationId, locationUuid, loading };
 }
+
