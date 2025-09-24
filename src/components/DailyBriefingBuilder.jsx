@@ -48,7 +48,7 @@ const DailyBriefingBuilder = () => {
         .select("*")
         .eq("location_id", locationIdString)
         .eq("date", date)
-        .maybeSingle(); if no record
+        .maybeSingle(); // Returns null if no record
 
       if (error && error.code !== 'PGRST116') {
         throw error;
