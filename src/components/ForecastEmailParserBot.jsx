@@ -225,8 +225,9 @@ const ForecastEmailParserBot = () => {
 
       console.log('Parsed days:', days);
       console.log('Saving with locationId:', locationId);
+      console.log('Using amSplit:', amSplit);
 
-      // Save to Supabase using the provided function
+      // ✅ UPDATED: Save to Supabase with amSplit parameter
       const result = await saveForecastToSupabase({
         supabase,
         locationId, // ✅ Using correct variable name
@@ -234,6 +235,7 @@ const ForecastEmailParserBot = () => {
         days,
         captureRate,
         spendPerGuest,
+        amSplit,        // ✅ ADDED: Pass amSplit parameter
         foodCostGoal,
         bevCostGoal,
         laborCostGoal
@@ -241,8 +243,8 @@ const ForecastEmailParserBot = () => {
 
       console.log('Save result:', result);
 
-      // Show success message
-      setSuccess(`Successfully saved forecast for ${result.count} days!`);
+      // Show success message with AM/PM split info
+      setSuccess(`Successfully saved forecast for ${result.count} days! AM/PM splits: ${result.totalAmGuests}/${result.totalPmGuests} guests.`);
 
       // Reload forecasts to update the accordion
       await loadExistingForecasts();
@@ -256,7 +258,7 @@ const ForecastEmailParserBot = () => {
     } finally {
       setIsSaving(false);
     }
-  }, [emailInput, locationId, loadingLocation, captureRate, spendPerGuest, foodCostGoal, bevCostGoal, laborCostGoal, loadExistingForecasts]);
+  }, [emailInput, locationId, loadingLocation, captureRate, spendPerGuest, amSplit, foodCostGoal, bevCostGoal, laborCostGoal, loadExistingForecasts]);
 
   // ✅ Show loading state until location is ready
   if (loadingLocation) {
@@ -412,9 +414,9 @@ const ForecastEmailParserBot = () => {
         <Card className="shadow-lg border-gray-200 bg-white">
           <CardContent className="text-center py-10">
             <div className="text-gray-500">
-              <MailCheck className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p className="text-lg font-medium mb-2">No Saved Forecasts</p>
-              <p className="text-sm">Generate your first forecast to see it appear here.</p>
+              <MailCheck className="h-12 w-12 mx-auto mb-4" />
+              <p className="text-lg font-medium mb-2">No Forecasts Yet</p>
+              <p className="text-sm">Create your first forecast using the form above.</p>
             </div>
           </CardContent>
         </Card>
