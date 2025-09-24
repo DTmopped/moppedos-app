@@ -9,7 +9,7 @@ import { useUserAndLocation } from "@/hooks/useUserAndLocation";
 import DailyBriefingPrintButton from "@/components/briefing/DailyBriefingPrintButton";
 import PrintableBriefingSheet from "@/components/PrintableBriefingSheet";
 
-const FinalDailyBriefing = () => {
+const DailyBriefingBuilder = () => {
   const { userId, locationId, locationUuid } = useUserAndLocation();
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [manager, setManager] = useState("");
@@ -33,132 +33,170 @@ const FinalDailyBriefing = () => {
   const [autoPopulated, setAutoPopulated] = useState(false);
   const [copiedFromYesterday, setCopiedFromYesterday] = useState(false);
 
-  // Fetch forecast data from fva_daily_history
-  const fetchForecastData = async (targetDate) => {
-    if (!locationUuid) return null;
-    try {
-      const { data, error } = await supabase
-        .from("fva_daily_history")
-        .select("am_guests, pm_guests, forecast_sales")
-        .eq("location_uuid", locationUuid)
-        .eq("date", targetDate)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    } catch (err) { console.error("Error fetching forecast data:", err); return null; }
-  };
+  // Enhanced fetch briefing with smart auto-population
+  const fetchBriefing = async () => {
+    if (!locationId || !date) return;
+    
+    setLoading(true);
+    setAutoPopulated(false);
+    setCopiedFromYesterday(false);
 
-  // Fetch actual sales from fva_daily_history for a specific date
-  const fetchActualsForDate = async (targetDate) => {
-    if (!locationUuid) return null;
     try {
-      const { data, error } = await supabase
-        .from("fva_daily_history")
-        .select("actual_sales")
-        .eq("location_uuid", locationUuid)
-        .eq("date", targetDate)
-        .maybeSingle();
-      if (error) throw error;
-      return data?.actual_sales || null;
-    } catch (err) { console.error("Error fetching actuals:", err); return null; }
-  };
-
-  // Fetch previous day's briefing for repetitive notes
-  const fetchPreviousDayBriefing = async (targetDate) => {
-    if (!locationId) return null;
-    const prevDate = new Date(targetDate);
-    prevDate.setDate(prevDate.getDate() - 1);
-    const prevDateString = prevDate.toISOString().split("T")[0];
-    try {
-      const { data, error } = await supabase
+      // Check if briefing already exists
+      const { data: existingBriefing, error } = await supabase
         .from("daily_briefings")
-        .select("reminders, food_items, beverage_items, events")
+        .select("*")
         .eq("location_id", locationId)
-        .eq("date", prevDateString)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    } catch (err) { console.error("Error fetching previous day briefing:", err); return null; }
+        .eq("date", date)
+        .maybeSingle(); // avoids throwing if no record
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      if (existingBriefing) {
+        // Load existing briefing data
+        setManager(existingBriefing.manager || "");
+        setLunch(existingBriefing.lunch || "");
+        setDinner(existingBriefing.dinner || "");
+        setForecastedSales(existingBriefing.forecasted_sales || "");
+        setForecastNotes(existingBriefing.forecast_notes || "");
+        setActualSales(existingBriefing.actual_sales || "");
+        setVarianceNotes(existingBriefing.variance_notes || "");
+        setShoutout(existingBriefing.shoutout || "");
+        setReminders(existingBriefing.reminders || "");
+        setMindset(existingBriefing.mindset || "");
+        setFoodItems(existingBriefing.food_items || "");
+        setBeverageItems(existingBriefing.beverage_items || "");
+        setEvents(existingBriefing.events || "");
+        setRepairNotes(existingBriefing.repair_notes || "");
+      } else {
+        // Create new briefing with smart auto-population
+        await performSmartAutoPopulation();
+      }
+    } catch (err) {
+      console.error("Error fetching briefing:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => {
-    if (!locationId || !locationUuid || !date) return;
+  // Smart auto-population logic
+  const performSmartAutoPopulation = async () => {
+    let hasAutoPopulated = false;
+    let hasCopiedFromYesterday = false;
 
-    const fetchBriefingWithAutoPopulation = async () => {
-      setLoading(true);
-      setAutoPopulated(false);
-      setCopiedFromYesterday(false);
-
-      try {
-        const { data: existingBriefing, error: briefingError } = await supabase
-          .from("daily_briefings")
-          .select("*")
-          .eq("location_id", locationId)
+    try {
+      // 1. Fetch forecast data for today from fva_daily_history
+      if (locationUuid) {
+        const { data: forecastData, error: forecastError } = await supabase
+          .from("fva_daily_history")
+          .select("am_guests, pm_guests, forecast_sales")
+          .eq("location_uuid", locationUuid)
           .eq("date", date)
           .maybeSingle();
 
-        if (briefingError) throw briefingError;
-
-        if (existingBriefing) {
-          // Load existing data
-          setManager(existingBriefing.manager || "");
-          setLunch(existingBriefing.lunch || "");
-          setDinner(existingBriefing.dinner || "");
-          setForecastedSales(existingBriefing.forecasted_sales || "");
-          setForecastNotes(existingBriefing.forecast_notes || "");
-          setActualSales(existingBriefing.actual_sales || "");
-          setVarianceNotes(existingBriefing.variance_notes || "");
-          setShoutout(existingBriefing.shoutout || "");
-          setReminders(existingBriefing.reminders || "");
-          setMindset(existingBriefing.mindset || "");
-          setFoodItems(existingBriefing.food_items || "");
-          setBeverageItems(existingBriefing.beverage_items || "");
-          setEvents(existingBriefing.events || "");
-          setRepairNotes(existingBriefing.repair_notes || "");
-        } else {
-          // Create new briefing with smart auto-population
-          const forecastData = await fetchForecastData(date);
-          const yesterdayActuals = await fetchActualsForDate(new Date(new Date(date).setDate(new Date(date).getDate() - 1)).toISOString().split("T")[0]);
-          const prevDayBriefing = await fetchPreviousDayBriefing(date);
-
-          // Auto-populate from forecast
-          if (forecastData) {
-            setLunch(forecastData.am_guests?.toString() || "");
-            setDinner(forecastData.pm_guests?.toString() || "");
-            setForecastedSales(forecastData.forecast_sales?.toString() || "");
+        if (!forecastError && forecastData) {
+          if (forecastData.am_guests) {
+            setLunch(forecastData.am_guests.toString());
+            hasAutoPopulated = true;
+          }
+          if (forecastData.pm_guests) {
+            setDinner(forecastData.pm_guests.toString());
+            hasAutoPopulated = true;
+          }
+          if (forecastData.forecast_sales) {
+            setForecastedSales(forecastData.forecast_sales.toString());
+            hasAutoPopulated = true;
+          }
+          if (hasAutoPopulated) {
             setForecastNotes("Auto-populated from forecast data.");
-            setAutoPopulated(true);
-          } else {
-            setForecastNotes("No forecast data available for this date.");
           }
-
-          // Auto-populate yesterday's actuals
-          setActualSales(yesterdayActuals?.toString() || "");
-
-          // Auto-populate from previous day's briefing
-          if (prevDayBriefing) {
-            setReminders(prevDayBriefing.reminders || "");
-            setFoodItems(prevDayBriefing.food_items || "");
-            setBeverageItems(prevDayBriefing.beverage_items || "");
-            setEvents(prevDayBriefing.events || "");
-            setCopiedFromYesterday(true);
-          }
-
-          // Clear fields that shouldn't be copied
-          setManager("");
-          setVarianceNotes("");
-          setShoutout("");
-          setMindset("");
-          setRepairNotes("");
+        } else {
+          setForecastNotes("No forecast data available for this date.");
         }
-      } catch (err) {
-        console.error("Error in fetchBriefingWithAutoPopulation:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
 
-    fetchBriefingWithAutoPopulation();
+        // 2. Fetch yesterday's actual sales for variance analysis
+        const yesterday = new Date(date);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayString = yesterday.toISOString().split('T')[0];
+
+        const { data: yesterdayActuals, error: actualsError } = await supabase
+          .from("fva_daily_history")
+          .select("actual_sales")
+          .eq("location_uuid", locationUuid)
+          .eq("date", yesterdayString)
+          .maybeSingle();
+
+        if (!actualsError && yesterdayActuals && yesterdayActuals.actual_sales) {
+          setActualSales(yesterdayActuals.actual_sales.toString());
+          hasAutoPopulated = true;
+        }
+      }
+
+      // 3. Fetch yesterday's briefing for repetitive content
+      if (locationId) {
+        const yesterday = new Date(date);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayString = yesterday.toISOString().split('T')[0];
+
+        const { data: yesterdayBriefing, error: briefingError } = await supabase
+          .from("daily_briefings")
+          .select("reminders, food_items, beverage_items, events, manager, repair_notes")
+          .eq("location_id", locationId)
+          .eq("date", yesterdayString)
+          .maybeSingle();
+
+        if (!briefingError && yesterdayBriefing) {
+          // Copy repetitive operational notes
+          if (yesterdayBriefing.reminders && yesterdayBriefing.reminders.trim()) {
+            setReminders(yesterdayBriefing.reminders);
+            hasCopiedFromYesterday = true;
+          }
+          
+          if (yesterdayBriefing.food_items && yesterdayBriefing.food_items.trim()) {
+            setFoodItems(yesterdayBriefing.food_items);
+            hasCopiedFromYesterday = true;
+          }
+          
+          if (yesterdayBriefing.beverage_items && yesterdayBriefing.beverage_items.trim()) {
+            setBeverageItems(yesterdayBriefing.beverage_items);
+            hasCopiedFromYesterday = true;
+          }
+          
+          if (yesterdayBriefing.events && yesterdayBriefing.events.trim()) {
+            setEvents(yesterdayBriefing.events);
+            hasCopiedFromYesterday = true;
+          }
+          
+          if (yesterdayBriefing.manager && yesterdayBriefing.manager.trim()) {
+            setManager(yesterdayBriefing.manager);
+            hasCopiedFromYesterday = true;
+          }
+          
+          if (yesterdayBriefing.repair_notes && yesterdayBriefing.repair_notes.trim()) {
+            setRepairNotes(yesterdayBriefing.repair_notes);
+            hasCopiedFromYesterday = true;
+          }
+        }
+      }
+
+      // Clear fields that should always be fresh
+      setShoutout("");
+      setMindset("");
+      setVarianceNotes("");
+
+      setAutoPopulated(hasAutoPopulated);
+      setCopiedFromYesterday(hasCopiedFromYesterday);
+
+    } catch (error) {
+      console.error("Error in smart auto-population:", error);
+      setForecastNotes("Error occurred during auto-population. Please enter data manually.");
+    }
+  };
+
+  useEffect(() => {
+    fetchBriefing();
   }, [date, locationId, locationUuid]);
 
   // DO NOT TOUCH - Inspirational Quote Feature
@@ -177,11 +215,60 @@ const FinalDailyBriefing = () => {
   }, []);
 
   const saveBriefing = async () => {
-    // ... (save logic remains the same)
+    if (!locationId || !userId) {
+      console.error("Missing locationId or userId");
+      return;
+    }
+
+    try {
+      const briefingData = {
+        location_id: locationId,
+        created_by: userId,
+        date,
+        manager,
+        lunch,
+        dinner,
+        forecasted_sales: forecastedSales,
+        forecast_notes: forecastNotes,
+        actual_sales: actualSales,
+        variance_notes: varianceNotes,
+        shoutout,
+        reminders,
+        mindset,
+        food_items: foodItems,
+        beverage_items: beverageItems,
+        events,
+        repair_notes: repairNotes,
+        food_image_url: foodImage,
+        beverage_image_url: beverageImage,
+        updated_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from("daily_briefings")
+        .upsert(briefingData, { 
+          onConflict: 'location_id,date',
+          returning: 'minimal'
+        });
+
+      if (error) throw error;
+      
+      console.log("Briefing saved successfully");
+    } catch (err) {
+      console.error("Error saving briefing:", err);
+      alert("Failed to save briefing. Please try again.");
+    }
   };
 
   const handleImageChange = (e, setter) => {
-    // ... (image change logic remains the same)
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setter(event.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const renderInput = (value, setter, placeholder, isAuto = false, isCopied = false) => (
@@ -204,31 +291,105 @@ const FinalDailyBriefing = () => {
 
   const renderTextarea = (value, setter, placeholder, isCopied = false) => (
     <div className="relative">
-        <Textarea
-            value={value}
-            onChange={(e) => setter(e.target.value)}
-            placeholder={placeholder}
-            className={`bg-gray-100 text-black rounded-md shadow-inner w-full min-h-[80px] ${
-              isCopied ? 'border-purple-300 bg-purple-50' : ''
-            }`}
-            disabled={loading}
-        />
-        {isCopied && <div className="absolute -top-2 right-2 bg-purple-500 text-white text-xs px-2 py-1 rounded">From Yesterday</div>}
+      <Textarea
+        value={value}
+        onChange={(e) => setter(e.target.value)}
+        placeholder={placeholder}
+        className={`bg-gray-100 text-black rounded-md shadow-inner w-full min-h-[80px] ${
+          isCopied ? 'border-purple-300 bg-purple-50' : ''
+        }`}
+        disabled={loading}
+      />
+      {isCopied && <div className="absolute -top-2 right-2 bg-purple-500 text-white text-xs px-2 py-1 rounded">From Yesterday</div>}
     </div>
   );
 
-  // ... (rest of the component JSX remains the same, but uses the new renderInput/renderTextarea)
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading briefing data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
-        {/* ... Header ... */}
-        {autoPopulated && <div className="bg-blue-50 border-blue-200 p-4 mb-6 rounded-lg"><p className="text-blue-800">✨ Today's forecast data has been auto-populated.</p></div>}
-        {copiedFromYesterday && <div className="bg-purple-50 border-purple-200 p-4 mb-6 rounded-lg"><p className="text-purple-800">📝 Repetitive notes from yesterday's briefing have been copied over.</p></div>}
-        {/* ... Top Actions ... */}
-        {/* ... Hidden Printable Component ... */}
-        {/* ... Live Form Cards ... */}
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">📋 Daily Briefing Builder</h1>
+          <p className="text-gray-600">Create and manage your daily operational briefing</p>
+        </div>
+        <div className="flex items-center space-x-4">
+          <div>
+            <Label htmlFor="date" className="text-sm font-medium text-gray-700">Date</Label>
+            <Input
+              id="date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="mt-1"
+              disabled={loading}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Status indicators */}
+      {autoPopulated && (
+        <div className="bg-blue-50 border-blue-200 p-4 mb-6 rounded-lg">
+          <p className="text-blue-800">✨ Today's forecast data has been auto-populated from your FVA system.</p>
+        </div>
+      )}
+      
+      {copiedFromYesterday && (
+        <div className="bg-purple-50 border-purple-200 p-4 mb-6 rounded-lg">
+          <p className="text-purple-800">📝 Repetitive operational notes have been copied from yesterday's briefing.</p>
+        </div>
+      )}
+
+      {/* Top Actions */}
+      <div className="flex space-x-3 mb-6">
+        <Button onClick={saveBriefing} className="bg-blue-600 hover:bg-blue-700 text-white">
+          💾 Save Briefing
+        </Button>
+        <DailyBriefingPrintButton />
+      </div>
+
+      {/* Hidden Printable Component */}
+      <div style={{ display: "none" }}>
+        <PrintableBriefingSheet
+          date={date}
+          manager={manager}
+          lunch={lunch}
+          dinner={dinner}
+          forecastedSales={forecastedSales}
+          forecastNotes={forecastNotes}
+          actualSales={actualSales}
+          varianceNotes={varianceNotes}
+          shoutout={shoutout}
+          reminders={reminders}
+          mindset={mindset}
+          foodItems={foodItems}
+          beverageItems={beverageItems}
+          events={events}
+          repairNotes={repairNotes}
+          foodImage={foodImage}
+          beverageImage={beverageImage}
+          quote={quote}
+        />
+      </div>
+
+      {/* Live Form Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Today's Forecast */}
         <Card className="rounded-2xl shadow-md">
-          <CardHeader><CardTitle>📊 Today’s Forecast</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>📊 Today's Forecast</CardTitle>
+          </CardHeader>
           <CardContent className="space-y-4">
             {renderInput(lunch, setLunch, "😊 Lunch (AM)", autoPopulated && !!lunch)}
             {renderInput(dinner, setDinner, "🌙 Dinner (PM)", autoPopulated && !!dinner)}
@@ -236,22 +397,119 @@ const FinalDailyBriefing = () => {
             {renderTextarea(forecastNotes, setForecastNotes, "📝 Notes...")}
           </CardContent>
         </Card>
+
+        {/* Yesterday's Recap */}
         <Card className="rounded-2xl shadow-md">
-          <CardHeader><CardTitle>📅 Yesterday’s Recap</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>📅 Yesterday's Recap</CardTitle>
+          </CardHeader>
           <CardContent className="space-y-4">
             {renderInput(actualSales, setActualSales, "Actual Sales ($)", autoPopulated && !!actualSales)}
             {renderTextarea(varianceNotes, setVarianceNotes, "⚠️ What affected results?")}
-            {quote && <div className="bg-gray-100 p-4 rounded-lg shadow"><p className="text-blue-700 italic font-medium text-center">✨ {quote}</p></div>}
+            
+            {/* Inspirational Quote */}
+            {quote && (
+              <div className="bg-gray-100 p-4 rounded-lg shadow">
+                <p className="text-blue-700 italic font-medium text-center">✨ {quote}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
-        {/* ... Mid Section ... */}
+
+        {/* Team & Leadership */}
         <Card className="rounded-2xl shadow-md">
-          <CardHeader><CardTitle>📣 Team Reminders</CardTitle></CardHeader>
-          <CardContent>{renderTextarea(reminders, setReminders, "✏️ Important notes...", copiedFromYesterday && !!reminders)}</CardContent>
+          <CardHeader>
+            <CardTitle>👥 Team & Leadership</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {renderInput(manager, setManager, "👨‍💼 Manager on Duty", false, copiedFromYesterday && !!manager)}
+            {renderTextarea(shoutout, setShoutout, "🎉 Team Shoutouts")}
+            {renderTextarea(mindset, setMindset, "🧠 Today's Mindset")}
+          </CardContent>
         </Card>
-        {/* ... etc. for other copied fields ... */}
+
+        {/* Team Reminders */}
+        <Card className="rounded-2xl shadow-md">
+          <CardHeader>
+            <CardTitle>📣 Team Reminders</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {renderTextarea(reminders, setReminders, "✏️ Important notes...", copiedFromYesterday && !!reminders)}
+          </CardContent>
+        </Card>
+
+        {/* Food & Beverage */}
+        <Card className="rounded-2xl shadow-md lg:col-span-2">
+          <CardHeader>
+            <CardTitle>🍽️ Food & Beverage Focus</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <Label className="text-sm font-medium text-gray-700">🍕 Food Items</Label>
+              {renderTextarea(foodItems, setFoodItems, "Today's food specials and features...", copiedFromYesterday && !!foodItems)}
+              
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-2 block">📸 Food Image</Label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleImageChange(e, setFoodImage)}
+                  className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  disabled={loading}
+                />
+                {foodImage && (
+                  <div className="mt-2">
+                    <img src={foodImage} alt="Food preview" className="w-full h-32 object-cover rounded-lg" />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <Label className="text-sm font-medium text-gray-700">🍹 Beverage Items</Label>
+              {renderTextarea(beverageItems, setBeverageItems, "Today's beverage specials and features...", copiedFromYesterday && !!beverageItems)}
+              
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-2 block">📸 Beverage Image</Label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleImageChange(e, setBeverageImage)}
+                  className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+                  disabled={loading}
+                />
+                {beverageImage && (
+                  <div className="mt-2">
+                    <img src={beverageImage} alt="Beverage preview" className="w-full h-32 object-cover rounded-lg" />
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Events & Special Occasions */}
+        <Card className="rounded-2xl shadow-md">
+          <CardHeader>
+            <CardTitle>🎉 Events & Special Occasions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {renderTextarea(events, setEvents, "🎊 Special events, holidays, promotions...", copiedFromYesterday && !!events)}
+          </CardContent>
+        </Card>
+
+        {/* Maintenance & Repairs */}
+        <Card className="rounded-2xl shadow-md">
+          <CardHeader>
+            <CardTitle>🔧 Maintenance & Repairs</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {renderTextarea(repairNotes, setRepairNotes, "🛠️ Equipment issues, repairs needed...", copiedFromYesterday && !!repairNotes)}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
 
-export default DailyBriefingBuilder; 
+export default DailyBriefingBuilder;
