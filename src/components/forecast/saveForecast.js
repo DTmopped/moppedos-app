@@ -6,6 +6,7 @@ export async function saveForecastToSupabase({
   days, 
   captureRate, 
   spendPerGuest, 
+  amSplit,         // ✅ ADDED: AM split ratio parameter
   foodCostGoal, 
   bevCostGoal, 
   laborCostGoal 
@@ -19,6 +20,11 @@ export async function saveForecastToSupabase({
     throw new Error('Invalid baseDate');
   }
 
+  // ✅ Validate amSplit parameter
+  if (typeof amSplit !== 'number' || amSplit <= 0 || amSplit >= 1) {
+    throw new Error('Invalid amSplit - must be a number between 0 and 1');
+  }
+
   // ✅ Prefer locationUuid for multi-tenant security
   const useLocationUuid = locationUuid || null;
   const useLocationId = locationId || null;
@@ -27,7 +33,8 @@ export async function saveForecastToSupabase({
     locationUuid: useLocationUuid,
     locationId: useLocationId,
     baseDate: baseDate.toISOString().split('T')[0],
-    daysCount: Object.keys(days).length
+    daysCount: Object.keys(days).length,
+    amSplit: amSplit
   });
 
   const DAY_ORDER = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
@@ -50,6 +57,10 @@ export async function saveForecastToSupabase({
     const guests = Math.round(paxValue * captureRate);
     const sales = guests * spendPerGuest;
 
+    // ✅ CALCULATE AM/PM SPLITS
+    const amGuests = Math.round(guests * amSplit);
+    const pmGuests = guests - amGuests;
+
     // ✅ Create record with both UUID and ID for compatibility
     const record = {
       date: dateStr,
@@ -60,6 +71,9 @@ export async function saveForecastToSupabase({
       // Additional forecast fields for enhanced tracking
       forecast_guests: guests,
       forecast_pax: paxValue,
+      // ✅ ADDED: AM/PM SPLITS TO DATABASE RECORD
+      am_guests: amGuests,
+      pm_guests: pmGuests,
     };
 
     // ✅ Add location identifiers based on what's available
@@ -78,6 +92,7 @@ export async function saveForecastToSupabase({
   }
 
   console.log('📝 Prepared records:', records.length);
+  console.log('🔍 Sample record with AM/PM splits:', records[0]);
 
   try {
     // ✅ Delete existing records using appropriate identifier
@@ -113,6 +128,7 @@ export async function saveForecastToSupabase({
     }
 
     console.log('✅ Successfully inserted:', insertedData?.length || records.length, 'records');
+    console.log('🎯 AM/PM splits saved successfully!');
 
     // ✅ Enhanced return data
     return { 
@@ -122,6 +138,8 @@ export async function saveForecastToSupabase({
       locationUuid: useLocationUuid,
       locationId: useLocationId,
       totalSales: records.reduce((sum, r) => sum + r.forecast_sales, 0),
+      totalAmGuests: records.reduce((sum, r) => sum + r.am_guests, 0),
+      totalPmGuests: records.reduce((sum, r) => sum + r.pm_guests, 0),
       dateRange: {
         start: dates[0],
         end: dates[dates.length - 1]
