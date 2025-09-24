@@ -39,7 +39,7 @@ const FvaDashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // ✅ NEW: Date range controls state
+  // Date range controls state
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [showCustomRange, setShowCustomRange] = useState(false);
   const [customStartDate, setCustomStartDate] = useState('');
@@ -47,24 +47,43 @@ const FvaDashboard = () => {
   const [expandedWeeks, setExpandedWeeks] = useState(new Set());
   const [showDateDropdown, setShowDateDropdown] = useState(false);
 
-  // ✅ Fetch real FVA data from database
+  // ✅ FIXED: Fetch real FVA data from Supabase
   const fetchRealFvaData = async () => {
-    if (!locationUuid) return;
+    if (!locationUuid) {
+      console.log('No locationUuid available for FVA data fetch');
+      return;
+    }
     
-    const { data } = await supabase
-      .from('fva_daily_history')
-      .select('*')
-      .eq('location_uuid', locationUuid)
-      .order('date', { ascending: true });
+    console.log('Fetching FVA data for location:', locationUuid);
     
-    setFvaData(data || []);
+    try {
+      const { data, error } = await supabase
+        .from('fva_daily_history')
+        .select('*')
+        .eq('location_uuid', locationUuid)
+        .order('date', { ascending: true });
+      
+      if (error) {
+        console.error('Supabase FVA data fetch error:', error);
+        setError('Failed to fetch FVA data');
+        return;
+      }
+
+      console.log('FVA data fetched:', data?.length || 0, 'records');
+      setFvaData(data || []);
+    } catch (err) {
+      console.error('Error fetching FVA data:', err);
+      setError('Network error fetching FVA data');
+    }
   };
 
   useEffect(() => {
-    fetchRealFvaData();
-  }, [locationUuid]);
+    if (locationUuid && !loadingLocation) {
+      fetchRealFvaData();
+    }
+  }, [locationUuid, loadingLocation]);
 
-  // ✅ Process data into combined format
+  // ✅ FIXED: Process data into combined format
   const combinedData = fvaData.map(row => {
     const actualSales = row.actual_sales || 0;
     const forecastSales = row.forecast_sales || 0;
@@ -90,13 +109,13 @@ const FvaDashboard = () => {
     };
   });
 
-  // ✅ NEW: Get available months from data
+  // Get available months from data
   const getAvailableMonths = () => {
     const months = [...new Set(combinedData.map(d => d.date.slice(0, 7)))];
     return months.sort().reverse(); // Most recent first
   };
 
-  // ✅ NEW: Filter data based on selection
+  // Filter data based on selection
   const getFilteredData = () => {
     if (showCustomRange && customStartDate && customEndDate) {
       return combinedData.filter(d => d.date >= customStartDate && d.date <= customEndDate);
@@ -104,12 +123,12 @@ const FvaDashboard = () => {
     return combinedData.filter(d => d.date.startsWith(selectedMonth));
   };
 
-  // ✅ NEW: Group data by weeks (Monday-Sunday)
+  // ✅ FIXED: Group data by weeks (Monday-Sunday) with proper date handling
   const groupDataByWeeks = (data) => {
     const weeks = {};
     
     data.forEach(item => {
-      const date = new Date(item.date);
+      const date = new Date(item.date + 'T00:00:00'); // Ensure proper date parsing
       // Get Monday of the week
       const monday = new Date(date);
       const day = date.getDay();
@@ -132,9 +151,9 @@ const FvaDashboard = () => {
     return weeks;
   };
 
-  // ✅ NEW: Format week range for display
+  // Format week range for display
   const formatWeekRange = (mondayDate) => {
-    const monday = new Date(mondayDate);
+    const monday = new Date(mondayDate + 'T00:00:00');
     const sunday = new Date(monday);
     sunday.setDate(monday.getDate() + 6);
     
@@ -142,7 +161,7 @@ const FvaDashboard = () => {
     return `${monday.toLocaleDateString('en-US', options)} - ${sunday.toLocaleDateString('en-US', options)}`;
   };
 
-  // ✅ NEW: Toggle week expansion
+  // Toggle week expansion
   const toggleWeek = (weekKey) => {
     const newExpanded = new Set(expandedWeeks);
     if (newExpanded.has(weekKey)) {
@@ -153,53 +172,77 @@ const FvaDashboard = () => {
     setExpandedWeeks(newExpanded);
   };
 
-  // ✅ Get filtered and grouped data
+  // Get filtered and grouped data
   const filteredData = getFilteredData();
   const weeklyData = groupDataByWeeks(filteredData);
   const availableMonths = getAvailableMonths();
 
-  // ✅ NEW: Get current week key for proper ordering
+  // ✅ FIXED: Get current week key for proper ordering (Sep 22, 2025 = Monday)
   const getCurrentWeekKey = () => {
     const today = new Date();
     const monday = new Date(today);
     const day = today.getDay();
     const diff = today.getDate() - day + (day === 0 ? -6 : 1);
     monday.setDate(diff);
-    return monday.toISOString().split('T')[0];
+    const weekKey = monday.toISOString().split('T')[0];
+    console.log('Current week key calculated:', weekKey, 'for today:', today.toISOString().split('T')[0]);
+    return weekKey;
   };
 
-  // ✅ NEW: Sort weeks with current week first, then future weeks
+  // ✅ FIXED: Sort weeks with current week first, then future weeks
   const getSortedWeekKeys = () => {
     const currentWeekKey = getCurrentWeekKey();
     const weekKeys = Object.keys(weeklyData);
+    
+    console.log('All week keys:', weekKeys);
+    console.log('Current week key:', currentWeekKey);
     
     // Separate current/past weeks from future weeks
     const currentAndPastWeeks = weekKeys.filter(key => key <= currentWeekKey).sort((a, b) => b.localeCompare(a));
     const futureWeeks = weekKeys.filter(key => key > currentWeekKey).sort((a, b) => a.localeCompare(b));
     
+    console.log('Current/past weeks:', currentAndPastWeeks);
+    console.log('Future weeks:', futureWeeks);
+    
     return [...currentAndPastWeeks, ...futureWeeks];
   };
 
-  // Auto-expand current week
+  // ✅ FIXED: Auto-expand current week
   useEffect(() => {
     const currentWeekKey = getCurrentWeekKey();
     if (weeklyData[currentWeekKey]) {
+      console.log('Auto-expanding current week:', currentWeekKey);
       setExpandedWeeks(new Set([currentWeekKey]));
+    } else {
+      console.log('Current week not found in data, expanding first available week');
+      const sortedWeeks = getSortedWeekKeys();
+      if (sortedWeeks.length > 0) {
+        setExpandedWeeks(new Set([sortedWeeks[0]]));
+      }
     }
-  }, [combinedData, today]);
+  }, [combinedData.length]);
 
-  // ✅ YTD and Last Month functions
+  // ✅ FIXED: YTD data fetching with proper error handling
   const fetchYtdData = async () => {
-    if (loadingLocation || !locationUuid) return;
+    if (loadingLocation || !locationUuid) {
+      console.log('Cannot fetch YTD data - loading or no locationUuid');
+      return;
+    }
+
+    console.log('Fetching YTD data for location:', locationUuid);
 
     try {
       const startOfYear = new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0];
+      console.log('YTD date range:', startOfYear, 'to', today);
       
       const { data: ytdData, error: ytdError } = await supabase
         .from('fva_daily_history')
         .select(`
           forecast_sales,
           actual_sales,
+          food_cost,
+          bev_cost,
+          labor_cost,
           food_cost_pct,
           bev_cost_pct,
           labor_cost_pct,
@@ -207,36 +250,62 @@ const FvaDashboard = () => {
         `)
         .eq('location_uuid', locationUuid)
         .gte('date', startOfYear)
-        .lte('date', today)
-        .not('actual_sales', 'is', null);
+        .lte('date', today);
 
       if (ytdError) {
         console.error('YTD data fetch error:', ytdError);
+        setError('Failed to fetch YTD data');
         return;
       }
 
+      console.log('YTD data fetched:', ytdData?.length || 0, 'records');
+
       if (ytdData && ytdData.length > 0) {
+        // Filter records with actual sales for accurate calculations
+        const recordsWithActuals = ytdData.filter(row => row.actual_sales && row.actual_sales > 0);
         const totalSales = ytdData.reduce((sum, row) => sum + (row.actual_sales || 0), 0);
         const totalForecast = ytdData.reduce((sum, row) => sum + (row.forecast_sales || 0), 0);
-        const avgFoodPct = ytdData.reduce((sum, row) => sum + (row.food_cost_pct || 0), 0) / ytdData.length;
-        const avgBevPct = ytdData.reduce((sum, row) => sum + (row.bev_cost_pct || 0), 0) / ytdData.length;
-        const avgLaborPct = ytdData.reduce((sum, row) => sum + (row.labor_cost_pct || 0), 0) / ytdData.length;
+        
+        // Calculate averages from records with actuals
+        const avgFoodPct = recordsWithActuals.length > 0 
+          ? recordsWithActuals.reduce((sum, row) => sum + (row.food_cost_pct || 0), 0) / recordsWithActuals.length
+          : 0;
+        const avgBevPct = recordsWithActuals.length > 0
+          ? recordsWithActuals.reduce((sum, row) => sum + (row.bev_cost_pct || 0), 0) / recordsWithActuals.length
+          : 0;
+        const avgLaborPct = recordsWithActuals.length > 0
+          ? recordsWithActuals.reduce((sum, row) => sum + (row.labor_cost_pct || 0), 0) / recordsWithActuals.length
+          : 0;
 
-        setYtd({
+        const ytdSummary = {
           total_sales: totalSales,
           total_forecast: totalForecast,
           avg_food_cost_pct: avgFoodPct,
           avg_bev_cost_pct: avgBevPct,
-          avg_labor_cost_pct: avgLaborPct
-        });
+          avg_labor_cost_pct: avgLaborPct,
+          record_count: recordsWithActuals.length
+        };
+
+        console.log('YTD summary calculated:', ytdSummary);
+        setYtd(ytdSummary);
+      } else {
+        console.log('No YTD data found');
+        setYtd(null);
       }
     } catch (err) {
       console.error('Error fetching YTD data:', err);
+      setError('Network error fetching YTD data');
     }
   };
 
+  // ✅ FIXED: Last Month data with placeholder fallback
   const fetchLastMonthData = async () => {
-    if (loadingLocation || !locationUuid) return;
+    if (loadingLocation || !locationUuid) {
+      console.log('Cannot fetch Last Month data - loading or no locationUuid');
+      return;
+    }
+
+    console.log('Fetching Last Month data for location:', locationUuid);
 
     try {
       const now = new Date();
@@ -249,74 +318,118 @@ const FvaDashboard = () => {
       const startDate = lastMonthStart.toISOString().split('T')[0];
       const endDate = lastMonthEnd.toISOString().split('T')[0];
 
+      console.log('Last month date range:', startDate, 'to', endDate);
+
       const { data, error } = await supabase
         .from('fva_daily_history')
         .select(`
           forecast_sales,
           actual_sales,
+          food_cost,
+          bev_cost,
+          labor_cost,
           food_cost_pct,
           bev_cost_pct,
           labor_cost_pct
         `)
         .eq('location_uuid', locationUuid)
         .gte('date', startDate)
-        .lte('date', endDate)
-        .not('actual_sales', 'is', null);
+        .lte('date', endDate);
 
       if (error) {
         console.error("Last Month fetch error", error);
+        setError('Failed to fetch Last Month data');
         return;
       }
 
+      console.log('Last Month data fetched:', data?.length || 0, 'records');
+
       if (data && data.length > 0) {
+        // Use real data if available
+        const recordsWithActuals = data.filter(row => row.actual_sales && row.actual_sales > 0);
         const totalForecastSales = data.reduce((sum, row) => sum + (row.forecast_sales || 0), 0);
         const totalActualSales = data.reduce((sum, row) => sum + (row.actual_sales || 0), 0);
-        const avgFoodPct = data.reduce((sum, row) => sum + (row.food_cost_pct || 0), 0) / data.length;
-        const avgBevPct = data.reduce((sum, row) => sum + (row.bev_cost_pct || 0), 0) / data.length;
-        const avgLaborPct = data.reduce((sum, row) => sum + (row.labor_cost_pct || 0), 0) / data.length;
+        
+        const avgFoodPct = recordsWithActuals.length > 0
+          ? recordsWithActuals.reduce((sum, row) => sum + (row.food_cost_pct || 0), 0) / recordsWithActuals.length
+          : 0;
+        const avgBevPct = recordsWithActuals.length > 0
+          ? recordsWithActuals.reduce((sum, row) => sum + (row.bev_cost_pct || 0), 0) / recordsWithActuals.length
+          : 0;
+        const avgLaborPct = recordsWithActuals.length > 0
+          ? recordsWithActuals.reduce((sum, row) => sum + (row.labor_cost_pct || 0), 0) / recordsWithActuals.length
+          : 0;
 
         setLastMonthSummary({
           total_forecast_sales: totalForecastSales,
           total_actual_sales: totalActualSales,
           avg_food_cost_pct: avgFoodPct,
           avg_bev_cost_pct: avgBevPct,
-          avg_labor_cost_pct: avgLaborPct
+          avg_labor_cost_pct: avgLaborPct,
+          is_placeholder: false
+        });
+
+        console.log('Last Month real data set');
+      } else {
+        // Use placeholder data when no real data exists
+        console.log('No Last Month data found, using placeholder');
+        setLastMonthSummary({
+          total_forecast_sales: 245000,
+          total_actual_sales: 252000,
+          avg_food_cost_pct: 0.28,
+          avg_bev_cost_pct: 0.22,
+          avg_labor_cost_pct: 0.31,
+          is_placeholder: true
         });
       }
     } catch (err) {
       console.error('Error fetching last month data:', err);
+      setError('Network error fetching Last Month data');
     }
   };
 
+  // Fetch YTD and Last Month data when component mounts
   useEffect(() => {
     if (!loadingLocation && locationUuid) {
       fetchYtdData();
       fetchLastMonthData();
     }
-  }, [loadingLocation, locationUuid, today]);
+  }, [loadingLocation, locationUuid]);
 
-  // ✅ Calculate metrics for different periods
+  // ✅ FIXED: Calculate metrics for different periods
   const getAverages = data => {
-    const count = data.filter(d => d.hasActuals).length;
+    const recordsWithActuals = data.filter(d => d.hasActuals);
+    const count = recordsWithActuals.length;
     const sumSales = data.reduce((acc, d) => acc + (d.forecastSales || 0), 0);
-    const sumActual = data.reduce((acc, d) => acc + (d.hasActuals ? d.actualSales : 0), 0);
-    const foodPct = data.reduce((acc, d) => acc + (d.hasActuals ? d.foodPct : 0), 0);
-    const bevPct = data.reduce((acc, d) => acc + (d.hasActuals ? d.bevPct : 0), 0);
-    const laborPct = data.reduce((acc, d) => acc + (d.hasActuals ? d.laborPct : 0), 0);
+    const sumActual = recordsWithActuals.reduce((acc, d) => acc + (d.actualSales || 0), 0);
+    const foodPct = recordsWithActuals.reduce((acc, d) => acc + (d.foodPct || 0), 0);
+    const bevPct = recordsWithActuals.reduce((acc, d) => acc + (d.bevPct || 0), 0);
+    const laborPct = recordsWithActuals.reduce((acc, d) => acc + (d.laborPct || 0), 0);
+    
     return {
       forecastSales: sumSales,
       actualSales: sumActual,
       foodPct: count ? (foodPct / count) : 0,
       bevPct: count ? (bevPct / count) : 0,
-      laborPct: count ? (laborPct / count) : 0
+      laborPct: count ? (laborPct / count) : 0,
+      recordCount: count
     };
   };
 
   const periodMetrics = getAverages(filteredData);
-  const mtdData = combinedData.filter(d => d.date.startsWith(currentMonth) && d.date <= today);
+  
+  // ✅ FIXED: MTD calculation with proper date filtering
+  const mtdData = combinedData.filter(d => {
+    const recordDate = d.date;
+    const isCurrentMonth = recordDate.startsWith(currentMonth);
+    const isUpToToday = recordDate <= today;
+    return isCurrentMonth && isUpToToday;
+  });
+  
   const mtdMetrics = getAverages(mtdData);
+  console.log('MTD data:', mtdData.length, 'records, metrics:', mtdMetrics);
 
-  // ✅ Render functions
+  // ✅ FIXED: Render Last Month cards with placeholder indication
   const renderLastMonthCards = () => {
     if (!lastMonthSummary) return null;
 
@@ -325,60 +438,69 @@ const FvaDashboard = () => {
     ) / lastMonthSummary.total_forecast_sales : 0;
 
     return (
-      <div className="grid grid-cols-6 gap-4 mt-4">
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-slate-500">Last Month Forecast Sales</p>
-            <p className="text-lg font-semibold">
-              ${lastMonthSummary.total_forecast_sales?.toLocaleString()}
+      <div className="space-y-4">
+        {lastMonthSummary.is_placeholder && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <p className="text-sm text-yellow-800">
+              <strong>Demo Data:</strong> Showing placeholder values. Real data will automatically replace this when available.
             </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-slate-500">Last Month Actual Sales</p>
-            <p className="text-lg font-semibold">
-              ${lastMonthSummary.total_actual_sales?.toLocaleString()}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-slate-500">Sales Variance %</p>
-            <p className={`text-lg font-semibold ${variance >= 0 ? "text-green-600" : "text-red-600"}`}>
-              {(variance * 100).toFixed(1)}%
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-slate-500">Avg Food Cost %</p>
-            <p className={`text-lg font-semibold ${lastMonthSummary.avg_food_cost_pct > foodTarget ? "text-red-600" : "text-green-600"}`}>
-              {(lastMonthSummary.avg_food_cost_pct * 100).toFixed(1)}%
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-slate-500">Avg Beverage Cost %</p>
-            <p className={`text-lg font-semibold ${lastMonthSummary.avg_bev_cost_pct > bevTarget ? "text-red-600" : "text-green-600"}`}>
-              {(lastMonthSummary.avg_bev_cost_pct * 100).toFixed(1)}%
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-slate-500">Avg Labor Cost %</p>
-            <p className={`text-lg font-semibold ${lastMonthSummary.avg_labor_cost_pct > laborTarget ? "text-red-600" : "text-green-600"}`}>
-              {(lastMonthSummary.avg_labor_cost_pct * 100).toFixed(1)}%
-            </p>
-          </CardContent>
-        </Card>
+          </div>
+        )}
+        <div className="grid grid-cols-6 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-sm text-slate-500">Last Month Forecast Sales</p>
+              <p className="text-lg font-semibold">
+                ${lastMonthSummary.total_forecast_sales?.toLocaleString()}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-sm text-slate-500">Last Month Actual Sales</p>
+              <p className="text-lg font-semibold">
+                ${lastMonthSummary.total_actual_sales?.toLocaleString()}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-sm text-slate-500">Sales Variance %</p>
+              <p className={`text-lg font-semibold ${variance >= 0 ? "text-green-600" : "text-red-600"}`}>
+                {(variance * 100).toFixed(1)}%
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-sm text-slate-500">Avg Food Cost %</p>
+              <p className={`text-lg font-semibold ${lastMonthSummary.avg_food_cost_pct > foodTarget ? "text-red-600" : "text-green-600"}`}>
+                {(lastMonthSummary.avg_food_cost_pct * 100).toFixed(1)}%
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-sm text-slate-500">Avg Beverage Cost %</p>
+              <p className={`text-lg font-semibold ${lastMonthSummary.avg_bev_cost_pct > bevTarget ? "text-red-600" : "text-green-600"}`}>
+                {(lastMonthSummary.avg_bev_cost_pct * 100).toFixed(1)}%
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-sm text-slate-500">Avg Labor Cost %</p>
+              <p className={`text-lg font-semibold ${lastMonthSummary.avg_labor_cost_pct > laborTarget ? "text-red-600" : "text-green-600"}`}>
+                {(lastMonthSummary.avg_labor_cost_pct * 100).toFixed(1)}%
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   };
 
-  // ✅ Export and print functions
+  // Export and print functions
   const handlePrint = () => {
     const printDate = new Date();
     const targets = { foodTarget, bevTarget, laborTarget };
@@ -468,7 +590,7 @@ const FvaDashboard = () => {
     URL.revokeObjectURL(url);
   };
 
-  // ✅ Loading state
+  // Loading state
   if (loadingLocation) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -523,10 +645,28 @@ const FvaDashboard = () => {
         </div>
       </div>
 
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800">{error}</p>
+          <button 
+            onClick={() => setError(null)}
+            className="text-red-600 underline text-sm mt-2"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* MTD Metrics */}
       {showMTD && (
         <>
           <h3 className="text-lg font-semibold text-slate-700 mt-8 mb-2">Month-to-Date Metrics</h3>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+            <p className="text-sm text-blue-800">
+              <strong>MTD Data:</strong> {mtdMetrics.recordCount} records with actuals from {mtdData.length} total MTD records
+            </p>
+          </div>
           <div className="grid grid-cols-4 gap-4">
             <Card>
               <CardContent className="p-4">
@@ -576,62 +716,79 @@ const FvaDashboard = () => {
       )}
 
       {/* YTD Metrics */}
-      {showYTD && ytd && (
+      {showYTD && (
         <>
           <h3 className="text-lg font-semibold text-slate-700 mt-8 mb-2">Year-to-Date Metrics</h3>
-          <div className="grid grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-sm text-slate-500">
-                  YTD Actual Sales <span title="Total actual sales year-to-date for this location." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+          {ytd ? (
+            <>
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                <p className="text-sm text-green-800">
+                  <strong>YTD Data:</strong> {ytd.record_count} records with actuals found
                 </p>
-                <p className="text-lg font-semibold text-slate-800">
-                  ${ytd?.total_sales?.toLocaleString() || 0}
-                </p>
-              </CardContent>
-            </Card>
+              </div>
+              <div className="grid grid-cols-4 gap-4">
+                <Card>
+                  <CardContent className="p-4">
+                    <p className="text-sm text-slate-500">
+                      YTD Actual Sales <span title="Total actual sales year-to-date for this location." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+                    </p>
+                    <p className="text-lg font-semibold text-slate-800">
+                      ${ytd?.total_sales?.toLocaleString() || 0}
+                    </p>
+                  </CardContent>
+                </Card>
 
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-sm text-slate-500">
-                  YTD Food Cost % <span title="Average food cost as a % of actual sales YTD." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
-                </p>
-                <p className={`text-lg font-semibold ${ytd?.avg_food_cost_pct > foodTarget ? 'text-red-600' : 'text-green-600'}`}>
-                  {ytd?.avg_food_cost_pct ? (ytd.avg_food_cost_pct * 100).toFixed(1) : '0.0'}%
-                </p>
-              </CardContent>
-            </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <p className="text-sm text-slate-500">
+                      YTD Food Cost % <span title="Average food cost as a % of actual sales YTD." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+                    </p>
+                    <p className={`text-lg font-semibold ${ytd?.avg_food_cost_pct > foodTarget ? 'text-red-600' : 'text-green-600'}`}>
+                      {ytd?.avg_food_cost_pct ? (ytd.avg_food_cost_pct * 100).toFixed(1) : '0.0'}%
+                    </p>
+                  </CardContent>
+                </Card>
 
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-sm text-slate-500">
-                  YTD Beverage Cost % <span title="Average beverage cost as a % of actual sales YTD." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
-                </p>
-                <p className={`text-lg font-semibold ${ytd?.avg_bev_cost_pct > bevTarget ? 'text-red-600' : 'text-green-600'}`}>
-                  {ytd?.avg_bev_cost_pct ? (ytd.avg_bev_cost_pct * 100).toFixed(1) : '0.0'}%
-                </p>
-              </CardContent>
-            </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <p className="text-sm text-slate-500">
+                      YTD Beverage Cost % <span title="Average beverage cost as a % of actual sales YTD." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+                    </p>
+                    <p className={`text-lg font-semibold ${ytd?.avg_bev_cost_pct > bevTarget ? 'text-red-600' : 'text-green-600'}`}>
+                      {ytd?.avg_bev_cost_pct ? (ytd.avg_bev_cost_pct * 100).toFixed(1) : '0.0'}%
+                    </p>
+                  </CardContent>
+                </Card>
 
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-sm text-slate-500">
-                  YTD Labor Cost % <span title="Average labor cost as a % of actual sales YTD." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
-                </p>
-                <p className={`text-lg font-semibold ${ytd?.avg_labor_cost_pct > laborTarget ? 'text-red-600' : 'text-green-600'}`}>
-                  {ytd?.avg_labor_cost_pct ? (ytd.avg_labor_cost_pct * 100).toFixed(1) : '0.0'}%
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+                <Card>
+                  <CardContent className="p-4">
+                    <p className="text-sm text-slate-500">
+                      YTD Labor Cost % <span title="Average labor cost as a % of actual sales YTD." className="ml-1 text-blue-400 cursor-help">ℹ️</span>
+                    </p>
+                    <p className={`text-lg font-semibold ${ytd?.avg_labor_cost_pct > laborTarget ? 'text-red-600' : 'text-green-600'}`}>
+                      {ytd?.avg_labor_cost_pct ? (ytd.avg_labor_cost_pct * 100).toFixed(1) : '0.0'}%
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            </>
+          ) : (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <p className="text-gray-600">No YTD data available for this location.</p>
+            </div>
+          )}
         </>
       )}
 
       {/* Last Month Summary */}
-      {showLastMonth && lastMonthSummary && (
+      {showLastMonth && (
         <div className="mt-8 border-t pt-4">
           <h3 className="text-lg font-semibold text-slate-700 mb-2">Last Month Summary</h3>
-          {renderLastMonthCards()}
+          {lastMonthSummary ? renderLastMonthCards() : (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <p className="text-gray-600">Loading Last Month data...</p>
+            </div>
+          )}
         </div>
       )}
 
@@ -682,7 +839,7 @@ const FvaDashboard = () => {
         </Card>
       </div>
 
-      {/* ✅ NEW: Weekly Accordion View */}
+      {/* Weekly Accordion View */}
       <Card className="shadow-xl bg-white text-slate-800 border border-slate-200">
         <CardHeader className="pb-4 flex flex-row items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -699,7 +856,7 @@ const FvaDashboard = () => {
             </div>
           </div>
           <div className="flex space-x-2">
-            {/* ✅ NEW: Date Range Dropdown */}
+            {/* Date Range Dropdown */}
             <div className="relative">
               <Button 
                 onClick={() => setShowDateDropdown(!showDateDropdown)} 
@@ -796,6 +953,9 @@ const FvaDashboard = () => {
             <div className="text-center py-8 text-slate-500">
               <p>No data available for the selected period.</p>
               <p className="text-sm mt-2">Try selecting a different month or date range.</p>
+              <p className="text-xs mt-2 text-slate-400">
+                Data source: fva_daily_history table for location {locationUuid?.slice(0, 8)}...
+              </p>
             </div>
           ) : (
             <div className="space-y-4">
