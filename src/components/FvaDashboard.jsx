@@ -654,11 +654,11 @@ const FvaDashboard = () => {
         </div>
       )}
 
-      {/* Period Metrics */}
+      {/* Week Metrics */}
       <div className="grid grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
-            <p className="text-sm text-slate-500">Period Actual Sales</p>
+            <p className="text-sm text-slate-500">Week Actual Sales</p>
             <p className="text-lg font-semibold text-slate-800">
               ${periodMetrics.actualSales?.toLocaleString() || 0}
             </p>
@@ -666,7 +666,7 @@ const FvaDashboard = () => {
         </Card>
         <Card>
           <CardContent className="p-4">
-            <p className="text-sm text-slate-500">Period Food Cost %</p>
+            <p className="text-sm text-slate-500">Week Food Cost %</p>
             <p className={`text-lg font-semibold ${periodMetrics.foodPct > foodTarget ? 'text-red-600' : 'text-green-600'}`}>
               {(periodMetrics.foodPct * 100).toFixed(1)}%
             </p>
@@ -674,7 +674,7 @@ const FvaDashboard = () => {
         </Card>
         <Card>
           <CardContent className="p-4">
-            <p className="text-sm text-slate-500">Period Beverage Cost %</p>
+            <p className="text-sm text-slate-500">Week Beverage Cost %</p>
             <p className={`text-lg font-semibold ${periodMetrics.bevPct > bevTarget ? 'text-red-600' : 'text-green-600'}`}>
               {(periodMetrics.bevPct * 100).toFixed(1)}%
             </p>
@@ -682,7 +682,7 @@ const FvaDashboard = () => {
         </Card>
         <Card>
           <CardContent className="p-4">
-            <p className="text-sm text-slate-500">Period Labor Cost %</p>
+            <p className="text-sm text-slate-500">Week Labor Cost %</p>
             <p className={`text-lg font-semibold ${periodMetrics.laborPct > laborTarget ? 'text-red-600' : 'text-green-600'}`}>
               {(periodMetrics.laborPct * 100).toFixed(1)}%
             </p>
@@ -720,7 +720,7 @@ const FvaDashboard = () => {
               </Button>
               
               {showDateDropdown && (
-                <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-lg shadow-lg z-50">
+                <div className="absolute right-0 mt-2 w-96 bg-white border border-slate-200 rounded-lg shadow-lg z-50">
                   <div className="p-4">
                     <div className="space-y-3">
                       {/* Current + 4 Weeks Option */}
@@ -762,20 +762,25 @@ const FvaDashboard = () => {
                       {/* Custom Date Range */}
                       <div className="border-t pt-3">
                         <p className="text-sm font-medium text-slate-700 mb-2">🗓️ Custom Date Range:</p>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="date"
-                            value={customStartDate}
-                            onChange={(e) => setCustomStartDate(e.target.value)}
-                            className="flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          />
-                          <span className="text-slate-500">to</span>
-                          <input
-                            type="date"
-                            value={customEndDate}
-                            onChange={(e) => setCustomEndDate(e.target.value)}
-                            className="flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          />
+                        <div className="grid grid-cols-2 gap-2 mb-3">
+                          <div>
+                            <label className="text-xs text-slate-500 block mb-1">Start Date</label>
+                            <input
+                              type="date"
+                              value={customStartDate}
+                              onChange={(e) => setCustomStartDate(e.target.value)}
+                              className="w-full px-2 py-2 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs text-slate-500 block mb-1">End Date</label>
+                            <input
+                              type="date"
+                              value={customEndDate}
+                              onChange={(e) => setCustomEndDate(e.target.value)}
+                              className="w-full px-2 py-2 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            />
+                          </div>
                         </div>
                         <button
                           onClick={() => {
@@ -785,7 +790,7 @@ const FvaDashboard = () => {
                             }
                           }}
                           disabled={!customStartDate || !customEndDate}
-                          className="w-full mt-2 px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed"
+                          className="w-full px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-sm"
                         >
                           Apply Custom Range
                         </button>
