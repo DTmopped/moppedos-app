@@ -375,25 +375,17 @@ const DailyBriefingBuilder = () => {
           </div>
           
           <div className="flex items-center gap-2">
-            <Button onClick={saveBriefing} className="bg-blue-500 hover:bg-blue-600 h-10">
+            <Button onClick={saveBriefing} className="bg-blue-500 hover:bg-blue-600 px-4 py-2 h-10 flex items-center">
               💾 Save Briefing
             </Button>
-            <DailyBriefingPrintButton className="bg-gray-600 hover:bg-gray-700 h-10">
+            <DailyBriefingPrintButton className="bg-gray-600 hover:bg-gray-700 px-4 py-2 h-10 flex items-center">
               🖨️ Generate PDF
             </DailyBriefingPrintButton>
           </div>
         </div>
       </div>
 
-      {/* Status Messages */}
-      {autoPopulated && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-center gap-2">
-            <span className="text-blue-600">ℹ️</span>
-            <span className="text-blue-800 font-medium">Auto-populated forecast data from FVA system</span>
-          </div>
-        </div>
-      )}
+
 
       {copiedFromYesterday && (
         <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
