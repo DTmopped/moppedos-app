@@ -27,6 +27,7 @@ const ForecastEmailParserBot = () => {
     isAdminMode, 
     adminSettings,
     locationId // ✅ Correct variable name from DataContext
+    locationUuid  // ✅ ADD THIS
   } = useData();
   
   const { captureRate, spendPerGuest, amSplit, foodCostGoal, bevCostGoal, laborCostGoal } = adminSettings;
@@ -231,6 +232,7 @@ const ForecastEmailParserBot = () => {
       const result = await saveForecastToSupabase({
         supabase,
         locationId, // ✅ Using correct variable name
+        locationUuid,  // ✅ ADD THIS
         baseDate,
         days,
         captureRate,
