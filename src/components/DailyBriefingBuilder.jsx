@@ -375,7 +375,7 @@ const DailyBriefingBuilder = () => {
 
           </div>
           
-          <div className="flex items-center gap-2 -mt-1">
+          <div className="flex items-center gap-2 -mt-2">
   <Button onClick={saveBriefing} className="bg-blue-500 hover:bg-blue-600 px-4 py-2 h-10 flex items-center">
     💾 Save Briefing
   </Button>
