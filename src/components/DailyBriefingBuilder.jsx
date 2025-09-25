@@ -252,6 +252,7 @@ const DailyBriefingBuilder = () => {
     try {
       const briefingData = {
         location_id: String(locationId),
+        location_uuid: String(locationUuid),  // ✅ ADD THIS LINE
         created_by: userId,
         date,
         manager,
