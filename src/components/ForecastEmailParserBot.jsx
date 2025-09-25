@@ -26,7 +26,7 @@ const ForecastEmailParserBot = () => {
     loadingLocation, 
     isAdminMode, 
     adminSettings,
-    locationId // ✅ Correct variable name from DataContext
+    locationId, // ✅ Correct variable name from DataContext
     locationUuid  // ✅ ADD THIS
   } = useData();
   
