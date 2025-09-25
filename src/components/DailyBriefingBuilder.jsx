@@ -370,7 +370,7 @@ const DailyBriefingBuilder = () => {
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-auto"
+              className="w-auto h-10"
             />
           </div>
           
