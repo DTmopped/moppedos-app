@@ -362,7 +362,7 @@ const DailyBriefingBuilder = () => {
           <p className="text-gray-600 mt-1">Create and manage your daily operational briefing</p>
         </div>
         
-        className="flex flex-col sm:flex-row items-center gap-4"
+        <div className="flex flex-col sm:flex-row items-center gap-4">
           <div className="flex items-center gap-2">
             <Label htmlFor="date" className="text-sm font-medium">Date</Label>
             <Input
