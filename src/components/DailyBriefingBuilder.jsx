@@ -244,74 +244,76 @@ const DailyBriefingBuilder = () => {
   }, []);
 
   const saveBriefing = async () => {
-    if (!locationId || !userId) {
-      console.error("Missing locationId or userId");
-      return;
+  if (!locationId || !userId) {
+    console.error("Missing locationId or userId");
+    alert("Missing required information. Please refresh the page and try again.");
+    return;
+  }
+
+  try {
+    const briefingData = {
+      location_id: String(locationId), // Use locationId (should be UUID)
+      created_by: userId,
+      date,
+      manager,
+      lunch: lunch ? parseInt(lunch, 10) : null,
+      dinner: dinner ? parseInt(dinner, 10) : null,
+      forecasted_sales: forecastedSales,
+      forecast_notes: forecastNotes,
+      actual_sales: actualSales,
+      variance_notes: varianceNotes,
+      shoutout,
+      reminders,
+      mindset,
+      food_items: foodItems,
+      beverage_items: beverageItems,
+      events,
+      repair_notes: repairNotes,
+      food_image_url: foodImage,
+      beverage_image_url: beverageImage,
+      updated_at: new Date().toISOString()
+    };
+
+    // Log payload before send
+    console.log('daily_briefings upsert payload:', briefingData);
+
+    // Log expected types
+    console.log('Expected types:', {
+      location_id: 'uuid',
+      created_by: 'uuid', 
+      date: 'date',
+      lunch: 'int',
+      dinner: 'int'
+    });
+
+    const { data, error } = await supabase
+      .from("daily_briefings")
+      .upsert(briefingData, { 
+        onConflict: 'location_id,date'
+      })
+      .select(); // ensures server returns row or error
+
+    if (error) {
+      console.error('daily_briefings upsert error:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      });
+      throw error;
+    } else {
+      console.log('daily_briefings upsert success:', data);
     }
+    
+    console.log("Briefing saved successfully");
+    alert("Briefing saved successfully!");
+    
+  } catch (err) {
+    console.error("Error saving briefing:", err);
+    alert(`Failed to save briefing: ${err.message}`);
+  }
+};
 
-    try {
-      const briefingData = {
-        location_id: String(locationId),
-        location_uuid: String(locationUuid),  // ✅ ADD THIS LINE
-        created_by: userId,
-        date,
-        manager,
-        lunch,
-        dinner,
-        forecasted_sales: forecastedSales,
-        forecast_notes: forecastNotes,
-        actual_sales: actualSales,
-        variance_notes: varianceNotes,
-        shoutout,
-        reminders,
-        mindset,
-        food_items: foodItems,
-        beverage_items: beverageItems,
-        events,
-        repair_notes: repairNotes,
-        food_image_url: foodImage,
-        beverage_image_url: beverageImage,
-        updated_at: new Date().toISOString()
-      };
-
-      // Log payload before send
-console.log('daily_briefings upsert payload:', briefingData);
-
-// Log expected types
-console.log('Expected types:', {
-  location_id: 'uuid',
-  created_by: 'uuid', 
-  date: 'date or timestamptz',
-  locationId: typeof locationId,
-  userId: typeof userId
-});
-
-const { data, error } = await supabase
-  .from("daily_briefings")
-  .upsert(briefingData, { 
-    onConflict: 'location_id,date'
-  })
-  .select(); // ensures server returns row or error
-
-if (error) {
-  console.error('daily_briefings upsert error:', {
-    message: error.message,
-    details: error.details,
-    hint: error.hint,
-    code: error.code,
-  });
-  throw error;
-} else {
-  console.log('daily_briefings upsert success:', data);
-}
-
-      
-      console.log("Briefing saved successfully");
-    } catch (err) {
-      console.error("Error saving briefing:", err);
-      alert("Failed to save briefing. Please try again.");
-    }
-  };
 
   const handleImageUpload = (file, type) => {
     if (file) {
