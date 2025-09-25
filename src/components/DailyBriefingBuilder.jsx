@@ -251,47 +251,62 @@ const DailyBriefingBuilder = () => {
   }
 
   try {
+    // Helper function to convert empty strings to null for numeric fields
+    const parseNumericField = (value) => {
+      if (!value || value === "" || value === null || value === undefined) {
+        return null;
+      }
+      // Remove currency symbols and commas, then parse
+      const cleanValue = String(value).replace(/[$,]/g, '');
+      const parsed = parseFloat(cleanValue);
+      return isNaN(parsed) ? null : parsed;
+    };
+
+    // Helper function to convert empty strings to null for integer fields
+    const parseIntegerField = (value) => {
+      if (!value || value === "" || value === null || value === undefined) {
+        return null;
+      }
+      const parsed = parseInt(value, 10);
+      return isNaN(parsed) ? null : parsed;
+    };
+
+    // Helper function to convert empty strings to null for text fields
+    const parseTextField = (value) => {
+      return (!value || value === "") ? null : String(value);
+    };
+
     const briefingData = {
-      location_id: String(locationId), // Use locationId (should be UUID)
+      location_id: String(locationId),
       created_by: userId,
       date,
-      manager,
-      lunch: lunch ? parseInt(lunch, 10) : null,
-      dinner: dinner ? parseInt(dinner, 10) : null,
-      forecasted_sales: forecastedSales,
-      forecast_notes: forecastNotes,
-      actual_sales: actualSales,
-      variance_notes: varianceNotes,
-      shoutout,
-      reminders,
-      mindset,
-      food_items: foodItems,
-      beverage_items: beverageItems,
-      events,
-      repair_notes: repairNotes,
-      food_image_url: foodImage,
-      beverage_image_url: beverageImage,
+      manager: parseTextField(manager),
+      lunch: parseIntegerField(lunch),
+      dinner: parseIntegerField(dinner),
+      forecasted_sales: parseNumericField(forecastedSales),
+      forecast_notes: parseTextField(forecastNotes),
+      actual_sales: parseNumericField(actualSales),
+      variance_notes: parseTextField(varianceNotes),
+      shoutout: parseTextField(shoutout),
+      reminders: parseTextField(reminders),
+      mindset: parseTextField(mindset),
+      food_items: parseTextField(foodItems),
+      beverage_items: parseTextField(beverageItems),
+      events: parseTextField(events),
+      repair_notes: parseTextField(repairNotes),
+      food_image_url: parseTextField(foodImage),
+      beverage_image_url: parseTextField(beverageImage),
       updated_at: new Date().toISOString()
     };
 
-    // Log payload before send
     console.log('daily_briefings upsert payload:', briefingData);
-
-    // Log expected types
-    console.log('Expected types:', {
-      location_id: 'uuid',
-      created_by: 'uuid', 
-      date: 'date',
-      lunch: 'int',
-      dinner: 'int'
-    });
 
     const { data, error } = await supabase
       .from("daily_briefings")
       .upsert(briefingData, { 
         onConflict: 'location_id,date'
       })
-      .select(); // ensures server returns row or error
+      .select();
 
     if (error) {
       console.error('daily_briefings upsert error:', {
@@ -301,8 +316,6 @@ const DailyBriefingBuilder = () => {
         code: error.code,
       });
       throw error;
-    } else {
-      console.log('daily_briefings upsert success:', data);
     }
     
     console.log("Briefing saved successfully");
@@ -313,6 +326,7 @@ const DailyBriefingBuilder = () => {
     alert(`Failed to save briefing: ${err.message}`);
   }
 };
+
 
 
   const handleImageUpload = (file, type) => {
