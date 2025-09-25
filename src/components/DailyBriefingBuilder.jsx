@@ -274,14 +274,37 @@ const DailyBriefingBuilder = () => {
         updated_at: new Date().toISOString()
       };
 
-      const { data, error } = await supabase
-        .from("daily_briefings")
-        .upsert(briefingData, { 
-          onConflict: 'location_id,date',
-          returning: 'minimal'
-        });
+      // Log payload before send
+console.log('daily_briefings upsert payload:', briefingData);
 
-      if (error) throw error;
+// Log expected types
+console.log('Expected types:', {
+  location_id: 'uuid',
+  created_by: 'uuid', 
+  date: 'date or timestamptz',
+  locationId: typeof locationId,
+  userId: typeof userId
+});
+
+const { data, error } = await supabase
+  .from("daily_briefings")
+  .upsert(briefingData, { 
+    onConflict: 'location_id,date'
+  })
+  .select(); // ensures server returns row or error
+
+if (error) {
+  console.error('daily_briefings upsert error:', {
+    message: error.message,
+    details: error.details,
+    hint: error.hint,
+    code: error.code,
+  });
+  throw error;
+} else {
+  console.log('daily_briefings upsert success:', data);
+}
+
       
       console.log("Briefing saved successfully");
     } catch (err) {
