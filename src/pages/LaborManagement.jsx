@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Building2, Users, Calendar, TrendingUp, Settings, Clock, Target, Zap,
   AlertCircle, CheckCircle, Wifi, WifiOff
@@ -15,7 +12,20 @@ import { DEPARTMENTS, ROLES, getRolesByDepartment } from '@/config/laborSchedule
 // Import your existing labor components (these will use the new data context)
 // Update these import paths to match your actual component locations
 import WeeklyLaborSchedule from '@/components/WeeklyLaborSchedule'; // Your existing component
-
+const Badge = ({ children, variant = "default", className = "" }) => {
+  const baseClasses = "inline-flex items-center px-2 py-1 text-xs font-semibold rounded";
+  const variantClasses = {
+    default: "bg-blue-600 text-white",
+    secondary: "bg-slate-600 text-slate-200",
+    outline: "bg-white text-slate-900 border border-slate-300"
+  };
+  
+  return (
+    <span className={`${baseClasses} ${variantClasses[variant]} ${className}`}>
+      {children}
+    </span>
+  );
+};
 function LaborManagementContent() {
   const [activeTab, setActiveTab] = useState('overview');
   const [showWelcome, setShowWelcome] = useState(true);
