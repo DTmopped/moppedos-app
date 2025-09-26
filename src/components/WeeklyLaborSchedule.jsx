@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOMServer from 'react-dom/server';
 import { motion } from 'framer-motion';
-import { useData } from '@/contexts/DataContext';
+import { useLaborData } from '@/contexts/LaborDataContext';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card.jsx';
 import { Printer, Info, Users, Save, Building2, Filter, Clock } from 'lucide-react';
@@ -246,7 +246,7 @@ const WeeklyLaborScheduleHeader = ({ onSave, onPrint, selectedDepartment, totalR
 
 // ===== MAIN ENHANCED COMPONENT (Same logic, better UI) =====
 const WeeklyLaborSchedule = () => {
-  const { forecastData } = useData();
+  const { forecastData } = useLaborData();
   
   // ===== State Management =====
   const [scheduleData, setScheduleData] = useState({});
