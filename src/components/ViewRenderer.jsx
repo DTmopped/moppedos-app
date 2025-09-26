@@ -17,6 +17,11 @@ const componentImportMap = {
   WeeklyOrderGuide: lazy(() => import('./WeeklyOrderGuide.jsx')),
   DailyBriefingBuilder: lazy(() => import('./DailyBriefingBuilder.jsx')),
   ForecastCenter: lazy(() => import('./ForecastEmailParserBot.jsx')), // Use the correct path to your new file
+
+  // Add these new template-enhanced components
+  LaborScheduleView: lazy(() => import('../views/LaborScheduleView.jsx')),
+  DashboardView: lazy(() => import('../views/DashboardView.jsx')),
+  TemplatesView: lazy(() => import('../views/TemplatesView.jsx')),
 };
 
 const ViewRenderer = ({ viewsConfig }) => {
