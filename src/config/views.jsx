@@ -41,7 +41,7 @@ export const views = [
     id: 'WEEKLY_LABOR_SCHEDULE',
     path: '/labor-schedule',
     label: 'Labor Schedule',
-    componentName: 'LaborScheduleView', // Changed from 'WeeklyLaborSchedule'
+    componentName: 'WeeklyLaborSchedule', // Back to original
     icon: <Users size={20} strokeWidth={2.5} />,
     showInNav: true,
   },
