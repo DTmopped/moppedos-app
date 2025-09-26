@@ -4,17 +4,28 @@ import { motion } from 'framer-motion';
 import { useData } from '@/contexts/DataContext';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card.jsx';
-import { Badge } from '@/components/ui/badge.jsx';
-import { Printer, Info, Users, Save, Building2, Filter, Eye, EyeOff } from 'lucide-react';
+import { Printer, Info, Users, Save, Building2, Filter } from 'lucide-react';
 import { useToast } from './ui/use-toast.jsx';
-import { LOCAL_STORAGE_KEY } from '@/config/laborScheduleConfig.jsx';
+import { LOCAL_STORAGE_KEY, ROLES, SHIFT_TIMES } from '@/config/laborScheduleConfig.jsx';
 import { loadSchedule, updateSlotInSchedule, generateInitialScheduleSlots } from '@/lib/laborScheduleUtils.js';
 import { startOfWeek, format, addDays } from 'date-fns';
 import AdminModeToggle from './ui/AdminModeToggle.jsx';
 
-// ===== NEW: Template Integration =====
-import { useTemplate } from '@/contexts/TemplateContext';
-import { supabase, getCurrentLocationId, createLocationQuery, createLocationUpsert } from '@/supabaseClient';
+// ===== NEW: Simple Badge Component (since yours doesn't exist) =====
+const SimpleBadge = ({ children, variant = "default", className = "" }) => {
+  const baseClasses = "inline-flex items-center px-2 py-1 text-xs font-medium rounded";
+  const variantClasses = {
+    default: "bg-primary text-primary-foreground",
+    secondary: "bg-secondary text-secondary-foreground",
+    outline: "border border-input bg-background text-foreground"
+  };
+  
+  return (
+    <span className={`${baseClasses} ${variantClasses[variant]} ${className}`}>
+      {children}
+    </span>
+  );
+};
 
 // ===== NEW: Department Filter Component =====
 const DepartmentFilter = ({ selectedDepartment, onDepartmentChange, departmentStats }) => {
@@ -37,9 +48,9 @@ const DepartmentFilter = ({ selectedDepartment, onDepartmentChange, departmentSt
             >
               {dept}
               {departmentStats[dept] && (
-                <Badge variant="secondary" className="ml-2">
+                <SimpleBadge variant="secondary" className="ml-2">
                   {departmentStats[dept].roleCount}
-                </Badge>
+                </SimpleBadge>
               )}
             </Button>
           ))}
@@ -134,9 +145,9 @@ const EnhancedScheduleTable = ({
                     <tr key={`${role.id}-${shift}`} className="border-b border-slate-800 hover:bg-slate-800/30">
                       <td className="p-3 font-medium text-slate-200">
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className={role.colorClass}>
+                          <SimpleBadge variant="outline" className={role.colorClass}>
                             {role.abbreviation}
-                          </Badge>
+                          </SimpleBadge>
                           <div>
                             <div className="text-sm">{role.name}</div>
                             <div className="text-xs text-slate-400">{shift} Shift</div>
@@ -169,7 +180,7 @@ const EnhancedScheduleTable = ({
 };
 
 // ===== ENHANCED: Header with Template Info =====
-const WeeklyLaborScheduleHeader = ({ onSave, onPrint, currentTemplate, selectedDepartment }) => (
+const WeeklyLaborScheduleHeader = ({ onSave, onPrint, selectedDepartment, totalRoles, filteredRoles }) => (
   <Card className="glassmorphic-card no-print card-hover-glow">
     <CardHeader className="pb-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
@@ -182,18 +193,16 @@ const WeeklyLaborScheduleHeader = ({ onSave, onPrint, currentTemplate, selectedD
               Enhanced Labor Schedule
             </CardTitle>
             <CardDescription className="text-muted-foreground">
-              {currentTemplate ? (
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge variant="secondary">
-                    <Building2 className="h-3 w-3 mr-1" />
-                    {currentTemplate.name}
-                  </Badge>
-                  <span>•</span>
-                  <span>Viewing: {selectedDepartment === 'ALL' ? 'All Departments' : selectedDepartment}</span>
-                </div>
-              ) : (
-                'Template-enhanced scheduling with 13 Mopped roles'
-              )}
+              <div className="flex items-center gap-2 mt-1">
+                <SimpleBadge variant="secondary">
+                  <Building2 className="h-3 w-3 mr-1" />
+                  Mopped Restaurant Template
+                </SimpleBadge>
+                <span>•</span>
+                <span>Viewing: {selectedDepartment === 'ALL' ? 'All Departments' : selectedDepartment}</span>
+                <span>•</span>
+                <span>{filteredRoles} of {totalRoles} roles</span>
+              </div>
             </CardDescription>
           </div>
         </div>
@@ -214,14 +223,6 @@ const WeeklyLaborScheduleHeader = ({ onSave, onPrint, currentTemplate, selectedD
 const WeeklyLaborSchedule = () => {
   const { forecastData } = useData();
   
-  // ===== NEW: Template Integration =====
-  const { 
-    currentTemplate, 
-    roles, 
-    isLoading: templateLoading,
-    getDepartmentStats 
-  } = useTemplate();
-  
   // ===== ENHANCED: State Management =====
   const [scheduleData, setScheduleData] = useState({});
   const [forecastGeneratedSchedule, setForecastGeneratedSchedule] = useState({});
@@ -235,20 +236,17 @@ const WeeklyLaborSchedule = () => {
 
   // ===== NEW: Filtered Roles by Department =====
   const filteredRoles = React.useMemo(() => {
-    if (!roles || roles.length === 0) return [];
-    if (selectedDepartment === 'ALL') return roles;
-    return roles.filter(role => role.department === selectedDepartment);
-  }, [roles, selectedDepartment]);
+    if (selectedDepartment === 'ALL') return ROLES;
+    return ROLES.filter(role => role.department === selectedDepartment);
+  }, [selectedDepartment]);
 
   // ===== NEW: Department Statistics =====
   const departmentStats = React.useMemo(() => {
-    if (!roles || roles.length === 0) return {};
-    
-    const stats = { ALL: { roleCount: roles.length, avgHourlyRate: 0, totalMaxHours: 0 } };
+    const stats = { ALL: { roleCount: ROLES.length, avgHourlyRate: 0, totalMaxHours: 0 } };
     
     // Calculate stats for each department
     ['Management', 'FOH', 'Bar', 'BOH'].forEach(dept => {
-      const deptRoles = roles.filter(role => role.department === dept);
+      const deptRoles = ROLES.filter(role => role.department === dept);
       if (deptRoles.length > 0) {
         stats[dept] = {
           roleCount: deptRoles.length,
@@ -259,138 +257,33 @@ const WeeklyLaborSchedule = () => {
     });
     
     return stats;
-  }, [roles]);
+  }, []);
 
   // ===== ENHANCED: Load Schedule Data =====
   useEffect(() => {
-    const loadScheduleData = async () => {
-      setIsLoading(true);
-      
-      try {
-        // Try to load from Supabase first
-        const weekDates = Array.from({ length: 7 }, (_, i) => addDays(weekStartDate, i));
-        const startDate = format(weekDates[0], 'yyyy-MM-dd');
-        const endDate = format(weekDates[6], 'yyyy-MM-dd');
+    setIsLoading(true);
+    const generatedForecast = generateInitialScheduleSlots(forecastData || []);
+    const storedSchedule = localStorage.getItem(LOCAL_STORAGE_KEY);
+    const loadedSchedule = loadSchedule(forecastData || [], storedSchedule);
 
-        const { data: supabaseData, error } = await createLocationQuery('labor_schedules')
-          .gte('shift_date', startDate)
-          .lte('shift_date', endDate);
-
-        if (!error && supabaseData && supabaseData.length > 0) {
-          // Transform Supabase data to schedule format
-          const transformedData = {};
-          supabaseData.forEach(record => {
-            const dayKey = record.shift_date;
-            const shiftKey = record.shift_type;
-            const roleName = record.role_name;
-
-            if (!transformedData[dayKey]) transformedData[dayKey] = {};
-            if (!transformedData[dayKey][shiftKey]) transformedData[dayKey][shiftKey] = {};
-            if (!transformedData[dayKey][shiftKey][roleName]) transformedData[dayKey][shiftKey][roleName] = [];
-
-            transformedData[dayKey][shiftKey][roleName].push({
-              id: record.id,
-              name: record.employee_name,
-              start: record.start_time,
-              end: record.end_time,
-              employeeId: record.employee_id
-            });
-          });
-          
-          setScheduleData(transformedData);
-        } else {
-          // Fallback to local storage and forecast data
-          const generatedForecast = generateInitialScheduleSlots(forecastData || []);
-          const storedSchedule = localStorage.getItem(LOCAL_STORAGE_KEY);
-          const loadedSchedule = loadSchedule(forecastData || [], storedSchedule);
-          
-          setScheduleData(loadedSchedule);
-          setForecastGeneratedSchedule(generatedForecast);
-        }
-      } catch (error) {
-        console.error('Error loading schedule data:', error);
-        // Fallback to local storage
-        const generatedForecast = generateInitialScheduleSlots(forecastData || []);
-        const storedSchedule = localStorage.getItem(LOCAL_STORAGE_KEY);
-        const loadedSchedule = loadSchedule(forecastData || [], storedSchedule);
-        
-        setScheduleData(loadedSchedule);
-        setForecastGeneratedSchedule(generatedForecast);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (!templateLoading) {
-      loadScheduleData();
-    }
-  }, [forecastData, weekStartDate, templateLoading]);
+    setScheduleData(loadedSchedule);
+    setForecastGeneratedSchedule(generatedForecast);
+    setIsLoading(false);
+  }, [forecastData]);
 
   // ===== ENHANCED: Update Schedule =====
   const handleUpdateSchedule = (date, roleName, shift, slotIndex, field, value) => {
     setScheduleData(prev => updateSlotInSchedule(prev, date, roleName, shift, slotIndex, field, value));
   };
 
-  // ===== ENHANCED: Save to Both Local Storage and Supabase =====
-  const saveScheduleToLocalStorage = async () => {
-    setIsSaving(true);
-    
-    try {
-      // Save to local storage (existing functionality)
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(scheduleData));
-      
-      // Save to Supabase (new functionality)
-      const scheduleRecords = [];
-      
-      Object.entries(scheduleData).forEach(([dayKey, dayData]) => {
-        Object.entries(dayData).forEach(([shiftKey, shiftData]) => {
-          Object.entries(shiftData).forEach(([roleName, employees]) => {
-            employees.forEach(employee => {
-              if (employee.name && !employee.id?.startsWith('empty-')) {
-                scheduleRecords.push({
-                  shift_date: dayKey,
-                  shift_type: shiftKey,
-                  role_name: roleName,
-                  employee_name: employee.name,
-                  employee_id: employee.employeeId,
-                  start_time: employee.start,
-                  end_time: employee.end,
-                  location_id: getCurrentLocationId()
-                });
-              }
-            });
-          });
-        });
-      });
-
-      if (scheduleRecords.length > 0) {
-        const { error } = await supabase
-          .from('labor_schedules')
-          .upsert(scheduleRecords, { 
-            onConflict: 'location_id,shift_date,shift_type,role_name,employee_id' 
-          });
-
-        if (error) {
-          console.error('Supabase save error:', error);
-          // Still show success for local storage save
-        }
-      }
-
-      toast({
-        title: "Schedule Saved!",
-        description: "Your labor schedule has been saved locally and to the database.",
-        action: <Save className="text-green-500" />,
-      });
-    } catch (error) {
-      console.error('Error saving schedule:', error);
-      toast({
-        title: "Partial Save",
-        description: "Schedule saved locally. Database sync may have failed.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSaving(false);
-    }
+  // ===== ENHANCED: Save Schedule =====
+  const saveScheduleToLocalStorage = () => {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(scheduleData));
+    toast({
+      title: "Schedule Saved!",
+      description: `Your enhanced labor schedule has been saved locally. Showing ${filteredRoles.length} roles in ${selectedDepartment === 'ALL' ? 'all departments' : selectedDepartment}.`,
+      action: <Save className="text-green-500" />,
+    });
   };
 
   // ===== EXISTING: Print Functionality =====
@@ -406,9 +299,10 @@ const WeeklyLaborSchedule = () => {
 
     // Create a simple printable version
     const printContent = `
-      <h1>Weekly Labor Schedule - ${formattedPrintDate}</h1>
-      <p>Template: ${currentTemplate?.name || 'Default'}</p>
+      <h1>Enhanced Weekly Labor Schedule - ${formattedPrintDate}</h1>
+      <p>Template: Mopped Restaurant (13 Roles)</p>
       <p>Department: ${selectedDepartment}</p>
+      <p>Roles Shown: ${filteredRoles.length} of ${ROLES.length}</p>
       <p>Generated: ${new Date().toLocaleString()}</p>
     `;
 
@@ -427,7 +321,7 @@ const WeeklyLaborSchedule = () => {
     doc.write(`
       <!DOCTYPE html>
       <html>
-        <head><title>Weekly Labor Schedule - Print</title></head>
+        <head><title>Enhanced Weekly Labor Schedule - Print</title></head>
         <body>${printContent}</body>
       </html>
     `);
@@ -440,8 +334,8 @@ const WeeklyLaborSchedule = () => {
     }, 500);
   };
 
-  // ===== LOADING STATES =====
-  if (templateLoading || isLoading) {
+  // ===== LOADING STATE =====
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
         <p className="text-lg text-muted-foreground">Loading enhanced schedule...</p>
@@ -461,8 +355,9 @@ const WeeklyLaborSchedule = () => {
       <WeeklyLaborScheduleHeader 
         onSave={saveScheduleToLocalStorage} 
         onPrint={handlePrint}
-        currentTemplate={currentTemplate}
         selectedDepartment={selectedDepartment}
+        totalRoles={ROLES.length}
+        filteredRoles={filteredRoles.length}
       />
 
       {/* Admin Mode Toggle */}
@@ -479,13 +374,13 @@ const WeeklyLaborSchedule = () => {
 
       {/* Enhanced Schedule Table */}
       <div className="printable-content printable-labor-schedule">
-        {(!roles || roles.length === 0) ? (
+        {(!ROLES || ROLES.length === 0) ? (
           <Card className="glassmorphic-card no-print">
             <CardContent className="pt-6">
               <div className="text-center text-muted-foreground flex flex-col items-center py-10">
                 <Info size={48} className="mb-4 text-primary" />
-                <p className="text-lg font-semibold text-foreground">Loading Template Data</p>
-                <p>Please wait while we load the restaurant template configuration.</p>
+                <p className="text-lg font-semibold text-foreground">No Template Data</p>
+                <p>Please check your laborScheduleConfig.jsx file.</p>
               </div>
             </CardContent>
           </Card>
@@ -500,31 +395,29 @@ const WeeklyLaborSchedule = () => {
         )}
       </div>
 
-      {/* Template Info */}
-      {currentTemplate && (
-        <Card className="glassmorphic-card no-print">
-          <CardContent className="p-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center text-sm">
-              <div>
-                <div className="font-bold text-blue-400">{roles.length}</div>
-                <div className="text-muted-foreground">Total Roles</div>
-              </div>
-              <div>
-                <div className="font-bold text-green-400">{filteredRoles.length}</div>
-                <div className="text-muted-foreground">Filtered Roles</div>
-              </div>
-              <div>
-                <div className="font-bold text-purple-400">{currentTemplate.labor_target_percentage}%</div>
-                <div className="text-muted-foreground">Labor Target</div>
-              </div>
-              <div>
-                <div className="font-bold text-orange-400">${currentTemplate.spend_per_guest}</div>
-                <div className="text-muted-foreground">Spend/Guest</div>
-              </div>
+      {/* Template Statistics */}
+      <Card className="glassmorphic-card no-print">
+        <CardContent className="p-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center text-sm">
+            <div>
+              <div className="font-bold text-blue-400">{ROLES.length}</div>
+              <div className="text-muted-foreground">Total Roles</div>
             </div>
-          </CardContent>
-        </Card>
-      )}
+            <div>
+              <div className="font-bold text-green-400">{filteredRoles.length}</div>
+              <div className="text-muted-foreground">Filtered Roles</div>
+            </div>
+            <div>
+              <div className="font-bold text-purple-400">4</div>
+              <div className="text-muted-foreground">Departments</div>
+            </div>
+            <div>
+              <div className="font-bold text-orange-400">3</div>
+              <div className="text-muted-foreground">Shift Types</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </motion.div>
   );
 };
