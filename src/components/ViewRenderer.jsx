@@ -17,6 +17,7 @@ const componentImportMap = {
   WeeklyOrderGuide: lazy(() => import('./WeeklyOrderGuide.jsx')),
   DailyBriefingBuilder: lazy(() => import('./DailyBriefingBuilder.jsx')),
   ForecastCenter: lazy(() => import('./ForecastEmailParserBot.jsx')), // Use the correct path to your new file
+  LaborManagement: lazy(() => import('../pages/LaborManagement.jsx')),
 
 };
 
