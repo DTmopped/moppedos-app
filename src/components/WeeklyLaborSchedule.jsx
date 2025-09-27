@@ -40,7 +40,7 @@ const formatDateHeader = (date) => {
     return { day: 'Invalid', date: 'Date' };
   }
   const formatted = date.toLocaleDateString('en-US', { 
-    weekday: 'long', // Changed to 'long' for full day names
+    weekday: 'long',
     month: 'numeric', 
     day: 'numeric' 
   });
@@ -93,25 +93,25 @@ const WeeklyLaborSchedule = () => {
     selectedDepartment === 'ALL' || role.department === selectedDepartment
   );
 
-  // Department colors - DARKER for better visibility
-  const getDepartmentRowColor = (department) => {
+  // Department colors for cards
+  const getDepartmentCardColor = (department) => {
     switch(department) {
-      case 'FOH': return 'bg-blue-100/80';
-      case 'BOH': return 'bg-emerald-100/80';
-      case 'Bar': return 'bg-purple-100/80';
-      case 'Management': return 'bg-slate-100/80';
-      default: return 'bg-gray-100/80';
+      case 'FOH': return 'bg-blue-50 border-blue-200';
+      case 'BOH': return 'bg-emerald-50 border-emerald-200';
+      case 'Bar': return 'bg-purple-50 border-purple-200';
+      case 'Management': return 'bg-slate-50 border-slate-200';
+      default: return 'bg-gray-50 border-gray-200';
     }
   };
 
-  // Department colors for left column - matching and darker
-  const getDepartmentLeftColumnColor = (department) => {
+  // Department colors for role cards
+  const getDepartmentRoleColor = (department) => {
     switch(department) {
-      case 'FOH': return 'bg-blue-100/80 border-l-4 border-blue-500';
-      case 'BOH': return 'bg-emerald-100/80 border-l-4 border-emerald-500';
-      case 'Bar': return 'bg-purple-100/80 border-l-4 border-purple-500';
-      case 'Management': return 'bg-slate-100/80 border-l-4 border-slate-500';
-      default: return 'bg-gray-100/80 border-l-4 border-gray-500';
+      case 'FOH': return 'bg-blue-100 border-blue-300';
+      case 'BOH': return 'bg-emerald-100 border-emerald-300';
+      case 'Bar': return 'bg-purple-100 border-purple-300';
+      case 'Management': return 'bg-slate-100 border-slate-300';
+      default: return 'bg-gray-100 border-gray-300';
     }
   };
 
@@ -199,7 +199,7 @@ const WeeklyLaborSchedule = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Department Filter and Week Navigation */}
       <Card className="bg-white border border-slate-200 shadow-sm rounded-xl">
         <CardContent className="p-6">
@@ -255,121 +255,122 @@ const WeeklyLaborSchedule = () => {
         </CardContent>
       </Card>
 
-      {/* Schedule Grid with rounded corners and proper spacing */}
-      <Card className="bg-white border border-slate-200 shadow-lg rounded-xl">
-        <div className="relative overflow-hidden rounded-xl">
-          {/* Sticky Header Row - Full weekday names */}
-          <div className="sticky top-0 z-20 bg-white border-b-2 border-slate-300 shadow-sm">
-            <div className="grid grid-cols-8 gap-0">
-              <div className="bg-slate-200 p-4 font-semibold text-slate-800 border-r-2 border-slate-300 sticky left-0 z-30 w-[220px] h-[120px] flex items-center justify-center rounded-tl-xl">
-                <div className="bg-white rounded-xl p-3 shadow-sm text-center">
-                  <span className="text-sm font-semibold">Role / Shift</span>
-                </div>
-              </div>
-              {weekDays.map((day, index) => {
-                const headerInfo = formatDateHeader(day);
-                return (
-                  <div key={index} className={`bg-slate-200 p-4 border-r border-slate-300 last:border-r-0 w-[220px] h-[120px] flex items-center justify-center ${index === 6 ? 'rounded-tr-xl' : ''}`}>
-                    <div className="bg-white rounded-xl p-3 shadow-sm text-center">
-                      <div className="font-semibold text-slate-800 text-sm">
-                        {headerInfo.day}
-                      </div>
-                      <div className="text-slate-600 text-xs">
-                        {headerInfo.date}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Scrollable Schedule Body with SPACING between rows */}
-          <div className="max-h-[600px] overflow-y-auto">
-            <div className="space-y-3 p-3"> {/* Added space-y-3 and padding for separation */}
-              {filteredRoles.map((role, roleIndex) => {
-                const shifts = [
-                  { name: 'AM Shift', startTime: '9:00', endTime: '5:00' },
-                  { name: 'PM Shift', startTime: '3:00', endTime: '11:00' }
-                ];
-
-                return shifts.map((shift, shiftIndex) => {
-                  const employeeId = `${roleIndex}-${shiftIndex}`;
-                  const isSelected = selectedEmployee === employeeId;
-                  
-                  return (
-                    <div 
-                      key={employeeId}
-                      className={`grid grid-cols-8 gap-0 transition-all duration-200 rounded-xl overflow-hidden shadow-sm ${
-                        isSelected ? 'ring-2 ring-yellow-400 ring-inset shadow-lg' : ''
-                      } ${getDepartmentRowColor(role.department)}`}
-                    >
-                      {/* Sticky Role/Shift Column - ROUNDED */}
-                      <div className={`sticky left-0 border-r-2 border-slate-300 z-10 w-[220px] h-[120px] flex items-center justify-center p-3 ${getDepartmentLeftColumnColor(role.department)}`}>
-                        <div 
-                          className="cursor-pointer group w-full"
-                          onClick={() => handleEmployeeClick(roleIndex, shiftIndex)}
-                        >
-                          <div className="bg-white rounded-xl p-3 shadow-sm">
-                            <div className="flex items-center space-x-2">
-                              <div className={`w-3 h-3 rounded-full ${getDepartmentIndicatorColor(role.department)} group-hover:scale-110 transition-transform`}></div>
-                              <div className="text-center flex-1">
-                                <div className="font-semibold text-slate-900 text-sm group-hover:text-slate-800">{role.name}</div>
-                                <div className="text-slate-700 text-xs">{shift.name}</div>
-                                <div className="text-slate-900 text-xs font-medium mt-1">
-                                  {formatTime(`${shift.startTime}:00`)} - {formatTime(`${shift.endTime}:00`)}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Day Columns - ROUNDED corners */}
-                      {weekDays.map((day, dayIndex) => (
-                        <div key={dayIndex} className={`border-r border-slate-200 last:border-r-0 w-[220px] h-[120px] p-3 ${isSelected ? 'bg-yellow-100/50' : ''}`}>
-                          <div className="space-y-2 h-full flex flex-col justify-center">
-                            {/* Employee Name Input - ROUNDED */}
-                            <div className="bg-white rounded-xl p-2 shadow-sm">
-                              <input
-                                type="text"
-                                placeholder="Employee Name"
-                                className="w-full border-0 outline-none text-sm font-medium text-slate-900 placeholder-slate-400 bg-transparent text-center"
-                                onChange={(e) => updateScheduleData(roleIndex, shiftIndex, dayIndex, 'employee', e.target.value)}
-                              />
-                            </div>
-                            
-                            {/* Time Display - ROUNDED */}
-                            <div className="bg-white rounded-xl p-2 shadow-sm">
-                              <div className="text-center">
-                                <div className="flex items-center justify-center space-x-1 text-xs text-slate-900 font-semibold">
-                                  <Clock className="h-3 w-3 text-slate-600" />
-                                  <span>
-                                    {formatTime(`${shift.startTime}:00`)} - {formatTime(`${shift.endTime}:00`)}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            {/* Department Badge - ROUNDED */}
-                            <div className="flex justify-center">
-                              <Badge variant={role.department.toLowerCase()}>
-                                {role.department}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                });
-              })}
-            </div>
-          </div>
+      {/* Week Header - Separate Cards for Each Day */}
+      <div className="grid grid-cols-8 gap-4">
+        {/* Role/Shift Header */}
+        <div className="flex items-center justify-center">
+          <Card className="bg-slate-100 border-slate-300 rounded-xl shadow-sm w-full">
+            <CardContent className="p-4 text-center">
+              <span className="font-semibold text-slate-800">Role / Shift</span>
+            </CardContent>
+          </Card>
         </div>
-      </Card>
+        
+        {/* Day Headers */}
+        {weekDays.map((day, index) => {
+          const headerInfo = formatDateHeader(day);
+          return (
+            <div key={index} className="flex items-center justify-center">
+              <Card className="bg-slate-100 border-slate-300 rounded-xl shadow-sm w-full">
+                <CardContent className="p-4 text-center">
+                  <div className="font-semibold text-slate-800 text-sm">
+                    {headerInfo.day}
+                  </div>
+                  <div className="text-slate-600 text-xs">
+                    {headerInfo.date}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          );
+        })}
+      </div>
 
-      {/* Action Buttons - ROUNDED */}
+      {/* Schedule Rows - Individual Cards for Each Employee */}
+      <div className="space-y-6">
+        {filteredRoles.map((role, roleIndex) => {
+          const shifts = [
+            { name: 'AM Shift', startTime: '9:00', endTime: '5:00' },
+            { name: 'PM Shift', startTime: '3:00', endTime: '11:00' }
+          ];
+
+          return shifts.map((shift, shiftIndex) => {
+            const employeeId = `${roleIndex}-${shiftIndex}`;
+            const isSelected = selectedEmployee === employeeId;
+            
+            return (
+              <div key={employeeId} className="grid grid-cols-8 gap-4">
+                {/* Role/Shift Card - Left Side */}
+                <div className="flex items-center justify-center">
+                  <Card 
+                    className={`${getDepartmentRoleColor(role.department)} rounded-xl shadow-sm w-full cursor-pointer transition-all duration-200 ${
+                      isSelected ? 'ring-2 ring-yellow-400 shadow-lg' : ''
+                    }`}
+                    onClick={() => handleEmployeeClick(roleIndex, shiftIndex)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-4 h-4 rounded-full ${getDepartmentIndicatorColor(role.department)}`}></div>
+                        <div className="text-center flex-1">
+                          <div className="font-semibold text-slate-900 text-sm">{role.name}</div>
+                          <div className="text-slate-700 text-xs">{shift.name}</div>
+                          <div className="text-slate-900 text-xs font-medium mt-1">
+                            {formatTime(`${shift.startTime}:00`)} - {formatTime(`${shift.endTime}:00`)}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Day Cards - Individual Cards for Each Day */}
+                {weekDays.map((day, dayIndex) => (
+                  <div key={dayIndex} className="flex items-center justify-center">
+                    <Card className={`${getDepartmentCardColor(role.department)} rounded-xl shadow-sm w-full ${
+                      isSelected ? 'ring-2 ring-yellow-400 shadow-lg' : ''
+                    }`}>
+                      <CardContent className="p-4">
+                        <div className="space-y-3">
+                          {/* Employee Name Input */}
+                          <div className="bg-white rounded-lg p-3 shadow-sm border border-slate-200">
+                            <input
+                              type="text"
+                              placeholder="Employee Name"
+                              className="w-full border-0 outline-none text-sm font-medium text-slate-900 placeholder-slate-400 bg-transparent text-center"
+                              onChange={(e) => updateScheduleData(roleIndex, shiftIndex, dayIndex, 'employee', e.target.value)}
+                            />
+                          </div>
+                          
+                          {/* Time Display */}
+                          <div className="bg-white rounded-lg p-3 shadow-sm border border-slate-200">
+                            <div className="text-center">
+                              <div className="flex items-center justify-center space-x-1 text-xs text-slate-900 font-semibold">
+                                <Clock className="h-3 w-3 text-slate-600" />
+                                <span>
+                                  {formatTime(`${shift.startTime}:00`)} - {formatTime(`${shift.endTime}:00`)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Department Badge */}
+                          <div className="flex justify-center">
+                            <Badge variant={role.department.toLowerCase()}>
+                              {role.department}
+                            </Badge>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ))}
+              </div>
+            );
+          });
+        })}
+      </div>
+
+      {/* Action Buttons */}
       <div className="flex justify-end space-x-3">
         <Button 
           variant="outline" 
@@ -388,7 +389,7 @@ const WeeklyLaborSchedule = () => {
         </Button>
       </div>
 
-      {/* Selected Employee Info - ROUNDED */}
+      {/* Selected Employee Info */}
       {selectedEmployee && (
         <Card className="border-yellow-300 bg-yellow-50 shadow-sm rounded-xl">
           <CardContent className="p-4">
