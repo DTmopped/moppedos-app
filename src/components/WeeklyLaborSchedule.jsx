@@ -17,8 +17,9 @@ const Badge = ({ children, variant = "default", className = "" }) => {
     bar: "bg-white text-purple-700 border border-purple-300",
     management: "bg-white text-slate-700 border border-slate-300"
   };
+
   return (
-    <span className={${baseClasses} ${variantClasses[variant]} ${className}}>
+    <span className={`${baseClasses} ${variantClasses[variant]} ${className}`}>
       {children}
     </span>
   );
