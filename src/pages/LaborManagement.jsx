@@ -9,6 +9,12 @@ import {
 
 import { LaborDataProvider, useLaborData } from '@/contexts/LaborDataContext';
 import { DEPARTMENTS, ROLES, getRolesByDepartment } from '@/config/laborScheduleConfig';
+
+// Import all the advanced components with correct paths
+import MultiWeekScheduler from '@/components/labor/MultiWeekScheduler';
+import PTOManagementSystem from '@/components/labor/PTOManagementSystem';
+import SmartSchedulingEngine from '@/components/labor/SmartSchedulingEngine';
+import EmployeeOnboardingSystem from '@/components/labor/EmployeeOnboardingSystem';
 import WeeklyLaborSchedule from '@/components/WeeklyLaborSchedule';
 
 const Badge = ({ children, variant = "default", className = "" }) => {
