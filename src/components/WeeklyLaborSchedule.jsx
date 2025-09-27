@@ -416,3 +416,4 @@ const WeeklyLaborSchedule = () => {
 };
 
 export default WeeklyLaborSchedule;
+
