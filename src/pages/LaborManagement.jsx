@@ -125,23 +125,23 @@ const EnhancedOverview = () => {
   const systemStats = getSystemStats();
 
   const handleQuickAction = (action) => {
-    switch (action) {
-      case 'schedule':
-        alert('Opening schedule creator...');
-        break;
-      case 'employee':
-        alert('Opening employee onboarding...');
-        break;
-      case 'pto':
-        alert('Opening PTO management...');
-        break;
-      case 'forecast':
-        alert('Opening AI forecast...');
-        break;
-      default:
-        break;
-    }
-  };
+  switch (action) {
+    case 'schedule':
+      onTabChange('schedule'); // Switch to schedule tab
+      break;
+    case 'addEmployee':
+      onTabChange('employees'); // Switch to employee management tab
+      break;
+    case 'reviewPTO':
+      onTabChange('pto'); // Switch to PTO management tab
+      break;
+    case 'aiForecast':
+      onTabChange('aiScheduling'); // Switch to AI scheduling tab
+      break;
+    default:
+      break;
+  }
+};
 
   return (
     <div className="space-y-6">
