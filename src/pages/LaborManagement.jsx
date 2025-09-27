@@ -9,6 +9,12 @@ import {
 
 import { LaborDataProvider, useLaborData } from '@/contexts/LaborDataContext';
 import { DEPARTMENTS, ROLES, getRolesByDepartment } from '@/config/laborScheduleConfig';
+
+// Import all the advanced components with correct paths
+import MultiWeekScheduler from '@/components/labor/MultiWeekScheduler';
+import PTOManagementSystem from '@/components/labor/PTOManagementSystem';
+import SmartSchedulingEngine from '@/components/labor/SmartSchedulingEngine';
+import EmployeeOnboardingSystem from '@/components/labor/EmployeeOnboardingSystem';
 import WeeklyLaborSchedule from '@/components/WeeklyLaborSchedule';
 
 // Enhanced Badge Component
@@ -41,7 +47,7 @@ const EnhancedHeader = ({ isConnected, currentLocation }) => {
             <Building2 className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Labor Management</h1>
+            <h1 className="text-2xl font-bold text-slate-900">Enhanced Labor Management</h1>
             <p className="text-slate-600">
               Mopped Restaurant - 13 Roles Including Dishwasher
             </p>
@@ -49,7 +55,6 @@ const EnhancedHeader = ({ isConnected, currentLocation }) => {
         </div>
         
         <div className="flex items-center space-x-4">
-          {/* Connection Status */}
           <div className="flex items-center space-x-2">
             {isConnected ? (
               <>
@@ -64,7 +69,6 @@ const EnhancedHeader = ({ isConnected, currentLocation }) => {
             )}
           </div>
           
-          {/* Location Info */}
           <div className="text-right">
             <div className="font-semibold text-slate-900">{currentLocation?.name || 'Mopped Restaurant'}</div>
             <div className="text-sm text-slate-600">13 roles • 4 departments</div>
@@ -76,26 +80,29 @@ const EnhancedHeader = ({ isConnected, currentLocation }) => {
 };
 
 // Enhanced Navigation Component
-const EnhancedNavigation = ({ activeTab, onTabChange }) => {
+const EnhancedNavigation = ({ activeView, onViewChange }) => {
   const tabs = [
     { id: 'overview', label: 'Overview', icon: TrendingUp, description: 'System dashboard and analytics' },
     { id: 'schedule', label: 'Weekly Schedule', icon: Calendar, description: 'Current week scheduling' },
-    { id: 'employees', label: 'Employee Management', icon: UserPlus, description: 'Staff management' },
+    { id: 'multiWeek', label: 'Multi-Week Planner', icon: CalendarDays, description: '4-week advance scheduling' },
+    { id: 'aiScheduling', label: 'AI Scheduling', icon: Brain, description: 'Smart scheduling engine' },
+    { id: 'onboarding', label: 'Employee Management', icon: UserPlus, description: 'Staff onboarding and management' },
+    { id: 'pto', label: 'PTO Management', icon: Clock, description: 'Time-off requests and approvals' },
     { id: 'roles', label: 'All 13 Roles', icon: Users, description: 'Complete role breakdown' }
   ];
 
   return (
     <div className="bg-white border-b border-slate-200">
-      <div className="flex space-x-1 p-1">
+      <div className="flex space-x-1 p-1 overflow-x-auto">
         {tabs.map(tab => {
           const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
+          const isActive = activeView === tab.id;
           
           return (
             <button
               key={tab.id}
-              onClick={() => onTabChange(tab.id)}
-              className={`flex items-center space-x-2 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+              onClick={() => onViewChange(tab.id)}
+              className={`flex items-center space-x-2 px-4 py-3 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
                 isActive
                   ? 'bg-blue-50 text-blue-700 border border-blue-200'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
@@ -112,8 +119,8 @@ const EnhancedNavigation = ({ activeTab, onTabChange }) => {
   );
 };
 
-// Enhanced Overview Dashboard
-const EnhancedOverview = () => {
+// Enhanced Overview Component - FIXED with onTabChange prop
+const EnhancedOverview = ({ onTabChange }) => {
   const { 
     employees, 
     ptoRequests, 
@@ -127,16 +134,16 @@ const EnhancedOverview = () => {
   const handleQuickAction = (action) => {
     switch (action) {
       case 'schedule':
-        alert('Opening schedule creator...');
+        onTabChange('schedule');
         break;
-      case 'employee':
-        alert('Opening employee onboarding...');
+      case 'addEmployee':
+        onTabChange('onboarding');
         break;
-      case 'pto':
-        alert('Opening PTO management...');
+      case 'reviewPTO':
+        onTabChange('pto');
         break;
-      case 'forecast':
-        alert('Opening AI forecast...');
+      case 'aiForecast':
+        onTabChange('aiScheduling');
         break;
       default:
         break;
@@ -145,7 +152,7 @@ const EnhancedOverview = () => {
 
   return (
     <div className="space-y-6">
-      {/* System Statistics */}
+      {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="border-slate-200 bg-white shadow-sm">
           <CardContent className="p-4 text-center">
@@ -230,7 +237,7 @@ const EnhancedOverview = () => {
         </CardContent>
       </Card>
 
-      {/* Quick Actions */}
+      {/* Quick Actions - FIXED with working buttons */}
       <Card className="border-slate-200 bg-white shadow-sm">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-slate-900">Quick Actions</CardTitle>
@@ -248,7 +255,7 @@ const EnhancedOverview = () => {
             <Button 
               variant="outline" 
               className="h-auto p-4 flex flex-col items-center space-y-2 border-slate-300 text-slate-700 hover:bg-slate-50"
-              onClick={() => handleQuickAction('employee')}
+              onClick={() => handleQuickAction('addEmployee')}
             >
               <UserPlus className="h-5 w-5" />
               <span className="text-sm">Add Employee</span>
@@ -256,7 +263,7 @@ const EnhancedOverview = () => {
             <Button 
               variant="outline" 
               className="h-auto p-4 flex flex-col items-center space-y-2 border-slate-300 text-slate-700 hover:bg-slate-50"
-              onClick={() => handleQuickAction('pto')}
+              onClick={() => handleQuickAction('reviewPTO')}
             >
               <CalendarDays className="h-5 w-5" />
               <span className="text-sm">Review PTO</span>
@@ -264,7 +271,7 @@ const EnhancedOverview = () => {
             <Button 
               variant="outline" 
               className="h-auto p-4 flex flex-col items-center space-y-2 border-slate-300 text-slate-700 hover:bg-slate-50"
-              onClick={() => handleQuickAction('forecast')}
+              onClick={() => handleQuickAction('aiForecast')}
             >
               <Brain className="h-5 w-5" />
               <span className="text-sm">AI Forecast</span>
@@ -276,7 +283,7 @@ const EnhancedOverview = () => {
   );
 };
 
-// Enhanced Roles Display
+// Enhanced Roles Display Component
 const EnhancedRolesDisplay = () => {
   const [selectedDepartment, setSelectedDepartment] = useState('all');
 
@@ -286,7 +293,6 @@ const EnhancedRolesDisplay = () => {
 
   return (
     <div className="space-y-6">
-      {/* Department Filter */}
       <div className="flex items-center space-x-4">
         <h3 className="text-lg font-semibold text-slate-900">Filter by Department:</h3>
         <div className="flex space-x-2">
@@ -319,7 +325,6 @@ const EnhancedRolesDisplay = () => {
         </div>
       </div>
 
-      {/* Roles Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredRoles.map(role => (
           <Card key={role.name} className="border-slate-200 bg-white shadow-sm">
@@ -343,47 +348,9 @@ const EnhancedRolesDisplay = () => {
   );
 };
 
-// Employee Management Component
-const EmployeeManagement = () => {
-  const { employees, addEmployee, updateEmployee, deleteEmployee } = useLaborData();
-  const [showAddForm, setShowAddForm] = useState(false);
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-slate-900">Employee Management</h3>
-        <Button onClick={() => setShowAddForm(true)}>
-          <UserPlus className="h-4 w-4 mr-2" />
-          Add Employee
-        </Button>
-      </div>
-
-      {/* Employee List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {employees.map(employee => (
-          <Card key={employee.id} className="border-slate-200 bg-white shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="font-medium text-slate-900">{employee.name}</h4>
-                <Badge variant={employee.status === 'active' ? 'success' : 'secondary'}>
-                  {employee.status}
-                </Badge>
-              </div>
-              <div className="space-y-1 text-sm text-slate-600">
-                <p>Role: <span className="font-medium">{employee.role}</span></p>
-                <p>Department: <span className="font-medium">{employee.department}</span></p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// Main Labor Management Content Component
+// Main Labor Management Content Component - FIXED
 function LaborManagementContent() {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeView, setActiveView] = useState('overview');
   
   const { 
     employees, 
@@ -400,7 +367,7 @@ function LaborManagementContent() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading labor management system...</p>
+          <p className="text-slate-600">Loading enhanced labor management system...</p>
         </div>
       </div>
     );
@@ -409,19 +376,16 @@ function LaborManagementContent() {
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-7xl mx-auto">
-        {/* Enhanced Header */}
         <EnhancedHeader 
           isConnected={isConnected} 
           currentLocation={{ name: 'Mopped Test Site' }}
         />
         
-        {/* Enhanced Navigation */}
         <EnhancedNavigation 
-          activeTab={activeTab} 
-          onTabChange={setActiveTab} 
+          activeView={activeView} 
+          onViewChange={setActiveView} 
         />
         
-        {/* Main Content Area */}
         <div className="p-6">
           {error && (
             <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
@@ -432,11 +396,14 @@ function LaborManagementContent() {
             </div>
           )}
 
-          {/* Tab Content */}
-          {activeTab === 'overview' && <EnhancedOverview />}
-          {activeTab === 'schedule' && <WeeklyLaborSchedule />}
-          {activeTab === 'employees' && <EmployeeManagement />}
-          {activeTab === 'roles' && <EnhancedRolesDisplay />}
+          {/* FIXED: Pass onTabChange to EnhancedOverview */}
+          {activeView === 'overview' && <EnhancedOverview onTabChange={setActiveView} />}
+          {activeView === 'schedule' && <WeeklyLaborSchedule />}
+          {activeView === 'multiWeek' && <MultiWeekScheduler />}
+          {activeView === 'aiScheduling' && <SmartSchedulingEngine />}
+          {activeView === 'onboarding' && <EmployeeOnboardingSystem />}
+          {activeView === 'pto' && <PTOManagementSystem />}
+          {activeView === 'roles' && <EnhancedRolesDisplay />}
         </div>
       </div>
     </div>
