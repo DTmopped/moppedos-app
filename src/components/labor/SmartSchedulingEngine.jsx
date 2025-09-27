@@ -165,10 +165,10 @@ class SalesForecastEngine {
 }
 
 // Smart Scheduling Engine
-class SmartSchedulingEngine {
+class SchedulingEngine {
   constructor(roles = ROLES) {
     this.roles = roles;
-    this.laborTargetPercentage = 14; // 14% labor cost target
+    this.laborTargetPercentage = 14;
   }
 
   // Generate optimal staffing for a day
@@ -440,7 +440,7 @@ const StaffingRecommendation = ({ staffingPlan, onApplyToSchedule }) => {
 };
 
 // Main Smart Scheduling Engine Component
-const SmartSchedulingEngine = ({ onScheduleUpdate }) => {
+const schedulingEngine = new SchedulingEngine();
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [forecast, setForecast] = useState(null);
   const [staffingPlan, setStaffingPlan] = useState(null);
