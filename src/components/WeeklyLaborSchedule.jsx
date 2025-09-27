@@ -78,14 +78,14 @@ const WeeklyLaborSchedule = () => {
   );
 
   const getDepartmentCardColor = (department) => {
-    switch (department) {
-      case 'FOH': return 'bg-blue-50 border-blue-200';
-      case 'BOH': return 'bg-emerald-50 border-emerald-200';
-      case 'Bar': return 'bg-purple-50 border-purple-200';
-      case 'Management': return 'bg-slate-50 border-slate-200';
-      default: return 'bg-gray-50 border-gray-200';
-    }
-  };
+  switch (department) {
+    case 'FOH': return 'bg-blue-100 border-blue-300';
+    case 'BOH': return 'bg-emerald-100 border-emerald-300';
+    case 'Bar': return 'bg-purple-100 border-purple-300';
+    case 'Management': return 'bg-slate-100 border-slate-300';
+    default: return 'bg-gray-100 border-gray-300';
+  }
+};
   const getDepartmentRoleColor = (department) => {
     switch (department) {
       case 'FOH': return 'bg-blue-100 border-blue-300';
