@@ -255,28 +255,28 @@ const WeeklyLaborSchedule = () => {
         </CardContent>
       </Card>
 
-      {/* Week Header - Separate Cards for Each Day */}
-      <div className="grid grid-cols-8 gap-4">
-        {/* Role/Shift Header */}
-        <div className="flex items-center justify-center">
-          <Card className="bg-slate-100 border-slate-300 rounded-xl shadow-sm w-full">
-            <CardContent className="p-4 text-center">
+      {/* Week Header - Wider Cards for Better Proportions */}
+      <div className="grid grid-cols-8 gap-6">
+        {/* Role/Shift Header - Wider for better proportions */}
+        <div className="min-w-[200px]">
+          <Card className="bg-slate-100 border-slate-300 rounded-xl shadow-sm">
+            <CardContent className="p-5 text-center">
               <span className="font-semibold text-slate-800">Role / Shift</span>
             </CardContent>
           </Card>
         </div>
         
-        {/* Day Headers */}
+        {/* Day Headers - Wider for better alignment */}
         {weekDays.map((day, index) => {
           const headerInfo = formatDateHeader(day);
           return (
-            <div key={index} className="flex items-center justify-center">
-              <Card className="bg-slate-100 border-slate-300 rounded-xl shadow-sm w-full">
-                <CardContent className="p-4 text-center">
+            <div key={index} className="min-w-[180px]">
+              <Card className="bg-slate-100 border-slate-300 rounded-xl shadow-sm">
+                <CardContent className="p-5 text-center">
                   <div className="font-semibold text-slate-800 text-sm">
                     {headerInfo.day}
                   </div>
-                  <div className="text-slate-600 text-xs">
+                  <div className="text-slate-600 text-xs mt-1">
                     {headerInfo.date}
                   </div>
                 </CardContent>
@@ -299,16 +299,16 @@ const WeeklyLaborSchedule = () => {
             const isSelected = selectedEmployee === employeeId;
             
             return (
-              <div key={employeeId} className="grid grid-cols-8 gap-4">
-                {/* Role/Shift Card - Left Side */}
-                <div className="flex items-center justify-center">
+              <div key={employeeId} className="grid grid-cols-8 gap-6">
+                {/* Role/Shift Card - Left Side - Wider for better proportions */}
+                <div className="min-w-[200px]">
                   <Card 
-                    className={`${getDepartmentRoleColor(role.department)} rounded-xl shadow-sm w-full cursor-pointer transition-all duration-200 ${
+                    className={`${getDepartmentRoleColor(role.department)} rounded-xl shadow-sm cursor-pointer transition-all duration-200 ${
                       isSelected ? 'ring-2 ring-yellow-400 shadow-lg' : ''
                     }`}
                     onClick={() => handleEmployeeClick(roleIndex, shiftIndex)}
                   >
-                    <CardContent className="p-4">
+                    <CardContent className="p-5">
                       <div className="flex items-center space-x-3">
                         <div className={`w-4 h-4 rounded-full ${getDepartmentIndicatorColor(role.department)}`}></div>
                         <div className="text-center flex-1">
@@ -323,16 +323,16 @@ const WeeklyLaborSchedule = () => {
                   </Card>
                 </div>
 
-                {/* Day Cards - Individual Cards for Each Day */}
+                {/* Day Cards - Wider for better proportions and usability */}
                 {weekDays.map((day, dayIndex) => (
-                  <div key={dayIndex} className="flex items-center justify-center">
-                    <Card className={`${getDepartmentCardColor(role.department)} rounded-xl shadow-sm w-full ${
+                  <div key={dayIndex} className="min-w-[180px]">
+                    <Card className={`${getDepartmentCardColor(role.department)} rounded-xl shadow-sm ${
                       isSelected ? 'ring-2 ring-yellow-400 shadow-lg' : ''
                     }`}>
-                      <CardContent className="p-4">
+                      <CardContent className="p-5">
                         <div className="space-y-3">
-                          {/* Employee Name Input */}
-                          <div className="bg-white rounded-lg p-3 shadow-sm border border-slate-200">
+                          {/* Employee Name Input - Wider for better usability */}
+                          <div className="bg-white rounded-lg p-4 shadow-sm border border-slate-200">
                             <input
                               type="text"
                               placeholder="Employee Name"
@@ -341,11 +341,11 @@ const WeeklyLaborSchedule = () => {
                             />
                           </div>
                           
-                          {/* Time Display */}
-                          <div className="bg-white rounded-lg p-3 shadow-sm border border-slate-200">
+                          {/* Time Display - Wider for better readability */}
+                          <div className="bg-white rounded-lg p-4 shadow-sm border border-slate-200">
                             <div className="text-center">
-                              <div className="flex items-center justify-center space-x-1 text-xs text-slate-900 font-semibold">
-                                <Clock className="h-3 w-3 text-slate-600" />
+                              <div className="flex items-center justify-center space-x-1 text-sm text-slate-900 font-semibold">
+                                <Clock className="h-4 w-4 text-slate-600" />
                                 <span>
                                   {formatTime(`${shift.startTime}:00`)} - {formatTime(`${shift.endTime}:00`)}
                                 </span>
