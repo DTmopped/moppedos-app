@@ -93,25 +93,25 @@ const WeeklyLaborSchedule = () => {
     selectedDepartment === 'ALL' || role.department === selectedDepartment
   );
 
-  // Department colors matching the overview cards
+  // Department colors - DARKER for better visibility
   const getDepartmentRowColor = (department) => {
     switch(department) {
-      case 'FOH': return 'bg-blue-50/60';
-      case 'BOH': return 'bg-emerald-50/60';
-      case 'Bar': return 'bg-purple-50/60';
-      case 'Management': return 'bg-slate-50/60';
-      default: return 'bg-gray-50/60';
+      case 'FOH': return 'bg-blue-100/80';
+      case 'BOH': return 'bg-emerald-100/80';
+      case 'Bar': return 'bg-purple-100/80';
+      case 'Management': return 'bg-slate-100/80';
+      default: return 'bg-gray-100/80';
     }
   };
 
-  // Department colors for left column - matching
+  // Department colors for left column - matching and darker
   const getDepartmentLeftColumnColor = (department) => {
     switch(department) {
-      case 'FOH': return 'bg-blue-50/60 border-l-4 border-blue-400';
-      case 'BOH': return 'bg-emerald-50/60 border-l-4 border-emerald-400';
-      case 'Bar': return 'bg-purple-50/60 border-l-4 border-purple-400';
-      case 'Management': return 'bg-slate-50/60 border-l-4 border-slate-400';
-      default: return 'bg-gray-50/60 border-l-4 border-gray-400';
+      case 'FOH': return 'bg-blue-100/80 border-l-4 border-blue-500';
+      case 'BOH': return 'bg-emerald-100/80 border-l-4 border-emerald-500';
+      case 'Bar': return 'bg-purple-100/80 border-l-4 border-purple-500';
+      case 'Management': return 'bg-slate-100/80 border-l-4 border-slate-500';
+      default: return 'bg-gray-100/80 border-l-4 border-gray-500';
     }
   };
 
@@ -255,22 +255,22 @@ const WeeklyLaborSchedule = () => {
         </CardContent>
       </Card>
 
-      {/* Schedule Grid with perfect alignment */}
+      {/* Schedule Grid with proper containment */}
       <Card className="bg-white border border-slate-200 shadow-lg">
         <div className="relative overflow-hidden">
-          {/* Sticky Header Row - Properly aligned with content */}
+          {/* Sticky Header Row - TALLER to match content */}
           <div className="sticky top-0 z-20 bg-white border-b-2 border-slate-300 shadow-sm">
             <div className="grid grid-cols-8 gap-0">
-              <div className="bg-slate-200 p-3 font-semibold text-slate-800 border-r-2 border-slate-300 sticky left-0 z-30 w-[220px] flex items-center justify-center">
-                <div className="bg-white rounded-lg p-2 shadow-sm text-center">
-                  <span className="text-sm">Role / Shift</span>
+              <div className="bg-slate-200 p-4 font-semibold text-slate-800 border-r-2 border-slate-300 sticky left-0 z-30 w-[220px] h-[120px] flex items-center justify-center">
+                <div className="bg-white rounded-lg p-3 shadow-sm text-center">
+                  <span className="text-sm font-semibold">Role / Shift</span>
                 </div>
               </div>
               {weekDays.map((day, index) => {
                 const headerInfo = formatDateHeader(day);
                 return (
-                  <div key={index} className="bg-slate-200 p-3 border-r border-slate-300 last:border-r-0 w-[220px] flex items-center justify-center">
-                    <div className="bg-white rounded-lg p-2 shadow-sm text-center">
+                  <div key={index} className="bg-slate-200 p-4 border-r border-slate-300 last:border-r-0 w-[220px] h-[120px] flex items-center justify-center">
+                    <div className="bg-white rounded-lg p-3 shadow-sm text-center">
                       <div className="font-semibold text-slate-800 text-sm">
                         {headerInfo.day},
                       </div>
@@ -284,7 +284,7 @@ const WeeklyLaborSchedule = () => {
             </div>
           </div>
 
-          {/* Scrollable Schedule Body with perfect alignment */}
+          {/* Scrollable Schedule Body with DATA ENTRY CELLS */}
           <div className="max-h-[600px] overflow-y-auto">
             <div className="divide-y divide-slate-200">
               {filteredRoles.map((role, roleIndex) => {
@@ -304,13 +304,13 @@ const WeeklyLaborSchedule = () => {
                         isSelected ? 'ring-2 ring-yellow-400 ring-inset shadow-lg' : ''
                       } ${getDepartmentRowColor(role.department)}`}
                     >
-                      {/* Sticky Role/Shift Column - SHORTER and CENTERED */}
-                      <div className={`sticky left-0 border-r-2 border-slate-300 z-10 w-[220px] h-[90px] flex items-center justify-center p-2 ${getDepartmentLeftColumnColor(role.department)}`}>
+                      {/* Sticky Role/Shift Column */}
+                      <div className={`sticky left-0 border-r-2 border-slate-300 z-10 w-[220px] h-[120px] flex items-center justify-center p-3 ${getDepartmentLeftColumnColor(role.department)}`}>
                         <div 
                           className="cursor-pointer group w-full"
                           onClick={() => handleEmployeeClick(roleIndex, shiftIndex)}
                         >
-                          <div className="bg-white rounded-lg p-2 shadow-sm">
+                          <div className="bg-white rounded-lg p-3 shadow-sm">
                             <div className="flex items-center space-x-2">
                               <div className={`w-3 h-3 rounded-full ${getDepartmentIndicatorColor(role.department)} group-hover:scale-110 transition-transform`}></div>
                               <div className="text-center flex-1">
@@ -325,12 +325,12 @@ const WeeklyLaborSchedule = () => {
                         </div>
                       </div>
 
-                      {/* Day Columns - MATCHING WIDTH and ALIGNMENT */}
+                      {/* Day Columns - WITH DATA ENTRY CELLS */}
                       {weekDays.map((day, dayIndex) => (
-                        <div key={dayIndex} className={`border-r border-slate-200 last:border-r-0 w-[220px] h-[90px] flex items-center justify-center p-2 ${isSelected ? 'bg-yellow-100/50' : ''}`}>
-                          <div className="space-y-2 w-full">
-                            {/* Employee Name Input - MATCHING WIDTH */}
-                            <div className="bg-white rounded-lg p-2 shadow-sm w-full">
+                        <div key={dayIndex} className={`border-r border-slate-200 last:border-r-0 w-[220px] h-[120px] p-3 ${isSelected ? 'bg-yellow-100/50' : ''}`}>
+                          <div className="space-y-2 h-full flex flex-col justify-center">
+                            {/* Employee Name Input - WHITE BOX */}
+                            <div className="bg-white rounded-lg p-2 shadow-sm">
                               <input
                                 type="text"
                                 placeholder="Employee Name"
@@ -339,8 +339,8 @@ const WeeklyLaborSchedule = () => {
                               />
                             </div>
                             
-                            {/* Time Display - SINGLE ROW, MATCHING WIDTH */}
-                            <div className="bg-white rounded-lg p-2 shadow-sm w-full">
+                            {/* Time Display - WHITE BOX, SINGLE ROW */}
+                            <div className="bg-white rounded-lg p-2 shadow-sm">
                               <div className="text-center">
                                 <div className="flex items-center justify-center space-x-1 text-xs text-slate-900 font-semibold">
                                   <Clock className="h-3 w-3 text-slate-600" />
