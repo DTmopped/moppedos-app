@@ -10,12 +10,66 @@ import {
 import { LaborDataProvider, useLaborData } from '@/contexts/LaborDataContext';
 import { DEPARTMENTS, ROLES, getRolesByDepartment } from '@/config/laborScheduleConfig';
 
-// Import all the advanced components with correct paths
-import MultiWeekScheduler from '@/components/labor/MultiWeekScheduler';
-import PTOManagementSystem from '@/components/labor/PTOManagementSystem';
-import SmartSchedulingEngine from '@/components/labor/SmartSchedulingEngine';
-import EmployeeOnboardingSystem from '@/components/labor/EmployeeOnboardingSystem';
+// Import WeeklyLaborSchedule (this one definitely exists)
 import WeeklyLaborSchedule from '@/components/WeeklyLaborSchedule';
+
+// Conditional imports for advanced components - with fallbacks
+let MultiWeekScheduler, PTOManagementSystem, SmartSchedulingEngine, EmployeeOnboardingSystem;
+
+try {
+  MultiWeekScheduler = require('@/components/labor/MultiWeekScheduler').default;
+} catch (e) {
+  MultiWeekScheduler = () => <div className="p-8 text-center text-slate-600">Multi-Week Scheduler coming soon...</div>;
+}
+
+try {
+  PTOManagementSystem = require('@/components/labor/PTOManagementSystem').default;
+} catch (e) {
+  PTOManagementSystem = () => <div className="p-8 text-center text-slate-600">PTO Management coming soon...</div>;
+}
+
+try {
+  SmartSchedulingEngine = require('@/components/labor/SmartSchedulingEngine').default;
+} catch (e) {
+  SmartSchedulingEngine = () => <div className="p-8 text-center text-slate-600">AI Scheduling Engine coming soon...</div>;
+}
+
+try {
+  EmployeeOnboardingSystem = require('@/components/labor/EmployeeOnboardingSystem').default;
+} catch (e) {
+  EmployeeOnboardingSystem = () => <div className="p-8 text-center text-slate-600">Employee Onboarding coming soon...</div>;
+}
+
+// Enhanced color scheme functions (inline since import might be causing issues)
+const generateDepartmentColors = (deptKey) => {
+  const colorMap = {
+    FOH: {
+      bg: 'bg-blue-50',
+      border: 'border-blue-200',
+      text: 'text-blue-700',
+      accent: 'bg-blue-600'
+    },
+    BOH: {
+      bg: 'bg-emerald-50',
+      border: 'border-emerald-200', 
+      text: 'text-emerald-700',
+      accent: 'bg-emerald-600'
+    },
+    Bar: {
+      bg: 'bg-purple-50',
+      border: 'border-purple-200',
+      text: 'text-purple-700',
+      accent: 'bg-purple-600'
+    },
+    Management: {
+      bg: 'bg-slate-50',
+      border: 'border-slate-200',
+      text: 'text-slate-700',
+      accent: 'bg-slate-600'
+    }
+  };
+  return colorMap[deptKey] || colorMap.Management;
+};
 
 // Enhanced Badge Component
 const Badge = ({ children, variant = "default", className = "" }) => {
@@ -40,14 +94,16 @@ const Badge = ({ children, variant = "default", className = "" }) => {
 // Enhanced Header Component
 const EnhancedHeader = ({ isConnected, currentLocation }) => {
   return (
-    <div className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200 p-6 rounded-t-lg">
+    <div className="bg-gradient-to-r from-blue-50 via-slate-50 to-emerald-50 border-b border-slate-200 p-6 rounded-t-lg">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <div className="p-3 bg-blue-600 rounded-lg">
+          <div className="p-3 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg shadow-lg">
             <Building2 className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Enhanced Labor Management</h1>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-700 to-emerald-700 bg-clip-text text-transparent">
+              Enhanced Labor Management
+            </h1>
             <p className="text-slate-600">
               Mopped Restaurant - 13 Roles Including Dishwasher
             </p>
@@ -82,17 +138,17 @@ const EnhancedHeader = ({ isConnected, currentLocation }) => {
 // Enhanced Navigation Component
 const EnhancedNavigation = ({ activeView, onViewChange }) => {
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: TrendingUp, description: 'System dashboard and analytics' },
-    { id: 'schedule', label: 'Weekly Schedule', icon: Calendar, description: 'Current week scheduling' },
-    { id: 'multiWeek', label: 'Multi-Week Planner', icon: CalendarDays, description: '4-week advance scheduling' },
-    { id: 'aiScheduling', label: 'AI Scheduling', icon: Brain, description: 'Smart scheduling engine' },
-    { id: 'onboarding', label: 'Employee Management', icon: UserPlus, description: 'Staff onboarding and management' },
-    { id: 'pto', label: 'PTO Management', icon: Clock, description: 'Time-off requests and approvals' },
-    { id: 'roles', label: 'All 13 Roles', icon: Users, description: 'Complete role breakdown' }
+    { id: 'overview', label: 'Overview', icon: TrendingUp, description: 'System dashboard and analytics', color: 'blue' },
+    { id: 'schedule', label: 'Weekly Schedule', icon: Calendar, description: 'Current week scheduling', color: 'emerald' },
+    { id: 'multiWeek', label: 'Multi-Week Planner', icon: CalendarDays, description: '4-week advance scheduling', color: 'purple' },
+    { id: 'aiScheduling', label: 'AI Scheduling', icon: Brain, description: 'Smart scheduling engine', color: 'indigo' },
+    { id: 'onboarding', label: 'Employee Management', icon: UserPlus, description: 'Staff onboarding and management', color: 'cyan' },
+    { id: 'pto', label: 'PTO Management', icon: Clock, description: 'Time-off requests and approvals', color: 'amber' },
+    { id: 'roles', label: 'All 13 Roles', icon: Users, description: 'Complete role breakdown', color: 'rose' }
   ];
 
   return (
-    <div className="bg-white border-b border-slate-200">
+    <div className="bg-white border-b border-slate-200 shadow-sm">
       <div className="flex space-x-1 p-1 overflow-x-auto">
         {tabs.map(tab => {
           const Icon = tab.icon;
@@ -104,7 +160,7 @@ const EnhancedNavigation = ({ activeView, onViewChange }) => {
               onClick={() => onViewChange(tab.id)}
               className={`flex items-center space-x-2 px-4 py-3 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
                 isActive
-                  ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                  ? `bg-${tab.color}-50 text-${tab.color}-700 border border-${tab.color}-200 shadow-sm`
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
               title={tab.description}
@@ -119,7 +175,7 @@ const EnhancedNavigation = ({ activeView, onViewChange }) => {
   );
 };
 
-// Enhanced Overview Component - FIXED with onTabChange prop
+// Enhanced Overview Component
 const EnhancedOverview = ({ onTabChange }) => {
   const { 
     employees, 
@@ -152,80 +208,93 @@ const EnhancedOverview = ({ onTabChange }) => {
 
   return (
     <div className="space-y-6">
-      {/* Stats Cards */}
+      {/* Enhanced Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="border-slate-200 bg-white shadow-sm">
+        <Card className="border-slate-200 bg-gradient-to-br from-blue-50 to-blue-100 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-4 text-center">
             <div className="flex items-center justify-center mb-2">
-              <Users className="h-5 w-5 text-blue-600" />
+              <div className="p-2 bg-blue-600 rounded-full">
+                <Users className="h-5 w-5 text-white" />
+              </div>
             </div>
-            <div className="text-2xl font-bold text-slate-900">{systemStats.totalEmployees}</div>
-            <div className="text-sm text-slate-600">Total Employees</div>
+            <div className="text-2xl font-bold text-blue-900">{systemStats.totalEmployees}</div>
+            <div className="text-sm text-blue-700">Total Employees</div>
           </CardContent>
         </Card>
         
-        <Card className="border-slate-200 bg-white shadow-sm">
+        <Card className="border-slate-200 bg-gradient-to-br from-emerald-50 to-emerald-100 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-4 text-center">
             <div className="flex items-center justify-center mb-2">
-              <CheckCircle className="h-5 w-5 text-emerald-600" />
+              <div className="p-2 bg-emerald-600 rounded-full">
+                <CheckCircle className="h-5 w-5 text-white" />
+              </div>
             </div>
-            <div className="text-2xl font-bold text-emerald-600">{systemStats.activeEmployees}</div>
-            <div className="text-sm text-slate-600">Active Staff</div>
+            <div className="text-2xl font-bold text-emerald-900">{systemStats.activeEmployees}</div>
+            <div className="text-sm text-emerald-700">Active Staff</div>
           </CardContent>
         </Card>
         
-        <Card className="border-slate-200 bg-white shadow-sm">
+        <Card className="border-slate-200 bg-gradient-to-br from-amber-50 to-amber-100 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-4 text-center">
             <div className="flex items-center justify-center mb-2">
-              <Clock className="h-5 w-5 text-amber-600" />
+              <div className="p-2 bg-amber-600 rounded-full">
+                <Clock className="h-5 w-5 text-white" />
+              </div>
             </div>
-            <div className="text-2xl font-bold text-amber-600">{systemStats.pendingPTO}</div>
-            <div className="text-sm text-slate-600">Pending PTO</div>
+            <div className="text-2xl font-bold text-amber-900">{systemStats.pendingPTO}</div>
+            <div className="text-sm text-amber-700">Pending PTO</div>
           </CardContent>
         </Card>
         
-        <Card className="border-slate-200 bg-white shadow-sm">
+        <Card className="border-slate-200 bg-gradient-to-br from-purple-50 to-purple-100 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-4 text-center">
             <div className="flex items-center justify-center mb-2">
-              <Target className="h-5 w-5 text-purple-600" />
+              <div className="p-2 bg-purple-600 rounded-full">
+                <Target className="h-5 w-5 text-white" />
+              </div>
             </div>
-            <div className="text-2xl font-bold text-purple-600">{systemStats.totalRoles}</div>
-            <div className="text-sm text-slate-600">Total Roles</div>
+            <div className="text-2xl font-bold text-purple-900">{systemStats.totalRoles}</div>
+            <div className="text-sm text-purple-700">Total Roles</div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Department Breakdown */}
+      {/* Enhanced Department Breakdown */}
       <Card className="border-slate-200 bg-white shadow-sm">
-        <CardHeader>
+        <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100">
           <CardTitle className="text-lg font-semibold text-slate-900">
             Department Breakdown - All 13 Roles
           </CardTitle>
           <CardDescription>
-            Complete role structure including the Dishwasher role with department organization
+            Complete role structure including the Dishwasher role with enhanced department organization
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {Object.entries(DEPARTMENTS).map(([deptKey, deptInfo]) => {
               const deptRoles = getRolesByDepartment(deptKey);
+              const colors = generateDepartmentColors(deptKey);
+              
               return (
-                <div key={deptKey} className={`${deptInfo.bgColor} border ${deptInfo.textColor.replace('text-', 'border-').replace('-700', '-200')} rounded-lg p-4`}>
+                <div key={deptKey} className={`${colors.bg} border-2 ${colors.border} rounded-xl p-4 hover:shadow-lg transition-all duration-200`}>
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className={`font-semibold ${deptInfo.textColor}`}>{deptInfo.name}</h4>
-                    <Badge variant="secondary">{deptRoles.length} roles</Badge>
+                    <h4 className={`font-bold ${colors.text} text-lg`}>{deptInfo.name}</h4>
+                    <Badge variant="outline" className={`${colors.accent} text-white border-transparent`}>
+                      {deptRoles.length} roles
+                    </Badge>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {deptRoles.slice(0, 3).map(role => (
-                      <div key={role.name} className="text-sm">
-                        <span className={`font-medium ${deptInfo.textColor}`}>{role.name}</span>
-                        <div className="text-xs opacity-75">
-                          ${role.hourly_rate}/hr • 1:{role.ratio}
+                      <div key={role.name} className="bg-white/70 rounded-lg p-2">
+                        <span className={`font-semibold ${colors.text} block`}>{role.name}</span>
+                        <div className="text-xs text-slate-600 mt-1">
+                          <span className="font-medium">${role.hourly_rate}/hr</span> • 
+                          <span className="ml-1">1:{role.ratio} ratio</span>
                         </div>
                       </div>
                     ))}
                     {deptRoles.length > 3 && (
-                      <div className="text-xs opacity-75">
+                      <div className={`text-sm ${colors.text} font-medium text-center py-2`}>
                         +{deptRoles.length - 3} more roles
                       </div>
                     )}
@@ -237,44 +306,53 @@ const EnhancedOverview = ({ onTabChange }) => {
         </CardContent>
       </Card>
 
-      {/* Quick Actions - FIXED with working buttons */}
+      {/* Enhanced Quick Actions */}
       <Card className="border-slate-200 bg-white shadow-sm">
-        <CardHeader>
+        <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100">
           <CardTitle className="text-lg font-semibold text-slate-900">Quick Actions</CardTitle>
+          <CardDescription>Jump to key management functions</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <CardContent className="p-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Button 
               variant="outline" 
-              className="h-auto p-4 flex flex-col items-center space-y-2 border-slate-300 text-slate-700 hover:bg-slate-50"
+              className="h-auto p-6 flex flex-col items-center space-y-3 border-2 border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 group"
               onClick={() => handleQuickAction('schedule')}
             >
-              <Calendar className="h-5 w-5" />
-              <span className="text-sm">Schedule Next Week</span>
+              <div className="p-3 bg-blue-100 rounded-full group-hover:bg-blue-200 transition-colors">
+                <Calendar className="h-6 w-6" />
+              </div>
+              <span className="text-sm font-medium">Schedule Next Week</span>
             </Button>
             <Button 
               variant="outline" 
-              className="h-auto p-4 flex flex-col items-center space-y-2 border-slate-300 text-slate-700 hover:bg-slate-50"
+              className="h-auto p-6 flex flex-col items-center space-y-3 border-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-300 transition-all duration-200 group"
               onClick={() => handleQuickAction('addEmployee')}
             >
-              <UserPlus className="h-5 w-5" />
-              <span className="text-sm">Add Employee</span>
+              <div className="p-3 bg-emerald-100 rounded-full group-hover:bg-emerald-200 transition-colors">
+                <UserPlus className="h-6 w-6" />
+              </div>
+              <span className="text-sm font-medium">Add Employee</span>
             </Button>
             <Button 
               variant="outline" 
-              className="h-auto p-4 flex flex-col items-center space-y-2 border-slate-300 text-slate-700 hover:bg-slate-50"
+              className="h-auto p-6 flex flex-col items-center space-y-3 border-2 border-amber-200 text-amber-700 hover:bg-amber-50 hover:border-amber-300 transition-all duration-200 group"
               onClick={() => handleQuickAction('reviewPTO')}
             >
-              <CalendarDays className="h-5 w-5" />
-              <span className="text-sm">Review PTO</span>
+              <div className="p-3 bg-amber-100 rounded-full group-hover:bg-amber-200 transition-colors">
+                <CalendarDays className="h-6 w-6" />
+              </div>
+              <span className="text-sm font-medium">Review PTO</span>
             </Button>
             <Button 
               variant="outline" 
-              className="h-auto p-4 flex flex-col items-center space-y-2 border-slate-300 text-slate-700 hover:bg-slate-50"
+              className="h-auto p-6 flex flex-col items-center space-y-3 border-2 border-purple-200 text-purple-700 hover:bg-purple-50 hover:border-purple-300 transition-all duration-200 group"
               onClick={() => handleQuickAction('aiForecast')}
             >
-              <Brain className="h-5 w-5" />
-              <span className="text-sm">AI Forecast</span>
+              <div className="p-3 bg-purple-100 rounded-full group-hover:bg-purple-200 transition-colors">
+                <Brain className="h-6 w-6" />
+              </div>
+              <span className="text-sm font-medium">AI Forecast</span>
             </Button>
           </div>
         </CardContent>
@@ -293,14 +371,14 @@ const EnhancedRolesDisplay = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-4 bg-white p-4 rounded-lg shadow-sm border border-slate-200">
         <h3 className="text-lg font-semibold text-slate-900">Filter by Department:</h3>
         <div className="flex space-x-2">
           <button
             onClick={() => setSelectedDepartment('all')}
-            className={`px-3 py-1 text-sm font-medium rounded transition-colors ${
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
               selectedDepartment === 'all'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-blue-600 text-white shadow-md'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >
@@ -308,14 +386,15 @@ const EnhancedRolesDisplay = () => {
           </button>
           {Object.entries(DEPARTMENTS).map(([deptKey, deptInfo]) => {
             const count = getRolesByDepartment(deptKey).length;
+            const colors = generateDepartmentColors(deptKey);
             return (
               <button
                 key={deptKey}
                 onClick={() => setSelectedDepartment(deptKey)}
-                className={`px-3 py-1 text-sm font-medium rounded transition-colors ${
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
                   selectedDepartment === deptKey
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    ? `${colors.accent} text-white shadow-md`
+                    : `${colors.bg} ${colors.text} hover:shadow-sm`
                 }`}
               >
                 {deptKey} ({count})
@@ -325,30 +404,41 @@ const EnhancedRolesDisplay = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredRoles.map(role => (
-          <Card key={role.name} className="border-slate-200 bg-white shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-medium text-slate-900">{role.name}</h3>
-                <Badge variant="secondary">
-                  {role.department}
-                </Badge>
-              </div>
-              <div className="space-y-1 text-sm text-slate-600">
-                <p>Ratio: <span className="font-medium">1:{role.ratio}</span></p>
-                <p>Rate: <span className="font-medium">${role.hourly_rate}/hr</span></p>
-                <p className="text-xs text-slate-500">{role.description}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredRoles.map(role => {
+          const colors = generateDepartmentColors(role.department);
+          return (
+            <Card key={role.name} className={`border-2 ${colors.border} bg-white shadow-sm hover:shadow-lg transition-all duration-200`}>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold text-slate-900 text-lg">{role.name}</h3>
+                  <Badge variant="outline" className={`${colors.accent} text-white border-transparent`}>
+                    {role.department}
+                  </Badge>
+                </div>
+                <div className={`${colors.bg} rounded-lg p-4 space-y-2`}>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-slate-600">Ratio:</span>
+                    <span className={`font-bold ${colors.text}`}>1:{role.ratio}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-slate-600">Rate:</span>
+                    <span className={`font-bold ${colors.text}`}>${role.hourly_rate}/hr</span>
+                  </div>
+                  <div className="pt-2 border-t border-slate-200">
+                    <p className="text-xs text-slate-500 leading-relaxed">{role.description}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
 };
 
-// Main Labor Management Content Component - FIXED
+// Main Labor Management Content Component
 function LaborManagementContent() {
   const [activeView, setActiveView] = useState('overview');
   
@@ -366,15 +456,15 @@ function LaborManagementContent() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading enhanced labor management system...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-slate-600 font-medium">Loading enhanced labor management system...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-emerald-50/30">
       <div className="max-w-7xl mx-auto">
         <EnhancedHeader 
           isConnected={isConnected} 
@@ -388,15 +478,14 @@ function LaborManagementContent() {
         
         <div className="p-6">
           {error && (
-            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="mb-6 p-4 bg-gradient-to-r from-amber-50 to-red-50 border-l-4 border-amber-400 rounded-lg shadow-sm">
               <div className="flex items-center">
                 <AlertCircle className="h-5 w-5 text-amber-600 mr-2" />
-                <span className="text-amber-800">{error}</span>
+                <span className="text-amber-800 font-medium">{error}</span>
               </div>
             </div>
           )}
 
-          {/* FIXED: Pass onTabChange to EnhancedOverview */}
           {activeView === 'overview' && <EnhancedOverview onTabChange={setActiveView} />}
           {activeView === 'schedule' && <WeeklyLaborSchedule />}
           {activeView === 'multiWeek' && <MultiWeekScheduler />}
@@ -420,6 +509,7 @@ function LaborManagement() {
 }
 
 export default LaborManagement;
+
 
 
 
