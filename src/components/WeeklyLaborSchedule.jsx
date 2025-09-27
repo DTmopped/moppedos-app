@@ -8,15 +8,15 @@ import {
 import { useLaborData } from '@/contexts/LaborDataContext';
 import { DEPARTMENTS, ROLES, getRolesByDepartment } from '@/config/laborScheduleConfig';
 
-// Clean Badge Component matching department cards
+// Clean Badge Component
 const Badge = ({ children, variant = "default", className = "" }) => {
-  const baseClasses = "inline-flex items-center px-3 py-1 text-xs font-semibold rounded";
+  const baseClasses = "inline-flex items-center px-2 py-1 text-xs font-medium rounded";
   const variantClasses = {
-    default: "bg-slate-100 text-slate-800",
-    foh: "bg-blue-100 text-blue-800",
-    boh: "bg-emerald-100 text-emerald-800", 
-    bar: "bg-purple-100 text-purple-800",
-    management: "bg-slate-100 text-slate-800"
+    default: "bg-slate-100 text-slate-700",
+    foh: "bg-blue-100 text-blue-700",
+    boh: "bg-emerald-100 text-emerald-700", 
+    bar: "bg-purple-100 text-purple-700",
+    management: "bg-slate-100 text-slate-700"
   };
   
   return (
@@ -35,17 +35,6 @@ const getStartOfWeek = (date) => {
   return start;
 };
 
-const formatDate = (date) => {
-  if (!date || !(date instanceof Date)) {
-    return 'Invalid Date';
-  }
-  return date.toLocaleDateString('en-US', { 
-    weekday: 'short', 
-    month: 'numeric', 
-    day: 'numeric' 
-  });
-};
-
 const formatDateHeader = (date) => {
   if (!date || !(date instanceof Date)) {
     return { day: 'Invalid', date: 'Date' };
@@ -62,28 +51,32 @@ const formatDateHeader = (date) => {
   };
 };
 
-// Format time to AM/PM with BLACK text
-const formatTime = (time) => {
-  if (!time || typeof time !== 'string') {
-    return 'Invalid Time';
+// Fixed time formatting function
+const formatTime = (timeString) => {
+  if (!timeString) return '';
+  
+  // Handle different time formats
+  let hours, minutes;
+  
+  if (timeString.includes(':')) {
+    [hours, minutes] = timeString.split(':');
+  } else {
+    return timeString; // Return as-is if not in expected format
   }
-  const timeParts = time.split(':');
-  if (timeParts.length !== 2) {
-    return time;
-  }
-  const [hours, minutes] = timeParts;
+  
   const hour = parseInt(hours);
-  if (isNaN(hour)) {
-    return time;
-  }
+  const min = minutes || '00';
+  
+  if (isNaN(hour)) return timeString;
+  
   const ampm = hour >= 12 ? 'PM' : 'AM';
   const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-  return `${displayHour}:${minutes} ${ampm}`;
+  
+  return `${displayHour}:${min} ${ampm}`;
 };
 
 const WeeklyLaborSchedule = () => {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
-  const [adminMode, setAdminMode] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState('ALL');
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [scheduleData, setScheduleData] = useState({});
@@ -101,18 +94,18 @@ const WeeklyLaborSchedule = () => {
     selectedDepartment === 'ALL' || role.department === selectedDepartment
   );
 
-  // Department colors matching the overview cards - colored borders with white interiors
+  // Department colors - clean borders with white backgrounds
   const getDepartmentRowColor = (department) => {
     switch(department) {
-      case 'FOH': return 'bg-white border-l-4 border-blue-400';
-      case 'BOH': return 'bg-white border-l-4 border-emerald-400';
-      case 'Bar': return 'bg-white border-l-4 border-purple-400';
-      case 'Management': return 'bg-white border-l-4 border-slate-400';
-      default: return 'bg-white border-l-4 border-gray-300';
+      case 'FOH': return 'border-l-4 border-blue-400';
+      case 'BOH': return 'border-l-4 border-emerald-400';
+      case 'Bar': return 'border-l-4 border-purple-400';
+      case 'Management': return 'border-l-4 border-slate-400';
+      default: return 'border-l-4 border-gray-300';
     }
   };
 
-  // Department indicator colors for the dots
+  // Department indicator dots
   const getDepartmentIndicatorColor = (department) => {
     switch(department) {
       case 'FOH': return 'bg-blue-500';
@@ -123,7 +116,7 @@ const WeeklyLaborSchedule = () => {
     }
   };
 
-  // Department filter button styling
+  // Department filter styling
   const getDepartmentFilterStyle = (deptId, isSelected) => {
     if (isSelected) {
       switch(deptId) {
@@ -252,23 +245,23 @@ const WeeklyLaborSchedule = () => {
         </CardContent>
       </Card>
 
-      {/* Enhanced Schedule Grid with MUCH BIGGER cells */}
+      {/* Schedule Grid with proper proportions */}
       <Card className="bg-white border border-slate-200 shadow-lg">
         <div className="relative overflow-hidden">
           {/* Sticky Header Row */}
           <div className="sticky top-0 z-20 bg-white border-b-2 border-slate-300 shadow-sm">
             <div className="grid grid-cols-8 gap-0">
-              <div className="bg-slate-100 p-6 font-semibold text-slate-700 text-lg border-r-2 border-slate-300 sticky left-0 z-30">
+              <div className="bg-slate-100 p-4 font-semibold text-slate-700 border-r-2 border-slate-300 sticky left-0 z-30">
                 Role / Shift
               </div>
               {weekDays.map((day, index) => {
                 const headerInfo = formatDateHeader(day);
                 return (
-                  <div key={index} className="bg-emerald-50 p-6 text-center border-r border-slate-200 last:border-r-0">
-                    <div className="font-semibold text-slate-700 text-lg">
+                  <div key={index} className="bg-emerald-50 p-4 text-center border-r border-slate-200 last:border-r-0">
+                    <div className="font-semibold text-slate-700">
                       {headerInfo.day},
                     </div>
-                    <div className="text-slate-600 text-base">
+                    <div className="text-slate-600 text-sm">
                       {headerInfo.date}
                     </div>
                   </div>
@@ -277,67 +270,68 @@ const WeeklyLaborSchedule = () => {
             </div>
           </div>
 
-          {/* Scrollable Schedule Body with MUCH BIGGER cells */}
-          <div className="max-h-[700px] overflow-y-auto">
+          {/* Scrollable Schedule Body */}
+          <div className="max-h-[600px] overflow-y-auto">
             <div className="divide-y divide-slate-200">
               {filteredRoles.map((role, roleIndex) => {
-                const shifts = role.shifts || [
-                  { name: 'AM Shift', startTime: '09:00', endTime: '17:00' },
-                  { name: 'PM Shift', startTime: '15:00', endTime: '23:00' }
+                const shifts = [
+                  { name: 'AM Shift', startTime: '9:00', endTime: '5:00' },
+                  { name: 'PM Shift', startTime: '3:00', endTime: '11:00' }
                 ];
 
                 return shifts.map((shift, shiftIndex) => {
-                  const isSelected = selectedEmployee === `${roleIndex}-${shiftIndex}`;
+                  const employeeId = `${roleIndex}-${shiftIndex}`;
+                  const isSelected = selectedEmployee === employeeId;
                   
                   return (
                     <div 
-                      key={`${roleIndex}-${shiftIndex}`}
+                      key={employeeId}
                       className={`grid grid-cols-8 gap-0 transition-all duration-200 ${
-                        isSelected ? 'bg-yellow-100 ring-2 ring-yellow-400 ring-inset' : 'hover:bg-slate-50'
-                      } ${getDepartmentRowColor(role.department)}`}
+                        isSelected ? 'bg-yellow-100 ring-2 ring-yellow-400 ring-inset shadow-lg' : 'hover:bg-slate-50'
+                      } ${getDepartmentRowColor(role.department)} bg-white`}
                     >
-                      {/* Sticky Role/Shift Column - BIGGER */}
-                      <div className="sticky left-0 bg-white p-8 border-r-2 border-slate-300 z-10 min-w-[240px]">
+                      {/* Sticky Role/Shift Column - Proper width */}
+                      <div className="sticky left-0 bg-white p-4 border-r-2 border-slate-300 z-10">
                         <div 
                           className="cursor-pointer group"
                           onClick={() => handleEmployeeClick(roleIndex, shiftIndex)}
                         >
-                          <div className="flex items-center space-x-4">
-                            <div className={`w-5 h-5 rounded-full ${getDepartmentIndicatorColor(role.department)} group-hover:scale-110 transition-transform`}></div>
+                          <div className="flex items-center space-x-3">
+                            <div className={`w-4 h-4 rounded-full ${getDepartmentIndicatorColor(role.department)} group-hover:scale-110 transition-transform`}></div>
                             <div>
-                              <div className="font-bold text-slate-900 text-lg group-hover:text-slate-800">{role.name}</div>
-                              <div className="text-slate-700 text-base font-medium">{shift.name}</div>
-                              <div className="text-slate-900 text-base font-semibold mt-2">
-                                {formatTime(shift.startTime)} - {formatTime(shift.endTime)}
+                              <div className="font-semibold text-slate-800 text-sm group-hover:text-slate-900">{role.name}</div>
+                              <div className="text-slate-600 text-xs">{shift.name}</div>
+                              <div className="text-slate-900 text-xs font-medium mt-1">
+                                {formatTime(`${shift.startTime}:00`)} - {formatTime(`${shift.endTime}:00`)}
                               </div>
                             </div>
                           </div>
                         </div>
                       </div>
 
-                      {/* Day Columns - MUCH BIGGER cells */}
+                      {/* Day Columns - Proper sizing */}
                       {weekDays.map((day, dayIndex) => (
-                        <div key={dayIndex} className="p-6 border-r border-slate-200 last:border-r-0 min-h-[160px] bg-white">
-                          <div className="space-y-4">
-                            {/* BIGGER Employee Name Input */}
+                        <div key={dayIndex} className={`p-3 border-r border-slate-200 last:border-r-0 min-h-[100px] ${isSelected ? 'bg-yellow-50' : 'bg-white'}`}>
+                          <div className="space-y-2">
+                            {/* Employee Name Input - Bigger but reasonable */}
                             <input
                               type="text"
                               placeholder="Employee Name"
-                              className="w-full p-4 border-2 border-slate-300 rounded-lg text-base font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white placeholder-slate-400"
+                              className="w-full p-2 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white"
                               onChange={(e) => updateScheduleData(roleIndex, shiftIndex, dayIndex, 'employee', e.target.value)}
                             />
                             
-                            {/* Time Display - BLACK text, larger */}
+                            {/* Time Display - BLACK text */}
                             <div className="flex items-center justify-center">
-                              <div className="flex items-center space-x-2 text-base text-slate-900 font-semibold">
-                                <Clock className="h-5 w-5 text-slate-600" />
+                              <div className="flex items-center space-x-1 text-xs text-slate-900 font-semibold">
+                                <Clock className="h-3 w-3 text-slate-600" />
                                 <span>
-                                  {formatTime(shift.startTime)} - {formatTime(shift.endTime)}
+                                  {formatTime(`${shift.startTime}:00`)} - {formatTime(`${shift.endTime}:00`)}
                                 </span>
                               </div>
                             </div>
                             
-                            {/* Department Badge - Larger */}
+                            {/* Department Badge */}
                             <div className="flex justify-center">
                               <Badge variant={role.department.toLowerCase()}>
                                 {role.department}
@@ -374,7 +368,7 @@ const WeeklyLaborSchedule = () => {
         </Button>
       </div>
 
-      {/* Selected Employee Info */}
+      {/* Selected Employee Info - RESTORED */}
       {selectedEmployee && (
         <Card className="border-yellow-300 bg-yellow-50 shadow-sm">
           <CardContent className="p-4">
