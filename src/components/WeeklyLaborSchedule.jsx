@@ -255,25 +255,25 @@ const WeeklyLaborSchedule = () => {
         </CardContent>
       </Card>
 
-      {/* Week Header - Wider Cards for Better Proportions */}
-      <div className="grid grid-cols-8 gap-6">
-        {/* Role/Shift Header - Wider for better proportions */}
-        <div className="min-w-[200px]">
+      {/* Week Header - Responsive Card Layout */}
+      <div className="grid grid-cols-8 gap-3">
+        {/* Role/Shift Header */}
+        <div className="col-span-2">
           <Card className="bg-slate-100 border-slate-300 rounded-xl shadow-sm">
-            <CardContent className="p-5 text-center">
-              <span className="font-semibold text-slate-800">Role / Shift</span>
+            <CardContent className="p-4 text-center">
+              <span className="font-semibold text-slate-800 text-sm">Role / Shift</span>
             </CardContent>
           </Card>
         </div>
         
-        {/* Day Headers - Wider for better alignment */}
+        {/* Day Headers */}
         {weekDays.map((day, index) => {
           const headerInfo = formatDateHeader(day);
           return (
-            <div key={index} className="min-w-[180px]">
+            <div key={index}>
               <Card className="bg-slate-100 border-slate-300 rounded-xl shadow-sm">
-                <CardContent className="p-5 text-center">
-                  <div className="font-semibold text-slate-800 text-sm">
+                <CardContent className="p-4 text-center">
+                  <div className="font-semibold text-slate-800 text-xs">
                     {headerInfo.day}
                   </div>
                   <div className="text-slate-600 text-xs mt-1">
@@ -299,20 +299,20 @@ const WeeklyLaborSchedule = () => {
             const isSelected = selectedEmployee === employeeId;
             
             return (
-              <div key={employeeId} className="grid grid-cols-8 gap-6">
-                {/* Role/Shift Card - Left Side - Wider for better proportions */}
-                <div className="min-w-[200px]">
+              <div key={employeeId} className="grid grid-cols-8 gap-3">
+                {/* Role/Shift Card - Left Side - Responsive width */}
+                <div className="col-span-2">
                   <Card 
                     className={`${getDepartmentRoleColor(role.department)} rounded-xl shadow-sm cursor-pointer transition-all duration-200 ${
                       isSelected ? 'ring-2 ring-yellow-400 shadow-lg' : ''
                     }`}
                     onClick={() => handleEmployeeClick(roleIndex, shiftIndex)}
                   >
-                    <CardContent className="p-5">
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-4 h-4 rounded-full ${getDepartmentIndicatorColor(role.department)}`}></div>
+                    <CardContent className="p-4">
+                      <div className="flex items-center space-x-2">
+                        <div className={`w-3 h-3 rounded-full ${getDepartmentIndicatorColor(role.department)}`}></div>
                         <div className="text-center flex-1">
-                          <div className="font-semibold text-slate-900 text-sm">{role.name}</div>
+                          <div className="font-semibold text-slate-900 text-xs">{role.name}</div>
                           <div className="text-slate-700 text-xs">{shift.name}</div>
                           <div className="text-slate-900 text-xs font-medium mt-1">
                             {formatTime(`${shift.startTime}:00`)} - {formatTime(`${shift.endTime}:00`)}
@@ -323,29 +323,29 @@ const WeeklyLaborSchedule = () => {
                   </Card>
                 </div>
 
-                {/* Day Cards - Wider for better proportions and usability */}
+                {/* Day Cards - Responsive and properly sized */}
                 {weekDays.map((day, dayIndex) => (
-                  <div key={dayIndex} className="min-w-[180px]">
+                  <div key={dayIndex}>
                     <Card className={`${getDepartmentCardColor(role.department)} rounded-xl shadow-sm ${
                       isSelected ? 'ring-2 ring-yellow-400 shadow-lg' : ''
                     }`}>
-                      <CardContent className="p-5">
-                        <div className="space-y-3">
-                          {/* Employee Name Input - Wider for better usability */}
-                          <div className="bg-white rounded-lg p-4 shadow-sm border border-slate-200">
+                      <CardContent className="p-3">
+                        <div className="space-y-2">
+                          {/* Employee Name Input */}
+                          <div className="bg-white rounded-lg p-3 shadow-sm border border-slate-200">
                             <input
                               type="text"
                               placeholder="Employee Name"
-                              className="w-full border-0 outline-none text-sm font-medium text-slate-900 placeholder-slate-400 bg-transparent text-center"
+                              className="w-full border-0 outline-none text-xs font-medium text-slate-900 placeholder-slate-400 bg-transparent text-center"
                               onChange={(e) => updateScheduleData(roleIndex, shiftIndex, dayIndex, 'employee', e.target.value)}
                             />
                           </div>
                           
-                          {/* Time Display - Wider for better readability */}
-                          <div className="bg-white rounded-lg p-4 shadow-sm border border-slate-200">
+                          {/* Time Display */}
+                          <div className="bg-white rounded-lg p-2 shadow-sm border border-slate-200">
                             <div className="text-center">
-                              <div className="flex items-center justify-center space-x-1 text-sm text-slate-900 font-semibold">
-                                <Clock className="h-4 w-4 text-slate-600" />
+                              <div className="flex items-center justify-center space-x-1 text-xs text-slate-900 font-semibold">
+                                <Clock className="h-3 w-3 text-slate-600" />
                                 <span>
                                   {formatTime(`${shift.startTime}:00`)} - {formatTime(`${shift.endTime}:00`)}
                                 </span>
