@@ -440,14 +440,14 @@ const StaffingRecommendation = ({ staffingPlan, onApplyToSchedule }) => {
 };
 
 // Main Smart Scheduling Engine Component
-const schedulingEngine = new SchedulingEngine();
+const SmartSchedulingEngine = ({ onScheduleUpdate }) => {
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [forecast, setForecast] = useState(null);
   const [staffingPlan, setStaffingPlan] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
   const forecastEngine = new SalesForecastEngine();
-  const schedulingEngine = new SmartSchedulingEngine();
+  const schedulingEngine = new SchedulingEngine(); // ← Fixed class name
 
   // Generate forecast for selected date
   const generateForecast = async () => {
