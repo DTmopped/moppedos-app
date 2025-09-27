@@ -9,7 +9,7 @@ import {
 
 import { LaborDataProvider, useLaborData } from '@/contexts/LaborDataContext';
 import { DEPARTMENTS, ROLES, getRolesByDepartment } from '@/config/laborScheduleConfig';
-import { generateTailwindClasses } from './enhanced-color-scheme';
+import { generateTailwindClasses } from '@/lib/enhanced-color-scheme';
 
 // Import all the advanced components
 import MultiWeekScheduler from '../components/MultiWeekScheduler';
