@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { 
   TrendingUp, TrendingDown, BarChart3, Calculator, Zap, 
   AlertTriangle, CheckCircle, Clock, DollarSign, Users,
-  Target, Activity, Lightbulb, ArrowRight
+  Target, Activity, Lightbulb, ArrowRight, Calendar  // ← Add Calendar here
 } from 'lucide-react';
 import { format, addDays, startOfWeek, parseISO } from 'date-fns';
 import { useLaborData } from '@/contexts/LaborDataContext';
