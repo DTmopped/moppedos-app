@@ -7,16 +7,11 @@ import {
   BarChart3, Brain, Lightbulb, ArrowRight, Shield
 } from 'lucide-react';
 
-import { LaborDataProvider, useLaborData } from '@/contexts/DataContext';
+import { useLaborData } from '@/contexts/LaborDataContext';
 import { DEPARTMENTS, ROLES, getRolesByDepartment } from '@/config/laborScheduleConfig';
+import WeeklyLaborSchedule from '@/components/WeeklyLaborSchedule';
 
-// Import all the advanced components
-import MultiWeekScheduler from '@/components/labor/MultiWeekScheduler';
-import PTOManagementSystem from '@/components/labor/PTOManagementSystem';
-import SmartSchedulingEngine from '@/components/labor/SmartSchedulingEngine';
-import EmployeeOnboardingSystem from '@/components/labor/EmployeeOnboardingSystem';
-
-// Enhanced Badge Component with new color scheme
+// Enhanced Badge Component
 const Badge = ({ children, variant = "default", className = "" }) => {
   const baseClasses = "inline-flex items-center px-2 py-1 text-xs font-semibold rounded border";
   const variantClasses = {
@@ -46,9 +41,9 @@ const EnhancedHeader = ({ isConnected, currentLocation }) => {
             <Building2 className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Enhanced Labor Management</h1>
+            <h1 className="text-2xl font-bold text-slate-900">Labor Management</h1>
             <p className="text-slate-600">
-              Complete enterprise solution with AI-powered scheduling and workforce optimization
+              Mopped Restaurant - 13 Roles Including Dishwasher
             </p>
           </div>
         </div>
@@ -74,16 +69,6 @@ const EnhancedHeader = ({ isConnected, currentLocation }) => {
             <div className="font-semibold text-slate-900">{currentLocation?.name || 'Mopped Restaurant'}</div>
             <div className="text-sm text-slate-600">13 roles • 4 departments</div>
           </div>
-          
-          {/* Admin Button - Repositioned */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="border-slate-300 text-slate-700 hover:bg-slate-50"
-          >
-            <Settings className="h-4 w-4 mr-2" />
-            Admin
-          </Button>
         </div>
       </div>
     </div>
@@ -94,10 +79,8 @@ const EnhancedHeader = ({ isConnected, currentLocation }) => {
 const EnhancedNavigation = ({ activeTab, onTabChange }) => {
   const tabs = [
     { id: 'overview', label: 'Overview', icon: TrendingUp, description: 'System dashboard and analytics' },
-    { id: 'schedule', label: 'Multi-Week Schedule', icon: Calendar, description: '4-week advance scheduling' },
-    { id: 'smart-scheduling', label: 'AI Scheduling', icon: Brain, description: 'Forecast-based optimization' },
-    { id: 'employees', label: 'Employee Management', icon: UserPlus, description: 'Onboarding and profiles' },
-    { id: 'pto', label: 'PTO Management', icon: CalendarDays, description: 'Time-off requests and approvals' },
+    { id: 'schedule', label: 'Weekly Schedule', icon: Calendar, description: 'Current week scheduling' },
+    { id: 'employees', label: 'Employee Management', icon: UserPlus, description: 'Staff management' },
     { id: 'roles', label: 'All 13 Roles', icon: Users, description: 'Complete role breakdown' }
   ];
 
@@ -121,12 +104,6 @@ const EnhancedNavigation = ({ activeTab, onTabChange }) => {
             >
               <Icon className="h-4 w-4" />
               <span>{tab.label}</span>
-              {tab.id === 'smart-scheduling' && (
-                <Badge variant="info" className="ml-1">
-                  <Lightbulb className="h-2 w-2 mr-1" />
-                  AI
-                </Badge>
-              )}
             </button>
           );
         })}
@@ -147,36 +124,24 @@ const EnhancedOverview = () => {
 
   const systemStats = getSystemStats();
 
-  const features = [
-    {
-      title: '4-Week Advance Scheduling',
-      description: 'Plan current week plus 4 weeks ahead with auto-population from previous schedules',
-      icon: Calendar,
-      status: 'active',
-      benefits: ['Reduce planning time by 75%', 'Ensure consistent staffing', 'Handle seasonal variations']
-    },
-    {
-      title: 'AI-Powered Forecasting',
-      description: 'Smart scheduling based on sales projections, weather, and historical patterns',
-      icon: Brain,
-      status: 'beta',
-      benefits: ['Optimize labor costs', 'Predict guest counts', 'Adjust for events automatically']
-    },
-    {
-      title: 'Complete PTO Workflow',
-      description: 'Full request, approval, and schedule integration system',
-      icon: CalendarDays,
-      status: 'active',
-      benefits: ['Streamlined approvals', 'Automatic schedule blocking', 'Coverage planning']
-    },
-    {
-      title: 'Employee Onboarding',
-      description: 'Comprehensive employee management with availability tracking',
-      icon: UserPlus,
-      status: 'active',
-      benefits: ['3-step onboarding process', 'Availability management', 'Role-based defaults']
+  const handleQuickAction = (action) => {
+    switch (action) {
+      case 'schedule':
+        alert('Opening schedule creator...');
+        break;
+      case 'employee':
+        alert('Opening employee onboarding...');
+        break;
+      case 'pto':
+        alert('Opening PTO management...');
+        break;
+      case 'forecast':
+        alert('Opening AI forecast...');
+        break;
+      default:
+        break;
     }
-  ];
+  };
 
   return (
     <div className="space-y-6">
@@ -223,53 +188,7 @@ const EnhancedOverview = () => {
         </Card>
       </div>
 
-      {/* Enhanced Features */}
-      <Card className="border-slate-200 bg-white shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900 flex items-center">
-            <Zap className="h-5 w-5 mr-2 text-blue-600" />
-            Enterprise Features
-          </CardTitle>
-          <CardDescription>
-            Advanced labor management capabilities for optimal workforce efficiency
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {features.map((feature, index) => {
-              const Icon = feature.icon;
-              return (
-                <div key={index} className="border border-slate-200 rounded-lg p-4">
-                  <div className="flex items-start space-x-3">
-                    <div className="p-2 bg-blue-50 rounded-lg">
-                      <Icon className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <h4 className="font-medium text-slate-900">{feature.title}</h4>
-                        <Badge variant={feature.status === 'beta' ? 'warning' : 'success'}>
-                          {feature.status === 'beta' ? 'Beta' : 'Active'}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-slate-600 mb-3">{feature.description}</p>
-                      <ul className="space-y-1">
-                        {feature.benefits.map((benefit, idx) => (
-                          <li key={idx} className="text-xs text-slate-500 flex items-center">
-                            <CheckCircle className="h-3 w-3 text-emerald-500 mr-1" />
-                            {benefit}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Department Breakdown - Enhanced */}
+      {/* Department Breakdown */}
       <Card className="border-slate-200 bg-white shadow-sm">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-slate-900">
@@ -318,19 +237,35 @@ const EnhancedOverview = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Button variant="outline" className="h-auto p-4 flex flex-col items-center space-y-2 border-slate-300 text-slate-700 hover:bg-slate-50">
+            <Button 
+              variant="outline" 
+              className="h-auto p-4 flex flex-col items-center space-y-2 border-slate-300 text-slate-700 hover:bg-slate-50"
+              onClick={() => handleQuickAction('schedule')}
+            >
               <Calendar className="h-5 w-5" />
               <span className="text-sm">Schedule Next Week</span>
             </Button>
-            <Button variant="outline" className="h-auto p-4 flex flex-col items-center space-y-2 border-slate-300 text-slate-700 hover:bg-slate-50">
+            <Button 
+              variant="outline" 
+              className="h-auto p-4 flex flex-col items-center space-y-2 border-slate-300 text-slate-700 hover:bg-slate-50"
+              onClick={() => handleQuickAction('employee')}
+            >
               <UserPlus className="h-5 w-5" />
               <span className="text-sm">Add Employee</span>
             </Button>
-            <Button variant="outline" className="h-auto p-4 flex flex-col items-center space-y-2 border-slate-300 text-slate-700 hover:bg-slate-50">
+            <Button 
+              variant="outline" 
+              className="h-auto p-4 flex flex-col items-center space-y-2 border-slate-300 text-slate-700 hover:bg-slate-50"
+              onClick={() => handleQuickAction('pto')}
+            >
               <CalendarDays className="h-5 w-5" />
               <span className="text-sm">Review PTO</span>
             </Button>
-            <Button variant="outline" className="h-auto p-4 flex flex-col items-center space-y-2 border-slate-300 text-slate-700 hover:bg-slate-50">
+            <Button 
+              variant="outline" 
+              className="h-auto p-4 flex flex-col items-center space-y-2 border-slate-300 text-slate-700 hover:bg-slate-50"
+              onClick={() => handleQuickAction('forecast')}
+            >
               <Brain className="h-5 w-5" />
               <span className="text-sm">AI Forecast</span>
             </Button>
@@ -391,15 +326,14 @@ const EnhancedRolesDisplay = () => {
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-medium text-slate-900">{role.name}</h3>
-                <Badge className={role.colorClass}>
-                  {role.abbreviation}
+                <Badge variant="secondary">
+                  {role.department}
                 </Badge>
               </div>
               <div className="space-y-1 text-sm text-slate-600">
-                <p>Department: <span className="font-medium">{role.department}</span></p>
                 <p>Ratio: <span className="font-medium">1:{role.ratio}</span></p>
                 <p>Rate: <span className="font-medium">${role.hourly_rate}/hr</span></p>
-                <p>Shifts: <span className="font-medium">{role.shifts.join(', ')}</span></p>
+                <p className="text-xs text-slate-500">{role.description}</p>
               </div>
             </CardContent>
           </Card>
@@ -409,8 +343,46 @@ const EnhancedRolesDisplay = () => {
   );
 };
 
-// Main Labor Management Content Component
-function LaborManagementContent() {
+// Employee Management Component
+const EmployeeManagement = () => {
+  const { employees, addEmployee, updateEmployee, deleteEmployee } = useLaborData();
+  const [showAddForm, setShowAddForm] = useState(false);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-slate-900">Employee Management</h3>
+        <Button onClick={() => setShowAddForm(true)}>
+          <UserPlus className="h-4 w-4 mr-2" />
+          Add Employee
+        </Button>
+      </div>
+
+      {/* Employee List */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {employees.map(employee => (
+          <Card key={employee.id} className="border-slate-200 bg-white shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-medium text-slate-900">{employee.name}</h4>
+                <Badge variant={employee.status === 'active' ? 'success' : 'secondary'}>
+                  {employee.status}
+                </Badge>
+              </div>
+              <div className="space-y-1 text-sm text-slate-600">
+                <p>Role: <span className="font-medium">{employee.role}</span></p>
+                <p>Department: <span className="font-medium">{employee.department}</span></p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Main Labor Management Component
+function LaborManagement() {
   const [activeTab, setActiveTab] = useState('overview');
   
   const { 
@@ -461,44 +433,17 @@ function LaborManagementContent() {
           )}
 
           {/* Tab Content */}
-          {activeTab === 'overview' && (
-            <EnhancedOverview />
-          )}
-
-          {activeTab === 'schedule' && (
-            <MultiWeekScheduler />
-          )}
-
-          {activeTab === 'smart-scheduling' && (
-            <SmartSchedulingEngine />
-          )}
-
-          {activeTab === 'employees' && (
-            <EmployeeOnboardingSystem />
-          )}
-
-          {activeTab === 'pto' && (
-            <PTOManagementSystem />
-          )}
-
-          {activeTab === 'roles' && (
-            <EnhancedRolesDisplay />
-          )}
+          {activeTab === 'overview' && <EnhancedOverview />}
+          {activeTab === 'schedule' && <WeeklyLaborSchedule />}
+          {activeTab === 'employees' && <EmployeeManagement />}
+          {activeTab === 'roles' && <EnhancedRolesDisplay />}
         </div>
       </div>
     </div>
   );
 }
 
-// Main component with provider wrapper
-function LaborManagement() {
-  return (
-    <LaborDataProvider>
-      <LaborManagementContent />
-    </LaborDataProvider>
-  );
-}
-
 export default LaborManagement;
+
 
 
