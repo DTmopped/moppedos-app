@@ -10,7 +10,7 @@ import { DEPARTMENTS, ROLES, getRolesByDepartment } from '@/config/laborSchedule
 
 // Clean Badge Component
 const Badge = ({ children, variant = "default", className = "" }) => {
-  const baseClasses = "inline-flex items-center px-2 py-1 text-xs font-medium rounded";
+  const baseClasses = "inline-flex items-center px-2 py-1 text-xs font-medium rounded-lg";
   const variantClasses = {
     default: "bg-white text-slate-700 border border-slate-300",
     foh: "bg-white text-blue-700 border border-blue-300",
@@ -40,7 +40,7 @@ const formatDateHeader = (date) => {
     return { day: 'Invalid', date: 'Date' };
   }
   const formatted = date.toLocaleDateString('en-US', { 
-    weekday: 'short', 
+    weekday: 'long', // Changed to 'long' for full day names
     month: 'numeric', 
     day: 'numeric' 
   });
@@ -201,7 +201,7 @@ const WeeklyLaborSchedule = () => {
   return (
     <div className="space-y-6">
       {/* Department Filter and Week Navigation */}
-      <Card className="bg-white border border-slate-200 shadow-sm">
+      <Card className="bg-white border border-slate-200 shadow-sm rounded-xl">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-6">
@@ -221,7 +221,7 @@ const WeeklyLaborSchedule = () => {
                     key={dept.id}
                     size="sm"
                     onClick={() => setSelectedDepartment(dept.id)}
-                    className={getDepartmentFilterStyle(dept.id, selectedDepartment === dept.id)}
+                    className={`rounded-lg ${getDepartmentFilterStyle(dept.id, selectedDepartment === dept.id)}`}
                   >
                     {dept.label}
                   </Button>
@@ -237,7 +237,7 @@ const WeeklyLaborSchedule = () => {
                   variant="outline" 
                   size="sm"
                   onClick={() => navigateWeek(-1)}
-                  className="border-slate-300 text-slate-700 hover:bg-slate-50"
+                  className="border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
@@ -245,7 +245,7 @@ const WeeklyLaborSchedule = () => {
                   variant="outline" 
                   size="sm"
                   onClick={() => navigateWeek(1)}
-                  className="border-slate-300 text-slate-700 hover:bg-slate-50"
+                  className="border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -255,24 +255,24 @@ const WeeklyLaborSchedule = () => {
         </CardContent>
       </Card>
 
-      {/* Schedule Grid with proper containment */}
-      <Card className="bg-white border border-slate-200 shadow-lg">
-        <div className="relative overflow-hidden">
-          {/* Sticky Header Row - TALLER to match content */}
+      {/* Schedule Grid with rounded corners and proper spacing */}
+      <Card className="bg-white border border-slate-200 shadow-lg rounded-xl">
+        <div className="relative overflow-hidden rounded-xl">
+          {/* Sticky Header Row - Full weekday names */}
           <div className="sticky top-0 z-20 bg-white border-b-2 border-slate-300 shadow-sm">
             <div className="grid grid-cols-8 gap-0">
-              <div className="bg-slate-200 p-4 font-semibold text-slate-800 border-r-2 border-slate-300 sticky left-0 z-30 w-[220px] h-[120px] flex items-center justify-center">
-                <div className="bg-white rounded-lg p-3 shadow-sm text-center">
+              <div className="bg-slate-200 p-4 font-semibold text-slate-800 border-r-2 border-slate-300 sticky left-0 z-30 w-[220px] h-[120px] flex items-center justify-center rounded-tl-xl">
+                <div className="bg-white rounded-xl p-3 shadow-sm text-center">
                   <span className="text-sm font-semibold">Role / Shift</span>
                 </div>
               </div>
               {weekDays.map((day, index) => {
                 const headerInfo = formatDateHeader(day);
                 return (
-                  <div key={index} className="bg-slate-200 p-4 border-r border-slate-300 last:border-r-0 w-[220px] h-[120px] flex items-center justify-center">
-                    <div className="bg-white rounded-lg p-3 shadow-sm text-center">
+                  <div key={index} className={`bg-slate-200 p-4 border-r border-slate-300 last:border-r-0 w-[220px] h-[120px] flex items-center justify-center ${index === 6 ? 'rounded-tr-xl' : ''}`}>
+                    <div className="bg-white rounded-xl p-3 shadow-sm text-center">
                       <div className="font-semibold text-slate-800 text-sm">
-                        {headerInfo.day},
+                        {headerInfo.day}
                       </div>
                       <div className="text-slate-600 text-xs">
                         {headerInfo.date}
@@ -284,9 +284,9 @@ const WeeklyLaborSchedule = () => {
             </div>
           </div>
 
-          {/* Scrollable Schedule Body with DATA ENTRY CELLS */}
+          {/* Scrollable Schedule Body with SPACING between rows */}
           <div className="max-h-[600px] overflow-y-auto">
-            <div className="divide-y divide-slate-200">
+            <div className="space-y-3 p-3"> {/* Added space-y-3 and padding for separation */}
               {filteredRoles.map((role, roleIndex) => {
                 const shifts = [
                   { name: 'AM Shift', startTime: '9:00', endTime: '5:00' },
@@ -300,17 +300,17 @@ const WeeklyLaborSchedule = () => {
                   return (
                     <div 
                       key={employeeId}
-                      className={`grid grid-cols-8 gap-0 transition-all duration-200 ${
+                      className={`grid grid-cols-8 gap-0 transition-all duration-200 rounded-xl overflow-hidden shadow-sm ${
                         isSelected ? 'ring-2 ring-yellow-400 ring-inset shadow-lg' : ''
                       } ${getDepartmentRowColor(role.department)}`}
                     >
-                      {/* Sticky Role/Shift Column */}
+                      {/* Sticky Role/Shift Column - ROUNDED */}
                       <div className={`sticky left-0 border-r-2 border-slate-300 z-10 w-[220px] h-[120px] flex items-center justify-center p-3 ${getDepartmentLeftColumnColor(role.department)}`}>
                         <div 
                           className="cursor-pointer group w-full"
                           onClick={() => handleEmployeeClick(roleIndex, shiftIndex)}
                         >
-                          <div className="bg-white rounded-lg p-3 shadow-sm">
+                          <div className="bg-white rounded-xl p-3 shadow-sm">
                             <div className="flex items-center space-x-2">
                               <div className={`w-3 h-3 rounded-full ${getDepartmentIndicatorColor(role.department)} group-hover:scale-110 transition-transform`}></div>
                               <div className="text-center flex-1">
@@ -325,12 +325,12 @@ const WeeklyLaborSchedule = () => {
                         </div>
                       </div>
 
-                      {/* Day Columns - WITH DATA ENTRY CELLS */}
+                      {/* Day Columns - ROUNDED corners */}
                       {weekDays.map((day, dayIndex) => (
                         <div key={dayIndex} className={`border-r border-slate-200 last:border-r-0 w-[220px] h-[120px] p-3 ${isSelected ? 'bg-yellow-100/50' : ''}`}>
                           <div className="space-y-2 h-full flex flex-col justify-center">
-                            {/* Employee Name Input - WHITE BOX */}
-                            <div className="bg-white rounded-lg p-2 shadow-sm">
+                            {/* Employee Name Input - ROUNDED */}
+                            <div className="bg-white rounded-xl p-2 shadow-sm">
                               <input
                                 type="text"
                                 placeholder="Employee Name"
@@ -339,8 +339,8 @@ const WeeklyLaborSchedule = () => {
                               />
                             </div>
                             
-                            {/* Time Display - WHITE BOX, SINGLE ROW */}
-                            <div className="bg-white rounded-lg p-2 shadow-sm">
+                            {/* Time Display - ROUNDED */}
+                            <div className="bg-white rounded-xl p-2 shadow-sm">
                               <div className="text-center">
                                 <div className="flex items-center justify-center space-x-1 text-xs text-slate-900 font-semibold">
                                   <Clock className="h-3 w-3 text-slate-600" />
@@ -351,7 +351,7 @@ const WeeklyLaborSchedule = () => {
                               </div>
                             </div>
                             
-                            {/* Department Badge */}
+                            {/* Department Badge - ROUNDED */}
                             <div className="flex justify-center">
                               <Badge variant={role.department.toLowerCase()}>
                                 {role.department}
@@ -369,28 +369,28 @@ const WeeklyLaborSchedule = () => {
         </div>
       </Card>
 
-      {/* Action Buttons */}
+      {/* Action Buttons - ROUNDED */}
       <div className="flex justify-end space-x-3">
         <Button 
           variant="outline" 
           onClick={handlePrintSchedule}
-          className="border-slate-300 text-slate-700 hover:bg-slate-50"
+          className="border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg"
         >
           <FileText className="h-4 w-4 mr-2" />
           Print / PDF
         </Button>
         <Button 
           onClick={handleSaveSchedule}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white"
+          className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg"
         >
           <Save className="h-4 w-4 mr-2" />
           Save Schedule
         </Button>
       </div>
 
-      {/* Selected Employee Info - YELLOW HIGHLIGHT FUNCTIONALITY */}
+      {/* Selected Employee Info - ROUNDED */}
       {selectedEmployee && (
-        <Card className="border-yellow-300 bg-yellow-50 shadow-sm">
+        <Card className="border-yellow-300 bg-yellow-50 shadow-sm rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center space-x-3">
               <div className="w-4 h-4 bg-yellow-500 rounded-full animate-pulse"></div>
@@ -402,7 +402,7 @@ const WeeklyLaborSchedule = () => {
                 variant="outline" 
                 size="sm" 
                 onClick={() => setSelectedEmployee(null)}
-                className="ml-auto border-yellow-400 text-yellow-800 hover:bg-yellow-100"
+                className="ml-auto border-yellow-400 text-yellow-800 hover:bg-yellow-100 rounded-lg"
               >
                 Clear Selection
               </Button>
