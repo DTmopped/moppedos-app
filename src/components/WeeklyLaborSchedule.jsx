@@ -93,25 +93,25 @@ const WeeklyLaborSchedule = () => {
     selectedDepartment === 'ALL' || role.department === selectedDepartment
   );
 
-  // Department colors matching the overview cards - light backgrounds
+  // Department colors matching the overview cards - light backgrounds for BOTH left and right
   const getDepartmentRowColor = (department) => {
     switch(department) {
-      case 'FOH': return 'bg-blue-50/80';
-      case 'BOH': return 'bg-emerald-50/80';
-      case 'Bar': return 'bg-purple-50/80';
-      case 'Management': return 'bg-slate-50/80';
-      default: return 'bg-gray-50/80';
+      case 'FOH': return 'bg-blue-50/60';
+      case 'BOH': return 'bg-emerald-50/60';
+      case 'Bar': return 'bg-purple-50/60';
+      case 'Management': return 'bg-slate-50/60';
+      default: return 'bg-gray-50/60';
     }
   };
 
-  // Department colors for left column
+  // Department colors for left column - SAME as row colors for consistency
   const getDepartmentLeftColumnColor = (department) => {
     switch(department) {
-      case 'FOH': return 'bg-blue-100/90 border-l-4 border-blue-400';
-      case 'BOH': return 'bg-emerald-100/90 border-l-4 border-emerald-400';
-      case 'Bar': return 'bg-purple-100/90 border-l-4 border-purple-400';
-      case 'Management': return 'bg-slate-100/90 border-l-4 border-slate-400';
-      default: return 'bg-gray-100/90 border-l-4 border-gray-400';
+      case 'FOH': return 'bg-blue-50/60 border-l-4 border-blue-400';
+      case 'BOH': return 'bg-emerald-50/60 border-l-4 border-emerald-400';
+      case 'Bar': return 'bg-purple-50/60 border-l-4 border-purple-400';
+      case 'Management': return 'bg-slate-50/60 border-l-4 border-slate-400';
+      default: return 'bg-gray-50/60 border-l-4 border-gray-400';
     }
   };
 
@@ -255,24 +255,28 @@ const WeeklyLaborSchedule = () => {
         </CardContent>
       </Card>
 
-      {/* Schedule Grid with department card styling */}
+      {/* Schedule Grid with matching colors and proper sizing */}
       <Card className="bg-white border border-slate-200 shadow-lg">
         <div className="relative overflow-hidden">
-          {/* Sticky Header Row */}
+          {/* Sticky Header Row - Styled to match role/shift styling */}
           <div className="sticky top-0 z-20 bg-white border-b-2 border-slate-300 shadow-sm">
             <div className="grid grid-cols-8 gap-0">
-              <div className="bg-slate-100 p-4 font-semibold text-slate-700 border-r-2 border-slate-300 sticky left-0 z-30 min-w-[200px]">
-                Role / Shift
+              <div className="bg-slate-200 p-3 font-semibold text-slate-800 border-r-2 border-slate-300 sticky left-0 z-30 min-w-[220px]">
+                <div className="bg-white rounded-lg p-2 shadow-sm">
+                  <span className="text-sm">Role / Shift</span>
+                </div>
               </div>
               {weekDays.map((day, index) => {
                 const headerInfo = formatDateHeader(day);
                 return (
-                  <div key={index} className="bg-emerald-50 p-4 text-center border-r border-slate-200 last:border-r-0 min-w-[180px]">
-                    <div className="font-semibold text-slate-700">
-                      {headerInfo.day},
-                    </div>
-                    <div className="text-slate-600 text-sm">
-                      {headerInfo.date}
+                  <div key={index} className="bg-slate-200 p-3 text-center border-r border-slate-300 last:border-r-0 min-w-[200px]">
+                    <div className="bg-white rounded-lg p-2 shadow-sm">
+                      <div className="font-semibold text-slate-800 text-sm">
+                        {headerInfo.day},
+                      </div>
+                      <div className="text-slate-600 text-xs">
+                        {headerInfo.date}
+                      </div>
                     </div>
                   </div>
                 );
@@ -280,7 +284,7 @@ const WeeklyLaborSchedule = () => {
             </div>
           </div>
 
-          {/* Scrollable Schedule Body with department colors */}
+          {/* Scrollable Schedule Body with matching department colors */}
           <div className="max-h-[600px] overflow-y-auto">
             <div className="divide-y divide-slate-200">
               {filteredRoles.map((role, roleIndex) => {
@@ -300,15 +304,15 @@ const WeeklyLaborSchedule = () => {
                         isSelected ? 'ring-2 ring-yellow-400 ring-inset shadow-lg' : ''
                       } ${getDepartmentRowColor(role.department)}`}
                     >
-                      {/* Sticky Role/Shift Column with department colors */}
-                      <div className={`sticky left-0 p-4 border-r-2 border-slate-300 z-10 min-w-[200px] ${getDepartmentLeftColumnColor(role.department)}`}>
+                      {/* Sticky Role/Shift Column - SHORTER and matching colors */}
+                      <div className={`sticky left-0 p-3 border-r-2 border-slate-300 z-10 min-w-[220px] ${getDepartmentLeftColumnColor(role.department)}`}>
                         <div 
                           className="cursor-pointer group"
                           onClick={() => handleEmployeeClick(roleIndex, shiftIndex)}
                         >
-                          <div className="bg-white rounded-lg p-3 shadow-sm">
-                            <div className="flex items-center space-x-3">
-                              <div className={`w-4 h-4 rounded-full ${getDepartmentIndicatorColor(role.department)} group-hover:scale-110 transition-transform`}></div>
+                          <div className="bg-white rounded-lg p-2 shadow-sm">
+                            <div className="flex items-center space-x-2">
+                              <div className={`w-3 h-3 rounded-full ${getDepartmentIndicatorColor(role.department)} group-hover:scale-110 transition-transform`}></div>
                               <div>
                                 <div className="font-semibold text-slate-900 text-sm group-hover:text-slate-800">{role.name}</div>
                                 <div className="text-slate-700 text-xs">{shift.name}</div>
@@ -323,9 +327,9 @@ const WeeklyLaborSchedule = () => {
 
                       {/* Day Columns - WIDER with white rounded boxes */}
                       {weekDays.map((day, dayIndex) => (
-                        <div key={dayIndex} className={`p-4 border-r border-slate-200 last:border-r-0 min-h-[120px] min-w-[180px] ${isSelected ? 'bg-yellow-100/50' : ''}`}>
-                          <div className="space-y-3">
-                            {/* Employee Name Input - WHITE ROUNDED BOX */}
+                        <div key={dayIndex} className={`p-3 border-r border-slate-200 last:border-r-0 min-h-[100px] min-w-[200px] ${isSelected ? 'bg-yellow-100/50' : ''}`}>
+                          <div className="space-y-2">
+                            {/* Employee Name Input - WHITE ROUNDED BOX, WIDER */}
                             <div className="bg-white rounded-lg p-3 shadow-sm">
                               <input
                                 type="text"
@@ -335,14 +339,14 @@ const WeeklyLaborSchedule = () => {
                               />
                             </div>
                             
-                            {/* Time Display - WHITE ROUNDED BOX with bigger text */}
-                            <div className="bg-white rounded-lg p-3 shadow-sm">
+                            {/* Time Display - WHITE ROUNDED BOX with better alignment */}
+                            <div className="bg-white rounded-lg p-2 shadow-sm">
                               <div className="text-center">
-                                <div className="flex items-center justify-center space-x-1 text-sm text-slate-900 font-semibold">
-                                  <Clock className="h-4 w-4 text-slate-600" />
+                                <div className="flex items-center justify-center space-x-1 text-xs text-slate-900 font-semibold">
+                                  <Clock className="h-3 w-3 text-slate-600" />
                                   <div className="flex flex-col">
                                     <span>{formatTime(`${shift.startTime}:00`)}</span>
-                                    <span className="text-xs text-slate-600">to</span>
+                                    <span className="text-xs text-slate-500">to</span>
                                     <span>{formatTime(`${shift.endTime}:00`)}</span>
                                   </div>
                                 </div>
@@ -386,7 +390,7 @@ const WeeklyLaborSchedule = () => {
         </Button>
       </div>
 
-      {/* Selected Employee Info */}
+      {/* Selected Employee Info - YELLOW HIGHLIGHT FUNCTIONALITY */}
       {selectedEmployee && (
         <Card className="border-yellow-300 bg-yellow-50 shadow-sm">
           <CardContent className="p-4">
