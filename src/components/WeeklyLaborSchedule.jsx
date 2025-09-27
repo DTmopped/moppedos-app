@@ -8,15 +8,15 @@ import {
 import { useLaborData } from '@/contexts/LaborDataContext';
 import { DEPARTMENTS, ROLES, getRolesByDepartment } from '@/config/laborScheduleConfig';
 
-// Clean Badge Component
+// Clean Badge Component matching department cards
 const Badge = ({ children, variant = "default", className = "" }) => {
-  const baseClasses = "inline-flex items-center px-2 py-1 text-xs font-medium rounded";
+  const baseClasses = "inline-flex items-center px-3 py-1 text-xs font-semibold rounded";
   const variantClasses = {
-    default: "bg-slate-100 text-slate-700",
-    foh: "bg-blue-100 text-blue-700",
-    boh: "bg-emerald-100 text-emerald-700", 
-    bar: "bg-purple-100 text-purple-700",
-    management: "bg-slate-100 text-slate-700"
+    default: "bg-slate-100 text-slate-800",
+    foh: "bg-blue-100 text-blue-800",
+    boh: "bg-emerald-100 text-emerald-800", 
+    bar: "bg-purple-100 text-purple-800",
+    management: "bg-slate-100 text-slate-800"
   };
   
   return (
@@ -62,7 +62,7 @@ const formatDateHeader = (date) => {
   };
 };
 
-// Format time to AM/PM (not military)
+// Format time to AM/PM with BLACK text
 const formatTime = (time) => {
   if (!time || typeof time !== 'string') {
     return 'Invalid Time';
@@ -101,18 +101,18 @@ const WeeklyLaborSchedule = () => {
     selectedDepartment === 'ALL' || role.department === selectedDepartment
   );
 
-  // Enhanced department colors matching the overview cards
+  // Department colors matching the overview cards - colored borders with white interiors
   const getDepartmentRowColor = (department) => {
     switch(department) {
-      case 'FOH': return 'bg-blue-50/30 border-l-4 border-blue-400';
-      case 'BOH': return 'bg-emerald-50/30 border-l-4 border-emerald-400';
-      case 'Bar': return 'bg-purple-50/30 border-l-4 border-purple-400';
-      case 'Management': return 'bg-slate-50/30 border-l-4 border-slate-400';
+      case 'FOH': return 'bg-white border-l-4 border-blue-400';
+      case 'BOH': return 'bg-white border-l-4 border-emerald-400';
+      case 'Bar': return 'bg-white border-l-4 border-purple-400';
+      case 'Management': return 'bg-white border-l-4 border-slate-400';
       default: return 'bg-white border-l-4 border-gray-300';
     }
   };
 
-  // Department indicator colors
+  // Department indicator colors for the dots
   const getDepartmentIndicatorColor = (department) => {
     switch(department) {
       case 'FOH': return 'bg-blue-500';
@@ -252,23 +252,23 @@ const WeeklyLaborSchedule = () => {
         </CardContent>
       </Card>
 
-      {/* Enhanced Schedule Grid with Excel-style freeze panes */}
+      {/* Enhanced Schedule Grid with MUCH BIGGER cells */}
       <Card className="bg-white border border-slate-200 shadow-lg">
         <div className="relative overflow-hidden">
           {/* Sticky Header Row */}
           <div className="sticky top-0 z-20 bg-white border-b-2 border-slate-300 shadow-sm">
             <div className="grid grid-cols-8 gap-0">
-              <div className="bg-slate-100 p-5 font-semibold text-slate-700 text-base border-r-2 border-slate-300 sticky left-0 z-30">
+              <div className="bg-slate-100 p-6 font-semibold text-slate-700 text-lg border-r-2 border-slate-300 sticky left-0 z-30">
                 Role / Shift
               </div>
               {weekDays.map((day, index) => {
                 const headerInfo = formatDateHeader(day);
                 return (
-                  <div key={index} className="bg-emerald-50 p-5 text-center border-r border-slate-200 last:border-r-0">
-                    <div className="font-semibold text-slate-700 text-base">
+                  <div key={index} className="bg-emerald-50 p-6 text-center border-r border-slate-200 last:border-r-0">
+                    <div className="font-semibold text-slate-700 text-lg">
                       {headerInfo.day},
                     </div>
-                    <div className="text-slate-600 text-sm">
+                    <div className="text-slate-600 text-base">
                       {headerInfo.date}
                     </div>
                   </div>
@@ -277,8 +277,8 @@ const WeeklyLaborSchedule = () => {
             </div>
           </div>
 
-          {/* Scrollable Schedule Body */}
-          <div className="max-h-[600px] overflow-y-auto">
+          {/* Scrollable Schedule Body with MUCH BIGGER cells */}
+          <div className="max-h-[700px] overflow-y-auto">
             <div className="divide-y divide-slate-200">
               {filteredRoles.map((role, roleIndex) => {
                 const shifts = role.shifts || [
@@ -296,18 +296,18 @@ const WeeklyLaborSchedule = () => {
                         isSelected ? 'bg-yellow-100 ring-2 ring-yellow-400 ring-inset' : 'hover:bg-slate-50'
                       } ${getDepartmentRowColor(role.department)}`}
                     >
-                      {/* Sticky Role/Shift Column */}
-                      <div className="sticky left-0 bg-white p-5 border-r-2 border-slate-300 z-10">
+                      {/* Sticky Role/Shift Column - BIGGER */}
+                      <div className="sticky left-0 bg-white p-8 border-r-2 border-slate-300 z-10 min-w-[240px]">
                         <div 
                           className="cursor-pointer group"
                           onClick={() => handleEmployeeClick(roleIndex, shiftIndex)}
                         >
                           <div className="flex items-center space-x-4">
-                            <div className={`w-4 h-4 rounded-full ${getDepartmentIndicatorColor(role.department)} group-hover:scale-110 transition-transform`}></div>
+                            <div className={`w-5 h-5 rounded-full ${getDepartmentIndicatorColor(role.department)} group-hover:scale-110 transition-transform`}></div>
                             <div>
-                              <div className="font-semibold text-slate-800 text-base group-hover:text-slate-900">{role.name}</div>
-                              <div className="text-slate-600 text-sm">{shift.name}</div>
-                              <div className="text-slate-500 text-sm mt-1">
+                              <div className="font-bold text-slate-900 text-lg group-hover:text-slate-800">{role.name}</div>
+                              <div className="text-slate-700 text-base font-medium">{shift.name}</div>
+                              <div className="text-slate-900 text-base font-semibold mt-2">
                                 {formatTime(shift.startTime)} - {formatTime(shift.endTime)}
                               </div>
                             </div>
@@ -315,28 +315,29 @@ const WeeklyLaborSchedule = () => {
                         </div>
                       </div>
 
-                      {/* Day Columns with bigger cells */}
+                      {/* Day Columns - MUCH BIGGER cells */}
                       {weekDays.map((day, dayIndex) => (
-                        <div key={dayIndex} className="p-4 border-r border-slate-200 last:border-r-0 min-h-[120px]">
-                          <div className="space-y-3">
+                        <div key={dayIndex} className="p-6 border-r border-slate-200 last:border-r-0 min-h-[160px] bg-white">
+                          <div className="space-y-4">
+                            {/* BIGGER Employee Name Input */}
                             <input
                               type="text"
                               placeholder="Employee Name"
-                              className="w-full p-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white"
+                              className="w-full p-4 border-2 border-slate-300 rounded-lg text-base font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white placeholder-slate-400"
                               onChange={(e) => updateScheduleData(roleIndex, shiftIndex, dayIndex, 'employee', e.target.value)}
                             />
                             
-                            {/* Time Display - Larger and clearer */}
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-2 text-sm text-slate-600">
-                                <Clock className="h-4 w-4 text-slate-400" />
-                                <span className="font-medium">
+                            {/* Time Display - BLACK text, larger */}
+                            <div className="flex items-center justify-center">
+                              <div className="flex items-center space-x-2 text-base text-slate-900 font-semibold">
+                                <Clock className="h-5 w-5 text-slate-600" />
+                                <span>
                                   {formatTime(shift.startTime)} - {formatTime(shift.endTime)}
                                 </span>
                               </div>
                             </div>
                             
-                            {/* Department Badge */}
+                            {/* Department Badge - Larger */}
                             <div className="flex justify-center">
                               <Badge variant={role.department.toLowerCase()}>
                                 {role.department}
