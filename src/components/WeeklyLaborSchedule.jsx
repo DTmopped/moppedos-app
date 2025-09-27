@@ -5,7 +5,7 @@ import {
   Calendar, Save, FileText, Settings, Users, Clock, 
   ChevronLeft, ChevronRight, Filter, Download, AlertCircle
 } from 'lucide-react';
-import { useLaborData } from '@/contexts/DataContext';
+import { useLaborData } from '@/contexts/LaborDataContext';
 import { DEPARTMENTS, ROLES, getRolesByDepartment } from '@/config/laborScheduleConfig';
 
 // Simple Badge Component - clean and minimal
