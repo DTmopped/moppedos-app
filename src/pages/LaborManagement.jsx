@@ -9,14 +9,9 @@ import {
 
 import { LaborDataProvider, useLaborData } from '@/contexts/LaborDataContext';
 import { DEPARTMENTS, ROLES, getRolesByDepartment } from '@/config/laborScheduleConfig';
-
-// Import all the advanced components with correct paths
-import MultiWeekScheduler from '@/components/labor/MultiWeekScheduler';
-import PTOManagementSystem from '@/components/labor/PTOManagementSystem';
-import SmartSchedulingEngine from '@/components/labor/SmartSchedulingEngine';
-import EmployeeOnboardingSystem from '@/components/labor/EmployeeOnboardingSystem';
 import WeeklyLaborSchedule from '@/components/WeeklyLaborSchedule';
 
+// Enhanced Badge Component
 const Badge = ({ children, variant = "default", className = "" }) => {
   const baseClasses = "inline-flex items-center px-2 py-1 text-xs font-semibold rounded border";
   const variantClasses = {
@@ -36,6 +31,7 @@ const Badge = ({ children, variant = "default", className = "" }) => {
   );
 };
 
+// Enhanced Header Component
 const EnhancedHeader = ({ isConnected, currentLocation }) => {
   return (
     <div className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200 p-6 rounded-t-lg">
@@ -53,6 +49,7 @@ const EnhancedHeader = ({ isConnected, currentLocation }) => {
         </div>
         
         <div className="flex items-center space-x-4">
+          {/* Connection Status */}
           <div className="flex items-center space-x-2">
             {isConnected ? (
               <>
@@ -67,6 +64,7 @@ const EnhancedHeader = ({ isConnected, currentLocation }) => {
             )}
           </div>
           
+          {/* Location Info */}
           <div className="text-right">
             <div className="font-semibold text-slate-900">{currentLocation?.name || 'Mopped Restaurant'}</div>
             <div className="text-sm text-slate-600">13 roles • 4 departments</div>
@@ -77,6 +75,7 @@ const EnhancedHeader = ({ isConnected, currentLocation }) => {
   );
 };
 
+// Enhanced Navigation Component
 const EnhancedNavigation = ({ activeTab, onTabChange }) => {
   const tabs = [
     { id: 'overview', label: 'Overview', icon: TrendingUp, description: 'System dashboard and analytics' },
@@ -113,6 +112,7 @@ const EnhancedNavigation = ({ activeTab, onTabChange }) => {
   );
 };
 
+// Enhanced Overview Dashboard
 const EnhancedOverview = () => {
   const { 
     employees, 
@@ -125,26 +125,27 @@ const EnhancedOverview = () => {
   const systemStats = getSystemStats();
 
   const handleQuickAction = (action) => {
-  switch (action) {
-    case 'schedule':
-      onTabChange('schedule'); // Switch to schedule tab
-      break;
-    case 'addEmployee':
-      onTabChange('employees'); // Switch to employee management tab
-      break;
-    case 'reviewPTO':
-      onTabChange('pto'); // Switch to PTO management tab
-      break;
-    case 'aiForecast':
-      onTabChange('aiScheduling'); // Switch to AI scheduling tab
-      break;
-    default:
-      break;
-  }
-};
+    switch (action) {
+      case 'schedule':
+        alert('Opening schedule creator...');
+        break;
+      case 'employee':
+        alert('Opening employee onboarding...');
+        break;
+      case 'pto':
+        alert('Opening PTO management...');
+        break;
+      case 'forecast':
+        alert('Opening AI forecast...');
+        break;
+      default:
+        break;
+    }
+  };
 
   return (
     <div className="space-y-6">
+      {/* System Statistics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="border-slate-200 bg-white shadow-sm">
           <CardContent className="p-4 text-center">
@@ -187,6 +188,7 @@ const EnhancedOverview = () => {
         </Card>
       </div>
 
+      {/* Department Breakdown */}
       <Card className="border-slate-200 bg-white shadow-sm">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-slate-900">
@@ -228,6 +230,7 @@ const EnhancedOverview = () => {
         </CardContent>
       </Card>
 
+      {/* Quick Actions */}
       <Card className="border-slate-200 bg-white shadow-sm">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-slate-900">Quick Actions</CardTitle>
@@ -273,6 +276,7 @@ const EnhancedOverview = () => {
   );
 };
 
+// Enhanced Roles Display
 const EnhancedRolesDisplay = () => {
   const [selectedDepartment, setSelectedDepartment] = useState('all');
 
@@ -282,6 +286,7 @@ const EnhancedRolesDisplay = () => {
 
   return (
     <div className="space-y-6">
+      {/* Department Filter */}
       <div className="flex items-center space-x-4">
         <h3 className="text-lg font-semibold text-slate-900">Filter by Department:</h3>
         <div className="flex space-x-2">
@@ -314,6 +319,7 @@ const EnhancedRolesDisplay = () => {
         </div>
       </div>
 
+      {/* Roles Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredRoles.map(role => (
           <Card key={role.name} className="border-slate-200 bg-white shadow-sm">
@@ -337,6 +343,7 @@ const EnhancedRolesDisplay = () => {
   );
 };
 
+// Employee Management Component
 const EmployeeManagement = () => {
   const { employees, addEmployee, updateEmployee, deleteEmployee } = useLaborData();
   const [showAddForm, setShowAddForm] = useState(false);
@@ -351,6 +358,7 @@ const EmployeeManagement = () => {
         </Button>
       </div>
 
+      {/* Employee List */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {employees.map(employee => (
           <Card key={employee.id} className="border-slate-200 bg-white shadow-sm">
@@ -373,6 +381,7 @@ const EmployeeManagement = () => {
   );
 };
 
+// Main Labor Management Content Component
 function LaborManagementContent() {
   const [activeTab, setActiveTab] = useState('overview');
   
@@ -400,16 +409,19 @@ function LaborManagementContent() {
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-7xl mx-auto">
+        {/* Enhanced Header */}
         <EnhancedHeader 
           isConnected={isConnected} 
           currentLocation={{ name: 'Mopped Test Site' }}
         />
         
+        {/* Enhanced Navigation */}
         <EnhancedNavigation 
           activeTab={activeTab} 
           onTabChange={setActiveTab} 
         />
         
+        {/* Main Content Area */}
         <div className="p-6">
           {error && (
             <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
@@ -420,6 +432,7 @@ function LaborManagementContent() {
             </div>
           )}
 
+          {/* Tab Content */}
           {activeTab === 'overview' && <EnhancedOverview />}
           {activeTab === 'schedule' && <WeeklyLaborSchedule />}
           {activeTab === 'employees' && <EmployeeManagement />}
@@ -430,6 +443,7 @@ function LaborManagementContent() {
   );
 }
 
+// Wrapper component with provider
 function LaborManagement() {
   return (
     <LaborDataProvider>
@@ -439,6 +453,7 @@ function LaborManagement() {
 }
 
 export default LaborManagement;
+
 
 
 
