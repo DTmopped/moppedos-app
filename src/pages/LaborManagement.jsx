@@ -7,9 +7,8 @@ import {
   BarChart3, Brain, Lightbulb, ArrowRight, Shield
 } from 'lucide-react';
 
-import { LaborDataProvider, useLaborData } from '@/contexts/LaborDataContext';
+import { LaborDataProvider, useLaborData } from '@/contexts/DataContext';
 import { DEPARTMENTS, ROLES, getRolesByDepartment } from '@/config/laborScheduleConfig';
-import { generateTailwindClasses } from '@/lib/enhanced-color-scheme';
 
 // Import all the advanced components
 import MultiWeekScheduler from '@/components/labor/MultiWeekScheduler';
@@ -390,71 +389,38 @@ const EnhancedRolesDisplay = () => {
         {filteredRoles.map(role => (
           <Card key={role.name} className="border-slate-200 bg-white shadow-sm">
             <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="font-medium text-slate-900">{role.name}</h4>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-medium text-slate-900">{role.name}</h3>
                 <Badge className={role.colorClass}>
                   {role.abbreviation}
                 </Badge>
               </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Department:</span>
-                  <Badge className={DEPARTMENTS[role.department]?.bgColor + ' ' + DEPARTMENTS[role.department]?.textColor + ' border-' + DEPARTMENTS[role.department]?.color + '-200'}>
-                    {role.department}
-                  </Badge>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Guest Ratio:</span>
-                  <span className="font-medium text-slate-900">1:{role.ratio}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Hourly Rate:</span>
-                  <span className="font-medium text-slate-900">${role.hourly_rate}/hr</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Shifts:</span>
-                  <span className="font-medium text-slate-900">{role.shifts.join(', ')}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Min Count:</span>
-                  <span className="font-medium text-slate-900">{role.minCount}</span>
-                </div>
+              <div className="space-y-1 text-sm text-slate-600">
+                <p>Department: <span className="font-medium">{role.department}</span></p>
+                <p>Ratio: <span className="font-medium">1:{role.ratio}</span></p>
+                <p>Rate: <span className="font-medium">${role.hourly_rate}/hr</span></p>
+                <p>Shifts: <span className="font-medium">{role.shifts.join(', ')}</span></p>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
-
-      {/* Role Summary */}
-      <Card className="border-blue-200 bg-blue-50 shadow-sm">
-        <CardContent className="p-4">
-          <div className="flex items-start space-x-3">
-            <Shield className="h-5 w-5 text-blue-600 mt-0.5" />
-            <div>
-              <h4 className="font-medium text-blue-800">Complete Role Coverage</h4>
-              <p className="text-sm text-blue-700 mt-1">
-                All 13 roles are now included, including the previously missing <strong>Dishwasher</strong> role. 
-                Each role has optimized guest ratios, competitive hourly rates, and appropriate shift assignments 
-                for maximum operational efficiency.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };
 
-// Main Enhanced Labor Management Component
-function EnhancedLaborManagementContent() {
+// Main Labor Management Content Component
+function LaborManagementContent() {
   const [activeTab, setActiveTab] = useState('overview');
   
   const { 
     employees, 
+    ptoRequests, 
     currentTemplate, 
     isConnected, 
     loading,
-    error
+    error,
+    getSystemStats
   } = useLaborData();
 
   if (loading) {
@@ -462,7 +428,7 @@ function EnhancedLaborManagementContent() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading enhanced labor management system...</p>
+          <p className="text-slate-600">Loading labor management system...</p>
         </div>
       </div>
     );
@@ -473,39 +439,51 @@ function EnhancedLaborManagementContent() {
       <div className="max-w-7xl mx-auto">
         {/* Enhanced Header */}
         <EnhancedHeader 
-          isConnected={isConnected}
-          currentLocation={{ name: 'Mopped Restaurant' }}
+          isConnected={isConnected} 
+          currentLocation={{ name: 'Mopped Test Site' }}
         />
-
+        
         {/* Enhanced Navigation */}
         <EnhancedNavigation 
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
+          activeTab={activeTab} 
+          onTabChange={setActiveTab} 
         />
-
-        {/* Main Content */}
+        
+        {/* Main Content Area */}
         <div className="p-6">
           {error && (
-            <Card className="border-amber-200 bg-amber-50 shadow-sm mb-6">
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-3">
-                  <AlertCircle className="h-5 w-5 text-amber-600" />
-                  <div>
-                    <h4 className="font-medium text-amber-800">System Notice</h4>
-                    <p className="text-sm text-amber-700">{error}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex items-center">
+                <AlertCircle className="h-5 w-5 text-amber-600 mr-2" />
+                <span className="text-amber-800">{error}</span>
+              </div>
+            </div>
           )}
 
           {/* Tab Content */}
-          {activeTab === 'overview' && <EnhancedOverview />}
-          {activeTab === 'schedule' && <MultiWeekScheduler />}
-          {activeTab === 'smart-scheduling' && <SmartSchedulingEngine />}
-          {activeTab === 'employees' && <EmployeeOnboardingSystem />}
-          {activeTab === 'pto' && <PTOManagementSystem />}
-          {activeTab === 'roles' && <EnhancedRolesDisplay />}
+          {activeTab === 'overview' && (
+            <EnhancedOverview />
+          )}
+
+          {activeTab === 'schedule' && (
+            <MultiWeekScheduler />
+          )}
+
+          {activeTab === 'smart-scheduling' && (
+            <SmartSchedulingEngine />
+          )}
+
+          {activeTab === 'employees' && (
+            <EmployeeOnboardingSystem />
+          )}
+
+          {activeTab === 'pto' && (
+            <PTOManagementSystem />
+          )}
+
+          {activeTab === 'roles' && (
+            <EnhancedRolesDisplay />
+          )}
         </div>
       </div>
     </div>
@@ -513,13 +491,14 @@ function EnhancedLaborManagementContent() {
 }
 
 // Main component with provider wrapper
-function EnhancedLaborManagement() {
+function LaborManagement() {
   return (
     <LaborDataProvider>
-      <EnhancedLaborManagementContent />
+      <LaborManagementContent />
     </LaborDataProvider>
   );
 }
 
-export default EnhancedLaborManagement;
+export default LaborManagement;
+
 
