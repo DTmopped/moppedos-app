@@ -12,10 +12,10 @@ import { DEPARTMENTS, ROLES, getRolesByDepartment } from '@/config/laborSchedule
 import { generateTailwindClasses } from '@/lib/enhanced-color-scheme';
 
 // Import all the advanced components
-import MultiWeekScheduler from '../components/MultiWeekScheduler';
-import PTOManagementSystem from '../components/PTOManagementSystem';
-import SmartSchedulingEngine from '../components/SmartSchedulingEngine';
-import EmployeeOnboardingSystem from '../components/EmployeeOnboardingSystem';
+import MultiWeekScheduler from '@/components/labor/MultiWeekScheduler';
+import PTOManagementSystem from '@/components/labor/PTOManagementSystem';
+import SmartSchedulingEngine from '@/components/labor/SmartSchedulingEngine';
+import EmployeeOnboardingSystem from '@/components/labor/EmployeeOnboardingSystem';
 
 // Enhanced Badge Component with new color scheme
 const Badge = ({ children, variant = "default", className = "" }) => {
