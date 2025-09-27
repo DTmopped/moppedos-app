@@ -56,7 +56,7 @@ const formatTime = (timeString) => {
 
   const ampm = hour >= 12 ? 'PM' : 'AM';
   const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-  return ${displayHour}:${min} ${ampm};
+  return `${displayHour}:${min} ${ampm}`;
 };
 
 const WeeklyLaborSchedule = () => {
@@ -118,12 +118,12 @@ const WeeklyLaborSchedule = () => {
   };
 
   const handleEmployeeClick = (roleIndex, shiftIndex) => {
-    const employeeId = ${roleIndex}-${shiftIndex};
+    const employeeId = `${roleIndex}-${shiftIndex}`;
     setSelectedEmployee(selectedEmployee === employeeId ? null : employeeId);
   };
 
   const updateScheduleData = (roleIndex, shiftIndex, dayIndex, field, value) => {
-    const key = ${roleIndex}-${shiftIndex}-${dayIndex};
+    const key = `${roleIndex}-${shiftIndex}-${dayIndex}`;
     setScheduleData(prev => ({
       ...prev,
       [key]: {
@@ -188,17 +188,17 @@ const WeeklyLaborSchedule = () => {
               </div>
               <div className="flex space-x-2">
                 {[
-                  { id: 'ALL', label: ALL (${ROLES.length}) },
-                  { id: 'FOH', label: FOH (${getRolesByDepartment('FOH').length}) },
-                  { id: 'BOH', label: BOH (${getRolesByDepartment('BOH').length}) },
-                  { id: 'Bar', label: Bar (${getRolesByDepartment('Bar').length}) },
-                  { id: 'Management', label: Management (${getRolesByDepartment('Management').length}) }
+                  { id: 'ALL', label: `ALL (${ROLES.length})` },
+                  { id: 'FOH', label: `FOH (${getRolesByDepartment('FOH').length})` },
+                  { id: 'BOH', label: `BOH (${getRolesByDepartment('BOH').length})` },
+                  { id: 'Bar', label: `Bar (${getRolesByDepartment('Bar').length})` },
+                  { id: 'Management', label: `Management (${getRolesByDepartment('Management').length})` }
                 ].map(dept => (
                   <Button
                     key={dept.id}
                     size="sm"
                     onClick={() => setSelectedDepartment(dept.id)}
-                    className={rounded-lg ${getDepartmentFilterStyle(dept.id, selectedDepartment === dept.id)}}
+                    className={`rounded-lg ${getDepartmentFilterStyle(dept.id, selectedDepartment === dept.id)}`}
                   >
                     {dept.label}
                   </Button>
@@ -256,7 +256,7 @@ const WeeklyLaborSchedule = () => {
             { name: 'PM Shift', startTime: '15:00', endTime: '23:00' }
           ];
           return shifts.map((shift, shiftIndex) => {
-            const employeeId = ${roleIndex}-${shiftIndex};
+            const employeeId = `${roleIndex}-${shiftIndex}`;
             const isSelected = selectedEmployee === employeeId;
 
             return (
@@ -264,17 +264,17 @@ const WeeklyLaborSchedule = () => {
                 {/* Role / Shift */}
                 <div className="col-span-1 flex">
                   <Card
-                    className={${getDepartmentRoleColor(role.department)} flex-1 rounded-xl shadow-sm cursor-pointer transition-all duration-200 ${
+                    className={`${getDepartmentRoleColor(role.department)} flex-1 rounded-xl shadow-sm cursor-pointer transition-all duration-200 ${
                       isSelected ? 'ring-2 ring-yellow-400 shadow-lg' : ''
-                    }}
+                    }`}
                     onClick={() => handleEmployeeClick(roleIndex, shiftIndex)}
                   >
                     <CardContent className="p-4 flex flex-col items-center justify-center h-full text-center space-y-1">
-                      <div className={w-3 h-3 rounded-full ${getDepartmentIndicatorColor(role.department)}}></div>
+                      <div className={`w-3 h-3 rounded-full ${getDepartmentIndicatorColor(role.department)}`}></div>
                       <div className="font-semibold text-slate-900 text-xs">{role.name}</div>
                       <div className="text-slate-700 text-xs">{shift.name}</div>
                       <div className="text-slate-900 text-xs font-medium">
-                        {formatTime(${shift.startTime}:00)} – {formatTime(${shift.endTime}:00)}
+                        {formatTime(`${shift.startTime}:00`)} – {formatTime(`${shift.endTime}:00`)}
                       </div>
                     </CardContent>
                   </Card>
@@ -284,9 +284,9 @@ const WeeklyLaborSchedule = () => {
                 {weekDays.map((day, dayIndex) => (
                   <div key={dayIndex} className="col-span-1 flex">
                     <Card
-                      className={${getDepartmentCardColor(role.department)} flex-1 rounded-xl shadow-sm ${
+                      className={`${getDepartmentCardColor(role.department)} flex-1 rounded-xl shadow-sm ${
                         isSelected ? 'ring-2 ring-yellow-400 shadow-lg' : ''
-                      }}
+                      }`}
                     >
                       <CardContent className="p-3 flex flex-col justify-between h-full">
                         {/* Name input */}
@@ -304,9 +304,9 @@ const WeeklyLaborSchedule = () => {
                         <div className="bg-white rounded-lg p-2 shadow-sm border border-slate-200 mt-2">
                           <div className="flex items-center justify-center space-x-1 text-xs text-slate-900 font-semibold">
                             <Clock className="h-3 w-3 text-slate-600" />
-                            <span>{formatTime(${shift.startTime}:00)}</span>
+                            <span>{formatTime(`${shift.startTime}:00`)}</span>
                             <span>–</span>
-                            <span>{formatTime(${shift.endTime}:00)}</span>
+                            <span>{formatTime(`${shift.endTime}:00`)}</span>
                           </div>
                         </div>
                         {/* Badge */}
