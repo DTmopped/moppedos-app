@@ -93,7 +93,7 @@ const WeeklyLaborSchedule = () => {
     selectedDepartment === 'ALL' || role.department === selectedDepartment
   );
 
-  // Department colors matching the overview cards - light backgrounds for BOTH left and right
+  // Department colors matching the overview cards
   const getDepartmentRowColor = (department) => {
     switch(department) {
       case 'FOH': return 'bg-blue-50/60';
@@ -104,7 +104,7 @@ const WeeklyLaborSchedule = () => {
     }
   };
 
-  // Department colors for left column - SAME as row colors for consistency
+  // Department colors for left column - matching
   const getDepartmentLeftColumnColor = (department) => {
     switch(department) {
       case 'FOH': return 'bg-blue-50/60 border-l-4 border-blue-400';
@@ -255,22 +255,22 @@ const WeeklyLaborSchedule = () => {
         </CardContent>
       </Card>
 
-      {/* Schedule Grid with matching colors and proper sizing */}
+      {/* Schedule Grid with perfect alignment */}
       <Card className="bg-white border border-slate-200 shadow-lg">
         <div className="relative overflow-hidden">
-          {/* Sticky Header Row - Styled to match role/shift styling */}
+          {/* Sticky Header Row - Properly aligned with content */}
           <div className="sticky top-0 z-20 bg-white border-b-2 border-slate-300 shadow-sm">
             <div className="grid grid-cols-8 gap-0">
-              <div className="bg-slate-200 p-3 font-semibold text-slate-800 border-r-2 border-slate-300 sticky left-0 z-30 min-w-[220px]">
-                <div className="bg-white rounded-lg p-2 shadow-sm">
+              <div className="bg-slate-200 p-3 font-semibold text-slate-800 border-r-2 border-slate-300 sticky left-0 z-30 w-[220px] flex items-center justify-center">
+                <div className="bg-white rounded-lg p-2 shadow-sm text-center">
                   <span className="text-sm">Role / Shift</span>
                 </div>
               </div>
               {weekDays.map((day, index) => {
                 const headerInfo = formatDateHeader(day);
                 return (
-                  <div key={index} className="bg-slate-200 p-3 text-center border-r border-slate-300 last:border-r-0 min-w-[200px]">
-                    <div className="bg-white rounded-lg p-2 shadow-sm">
+                  <div key={index} className="bg-slate-200 p-3 border-r border-slate-300 last:border-r-0 w-[220px] flex items-center justify-center">
+                    <div className="bg-white rounded-lg p-2 shadow-sm text-center">
                       <div className="font-semibold text-slate-800 text-sm">
                         {headerInfo.day},
                       </div>
@@ -284,7 +284,7 @@ const WeeklyLaborSchedule = () => {
             </div>
           </div>
 
-          {/* Scrollable Schedule Body with matching department colors */}
+          {/* Scrollable Schedule Body with perfect alignment */}
           <div className="max-h-[600px] overflow-y-auto">
             <div className="divide-y divide-slate-200">
               {filteredRoles.map((role, roleIndex) => {
@@ -304,16 +304,16 @@ const WeeklyLaborSchedule = () => {
                         isSelected ? 'ring-2 ring-yellow-400 ring-inset shadow-lg' : ''
                       } ${getDepartmentRowColor(role.department)}`}
                     >
-                      {/* Sticky Role/Shift Column - SHORTER and matching colors */}
-                      <div className={`sticky left-0 p-3 border-r-2 border-slate-300 z-10 min-w-[220px] ${getDepartmentLeftColumnColor(role.department)}`}>
+                      {/* Sticky Role/Shift Column - SHORTER and CENTERED */}
+                      <div className={`sticky left-0 border-r-2 border-slate-300 z-10 w-[220px] h-[90px] flex items-center justify-center p-2 ${getDepartmentLeftColumnColor(role.department)}`}>
                         <div 
-                          className="cursor-pointer group"
+                          className="cursor-pointer group w-full"
                           onClick={() => handleEmployeeClick(roleIndex, shiftIndex)}
                         >
                           <div className="bg-white rounded-lg p-2 shadow-sm">
                             <div className="flex items-center space-x-2">
                               <div className={`w-3 h-3 rounded-full ${getDepartmentIndicatorColor(role.department)} group-hover:scale-110 transition-transform`}></div>
-                              <div>
+                              <div className="text-center flex-1">
                                 <div className="font-semibold text-slate-900 text-sm group-hover:text-slate-800">{role.name}</div>
                                 <div className="text-slate-700 text-xs">{shift.name}</div>
                                 <div className="text-slate-900 text-xs font-medium mt-1">
@@ -325,30 +325,28 @@ const WeeklyLaborSchedule = () => {
                         </div>
                       </div>
 
-                      {/* Day Columns - WIDER with white rounded boxes */}
+                      {/* Day Columns - MATCHING WIDTH and ALIGNMENT */}
                       {weekDays.map((day, dayIndex) => (
-                        <div key={dayIndex} className={`p-3 border-r border-slate-200 last:border-r-0 min-h-[100px] min-w-[200px] ${isSelected ? 'bg-yellow-100/50' : ''}`}>
-                          <div className="space-y-2">
-                            {/* Employee Name Input - WHITE ROUNDED BOX, WIDER */}
-                            <div className="bg-white rounded-lg p-3 shadow-sm">
+                        <div key={dayIndex} className={`border-r border-slate-200 last:border-r-0 w-[220px] h-[90px] flex items-center justify-center p-2 ${isSelected ? 'bg-yellow-100/50' : ''}`}>
+                          <div className="space-y-2 w-full">
+                            {/* Employee Name Input - MATCHING WIDTH */}
+                            <div className="bg-white rounded-lg p-2 shadow-sm w-full">
                               <input
                                 type="text"
                                 placeholder="Employee Name"
-                                className="w-full border-0 outline-none text-sm font-medium text-slate-900 placeholder-slate-400 bg-transparent"
+                                className="w-full border-0 outline-none text-sm font-medium text-slate-900 placeholder-slate-400 bg-transparent text-center"
                                 onChange={(e) => updateScheduleData(roleIndex, shiftIndex, dayIndex, 'employee', e.target.value)}
                               />
                             </div>
                             
-                            {/* Time Display - WHITE ROUNDED BOX with better alignment */}
-                            <div className="bg-white rounded-lg p-2 shadow-sm">
+                            {/* Time Display - SINGLE ROW, MATCHING WIDTH */}
+                            <div className="bg-white rounded-lg p-2 shadow-sm w-full">
                               <div className="text-center">
                                 <div className="flex items-center justify-center space-x-1 text-xs text-slate-900 font-semibold">
                                   <Clock className="h-3 w-3 text-slate-600" />
-                                  <div className="flex flex-col">
-                                    <span>{formatTime(`${shift.startTime}:00`)}</span>
-                                    <span className="text-xs text-slate-500">to</span>
-                                    <span>{formatTime(`${shift.endTime}:00`)}</span>
-                                  </div>
+                                  <span>
+                                    {formatTime(`${shift.startTime}:00`)} - {formatTime(`${shift.endTime}:00`)}
+                                  </span>
                                 </div>
                               </div>
                             </div>
