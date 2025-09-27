@@ -323,47 +323,50 @@ const WeeklyLaborSchedule = () => {
                   </Card>
                 </div>
 
-                {/* Day Cards - Responsive and properly sized */}
-                {weekDays.map((day, dayIndex) => (
-                  <div key={dayIndex}>
-                    <Card className={`${getDepartmentCardColor(role.department)} rounded-xl shadow-sm ${
-                      isSelected ? 'ring-2 ring-yellow-400 shadow-lg' : ''
-                    }`}>
-                      <CardContent className="p-3">
-                        <div className="space-y-2">
-                          {/* Employee Name Input */}
-                          <div className="bg-white rounded-lg p-3 shadow-sm border border-slate-200">
-                            <input
-                              type="text"
-                              placeholder="Employee Name"
-                              className="w-full border-0 outline-none text-xs font-medium text-slate-900 placeholder-slate-400 bg-transparent text-center"
-                              onChange={(e) => updateScheduleData(roleIndex, shiftIndex, dayIndex, 'employee', e.target.value)}
-                            />
-                          </div>
-                          
-                          {/* Time Display */}
-                          <div className="bg-white rounded-lg p-2 shadow-sm border border-slate-200">
-                            <div className="text-center">
-                              <div className="flex items-center justify-center space-x-1 text-xs text-slate-900 font-semibold">
-                                <Clock className="h-3 w-3 text-slate-600" />
-                                <span>
-                                  {formatTime(`${shift.startTime}:00`)} - {formatTime(`${shift.endTime}:00`)}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          {/* Department Badge */}
-                          <div className="flex justify-center">
-                            <Badge variant={role.department.toLowerCase()}>
-                              {role.department}
-                            </Badge>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                ))}
+{/* Day Cards - Responsive and properly sized */}
+{weekDays.map((day, dayIndex) => (
+  <div key={dayIndex}>
+    <Card className={`${getDepartmentCardColor(role.department)} rounded-xl shadow-sm ${
+      isSelected ? 'ring-2 ring-yellow-400 shadow-lg' : ''
+    }`}>
+      <CardContent className="p-3">
+        <div className="space-y-2">
+          {/* Employee Name Input */}
+          <div className="bg-white rounded-lg p-3 shadow-sm border border-slate-200">
+            <input
+              type="text"
+              placeholder="Employee Name"
+              className="w-full border-0 outline-none text-xs font-medium text-slate-900 placeholder-slate-400 bg-transparent text-center"
+              onChange={(e) => updateScheduleData(roleIndex, shiftIndex, dayIndex, 'employee', e.target.value)}
+            />
+          </div>
+
+          {/* Time Display - SIDE BY SIDE */}
+          <div className="bg-white rounded-lg px-3 py-2 shadow-sm border border-slate-200">
+            <div className="flex items-center justify-between text-xs text-slate-900 font-semibold">
+              <div className="flex items-center space-x-1">
+                <Clock className="h-3 w-3 text-slate-600" />
+                <span>{formatTime(`${shift.startTime}:00`)}</span>
+              </div>
+              <span>-</span>
+              <div className="flex items-center space-x-1">
+                <Clock className="h-3 w-3 text-slate-600" />
+                <span>{formatTime(`${shift.endTime}:00`)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Department Badge */}
+          <div className="flex justify-center">
+            <Badge variant={role.department.toLowerCase()}>
+              {role.department}
+            </Badge>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+))}
               </div>
             );
           });
