@@ -7,8 +7,8 @@ import {
 } from 'lucide-react';
 import { useLaborData } from '@/contexts/LaborDataContext';
 import { ROLES, getRolesByDepartment } from '@/config/laborScheduleConfig';
-import EmployeeRequestForm from './EmployeeRequestForm';
-import ScheduleRequestManager from './ScheduleRequestManager';
+import EmployeeRequestForm from './labor/EmployeeRequestForm';
+import ScheduleRequestManager from './labor/ScheduleRequestManager';
 
 // Badge Component (keeping your exact design)
 const Badge = ({ children, variant = "default", className = "" }) => {
