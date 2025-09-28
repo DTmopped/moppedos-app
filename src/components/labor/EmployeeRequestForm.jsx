@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useLaborData } from '../contexts/LaborDataContext';
+import { useLaborData } from '@/contexts/LaborDataContext';
 import { Calendar, Clock, Users, Edit, Send, X } from 'lucide-react';
 
 const EmployeeRequestForm = ({ isOpen, onClose }) => {
