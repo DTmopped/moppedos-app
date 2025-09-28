@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLaborData } from '../contexts/LaborDataContext';
+import { useLaborData } from '@/contexts/LaborDataContext';
 import { Clock, User, Calendar, MessageSquare, Check, X, Filter } from 'lucide-react';
 
 const ScheduleRequestManager = () => {
