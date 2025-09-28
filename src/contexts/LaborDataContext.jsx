@@ -28,7 +28,22 @@ const mockPTORequests = [
   { id: '3', employee_id: '5', employee_name: 'Tom Brown', start_date: '2025-11-01', end_date: '2025-11-05', status: 'pending', reason: 'Personal time' }
 ];
 
+// Mock schedule requests for demo
+const mockScheduleRequests = [
+  { id: '1', employee_id: '1', employee_name: 'John Smith', request_type: 'time_off', requested_date: '2025-10-05', status: 'pending', reason: 'Personal appointment' },
+  { id: '2', employee_id: '2', employee_name: 'Sarah Johnson', request_type: 'shift_preference', requested_date: '2025-10-08', status: 'approved', reason: 'Prefer morning shift' },
+  { id: '3', employee_id: '4', employee_name: 'Lisa Wilson', request_type: 'shift_swap', requested_date: '2025-10-10', status: 'pending', reason: 'Need to swap with Tom' }
+];
+
+// Mock availability data
+const mockAvailability = [
+  { id: '1', employee_id: '1', employee_name: 'John Smith', day_of_week: 1, available_start: '09:00', available_end: '17:00', preferred_departments: ['FOH'] },
+  { id: '2', employee_id: '2', employee_name: 'Sarah Johnson', day_of_week: 2, available_start: '08:00', available_end: '16:00', preferred_departments: ['BOH'] },
+  { id: '3', employee_id: '3', employee_name: 'Mike Davis', day_of_week: 3, available_start: '10:00', available_end: '18:00', preferred_departments: ['BOH'] }
+];
+
 export const LaborDataProvider = ({ children }) => {
+  // Existing state
   const [employees, setEmployees] = useState(mockEmployees);
   const [ptoRequests, setPtoRequests] = useState(mockPTORequests);
   const [currentTemplate, setCurrentTemplate] = useState(MOPPED_RESTAURANT_TEMPLATE);
@@ -36,11 +51,15 @@ export const LaborDataProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
 
+  // New scheduling state
+  const [scheduleRequests, setScheduleRequests] = useState(mockScheduleRequests);
+  const [employeeAvailability, setEmployeeAvailability] = useState(mockAvailability);
+
   // Get current user's location
   const getCurrentLocationId = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return 'demo-location-123';
+      if (!user) return 'a8e559f8-fdb4-435b-bd1f-ccba5d175f2b'; // Use your test location
       
       const { data: profile } = await supabase
         .from('user_profiles')
@@ -48,9 +67,9 @@ export const LaborDataProvider = ({ children }) => {
         .eq('user_id', user.id)
         .single();
       
-      return profile?.location_id || 'demo-location-123';
+      return profile?.location_id || 'a8e559f8-fdb4-435b-bd1f-ccba5d175f2b';
     } catch (error) {
-      return 'demo-location-123';
+      return 'a8e559f8-fdb4-435b-bd1f-ccba5d175f2b';
     }
   };
 
@@ -64,8 +83,7 @@ export const LaborDataProvider = ({ children }) => {
       const { data: employeesData, error: empError } = await supabase
         .from('employees')
         .select('*')
-        .eq('location_id', locationId)
-        .eq('is_active', true);
+        .eq('location_id', locationId);
 
       if (!empError && employeesData?.length > 0) {
         setEmployees(employeesData);
@@ -82,9 +100,120 @@ export const LaborDataProvider = ({ children }) => {
         setPtoRequests(ptoData);
       }
 
+      // Load schedule requests
+      const { data: scheduleData, error: scheduleError } = await supabase
+        .from('schedule_requests')
+        .select(`
+          *,
+          employees!inner(id, name, role)
+        `)
+        .eq('location_id', locationId)
+        .order('created_at', { ascending: false });
+
+      if (!scheduleError && scheduleData) {
+        setScheduleRequests(scheduleData);
+      }
+
+      // Load employee availability
+      const { data: availabilityData, error: availError } = await supabase
+        .from('employee_availability')
+        .select(`
+          *,
+          employees!inner(id, name, role)
+        `)
+        .eq('location_id', locationId);
+
+      if (!availError && availabilityData) {
+        setEmployeeAvailability(availabilityData);
+      }
+
     } catch (err) {
       console.error('Error loading labor data:', err);
       setError('Using demo data - Supabase connection failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // New scheduling functions
+  const submitScheduleRequest = async (requestData) => {
+    try {
+      setLoading(true);
+      const locationId = await getCurrentLocationId();
+      
+      const { data, error } = await supabase
+        .from('schedule_requests')
+        .insert([{
+          ...requestData,
+          location_id: locationId,
+          organization_id: requestData.organization_id || crypto.randomUUID(),
+          status: 'pending'
+        }])
+        .select();
+      
+      if (error) throw error;
+      
+      // Refresh data
+      await loadLaborData();
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error submitting request:', error);
+      setError(error.message);
+      return { success: false, error };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateRequestStatus = async (requestId, status, managerNotes = '') => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('schedule_requests')
+        .update({
+          status,
+          manager_notes: managerNotes,
+          approved_at: status === 'approved' ? new Date().toISOString() : null
+        })
+        .eq('id', requestId)
+        .select();
+      
+      if (error) throw error;
+      
+      // Refresh data
+      await loadLaborData();
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error updating request:', error);
+      setError(error.message);
+      return { success: false, error };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addEmployeeAvailability = async (availabilityData) => {
+    try {
+      setLoading(true);
+      const locationId = await getCurrentLocationId();
+      
+      const { data, error } = await supabase
+        .from('employee_availability')
+        .insert([{
+          ...availabilityData,
+          location_id: locationId
+        }])
+        .select();
+      
+      if (error) throw error;
+      
+      // Refresh data
+      await loadLaborData();
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error adding availability:', error);
+      setError(error.message);
+      return { success: false, error };
     } finally {
       setLoading(false);
     }
@@ -99,10 +228,21 @@ export const LaborDataProvider = ({ children }) => {
     activeEmployees: employees.filter(e => e.is_active).length,
     pendingPTO: ptoRequests.filter(req => req.status === 'pending').length,
     approvedPTO: ptoRequests.filter(req => req.status === 'approved').length,
+    pendingScheduleRequests: scheduleRequests.filter(req => req.status === 'pending').length,
     totalRoles: currentTemplate?.default_roles?.length || 13
   });
 
+  // Helper functions for scheduling
+  const getPendingRequestsCount = () => {
+    return scheduleRequests.filter(req => req.status === 'pending').length;
+  };
+
+  const getRequestsByStatus = (status) => {
+    return scheduleRequests.filter(req => req.status === status);
+  };
+
   const contextValue = {
+    // Existing values
     employees,
     ptoRequests,
     currentTemplate,
@@ -110,7 +250,19 @@ export const LaborDataProvider = ({ children }) => {
     error,
     isConnected,
     getSystemStats,
-    setError
+    setError,
+    
+    // New scheduling values
+    scheduleRequests,
+    employeeAvailability,
+    
+    // New scheduling functions
+    submitScheduleRequest,
+    updateRequestStatus,
+    addEmployeeAvailability,
+    getPendingRequestsCount,
+    getRequestsByStatus,
+    loadLaborData
   };
 
   return (
@@ -119,3 +271,4 @@ export const LaborDataProvider = ({ children }) => {
     </LaborDataContext.Provider>
   );
 };
+
