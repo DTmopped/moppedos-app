@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
-  ChevronLeft, ChevronRight, Calendar, Copy, RotateCcw, Save,
-  ArrowRight, Clock, Users, TrendingUp, AlertCircle
+  Calendar, Clock, Users, DollarSign, TrendingUp, TrendingDown,
+  ChevronLeft, ChevronRight, Copy, Edit, BarChart3, Target,
+  AlertCircle, CheckCircle, XCircle, Plus, Settings, RefreshCw
 } from 'lucide-react';
-import { startOfWeek, addWeeks, format, isSameWeek } from 'date-fns';
+import { format, addWeeks, startOfWeek, endOfWeek, addDays } from 'date-fns';
 import { useLaborData } from '@/contexts/LaborDataContext';
-import { ROLES, SHIFT_TIMES } from '@/config/laborScheduleConfig';
 
 // Enhanced Badge Component
 const Badge = ({ children, variant = "default", className = "" }) => {
@@ -15,9 +15,13 @@ const Badge = ({ children, variant = "default", className = "" }) => {
   const variantClasses = {
     default: "bg-blue-600 text-white border-blue-500",
     secondary: "bg-slate-100 text-slate-700 border-slate-200",
-    outline: "bg-white text-slate-700 border-slate-300",
     success: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    warning: "bg-amber-50 text-amber-700 border-amber-200"
+    warning: "bg-amber-50 text-amber-700 border-amber-200",
+    error: "bg-red-50 text-red-700 border-red-200",
+    info: "bg-blue-50 text-blue-700 border-blue-200",
+    minimal: "bg-orange-50 text-orange-700 border-orange-200",
+    full: "bg-green-50 text-green-700 border-green-200",
+    notset: "bg-slate-50 text-slate-600 border-slate-200"
   };
   
   return (
@@ -27,321 +31,414 @@ const Badge = ({ children, variant = "default", className = "" }) => {
   );
 };
 
-// Week Navigation Component
-const WeekNavigation = ({ currentWeek, onWeekChange, availableWeeks }) => {
-  const currentWeekIndex = availableWeeks.findIndex(week => 
-    isSameWeek(week.startDate, currentWeek)
-  );
-
-  const canGoPrevious = currentWeekIndex > 0;
-  const canGoNext = currentWeekIndex < availableWeeks.length - 1;
+// Multi-Week Analytics Summary
+const AnalyticsSummary = ({ weeks }) => {
+  const totalWeeks = weeks.length;
+  const totalHours = weeks.reduce((sum, week) => sum + week.totalHours, 0);
+  const totalCost = weeks.reduce((sum, week) => sum + week.estimatedCost, 0);
+  const avgWeeklyCost = totalCost / totalWeeks;
 
   return (
-    <div className="flex items-center justify-between bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
-      <div className="flex items-center space-x-4">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100">
+        <CardContent className="p-4 text-center">
+          <div className="flex items-center justify-center mb-2">
+            <div className="p-2 bg-blue-600 rounded-full">
+              <Calendar className="h-4 w-4 text-white" />
+            </div>
+          </div>
+          <div className="text-2xl font-bold text-blue-900">{totalWeeks}</div>
+          <div className="text-sm text-blue-700">Weeks Planned</div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100">
+        <CardContent className="p-4 text-center">
+          <div className="flex items-center justify-center mb-2">
+            <div className="p-2 bg-emerald-600 rounded-full">
+              <Clock className="h-4 w-4 text-white" />
+            </div>
+          </div>
+          <div className="text-2xl font-bold text-emerald-900">{totalHours.toLocaleString()}</div>
+          <div className="text-sm text-emerald-700">Total Hours</div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100">
+        <CardContent className="p-4 text-center">
+          <div className="flex items-center justify-center mb-2">
+            <div className="p-2 bg-purple-600 rounded-full">
+              <DollarSign className="h-4 w-4 text-white" />
+            </div>
+          </div>
+          <div className="text-2xl font-bold text-purple-900">${totalCost.toLocaleString()}</div>
+          <div className="text-sm text-purple-700">Total Cost</div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-orange-100">
+        <CardContent className="p-4 text-center">
+          <div className="flex items-center justify-center mb-2">
+            <div className="p-2 bg-orange-600 rounded-full">
+              <BarChart3 className="h-4 w-4 text-white" />
+            </div>
+          </div>
+          <div className="text-2xl font-bold text-orange-900">${Math.round(avgWeeklyCost).toLocaleString()}</div>
+          <div className="text-sm text-orange-700">Avg/Week</div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+// Week Card Component
+const WeekCard = ({ week, isCurrentWeek, onCopyPrevious, onEditWeek }) => {
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'full':
+        return <Badge variant="full">Full Staffing</Badge>;
+      case 'minimal':
+        return <Badge variant="minimal">Minimal</Badge>;
+      case 'not_set':
+        return <Badge variant="notset">Not Set</Badge>;
+      default:
+        return <Badge variant="secondary">Unknown</Badge>;
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'full':
+        return <CheckCircle className="h-4 w-4 text-emerald-600" />;
+      case 'minimal':
+        return <AlertCircle className="h-4 w-4 text-orange-600" />;
+      case 'not_set':
+        return <XCircle className="h-4 w-4 text-slate-400" />;
+      default:
+        return <Clock className="h-4 w-4 text-slate-400" />;
+    }
+  };
+
+  return (
+    <Card className={`border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow ${
+      isCurrentWeek ? 'ring-2 ring-blue-500 border-blue-300' : ''
+    }`}>
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between mb-3">
+          <div>
+            <div className="flex items-center space-x-2 mb-1">
+              <h3 className="font-semibold text-slate-900">
+                {format(week.startDate, 'MMM d')} - {format(week.endDate, 'MMM d, yyyy')}
+              </h3>
+              {isCurrentWeek && (
+                <Badge variant="info">Current Week</Badge>
+              )}
+            </div>
+            <div className="flex items-center space-x-2">
+              {getStatusIcon(week.status)}
+              {getStatusBadge(week.status)}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-2 mb-4">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-slate-600">Shifts:</span>
+            <span className="font-medium text-slate-900">{week.totalShifts}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-slate-600">Hours:</span>
+            <span className="font-medium text-slate-900">{week.totalHours}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-slate-600">Est. Labor Cost:</span>
+            <span className="font-medium text-slate-900">${week.estimatedCost.toLocaleString()}</span>
+          </div>
+        </div>
+
         <div className="flex items-center space-x-2">
-          <Calendar className="h-5 w-5 text-blue-600" />
-          <span className="font-semibold text-slate-900">Week Navigation</span>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => onCopyPrevious(week.id)}
+            className="border-slate-300 text-slate-700 hover:bg-slate-50 flex-1"
+          >
+            <Copy className="h-4 w-4 mr-1" />
+            Copy Previous
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => onEditWeek(week.id)}
+            className="bg-blue-600 hover:bg-blue-700 text-white flex-1"
+          >
+            <Edit className="h-4 w-4 mr-1" />
+            Edit Week
+          </Button>
         </div>
-        <div className="flex items-center space-x-1">
-          {availableWeeks.map((week, index) => (
-            <button
-              key={week.id}
-              onClick={() => onWeekChange(week.startDate)}
-              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-                isSameWeek(week.startDate, currentWeek)
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
-            >
-              {week.label}
-            </button>
-          ))}
-        </div>
-      </div>
-      
-      <div className="flex items-center space-x-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => canGoPrevious && onWeekChange(availableWeeks[currentWeekIndex - 1].startDate)}
-          disabled={!canGoPrevious}
-          className="border-slate-300 text-slate-700 hover:bg-slate-50"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        
-        <div className="text-center min-w-[120px]">
-          <div className="font-semibold text-slate-900">
-            {format(currentWeek, 'MMM d')} - {format(addWeeks(currentWeek, 1), 'MMM d, yyyy')}
-          </div>
-          <div className="text-xs text-slate-500">
-            {availableWeeks[currentWeekIndex]?.label || 'Current Week'}
-          </div>
-        </div>
-        
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => canGoNext && onWeekChange(availableWeeks[currentWeekIndex + 1].startDate)}
-          disabled={!canGoNext}
-          className="border-slate-300 text-slate-700 hover:bg-slate-50"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
-// Week Actions Component
-const WeekActions = ({ 
-  currentWeek, 
-  onCopyFromPrevious, 
-  onResetWeek, 
-  onSaveWeek,
-  hasChanges,
-  isCurrentWeek 
-}) => {
+// Quick Actions Toolbar
+const QuickActions = ({ onAutoPopulate, onOptimizeAll, onGenerateReport }) => {
   return (
-    <div className="flex items-center justify-between bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
-      <div className="flex items-center space-x-3">
-        <Badge variant={isCurrentWeek ? "default" : "secondary"}>
-          {isCurrentWeek ? "Current Week" : "Future Week"}
-        </Badge>
-        {hasChanges && (
-          <Badge variant="warning">
-            <Clock className="h-3 w-3 mr-1" />
-            Unsaved Changes
-          </Badge>
-        )}
-      </div>
-      
-      <div className="flex items-center space-x-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onCopyFromPrevious}
-          className="border-slate-300 text-slate-700 hover:bg-slate-50"
-        >
-          <Copy className="h-4 w-4 mr-2" />
-          Copy Previous Week
-        </Button>
-        
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onResetWeek}
-          className="border-slate-300 text-slate-700 hover:bg-slate-50"
-        >
-          <RotateCcw className="h-4 w-4 mr-2" />
-          Reset
-        </Button>
-        
-        <Button
-          onClick={onSaveWeek}
-          disabled={!hasChanges}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600"
-        >
-          <Save className="h-4 w-4 mr-2" />
-          Save Week
-        </Button>
-      </div>
-    </div>
+    <Card className="border-slate-200 bg-white">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold text-slate-900 mb-1">Quick Actions</h3>
+            <p className="text-sm text-slate-600">Bulk operations for multi-week planning</p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onGenerateReport}
+              className="border-slate-300 text-slate-700 hover:bg-slate-50"
+            >
+              <BarChart3 className="h-4 w-4 mr-1" />
+              Generate Report
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onOptimizeAll}
+              className="border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+            >
+              <Target className="h-4 w-4 mr-1" />
+              Optimize All
+            </Button>
+            <Button
+              size="sm"
+              onClick={onAutoPopulate}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Auto-Populate All Weeks
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
-// Schedule Summary Component
-const ScheduleSummary = ({ weekData, weekLabel }) => {
-  const totalShifts = Object.values(weekData).reduce((total, dayData) => {
-    return total + Object.values(dayData).reduce((dayTotal, shiftData) => {
-      return dayTotal + Object.values(shiftData).reduce((shiftTotal, roleData) => {
-        return shiftTotal + (Array.isArray(roleData) ? roleData.filter(emp => emp.name).length : 0);
-      }, 0);
-    }, 0);
-  }, 0);
+// Department Breakdown
+const DepartmentBreakdown = ({ weeks }) => {
+  // Calculate department totals across all weeks
+  const departmentTotals = {
+    'Front of House': { hours: 0, cost: 0 },
+    'Back of House': { hours: 0, cost: 0 },
+    'Bar & Beverage': { hours: 0, cost: 0 },
+    'Management': { hours: 0, cost: 0 }
+  };
 
-  const filledRoles = new Set();
-  Object.values(weekData).forEach(dayData => {
-    Object.values(dayData).forEach(shiftData => {
-      Object.entries(shiftData).forEach(([role, employees]) => {
-        if (Array.isArray(employees) && employees.some(emp => emp.name)) {
-          filledRoles.add(role);
-        }
-      });
-    });
+  // Simulate department breakdown (in real app, this would come from actual schedule data)
+  weeks.forEach(week => {
+    departmentTotals['Front of House'].hours += Math.round(week.totalHours * 0.4);
+    departmentTotals['Front of House'].cost += Math.round(week.estimatedCost * 0.4);
+    
+    departmentTotals['Back of House'].hours += Math.round(week.totalHours * 0.35);
+    departmentTotals['Back of House'].cost += Math.round(week.estimatedCost * 0.35);
+    
+    departmentTotals['Bar & Beverage'].hours += Math.round(week.totalHours * 0.15);
+    departmentTotals['Bar & Beverage'].cost += Math.round(week.estimatedCost * 0.15);
+    
+    departmentTotals['Management'].hours += Math.round(week.totalHours * 0.1);
+    departmentTotals['Management'].cost += Math.round(week.estimatedCost * 0.1);
   });
 
-  const completionPercentage = ROLES.length > 0 ? Math.round((filledRoles.size / ROLES.length) * 100) : 0;
+  const departmentColors = {
+    'Front of House': 'bg-blue-500',
+    'Back of House': 'bg-emerald-500',
+    'Bar & Beverage': 'bg-purple-500',
+    'Management': 'bg-orange-500'
+  };
 
   return (
-    <div className="grid grid-cols-3 gap-4">
-      <div className="bg-white border border-slate-200 rounded-lg p-4 text-center">
-        <div className="text-2xl font-bold text-blue-600">{totalShifts}</div>
-        <div className="text-sm text-slate-600">Total Shifts</div>
-      </div>
-      <div className="bg-white border border-slate-200 rounded-lg p-4 text-center">
-        <div className="text-2xl font-bold text-emerald-600">{filledRoles.size}</div>
-        <div className="text-sm text-slate-600">Roles Filled</div>
-      </div>
-      <div className="bg-white border border-slate-200 rounded-lg p-4 text-center">
-        <div className="text-2xl font-bold text-purple-600">{completionPercentage}%</div>
-        <div className="text-sm text-slate-600">Complete</div>
-      </div>
-    </div>
+    <Card className="border-slate-200 bg-white">
+      <CardHeader>
+        <CardTitle className="flex items-center text-slate-900">
+          <Users className="h-5 w-5 mr-2" />
+          Department Breakdown - Multi-Week Totals
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {Object.entries(departmentTotals).map(([dept, data]) => (
+            <div key={dept} className="text-center">
+              <div className={`w-12 h-12 ${departmentColors[dept]} rounded-full mx-auto mb-2 flex items-center justify-center`}>
+                <Users className="h-6 w-6 text-white" />
+              </div>
+              <h4 className="font-medium text-slate-900 text-sm mb-1">{dept}</h4>
+              <div className="text-xs text-slate-600">
+                <div>{data.hours} hours</div>
+                <div>${data.cost.toLocaleString()}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
 // Main Multi-Week Scheduler Component
-const MultiWeekScheduler = ({ 
-  scheduleData, 
-  onScheduleUpdate,
-  onWeekSave,
-  filteredRoles,
-  selectedDepartment 
-}) => {
-  const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState({});
-  
-  // Generate 5 weeks (current + 4 future)
-  const availableWeeks = React.useMemo(() => {
+const MultiWeekScheduler = () => {
+  const [currentPeriodStart, setCurrentPeriodStart] = useState(() => startOfWeek(new Date()));
+  const { getWeekSchedule, employees } = useLaborData();
+
+  // Generate 5 weeks of data starting from current period
+  const generateWeeksData = (startDate) => {
     const weeks = [];
-    const today = new Date();
-    const startWeek = startOfWeek(today, { weekStartsOn: 1 });
-    
     for (let i = 0; i < 5; i++) {
-      const weekStart = addWeeks(startWeek, i);
+      const weekStart = addWeeks(startDate, i);
+      const weekEnd = endOfWeek(weekStart);
+      const isCurrentWeek = i === 0;
+      
+      // Simulate different staffing levels and costs
+      const staffingLevels = ['full', 'full', 'minimal', 'full', 'not_set'];
+      const shifts = [45, 42, 28, 53, 0];
+      const hours = [338, 315, 210, 398, 0];
+      const costs = [6075, 5670, 3780, 7155, 0];
+      
       weeks.push({
         id: `week-${i}`,
         startDate: weekStart,
-        label: i === 0 ? 'Current' : `Week +${i}`,
-        isCurrentWeek: i === 0
+        endDate: weekEnd,
+        status: staffingLevels[i],
+        totalShifts: shifts[i],
+        totalHours: hours[i],
+        estimatedCost: costs[i],
+        isCurrentWeek
       });
     }
     return weeks;
-  }, []);
-
-  // Get current week data
-  const currentWeekData = React.useMemo(() => {
-    const weekKey = format(currentWeek, 'yyyy-MM-dd');
-    return scheduleData[weekKey] || {};
-  }, [scheduleData, currentWeek]);
-
-  // Handle week change
-  const handleWeekChange = (newWeekStart) => {
-    setCurrentWeek(newWeekStart);
   };
 
-  // Copy from previous week
-  const handleCopyFromPrevious = () => {
-    const currentWeekIndex = availableWeeks.findIndex(week => 
-      isSameWeek(week.startDate, currentWeek)
-    );
-    
-    if (currentWeekIndex > 0) {
-      const previousWeek = availableWeeks[currentWeekIndex - 1];
-      const previousWeekKey = format(previousWeek.startDate, 'yyyy-MM-dd');
-      const previousWeekData = scheduleData[previousWeekKey] || {};
-      
-      // Copy the schedule structure but clear employee names for future weeks
-      const copiedData = JSON.parse(JSON.stringify(previousWeekData));
-      
-      // If copying to a future week, clear names but keep structure
-      if (currentWeekIndex > 0) {
-        Object.keys(copiedData).forEach(day => {
-          Object.keys(copiedData[day]).forEach(shift => {
-            Object.keys(copiedData[day][shift]).forEach(role => {
-              if (Array.isArray(copiedData[day][shift][role])) {
-                copiedData[day][shift][role] = copiedData[day][shift][role].map(emp => ({
-                  ...emp,
-                  name: '', // Clear names for future weeks
-                  start: emp.start || '',
-                  end: emp.end || ''
-                }));
-              }
-            });
-          });
-        });
-      }
-      
-      const currentWeekKey = format(currentWeek, 'yyyy-MM-dd');
-      onScheduleUpdate(currentWeekKey, copiedData);
-      setHasUnsavedChanges(prev => ({ ...prev, [currentWeekKey]: true }));
-    }
+  const [weeks, setWeeks] = useState(() => generateWeeksData(currentPeriodStart));
+
+  // Update weeks when period changes
+  useEffect(() => {
+    setWeeks(generateWeeksData(currentPeriodStart));
+  }, [currentPeriodStart]);
+
+  const handlePreviousPeriod = () => {
+    setCurrentPeriodStart(prev => addWeeks(prev, -5));
   };
 
-  // Reset current week
-  const handleResetWeek = () => {
-    const currentWeekKey = format(currentWeek, 'yyyy-MM-dd');
-    onScheduleUpdate(currentWeekKey, {});
-    setHasUnsavedChanges(prev => ({ ...prev, [currentWeekKey]: false }));
+  const handleNextPeriod = () => {
+    setCurrentPeriodStart(prev => addWeeks(prev, 5));
   };
 
-  // Save current week
-  const handleSaveWeek = () => {
-    const currentWeekKey = format(currentWeek, 'yyyy-MM-dd');
-    if (onWeekSave) {
-      onWeekSave(currentWeekKey, currentWeekData);
-    }
-    setHasUnsavedChanges(prev => ({ ...prev, [currentWeekKey]: false }));
+  const handleCurrentPeriod = () => {
+    setCurrentPeriodStart(startOfWeek(new Date()));
   };
 
-  const currentWeekKey = format(currentWeek, 'yyyy-MM-dd');
-  const hasChanges = hasUnsavedChanges[currentWeekKey] || false;
-  const isCurrentWeek = isSameWeek(currentWeek, new Date());
+  const handleCopyPrevious = (weekId) => {
+    console.log('Copy previous week for:', weekId);
+    // Implement copy previous week logic
+  };
+
+  const handleEditWeek = (weekId) => {
+    console.log('Edit week:', weekId);
+    // Navigate to weekly schedule view for specific week
+  };
+
+  const handleAutoPopulate = () => {
+    console.log('Auto-populate all weeks');
+    // Implement auto-population logic
+  };
+
+  const handleOptimizeAll = () => {
+    console.log('Optimize all weeks');
+    // Implement optimization logic
+  };
+
+  const handleGenerateReport = () => {
+    console.log('Generate multi-week report');
+    // Implement report generation
+  };
 
   return (
     <div className="space-y-6">
-      {/* Week Navigation */}
-      <WeekNavigation
-        currentWeek={currentWeek}
-        onWeekChange={handleWeekChange}
-        availableWeeks={availableWeeks}
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900">Multi-Week Scheduler</h2>
+          <p className="text-slate-600">Plan and optimize schedules across multiple weeks</p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            onClick={handlePreviousPeriod}
+            className="border-slate-300 text-slate-700 hover:bg-slate-50"
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Previous Period
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleCurrentPeriod}
+            className="border-slate-300 text-slate-700 hover:bg-slate-50"
+          >
+            Current Period
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleNextPeriod}
+            className="border-slate-300 text-slate-700 hover:bg-slate-50"
+          >
+            Next Period
+            <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Analytics Summary */}
+      <AnalyticsSummary weeks={weeks} />
+
+      {/* Quick Actions */}
+      <QuickActions
+        onAutoPopulate={handleAutoPopulate}
+        onOptimizeAll={handleOptimizeAll}
+        onGenerateReport={handleGenerateReport}
       />
 
-      {/* Week Actions */}
-      <WeekActions
-        currentWeek={currentWeek}
-        onCopyFromPrevious={handleCopyFromPrevious}
-        onResetWeek={handleResetWeek}
-        onSaveWeek={handleSaveWeek}
-        hasChanges={hasChanges}
-        isCurrentWeek={isCurrentWeek}
-      />
-
-      {/* Schedule Summary */}
-      <Card className="border-slate-200 bg-white shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg font-semibold text-slate-900 flex items-center">
-            <TrendingUp className="h-5 w-5 mr-2 text-blue-600" />
-            Week Summary - {format(currentWeek, 'MMM d')} to {format(addWeeks(currentWeek, 1), 'MMM d, yyyy')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ScheduleSummary 
-            weekData={currentWeekData}
-            weekLabel={availableWeeks.find(w => isSameWeek(w.startDate, currentWeek))?.label}
+      {/* Week Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        {weeks.map((week) => (
+          <WeekCard
+            key={week.id}
+            week={week}
+            isCurrentWeek={week.isCurrentWeek}
+            onCopyPrevious={handleCopyPrevious}
+            onEditWeek={handleEditWeek}
           />
+        ))}
+      </div>
+
+      {/* Department Breakdown */}
+      <DepartmentBreakdown weeks={weeks} />
+
+      {/* Planning Tips */}
+      <Card className="border-blue-200 bg-blue-50">
+        <CardContent className="p-4">
+          <div className="flex items-start space-x-3">
+            <Target className="h-5 w-5 text-blue-600 mt-0.5" />
+            <div>
+              <h4 className="font-medium text-blue-800">Multi-Week Planning Tips</h4>
+              <ul className="text-sm text-blue-700 mt-1 space-y-1">
+                <li>• Plan 4-5 weeks in advance for better staff coordination and cost control</li>
+                <li>• Use "Copy Previous" for consistent schedules, then adjust for special events</li>
+                <li>• Monitor labor cost trends across weeks to identify optimization opportunities</li>
+                <li>• Consider seasonal patterns and local events when planning future weeks</li>
+              </ul>
+            </div>
+          </div>
         </CardContent>
       </Card>
-
-      {/* Future Week Planning Tips */}
-      {!isCurrentWeek && (
-        <Card className="border-amber-200 bg-amber-50 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-start space-x-3">
-              <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
-              <div>
-                <h4 className="font-medium text-amber-800">Future Week Planning</h4>
-                <p className="text-sm text-amber-700 mt-1">
-                  Use "Copy Previous Week" to start with last week's structure, then adjust for expected sales changes, 
-                  PTO requests, and special events. Save early to avoid losing changes.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };
