@@ -4,11 +4,10 @@ import { Button } from '@/components/ui/button';
 import { 
   Calendar, Clock, User, CheckCircle, XCircle, AlertCircle, 
   Plus, Filter, Search, Mail, MessageSquare, FileText,
-  CalendarDays, Users, TrendingUp
+  CalendarDays, Users, TrendingUp, Eye, Edit, Trash2
 } from 'lucide-react';
 import { format, parseISO, differenceInDays, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { useLaborData } from '@/contexts/LaborDataContext';
-import { supabase } from '@/supabaseClient';
 
 // Enhanced Badge Component
 const Badge = ({ children, variant = "default", className = "" }) => {
@@ -19,13 +18,77 @@ const Badge = ({ children, variant = "default", className = "" }) => {
     success: "bg-emerald-50 text-emerald-700 border-emerald-200",
     warning: "bg-amber-50 text-amber-700 border-amber-200",
     error: "bg-red-50 text-red-700 border-red-200",
-    outline: "bg-white text-slate-700 border-slate-300"
+    info: "bg-blue-50 text-blue-700 border-blue-200"
   };
   
   return (
     <span className={`${baseClasses} ${variantClasses[variant]} ${className}`}>
       {children}
     </span>
+  );
+};
+
+// PTO Statistics Component
+const PTOStatistics = ({ ptoRequests }) => {
+  const stats = {
+    pending: ptoRequests.filter(req => req.status === 'pending').length,
+    approved: ptoRequests.filter(req => req.status === 'approved').length,
+    denied: ptoRequests.filter(req => req.status === 'denied').length,
+    totalDays: ptoRequests
+      .filter(req => req.status === 'approved')
+      .reduce((sum, req) => sum + (req.days_requested || 0), 0)
+  };
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <Card className="border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100">
+        <CardContent className="p-4 text-center">
+          <div className="flex items-center justify-center mb-2">
+            <div className="p-2 bg-amber-600 rounded-full">
+              <Clock className="h-4 w-4 text-white" />
+            </div>
+          </div>
+          <div className="text-2xl font-bold text-amber-900">{stats.pending}</div>
+          <div className="text-sm text-amber-700">Pending Requests</div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100">
+        <CardContent className="p-4 text-center">
+          <div className="flex items-center justify-center mb-2">
+            <div className="p-2 bg-emerald-600 rounded-full">
+              <CheckCircle className="h-4 w-4 text-white" />
+            </div>
+          </div>
+          <div className="text-2xl font-bold text-emerald-900">{stats.approved}</div>
+          <div className="text-sm text-emerald-700">Approved</div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-red-200 bg-gradient-to-br from-red-50 to-red-100">
+        <CardContent className="p-4 text-center">
+          <div className="flex items-center justify-center mb-2">
+            <div className="p-2 bg-red-600 rounded-full">
+              <XCircle className="h-4 w-4 text-white" />
+            </div>
+          </div>
+          <div className="text-2xl font-bold text-red-900">{stats.denied}</div>
+          <div className="text-sm text-red-700">Denied</div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100">
+        <CardContent className="p-4 text-center">
+          <div className="flex items-center justify-center mb-2">
+            <div className="p-2 bg-blue-600 rounded-full">
+              <CalendarDays className="h-4 w-4 text-white" />
+            </div>
+          </div>
+          <div className="text-2xl font-bold text-blue-900">{stats.totalDays}</div>
+          <div className="text-sm text-blue-700">Total PTO Days</div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
@@ -36,7 +99,7 @@ const PTORequestModal = ({ isOpen, onClose, onSubmit, employees }) => {
     start_date: '',
     end_date: '',
     reason: '',
-    type: 'vacation', // vacation, sick, personal, emergency
+    type: 'vacation',
     notes: ''
   });
 
@@ -46,7 +109,6 @@ const PTORequestModal = ({ isOpen, onClose, onSubmit, employees }) => {
     e.preventDefault();
     const newErrors = {};
 
-    // Validation
     if (!formData.employee_id) newErrors.employee_id = 'Employee is required';
     if (!formData.start_date) newErrors.start_date = 'Start date is required';
     if (!formData.end_date) newErrors.end_date = 'End date is required';
@@ -95,7 +157,6 @@ const PTORequestModal = ({ isOpen, onClose, onSubmit, employees }) => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Employee Selection */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 Employee *
@@ -117,7 +178,6 @@ const PTORequestModal = ({ isOpen, onClose, onSubmit, employees }) => {
               )}
             </div>
 
-            {/* PTO Type */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 Type *
@@ -134,7 +194,6 @@ const PTORequestModal = ({ isOpen, onClose, onSubmit, employees }) => {
               </select>
             </div>
 
-            {/* Date Range */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -166,7 +225,6 @@ const PTORequestModal = ({ isOpen, onClose, onSubmit, employees }) => {
               </div>
             </div>
 
-            {/* Duration Display */}
             {daysDifference > 0 && (
               <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
                 <div className="flex items-center text-blue-700">
@@ -178,7 +236,6 @@ const PTORequestModal = ({ isOpen, onClose, onSubmit, employees }) => {
               </div>
             )}
 
-            {/* Reason */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 Reason *
@@ -195,7 +252,6 @@ const PTORequestModal = ({ isOpen, onClose, onSubmit, employees }) => {
               )}
             </div>
 
-            {/* Notes */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 Additional Notes
@@ -209,7 +265,6 @@ const PTORequestModal = ({ isOpen, onClose, onSubmit, employees }) => {
               />
             </div>
 
-            {/* Submit Buttons */}
             <div className="flex justify-end space-x-3 pt-4">
               <Button
                 type="button"
@@ -234,12 +289,12 @@ const PTORequestModal = ({ isOpen, onClose, onSubmit, employees }) => {
 };
 
 // PTO Request Card
-const PTORequestCard = ({ request, onApprove, onReject, onViewDetails }) => {
+const PTORequestCard = ({ request, onApprove, onDeny, onViewDetails }) => {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'approved':
         return <CheckCircle className="h-4 w-4 text-emerald-600" />;
-      case 'rejected':
+      case 'denied':
         return <XCircle className="h-4 w-4 text-red-600" />;
       default:
         return <Clock className="h-4 w-4 text-amber-600" />;
@@ -250,8 +305,8 @@ const PTORequestCard = ({ request, onApprove, onReject, onViewDetails }) => {
     switch (status) {
       case 'approved':
         return <Badge variant="success">Approved</Badge>;
-      case 'rejected':
-        return <Badge variant="error">Rejected</Badge>;
+      case 'denied':
+        return <Badge variant="error">Denied</Badge>;
       default:
         return <Badge variant="warning">Pending</Badge>;
     }
@@ -272,9 +327,9 @@ const PTORequestCard = ({ request, onApprove, onReject, onViewDetails }) => {
     }
   };
 
-  const startDate = parseISO(request.start_date);
-  const endDate = parseISO(request.end_date);
-  const duration = differenceInDays(endDate, startDate) + 1;
+  const startDate = new Date(request.start_date);
+  const endDate = new Date(request.end_date);
+  const duration = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
 
   return (
     <Card className="border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow">
@@ -298,8 +353,8 @@ const PTORequestCard = ({ request, onApprove, onReject, onViewDetails }) => {
         <div className="space-y-2 mb-4">
           <div className="flex items-center justify-between text-sm">
             <span className="text-slate-600">Type:</span>
-            <span className={`font-medium capitalize ${getTypeColor(request.type)}`}>
-              {request.type}
+            <span className={`font-medium capitalize ${getTypeColor(request.type || 'vacation')}`}>
+              {request.type || 'vacation'}
             </span>
           </div>
           <div className="flex items-center justify-between text-sm">
@@ -332,11 +387,11 @@ const PTORequestCard = ({ request, onApprove, onReject, onViewDetails }) => {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => onReject(request.id)}
+              onClick={() => onDeny(request.id)}
               className="border-red-300 text-red-700 hover:bg-red-50 flex-1"
             >
               <XCircle className="h-4 w-4 mr-1" />
-              Reject
+              Deny
             </Button>
           </div>
         )}
@@ -359,123 +414,61 @@ const PTORequestCard = ({ request, onApprove, onReject, onViewDetails }) => {
 
 // Main PTO Management System
 const PTOManagementSystem = () => {
-  const { employees, ptoRequests, isConnected } = useLaborData();
+  const { 
+    employees, 
+    ptoRequests, 
+    addPTORequest, 
+    approvePTORequest, 
+    denyPTORequest,
+    isConnected,
+    loading 
+  } = useLaborData();
+
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [localPTORequests, setLocalPTORequests] = useState(ptoRequests);
-
-  useEffect(() => {
-    setLocalPTORequests(ptoRequests);
-  }, [ptoRequests]);
 
   // Filter and search PTO requests
-  const filteredRequests = localPTORequests.filter(request => {
+  const filteredRequests = ptoRequests.filter(request => {
     const matchesStatus = filterStatus === 'all' || request.status === filterStatus;
-    const matchesSearch = request.employee_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         request.reason.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = request.employee_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         request.reason?.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesStatus && matchesSearch;
   });
 
   // Handle new PTO request submission
   const handlePTOSubmit = async (formData) => {
-    try {
-      const employee = employees.find(emp => emp.id === formData.employee_id);
-      const newRequest = {
-        id: `pto-${Date.now()}`,
-        employee_id: formData.employee_id,
-        employee_name: employee?.name || 'Unknown Employee',
-        employee_role: employee?.role || 'Employee',
-        start_date: formData.start_date,
-        end_date: formData.end_date,
-        reason: formData.reason,
-        type: formData.type,
-        notes: formData.notes,
-        status: 'pending',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
+    const employee = employees.find(emp => emp.id === formData.employee_id);
+    const ptoData = {
+      ...formData,
+      employee_name: employee?.name || 'Unknown Employee',
+      days_requested: Math.ceil((new Date(formData.end_date) - new Date(formData.start_date)) / (1000 * 60 * 60 * 24)) + 1
+    };
 
-      if (isConnected) {
-        // Save to Supabase
-        const { error } = await supabase
-          .from('pto_requests')
-          .insert([newRequest]);
-        
-        if (error) throw error;
-      }
-
-      // Update local state
-      setLocalPTORequests(prev => [newRequest, ...prev]);
+    const result = await addPTORequest(ptoData);
+    if (result.success) {
       setShowRequestModal(false);
-      
-      // Show success message (you can implement toast notifications)
-      console.log('PTO request submitted successfully');
-    } catch (error) {
-      console.error('Error submitting PTO request:', error);
     }
   };
 
   // Handle PTO approval
   const handleApprove = async (requestId) => {
-    try {
-      if (isConnected) {
-        const { error } = await supabase
-          .from('pto_requests')
-          .update({ 
-            status: 'approved',
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', requestId);
-        
-        if (error) throw error;
-      }
-
-      setLocalPTORequests(prev => 
-        prev.map(req => 
-          req.id === requestId 
-            ? { ...req, status: 'approved', updated_at: new Date().toISOString() }
-            : req
-        )
-      );
-    } catch (error) {
-      console.error('Error approving PTO request:', error);
-    }
+    await approvePTORequest(requestId, {
+      notes: 'Approved by manager'
+    });
   };
 
-  // Handle PTO rejection
-  const handleReject = async (requestId) => {
-    try {
-      if (isConnected) {
-        const { error } = await supabase
-          .from('pto_requests')
-          .update({ 
-            status: 'rejected',
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', requestId);
-        
-        if (error) throw error;
-      }
-
-      setLocalPTORequests(prev => 
-        prev.map(req => 
-          req.id === requestId 
-            ? { ...req, status: 'rejected', updated_at: new Date().toISOString() }
-            : req
-        )
-      );
-    } catch (error) {
-      console.error('Error rejecting PTO request:', error);
-    }
+  // Handle PTO denial
+  const handleDeny = async (requestId) => {
+    await denyPTORequest(requestId, {
+      reason: 'Denied by manager',
+      notes: 'Please discuss alternative dates'
+    });
   };
 
-  // Statistics
-  const stats = {
-    total: localPTORequests.length,
-    pending: localPTORequests.filter(req => req.status === 'pending').length,
-    approved: localPTORequests.filter(req => req.status === 'approved').length,
-    rejected: localPTORequests.filter(req => req.status === 'rejected').length
+  const handleViewDetails = (request) => {
+    // Implement view details modal if needed
+    console.log('View details for request:', request);
   };
 
   return (
@@ -484,94 +477,74 @@ const PTOManagementSystem = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">PTO Management</h2>
-          <p className="text-slate-600">Manage vacation and time-off requests</p>
+          <p className="text-slate-600">Manage time-off requests and approvals</p>
         </div>
         <Button
           onClick={() => setShowRequestModal(true)}
           className="bg-blue-600 hover:bg-blue-700 text-white"
         >
           <Plus className="h-4 w-4 mr-2" />
-          New Request
+          New PTO Request
         </Button>
       </div>
 
       {/* Statistics */}
-      <div className="grid grid-cols-4 gap-4">
-        <Card className="border-slate-200 bg-white">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-slate-900">{stats.total}</div>
-            <div className="text-sm text-slate-600">Total Requests</div>
-          </CardContent>
-        </Card>
-        <Card className="border-slate-200 bg-white">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-amber-600">{stats.pending}</div>
-            <div className="text-sm text-slate-600">Pending</div>
-          </CardContent>
-        </Card>
-        <Card className="border-slate-200 bg-white">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-emerald-600">{stats.approved}</div>
-            <div className="text-sm text-slate-600">Approved</div>
-          </CardContent>
-        </Card>
-        <Card className="border-slate-200 bg-white">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-red-600">{stats.rejected}</div>
-            <div className="text-sm text-slate-600">Rejected</div>
-          </CardContent>
-        </Card>
-      </div>
+      <PTOStatistics ptoRequests={ptoRequests} />
 
-      {/* Filters */}
-      <div className="flex items-center space-x-4">
-        <div className="flex items-center space-x-2">
-          <Filter className="h-4 w-4 text-slate-600" />
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="border border-slate-300 rounded-md px-3 py-1 text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-          >
-            <option value="all">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-          </select>
-        </div>
-        <div className="flex items-center space-x-2 flex-1 max-w-sm">
-          <Search className="h-4 w-4 text-slate-600" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by employee or reason..."
-            className="flex-1 border border-slate-300 rounded-md px-3 py-1 text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-          />
-        </div>
-      </div>
+      {/* Filters and Search */}
+      <Card className="border-slate-200 bg-white">
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search by employee name or reason..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-md text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+            <div className="sm:w-48">
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="w-full border border-slate-300 rounded-md px-3 py-2 text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="all">All Requests</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="denied">Denied</option>
+              </select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* PTO Requests Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredRequests.map(request => (
-          <PTORequestCard
-            key={request.id}
-            request={request}
-            onApprove={handleApprove}
-            onReject={handleReject}
-            onViewDetails={(req) => console.log('View details:', req)}
-          />
-        ))}
-      </div>
-
-      {filteredRequests.length === 0 && (
+      {filteredRequests.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredRequests.map(request => (
+            <PTORequestCard
+              key={request.id}
+              request={request}
+              onApprove={handleApprove}
+              onDeny={handleDeny}
+              onViewDetails={handleViewDetails}
+            />
+          ))}
+        </div>
+      ) : (
         <Card className="border-slate-200 bg-white">
           <CardContent className="p-8 text-center">
             <CalendarDays className="h-12 w-12 text-slate-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-slate-900 mb-2">No PTO requests found</h3>
             <p className="text-slate-600 mb-4">
-              {searchTerm || filterStatus !== 'all' 
+              {searchTerm || filterStatus !== 'all'
                 ? 'Try adjusting your filters or search terms.'
-                : 'Get started by creating a new PTO request.'}
+                : 'No PTO requests have been submitted yet.'}
             </p>
             {!searchTerm && filterStatus === 'all' && (
               <Button
@@ -585,6 +558,25 @@ const PTOManagementSystem = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* PTO Calendar Placeholder */}
+      <Card className="border-slate-200 bg-white">
+        <CardHeader>
+          <CardTitle className="flex items-center text-slate-900">
+            <Calendar className="h-5 w-5 mr-2" />
+            PTO Calendar
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="text-center py-8">
+            <Calendar className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-slate-900 mb-2">PTO Calendar View</h3>
+            <p className="text-slate-600">
+              Visual calendar showing approved PTO requests and schedule conflicts coming soon.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* PTO Request Modal */}
       <PTORequestModal
