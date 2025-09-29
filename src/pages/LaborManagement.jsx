@@ -17,33 +17,11 @@ import WeeklyLaborSchedule from '@/components/WeeklyLaborSchedule';
 import ScheduleRequestManager from '@/components/labor/ScheduleRequestManager';
 import EmployeeRequestForm from '@/components/labor/EmployeeRequestForm';
 
-// Conditional imports for advanced components - with fallbacks
-let MultiWeekScheduler, PTOManagementSystem, SmartSchedulingEngine, EmployeeOnboardingSystem;
-
-try {
-  MultiWeekScheduler = require('@/components/labor/MultiWeekScheduler').default;
-} catch (e) {
-  MultiWeekScheduler = () => <div className="p-8 text-center text-slate-600">Multi-Week Scheduler coming soon...</div>;
-}
-
-try {
-  PTOManagementSystem = require('@/components/labor/PTOManagementSystem').default;
-} catch (e) {
-  // Use our ScheduleRequestManager as fallback for PTO Management
-  PTOManagementSystem = () => <ScheduleRequestManager />;
-}
-
-try {
-  SmartSchedulingEngine = require('@/components/labor/SmartSchedulingEngine').default;
-} catch (e) {
-  SmartSchedulingEngine = () => <div className="p-8 text-center text-slate-600">Smart Scheduling Assistant (Logic-Based) coming soon...</div>;
-}
-
-try {
-  EmployeeOnboardingSystem = require('@/components/labor/EmployeeOnboardingSystem').default;
-} catch (e) {
-  EmployeeOnboardingSystem = () => <div className="p-8 text-center text-slate-600">Employee Management coming soon...</div>;
-}
+// FIXED: Direct ES6 imports instead of conditional require()
+import MultiWeekScheduler from '@/components/labor/MultiWeekScheduler';
+import PTOManagementSystem from '@/components/labor/PTOManagementSystem';
+import SmartSchedulingEngine from '@/components/labor/SmartSchedulingEngine';
+import EmployeeOnboardingSystem from '@/components/labor/EmployeeOnboardingSystem';
 
 // Enhanced color scheme functions (inline since import might be causing issues)
 const generateDepartmentColors = (deptKey) => {
@@ -141,7 +119,7 @@ const EnhancedHeader = ({ isConnected, currentLocation, pendingCount }) => {
           </div>
           
           <div className="text-right">
-            <div className="font-semibold text-slate-900">{currentLocation?.name || 'Mopped Restaurant'}</div>
+            <div className="font-semibold text-slate-900">{currentLocation?.name || 'Mopped Test Site'}</div>
             <div className="text-sm text-slate-600">13 roles • 4 departments</div>
           </div>
         </div>
@@ -345,8 +323,6 @@ const EnhancedOverview = ({ onTabChange }) => {
           </div>
         </CardContent>
       </Card>
-
-      {/* REMOVED: Quick Actions section completely removed */}
     </div>
   );
 };
@@ -394,29 +370,31 @@ const EnhancedRolesDisplay = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredRoles.map(role => {
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {filteredRoles.map((role, index) => {
           const colors = generateDepartmentColors(role.department);
           return (
-            <Card key={role.name} className={`border-2 ${colors.border} bg-white shadow-sm hover:shadow-lg transition-all duration-200`}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-slate-900 text-lg">{role.name}</h3>
+            <Card key={index} className={`${colors.bg} border-2 ${colors.border} shadow-sm hover:shadow-lg transition-all duration-200`}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className={`w-3 h-3 rounded-full ${colors.accent}`}></div>
                   <Badge variant="outline" className={`${colors.accent} text-white border-transparent`}>
                     {role.department}
                   </Badge>
                 </div>
-                <div className={`${colors.bg} rounded-lg p-4 space-y-2`}>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-600">Ratio:</span>
-                    <span className={`font-bold ${colors.text}`}>1:{role.ratio}</span>
+                <h4 className={`font-bold ${colors.text} text-lg mb-2`}>{role.name}</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Hourly Rate:</span>
+                    <span className={`font-semibold ${colors.text}`}>${role.hourly_rate}</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-600">Rate:</span>
-                    <span className={`font-bold ${colors.text}`}>${role.hourly_rate}/hr</span>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Guest Ratio:</span>
+                    <span className={`font-semibold ${colors.text}`}>1:{role.ratio}</span>
                   </div>
-                  <div className="pt-2 border-t border-slate-200">
-                    <p className="text-xs text-slate-500 leading-relaxed">{role.description}</p>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Shift Type:</span>
+                    <span className={`font-semibold ${colors.text}`}>{role.shift_type}</span>
                   </div>
                 </div>
               </CardContent>
@@ -428,79 +406,68 @@ const EnhancedRolesDisplay = () => {
   );
 };
 
-// Main Labor Management Content Component
-function LaborManagementContent() {
+// Main Labor Management Component
+const LaborManagementContent = () => {
   const [activeView, setActiveView] = useState('overview');
-  
   const { 
-    employees, 
-    ptoRequests, 
-    currentTemplate, 
     isConnected, 
-    loading,
-    error,
-    getSystemStats,
-    getPendingRequestsCount
+    currentLocation, 
+    getPendingRequestsCount 
   } = useLaborData();
 
-  const pendingCount = getPendingRequestsCount ? getPendingRequestsCount() : 0;
+  const pendingCount = getPendingRequestsCount ? getPendingRequestsCount() : 2;
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-slate-600 font-medium">Loading enhanced labor management system...</p>
-        </div>
-      </div>
-    );
-  }
+  const renderContent = () => {
+    switch (activeView) {
+      case 'overview':
+        return <EnhancedOverview onTabChange={setActiveView} />;
+      case 'schedule':
+        return <WeeklyLaborSchedule />;
+      case 'multiWeek':
+        return <MultiWeekScheduler />;
+      case 'aiScheduling':
+        return <SmartSchedulingEngine />;
+      case 'onboarding':
+        return <EmployeeOnboardingSystem />;
+      case 'pto':
+        return <PTOManagementSystem />;
+      case 'roles':
+        return <EnhancedRolesDisplay />;
+      default:
+        return <EnhancedOverview onTabChange={setActiveView} />;
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-emerald-50/30">
+    <div className="min-h-screen bg-slate-50">
       <div className="max-w-7xl mx-auto">
-        <EnhancedHeader 
-          isConnected={isConnected} 
-          currentLocation={{ name: 'Mopped Test Site' }}
-          pendingCount={pendingCount}
-        />
-        
-        <EnhancedNavigation 
-          activeView={activeView} 
-          onViewChange={setActiveView}
-          pendingCount={pendingCount}
-        />
-        
-        <div className="p-6">
-          {error && (
-            <div className="mb-6 p-4 bg-gradient-to-r from-amber-50 to-red-50 border-l-4 border-amber-400 rounded-lg shadow-sm">
-              <div className="flex items-center">
-                <AlertCircle className="h-5 w-5 text-amber-600 mr-2" />
-                <span className="text-amber-800 font-medium">{error}</span>
-              </div>
-            </div>
-          )}
-
-          {activeView === 'overview' && <EnhancedOverview onTabChange={setActiveView} />}
-          {activeView === 'schedule' && <WeeklyLaborSchedule />}
-          {activeView === 'multiWeek' && <MultiWeekScheduler />}
-          {activeView === 'aiScheduling' && <SmartSchedulingEngine />}
-          {activeView === 'onboarding' && <EmployeeOnboardingSystem />}
-          {activeView === 'pto' && <PTOManagementSystem />}
-          {activeView === 'roles' && <EnhancedRolesDisplay />}
-        </div>
+        <Card className="shadow-xl border-0 rounded-xl overflow-hidden">
+          <EnhancedHeader 
+            isConnected={isConnected}
+            currentLocation={currentLocation}
+            pendingCount={pendingCount}
+          />
+          <EnhancedNavigation 
+            activeView={activeView}
+            onViewChange={setActiveView}
+            pendingCount={pendingCount}
+          />
+          <div className="p-6 bg-slate-50">
+            {renderContent()}
+          </div>
+        </Card>
       </div>
     </div>
   );
-}
+};
 
 // Wrapper component with provider
-function LaborManagement() {
+const LaborManagement = () => {
   return (
     <LaborDataProvider>
       <LaborManagementContent />
     </LaborDataProvider>
   );
-}
+};
 
 export default LaborManagement;
