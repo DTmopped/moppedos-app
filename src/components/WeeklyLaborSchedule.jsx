@@ -2,13 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
-  Save, FileText, ChevronLeft, ChevronRight, Filter, Clock, AlertCircle, 
-  Plus, Bell, Calendar
+  Save, FileText, ChevronLeft, ChevronRight, Filter, Clock, AlertCircle
 } from 'lucide-react';
 import { useLaborData } from '@/contexts/LaborDataContext';
 import { ROLES, getRolesByDepartment } from '@/config/laborScheduleConfig';
-import EmployeeRequestForm from './labor/EmployeeRequestForm';
-import ScheduleRequestManager from './labor/ScheduleRequestManager';
 
 // Badge Component (keeping your exact design)
 const Badge = ({ children, variant = "default", className = "" }) => {
@@ -67,19 +64,8 @@ const WeeklyLaborSchedule = () => {
   const [selectedDepartment, setSelectedDepartment] = useState('ALL');
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [scheduleData, setScheduleData] = useState({});
-  
-  // New state for scheduling features
-  const [showRequestForm, setShowRequestForm] = useState(false);
-  const [showRequestManager, setShowRequestManager] = useState(false);
 
-  const { 
-    loading, 
-    error, 
-    getPendingRequestsCount,
-    scheduleRequests,
-    employees 
-  } = useLaborData();
-
+  const { loading, error } = useLaborData();
   const weekStart = getStartOfWeek(currentWeek);
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const day = new Date(weekStart);
@@ -194,54 +180,8 @@ const WeeklyLaborSchedule = () => {
     );
   }
 
-  const pendingCount = getPendingRequestsCount ? getPendingRequestsCount() : 0;
-
   return (
     <div className="space-y-8">
-      {/* NEW: Request Management Bar */}
-      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 shadow-sm rounded-xl">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <Calendar className="h-5 w-5 text-blue-600" />
-                <span className="font-semibold text-blue-900">Schedule Requests</span>
-                {pendingCount > 0 && (
-                  <div className="flex items-center space-x-1">
-                    <Bell className="h-4 w-4 text-orange-500" />
-                    <span className="bg-orange-100 text-orange-800 text-xs font-medium px-2 py-1 rounded-full">
-                      {pendingCount} pending
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowRequestForm(true)}
-                className="border-blue-300 text-blue-700 hover:bg-blue-50 rounded-lg"
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                New Request
-              </Button>
-              {pendingCount > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowRequestManager(true)}
-                  className="border-orange-300 text-orange-700 hover:bg-orange-50 rounded-lg"
-                >
-                  <Bell className="h-4 w-4 mr-1" />
-                  Review ({pendingCount})
-                </Button>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Filter + Week Nav (keeping your exact design) */}
       <Card className="bg-white border border-slate-200 shadow-sm rounded-xl">
         <CardContent className="p-6">
@@ -429,37 +369,11 @@ const WeeklyLaborSchedule = () => {
           </CardContent>
         </Card>
       )}
-
-      {/* NEW: Modal Components */}
-      <EmployeeRequestForm 
-        isOpen={showRequestForm} 
-        onClose={() => setShowRequestForm(false)} 
-      />
-      
-      {showRequestManager && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
-            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Schedule Request Manager</h2>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowRequestManager(false)}
-                className="border-gray-300 text-gray-700 hover:bg-gray-50"
-              >
-                Close
-              </Button>
-            </div>
-            <div className="overflow-y-auto max-h-[calc(90vh-80px)]">
-              <ScheduleRequestManager />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
 export default WeeklyLaborSchedule;
+
 
 
