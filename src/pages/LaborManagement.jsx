@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { 
   Building2, Users, Calendar, TrendingUp, Settings, Clock, Target, Zap,
   AlertCircle, CheckCircle, Wifi, WifiOff, UserPlus, CalendarDays,
-  BarChart3, Brain, Lightbulb, ArrowRight, Shield
+  BarChart3, Brain, Lightbulb, ArrowRight, Shield, Bell
 } from 'lucide-react';
 
 import { LaborDataProvider, useLaborData } from '@/contexts/LaborDataContext';
@@ -12,6 +12,10 @@ import { DEPARTMENTS, ROLES, getRolesByDepartment } from '@/config/laborSchedule
 
 // Import WeeklyLaborSchedule (this one definitely exists)
 import WeeklyLaborSchedule from '@/components/WeeklyLaborSchedule';
+
+// Import the new scheduling components
+import ScheduleRequestManager from '@/components/labor/ScheduleRequestManager';
+import EmployeeRequestForm from '@/components/labor/EmployeeRequestForm';
 
 // Conditional imports for advanced components - with fallbacks
 let MultiWeekScheduler, PTOManagementSystem, SmartSchedulingEngine, EmployeeOnboardingSystem;
@@ -25,19 +29,20 @@ try {
 try {
   PTOManagementSystem = require('@/components/labor/PTOManagementSystem').default;
 } catch (e) {
-  PTOManagementSystem = () => <div className="p-8 text-center text-slate-600">PTO Management coming soon...</div>;
+  // Use our ScheduleRequestManager as fallback for PTO Management
+  PTOManagementSystem = () => <ScheduleRequestManager />;
 }
 
 try {
   SmartSchedulingEngine = require('@/components/labor/SmartSchedulingEngine').default;
 } catch (e) {
-  SmartSchedulingEngine = () => <div className="p-8 text-center text-slate-600">AI Scheduling Engine coming soon...</div>;
+  SmartSchedulingEngine = () => <div className="p-8 text-center text-slate-600">Smart Scheduling Assistant (Logic-Based) coming soon...</div>;
 }
 
 try {
   EmployeeOnboardingSystem = require('@/components/labor/EmployeeOnboardingSystem').default;
 } catch (e) {
-  EmployeeOnboardingSystem = () => <div className="p-8 text-center text-slate-600">Employee Onboarding coming soon...</div>;
+  EmployeeOnboardingSystem = () => <div className="p-8 text-center text-slate-600">Employee Management coming soon...</div>;
 }
 
 // Enhanced color scheme functions (inline since import might be causing issues)
@@ -92,7 +97,7 @@ const Badge = ({ children, variant = "default", className = "" }) => {
 };
 
 // Enhanced Header Component
-const EnhancedHeader = ({ isConnected, currentLocation }) => {
+const EnhancedHeader = ({ isConnected, currentLocation, pendingCount }) => {
   return (
     <div className="bg-gradient-to-r from-blue-50 via-slate-50 to-emerald-50 border-b border-slate-200 p-6 rounded-t-lg">
       <div className="flex items-center justify-between">
@@ -109,8 +114,18 @@ const EnhancedHeader = ({ isConnected, currentLocation }) => {
             </p>
           </div>
         </div>
-        
+
         <div className="flex items-center space-x-4">
+          {/* Pending Notifications */}
+          {pendingCount > 0 && (
+            <div className="flex items-center space-x-2 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2">
+              <Bell className="h-4 w-4 text-orange-600" />
+              <span className="text-sm font-medium text-orange-800">
+                {pendingCount} pending request{pendingCount !== 1 ? 's' : ''}
+              </span>
+            </div>
+          )}
+          
           <div className="flex items-center space-x-2">
             {isConnected ? (
               <>
@@ -136,14 +151,21 @@ const EnhancedHeader = ({ isConnected, currentLocation }) => {
 };
 
 // Enhanced Navigation Component
-const EnhancedNavigation = ({ activeView, onViewChange }) => {
+const EnhancedNavigation = ({ activeView, onViewChange, pendingCount }) => {
   const tabs = [
     { id: 'overview', label: 'Overview', icon: TrendingUp, description: 'System dashboard and analytics', color: 'blue' },
     { id: 'schedule', label: 'Weekly Schedule', icon: Calendar, description: 'Current week scheduling', color: 'emerald' },
     { id: 'multiWeek', label: 'Multi-Week Planner', icon: CalendarDays, description: '4-week advance scheduling', color: 'purple' },
-    { id: 'aiScheduling', label: 'AI Scheduling', icon: Brain, description: 'Smart scheduling engine', color: 'indigo' },
+    { id: 'aiScheduling', label: 'Smart Scheduling Assistant', icon: Brain, description: 'Logic-based scheduling helper', color: 'indigo' },
     { id: 'onboarding', label: 'Employee Management', icon: UserPlus, description: 'Staff onboarding and management', color: 'cyan' },
-    { id: 'pto', label: 'PTO Management', icon: Clock, description: 'Time-off requests and approvals', color: 'amber' },
+    { 
+      id: 'pto', 
+      label: `PTO Management${pendingCount > 0 ? ` (${pendingCount})` : ''}`, 
+      icon: Clock, 
+      description: 'Time-off requests and approvals', 
+      color: 'amber',
+      hasPending: pendingCount > 0
+    },
     { id: 'roles', label: 'All 13 Roles', icon: Users, description: 'Complete role breakdown', color: 'rose' }
   ];
 
@@ -158,7 +180,7 @@ const EnhancedNavigation = ({ activeView, onViewChange }) => {
             <button
               key={tab.id}
               onClick={() => onViewChange(tab.id)}
-              className={`flex items-center space-x-2 px-4 py-3 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+              className={`flex items-center space-x-2 px-4 py-3 rounded-lg text-sm font-medium transition-all whitespace-nowrap relative ${
                 isActive
                   ? `bg-${tab.color}-50 text-${tab.color}-700 border border-${tab.color}-200 shadow-sm`
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
@@ -167,6 +189,9 @@ const EnhancedNavigation = ({ activeView, onViewChange }) => {
             >
               <Icon className="h-4 w-4" />
               <span>{tab.label}</span>
+              {tab.hasPending && (
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full animate-pulse"></div>
+              )}
             </button>
           );
         })}
@@ -175,31 +200,31 @@ const EnhancedNavigation = ({ activeView, onViewChange }) => {
   );
 };
 
-// Enhanced Overview Component
+// Enhanced Overview Component (UPDATED - Functional Cards, No Quick Actions)
 const EnhancedOverview = ({ onTabChange }) => {
   const { 
     employees, 
     ptoRequests, 
     currentTemplate, 
     isConnected, 
-    getSystemStats 
+    getSystemStats,
+    getPendingRequestsCount
   } = useLaborData();
 
   const systemStats = getSystemStats();
+  const pendingCount = getPendingRequestsCount ? getPendingRequestsCount() : 0;
 
-  const handleQuickAction = (action) => {
-    switch (action) {
-      case 'schedule':
-        onTabChange('schedule');
-        break;
-      case 'addEmployee':
+  // Handle stat card clicks
+  const handleStatCardClick = (cardType) => {
+    switch (cardType) {
+      case 'employees':
         onTabChange('onboarding');
         break;
-      case 'reviewPTO':
+      case 'pto':
         onTabChange('pto');
         break;
-      case 'aiForecast':
-        onTabChange('aiScheduling');
+      case 'roles':
+        onTabChange('roles');
         break;
       default:
         break;
@@ -208,9 +233,12 @@ const EnhancedOverview = ({ onTabChange }) => {
 
   return (
     <div className="space-y-6">
-      {/* Enhanced Stats Cards */}
+      {/* Enhanced Stats Cards - NOW CLICKABLE */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="border-slate-200 bg-gradient-to-br from-blue-50 to-blue-100 shadow-sm hover:shadow-md transition-shadow">
+        <Card 
+          className="border-slate-200 bg-gradient-to-br from-blue-50 to-blue-100 shadow-sm hover:shadow-md transition-all cursor-pointer transform hover:scale-105"
+          onClick={() => handleStatCardClick('employees')}
+        >
           <CardContent className="p-4 text-center">
             <div className="flex items-center justify-center mb-2">
               <div className="p-2 bg-blue-600 rounded-full">
@@ -219,6 +247,7 @@ const EnhancedOverview = ({ onTabChange }) => {
             </div>
             <div className="text-2xl font-bold text-blue-900">{systemStats.totalEmployees}</div>
             <div className="text-sm text-blue-700">Total Employees</div>
+            <div className="text-xs text-blue-600 mt-1">Click to manage</div>
           </CardContent>
         </Card>
         
@@ -234,19 +263,29 @@ const EnhancedOverview = ({ onTabChange }) => {
           </CardContent>
         </Card>
         
-        <Card className="border-slate-200 bg-gradient-to-br from-amber-50 to-amber-100 shadow-sm hover:shadow-md transition-shadow">
+        <Card 
+          className="border-slate-200 bg-gradient-to-br from-amber-50 to-amber-100 shadow-sm hover:shadow-md transition-all cursor-pointer transform hover:scale-105 relative"
+          onClick={() => handleStatCardClick('pto')}
+        >
           <CardContent className="p-4 text-center">
             <div className="flex items-center justify-center mb-2">
               <div className="p-2 bg-amber-600 rounded-full">
                 <Clock className="h-5 w-5 text-white" />
               </div>
             </div>
-            <div className="text-2xl font-bold text-amber-900">{systemStats.pendingPTO}</div>
+            <div className="text-2xl font-bold text-amber-900">{pendingCount}</div>
             <div className="text-sm text-amber-700">Pending PTO</div>
+            <div className="text-xs text-amber-600 mt-1">Click to review</div>
+            {pendingCount > 0 && (
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full animate-pulse"></div>
+            )}
           </CardContent>
         </Card>
         
-        <Card className="border-slate-200 bg-gradient-to-br from-purple-50 to-purple-100 shadow-sm hover:shadow-md transition-shadow">
+        <Card 
+          className="border-slate-200 bg-gradient-to-br from-purple-50 to-purple-100 shadow-sm hover:shadow-md transition-all cursor-pointer transform hover:scale-105"
+          onClick={() => handleStatCardClick('roles')}
+        >
           <CardContent className="p-4 text-center">
             <div className="flex items-center justify-center mb-2">
               <div className="p-2 bg-purple-600 rounded-full">
@@ -255,6 +294,7 @@ const EnhancedOverview = ({ onTabChange }) => {
             </div>
             <div className="text-2xl font-bold text-purple-900">{systemStats.totalRoles}</div>
             <div className="text-sm text-purple-700">Total Roles</div>
+            <div className="text-xs text-purple-600 mt-1">Click to view</div>
           </CardContent>
         </Card>
       </div>
@@ -306,57 +346,7 @@ const EnhancedOverview = ({ onTabChange }) => {
         </CardContent>
       </Card>
 
-      {/* Enhanced Quick Actions */}
-      <Card className="border-slate-200 bg-white shadow-sm">
-        <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100">
-          <CardTitle className="text-lg font-semibold text-slate-900">Quick Actions</CardTitle>
-          <CardDescription>Jump to key management functions</CardDescription>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Button 
-              variant="outline" 
-              className="h-auto p-6 flex flex-col items-center space-y-3 border-2 border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 group"
-              onClick={() => handleQuickAction('schedule')}
-            >
-              <div className="p-3 bg-blue-100 rounded-full group-hover:bg-blue-200 transition-colors">
-                <Calendar className="h-6 w-6" />
-              </div>
-              <span className="text-sm font-medium">Schedule Next Week</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              className="h-auto p-6 flex flex-col items-center space-y-3 border-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-300 transition-all duration-200 group"
-              onClick={() => handleQuickAction('addEmployee')}
-            >
-              <div className="p-3 bg-emerald-100 rounded-full group-hover:bg-emerald-200 transition-colors">
-                <UserPlus className="h-6 w-6" />
-              </div>
-              <span className="text-sm font-medium">Add Employee</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              className="h-auto p-6 flex flex-col items-center space-y-3 border-2 border-amber-200 text-amber-700 hover:bg-amber-50 hover:border-amber-300 transition-all duration-200 group"
-              onClick={() => handleQuickAction('reviewPTO')}
-            >
-              <div className="p-3 bg-amber-100 rounded-full group-hover:bg-amber-200 transition-colors">
-                <CalendarDays className="h-6 w-6" />
-              </div>
-              <span className="text-sm font-medium">Review PTO</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              className="h-auto p-6 flex flex-col items-center space-y-3 border-2 border-purple-200 text-purple-700 hover:bg-purple-50 hover:border-purple-300 transition-all duration-200 group"
-              onClick={() => handleQuickAction('aiForecast')}
-            >
-              <div className="p-3 bg-purple-100 rounded-full group-hover:bg-purple-200 transition-colors">
-                <Brain className="h-6 w-6" />
-              </div>
-              <span className="text-sm font-medium">AI Forecast</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* REMOVED: Quick Actions section completely removed */}
     </div>
   );
 };
@@ -449,8 +439,11 @@ function LaborManagementContent() {
     isConnected, 
     loading,
     error,
-    getSystemStats
+    getSystemStats,
+    getPendingRequestsCount
   } = useLaborData();
+
+  const pendingCount = getPendingRequestsCount ? getPendingRequestsCount() : 0;
 
   if (loading) {
     return (
@@ -469,11 +462,13 @@ function LaborManagementContent() {
         <EnhancedHeader 
           isConnected={isConnected} 
           currentLocation={{ name: 'Mopped Test Site' }}
+          pendingCount={pendingCount}
         />
         
         <EnhancedNavigation 
           activeView={activeView} 
-          onViewChange={setActiveView} 
+          onViewChange={setActiveView}
+          pendingCount={pendingCount}
         />
         
         <div className="p-6">
@@ -509,9 +504,3 @@ function LaborManagement() {
 }
 
 export default LaborManagement;
-
-
-
-
-
-
