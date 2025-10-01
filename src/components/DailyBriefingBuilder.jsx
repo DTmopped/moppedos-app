@@ -19,7 +19,7 @@ const DailyBriefingBuilder = () => {
   const [lunch, setLunch] = useState("");
   const [dinner, setDinner] = useState("");
   const [forecastedSales, setForecastedSales] = useState("");
-  const [forecastNotes, setForecastNotes] = useState("");
+
 
   // Yesterday's Recap
   const [actualSales, setActualSales] = useState("");
@@ -440,34 +440,36 @@ const DailyBriefingBuilder = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Today's Forecast */}
         <Card className="rounded-2xl shadow-md">
-          <CardHeader>
-            <CardTitle>📊 Today's Forecast</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="lunch">🍽️ Lunch (AM)</Label>
-              {renderInput(lunch, setLunch, "", autoPopulated && !!lunch)}
-            </div>
-            <div>
-              <Label htmlFor="dinner">🌙 Dinner (PM)</Label>
-              {renderInput(dinner, setDinner, "", autoPopulated && !!dinner)}
-            </div>
-            <div>
-              <Label htmlFor="forecasted-sales">💰 Forecasted Sales ($)</Label>
-              {renderInput(forecastedSales, setForecastedSales, "", autoPopulated && !!forecastedSales)}
-            </div>
-            <div>
-              <Label htmlFor="forecast-notes">📝 Notes...</Label>
-              <textarea
-                id="forecast-notes"
-                value={forecastNotes}
-                onChange={(e) => setForecastNotes(e.target.value)}
-                placeholder="📝 Notes..."
-                className="w-full p-3 border border-gray-300 rounded-lg resize-none h-24 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </CardContent>
-        </Card>
+  <CardHeader>
+    <CardTitle>📊 Today's Forecast</CardTitle>
+  </CardHeader>
+  <CardContent className="space-y-4">
+    <div>
+      <Label htmlFor="lunch">🍽️ Lunch (AM)</Label>
+      {renderInput(lunch, setLunch, "", autoPopulated && !!lunch)}
+    </div>
+    <div>
+      <Label htmlFor="dinner">🌙 Dinner (PM)</Label>
+      {renderInput(dinner, setDinner, "", autoPopulated && !!dinner)}
+    </div>
+    <div>
+      <Label htmlFor="forecasted-sales">💰 Forecasted Sales ($)</Label>
+      {renderInput(forecastedSales, setForecastedSales, "", autoPopulated && !!forecastedSales)}
+    </div>
+
+    {/* ✅ Weather card inline */}
+    {weather && (
+      <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg text-blue-900">
+        <div className="flex items-center gap-2 mb-2 text-blue-800 font-semibold text-sm">
+          🌤️ Weather Forecast
+        </div>
+        <p><strong>Conditions:</strong> {weather.conditions}</p>
+        <p><strong>Low:</strong> {weather.temperature_low}°F</p>
+        <p><strong>High:</strong> {weather.temperature_high}°F</p>
+      </div>
+    )}
+  </CardContent>
+</Card>
 
         {/* Yesterday's Recap */}
         <Card className="rounded-2xl shadow-md">
