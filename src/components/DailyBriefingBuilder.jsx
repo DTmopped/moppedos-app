@@ -293,72 +293,72 @@ const DailyBriefingBuilder = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Today's Forecast */}
-        <Card className="rounded-2xl shadow-md">
-          <CardHeader>
-            <CardTitle>📊 Today's Forecast</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="lunch">🍽️ Lunch (AM)</Label>
-              {renderInput(lunch, setLunch, "", autoPopulated && !!lunch)}
-            </div>
-            <div>
-              <Label htmlFor="dinner">🌙 Dinner (PM)</Label>
-              {renderInput(dinner, setDinner, "", autoPopulated && !!dinner)}
-            </div>
-            <div>
-              <Label htmlFor="forecasted-sales">💰 Forecasted Sales ($)</Label>
-              {renderInput(forecastedSales, setForecastedSales, "", autoPopulated && !!forecastedSales)}
-            </div>
+     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  {/* Today's Forecast */}
+ <Card className="rounded-2xl shadow-md">
+  <CardHeader>
+    <CardTitle>📊 Today's Forecast</CardTitle>
+  </CardHeader>
+  <CardContent className="space-y-4">
+    <div>
+      <Label htmlFor="lunch">🍽️ Lunch (AM)</Label>
+      {renderInput(lunch, setLunch, "", autoPopulated && !!lunch)}
+    </div>
+    <div>
+      <Label htmlFor="dinner">🌙 Dinner (PM)</Label>
+      {renderInput(dinner, setDinner, "", autoPopulated && !!dinner)}
+    </div>
+    <div>
+      <Label htmlFor="forecasted-sales">💰 Forecasted Sales ($)</Label>
+      {renderInput(forecastedSales, setForecastedSales, "", autoPopulated && !!forecastedSales)}
+    </div>
 
-            {weather && (
-              <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg text-blue-900">
-                <div className="flex items-center gap-2 mb-2 text-blue-800 font-semibold text-sm">
-                  🌤️ Weather Forecast
-                </div>
-                <p><strong>Conditions:</strong> {weather.conditions}</p>
-                <p><strong>Low:</strong> {weather.temperature_low}°F</p>
-                <p><strong>High:</strong> {weather.temperature_high}°F</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Yesterday's Recap */}
-        <Card className="rounded-2xl shadow-md">
-          <CardHeader>
-            <CardTitle>📅 Yesterday's Recap</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="actual-sales">Actual Sales ($)</Label>
-              <Input
-                id="actual-sales"
-                value={actualSales}
-                onChange={(e) => setActualSales(e.target.value)}
-                placeholder=""
-              />
-            </div>
-            <div>
-              <Label htmlFor="variance-notes">⚠️ What affected results?</Label>
-              <textarea
-                id="variance-notes"
-                value={varianceNotes}
-                onChange={(e) => setVarianceNotes(e.target.value)}
-                placeholder=""
-                className="w-full p-3 border border-gray-300 rounded-lg resize-none h-24 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <div className="text-sm text-blue-800 italic">
-                ⭐ {quote}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+    {weather && (
+      <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg text-blue-900">
+        <div className="flex items-center gap-2 mb-2 text-blue-800 font-semibold text-sm">
+          🌤️ Weather Forecast
+        </div>
+        <p><strong>Conditions:</strong> {weather.conditions}</p>
+        <p><strong>Low:</strong> {weather.temperature_low}°F</p>
+        <p><strong>High:</strong> {weather.temperature_high}°F</p>
       </div>
+    )}
+  </CardContent>
+</Card>
+
+  {/* Yesterday's Recap */}
+  <Card className="rounded-2xl shadow-md">
+    <CardHeader>
+      <CardTitle>📅 Yesterday's Recap</CardTitle>
+    </CardHeader>
+    <CardContent className="space-y-4">
+      <div>
+        <Label htmlFor="actual-sales">Actual Sales ($)</Label>
+        <Input
+          id="actual-sales"
+          value={actualSales}
+          onChange={(e) => setActualSales(e.target.value)}
+          placeholder=""
+        />
+      </div>
+      <div>
+        <Label htmlFor="variance-notes">⚠️ What affected results?</Label>
+        <textarea
+          id="variance-notes"
+          value={varianceNotes}
+          onChange={(e) => setVarianceNotes(e.target.value)}
+          placeholder=""
+          className="w-full p-3 border border-gray-300 rounded-lg resize-none h-24 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+      </div>
+      <div className="bg-blue-50 p-4 rounded-lg">
+        <div className="text-sm text-blue-800 italic">
+          ⭐ {quote}
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+</div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Team & Leadership */}
