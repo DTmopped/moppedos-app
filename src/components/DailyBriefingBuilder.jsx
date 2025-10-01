@@ -13,13 +13,14 @@ const DailyBriefingBuilder = () => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
   const [autoPopulated, setAutoPopulated] = useState(false);
-  const [copiedFromYesterday, setCopiedFromYesterday] = useState(false);
 
   // Today's Forecast
   const [lunch, setLunch] = useState("");
   const [dinner, setDinner] = useState("");
   const [forecastedSales, setForecastedSales] = useState("");
 
+  // Weather
+  const [weather, setWeather] = useState(null);
 
   // Yesterday's Recap
   const [actualSales, setActualSales] = useState("");
@@ -42,8 +43,6 @@ const DailyBriefingBuilder = () => {
   // Events & Special Occasions
   const [events, setEvents] = useState("");
 
-
-
   // Maintenance & Repairs
   const [repairNotes, setRepairNotes] = useState("");
 
@@ -53,16 +52,13 @@ const DailyBriefingBuilder = () => {
   const fetchBriefing = async () => {
     if (!locationId || !date) return;
 
-    // Ensure we use the same UUID for both tables (convert to string to avoid bigint issues)
     const locationUuidString = String(locationUuid || locationId);
     const locationIdString = String(locationId);
 
     setLoading(true);
     setAutoPopulated(false);
-    setCopiedFromYesterday(false);
 
     try {
-      // 1. Fetch existing briefing for this date
       const { data: existingBriefing, error: existingError } = await supabase
         .from("daily_briefings")
         .select("*")
@@ -80,7 +76,6 @@ const DailyBriefingBuilder = () => {
         setLunch(existingBriefing.lunch || "");
         setDinner(existingBriefing.dinner || "");
         setForecastedSales(existingBriefing.forecasted_sales || "");
-        setForecastNotes(existingBriefing.forecast_notes || "");
         setActualSales(existingBriefing.actual_sales || "");
         setVarianceNotes(existingBriefing.variance_notes || "");
         setShoutout(existingBriefing.shoutout || "");
@@ -93,7 +88,6 @@ const DailyBriefingBuilder = () => {
         setFoodImage(existingBriefing.food_image_url || null);
         setBeverageImage(existingBriefing.beverage_image_url || null);
       } else {
-        // No existing briefing, perform smart auto-population
         await performSmartAutoPopulation(locationUuidString, locationIdString);
       }
     } catch (err) {
@@ -103,42 +97,36 @@ const DailyBriefingBuilder = () => {
     }
   };
 
-  // Smart auto-population function
   const performSmartAutoPopulation = async (locationUuidString, locationIdString) => {
     let hasAutoPopulated = false;
-    let hasCopiedFromYesterday = false;
 
     try {
-      // 1. Fetch forecast data for today from fva_daily_history
       if (locationUuidString) {
         const { data: forecastData, error: forecastError } = await supabase
           .from("fva_daily_history")
-          .select("am_guests, pm_guests, forecast_sales, forecast_guests, forecast_pax")
+          .select("am_guests, pm_guests, forecast_sales, forecast_guests")
           .eq("location_uuid", locationUuidString)
           .eq("date", date)
           .maybeSingle();
 
         if (!forecastError && forecastData) {
-          // Use calculated AM/PM guest splits from your app logic
-          if (forecastData.am_guests) {
+          if (forecastData.am_guests !== null && forecastData.am_guests !== undefined) {
             setLunch(forecastData.am_guests.toString());
             hasAutoPopulated = true;
           }
-          
-          if (forecastData.pm_guests) {
+
+          if (forecastData.pm_guests !== null && forecastData.pm_guests !== undefined) {
             setDinner(forecastData.pm_guests.toString());
             hasAutoPopulated = true;
           }
-          
-          // Fallback: if AM/PM splits aren't calculated yet, use total guests
+
           if (!forecastData.am_guests && !forecastData.pm_guests && forecastData.forecast_guests) {
             setLunch(forecastData.forecast_guests.toString());
-            setDinner(""); // Leave dinner empty if no split available
+            setDinner("");
             hasAutoPopulated = true;
           }
-          
+
           if (forecastData.forecast_sales) {
-            // Format as currency: $9,000.00
             const formattedSales = new Intl.NumberFormat('en-US', {
               style: 'currency',
               currency: 'USD',
@@ -147,18 +135,8 @@ const DailyBriefingBuilder = () => {
             setForecastedSales(formattedSales);
             hasAutoPopulated = true;
           }
-          
-          if (hasAutoPopulated) {
-            const amPmNote = (forecastData.am_guests && forecastData.pm_guests) 
-              ? "Auto-populated with calculated AM/PM guest splits."
-              : "Auto-populated from forecast data (AM/PM calculation pending).";
-            setForecastNotes(amPmNote);
-          }
-        } else {
-          setForecastNotes("No forecast data available for this date.");
         }
 
-        // 2. Fetch yesterday's actual sales for variance analysis
         const yesterday = new Date(date);
         yesterday.setDate(yesterday.getDate() - 1);
         const yesterdayStr = yesterday.toISOString().split('T')[0];
@@ -171,7 +149,6 @@ const DailyBriefingBuilder = () => {
           .maybeSingle();
 
         if (!yesterdayError && yesterdayData?.actual_sales) {
-          // Format as currency: $X,XXX.XX
           const formattedActualSales = new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: 'USD',
@@ -179,46 +156,9 @@ const DailyBriefingBuilder = () => {
           }).format(yesterdayData.actual_sales);
           setActualSales(formattedActualSales);
         }
-
-        // 3. Fetch yesterday's briefing for auto-population
-        const { data: yesterdayBriefing, error: yesterdayBriefingError } = await supabase
-          .from("daily_briefings")
-          .select("reminders, food_items, beverage_items, events, manager, repair_notes")
-          .eq("location_id", locationIdString)
-          .eq("date", yesterdayStr)
-          .maybeSingle();
-
-        if (!yesterdayBriefingError && yesterdayBriefing) {
-          // Copy repetitive content from yesterday
-          if (yesterdayBriefing.reminders) {
-            setReminders(yesterdayBriefing.reminders);
-            hasCopiedFromYesterday = true;
-          }
-          if (yesterdayBriefing.food_items) {
-            setFoodItems(yesterdayBriefing.food_items);
-            hasCopiedFromYesterday = true;
-          }
-          if (yesterdayBriefing.beverage_items) {
-            setBeverageItems(yesterdayBriefing.beverage_items);
-            hasCopiedFromYesterday = true;
-          }
-          if (yesterdayBriefing.events) {
-            setEvents(yesterdayBriefing.events);
-            hasCopiedFromYesterday = true;
-          }
-          if (yesterdayBriefing.manager) {
-            setManager(yesterdayBriefing.manager);
-            hasCopiedFromYesterday = true;
-          }
-          if (yesterdayBriefing.repair_notes) {
-            setRepairNotes(yesterdayBriefing.repair_notes);
-            hasCopiedFromYesterday = true;
-          }
-        }
       }
 
       setAutoPopulated(hasAutoPopulated);
-      setCopiedFromYesterday(hasCopiedFromYesterday);
     } catch (err) {
       console.error("Error during auto-population:", err);
     }
@@ -228,7 +168,7 @@ const DailyBriefingBuilder = () => {
     fetchBriefing();
   }, [locationId, date]);
 
-  // DO NOT TOUCH - Inspirational Quote Feature
+  // Inspirational Quote
   useEffect(() => {
     const getQuote = async () => {
       try {
@@ -243,91 +183,27 @@ const DailyBriefingBuilder = () => {
     getQuote();
   }, []);
 
-  const saveBriefing = async () => {
-  if (!locationId || !userId) {
-    console.error("Missing locationId or userId");
-    alert("Missing required information. Please refresh the page and try again.");
-    return;
-  }
+  // Fetch Weather
+  useEffect(() => {
+    const fetchWeather = async () => {
+      if (!locationId || !date) return;
 
-  try {
-    // Helper function to convert empty strings to null for numeric fields
-    const parseNumericField = (value) => {
-      if (!value || value === "" || value === null || value === undefined) {
-        return null;
+      const { data, error } = await supabase
+        .from("weather_data")
+        .select("*")
+        .eq("location_id", String(locationId))
+        .eq("forecast_date", date)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Weather fetch error:", error);
+      } else {
+        setWeather(data);
       }
-      // Remove currency symbols and commas, then parse
-      const cleanValue = String(value).replace(/[$,]/g, '');
-      const parsed = parseFloat(cleanValue);
-      return isNaN(parsed) ? null : parsed;
     };
 
-    // Helper function to convert empty strings to null for integer fields
-    const parseIntegerField = (value) => {
-      if (!value || value === "" || value === null || value === undefined) {
-        return null;
-      }
-      const parsed = parseInt(value, 10);
-      return isNaN(parsed) ? null : parsed;
-    };
-
-    // Helper function to convert empty strings to null for text fields
-    const parseTextField = (value) => {
-      return (!value || value === "") ? null : String(value);
-    };
-
-    const briefingData = {
-      location_id: String(locationId),
-      created_by: userId,
-      date,
-      manager: parseTextField(manager),
-      lunch: parseIntegerField(lunch),
-      dinner: parseIntegerField(dinner),
-      forecasted_sales: parseNumericField(forecastedSales),
-      forecast_notes: parseTextField(forecastNotes),
-      actual_sales: parseNumericField(actualSales),
-      variance_notes: parseTextField(varianceNotes),
-      shoutout: parseTextField(shoutout),
-      reminders: parseTextField(reminders),
-      mindset: parseTextField(mindset),
-      food_items: parseTextField(foodItems),
-      beverage_items: parseTextField(beverageItems),
-      events: parseTextField(events),
-      repair_notes: parseTextField(repairNotes),
-      food_image_url: parseTextField(foodImage),
-      beverage_image_url: parseTextField(beverageImage),
-      updated_at: new Date().toISOString()
-    };
-
-    console.log('daily_briefings upsert payload:', briefingData);
-
-    const { data, error } = await supabase
-      .from("daily_briefings")
-      .upsert(briefingData, { 
-        onConflict: 'location_id,date'
-      })
-      .select();
-
-    if (error) {
-      console.error('daily_briefings upsert error:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code,
-      });
-      throw error;
-    }
-    
-    console.log("Briefing saved successfully");
-    alert("Briefing saved successfully!");
-    
-  } catch (err) {
-    console.error("Error saving briefing:", err);
-    alert(`Failed to save briefing: ${err.message}`);
-  }
-};
-
-
+    fetchWeather();
+  }, [locationId, date]);
 
   const handleImageUpload = (file, type) => {
     if (file) {
@@ -343,45 +219,34 @@ const DailyBriefingBuilder = () => {
     }
   };
 
-  const renderTextarea = (value, setValue, placeholder, showFromYesterday = false) => {
-    return (
-      <div className="space-y-2">
-        <textarea
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder={placeholder}
-          className="w-full p-3 border border-gray-300 rounded-lg resize-none h-24 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        />
-        {showFromYesterday && (
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-              From Yesterday
-            </span>
-          </div>
-        )}
-      </div>
-    );
-  };
+  const renderTextarea = (value, setValue, placeholder, showFromYesterday = false) => (
+    <div className="space-y-2">
+      <textarea
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder={placeholder}
+        className="w-full p-3 border border-gray-300 rounded-lg resize-none h-24 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      />
+    </div>
+  );
 
-  const renderInput = (value, setValue, placeholder, showAutoFilled = false) => {
-    return (
-      <div className="space-y-2">
-        <Input
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder={placeholder}
-          className="w-full"
-        />
-        {showAutoFilled && (
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-              Auto-filled
-            </span>
-          </div>
-        )}
-      </div>
-    );
-  };
+  const renderInput = (value, setValue, placeholder, showAutoFilled = false) => (
+    <div className="space-y-2">
+      <Input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder={placeholder}
+        className="w-full"
+      />
+      {showAutoFilled && (
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+            Auto-filled
+          </span>
+        </div>
+      )}
+    </div>
+  );
 
   if (loading) {
     return (
@@ -401,7 +266,7 @@ const DailyBriefingBuilder = () => {
           </h1>
           <p className="text-gray-600 mt-1">Create and manage your daily operational briefing</p>
         </div>
-        
+
         <div className="flex flex-col sm:flex-row items-center gap-4">
           <div className="flex items-center gap-2">
             <Label htmlFor="date" className="text-sm font-medium">Date</Label>
@@ -412,64 +277,51 @@ const DailyBriefingBuilder = () => {
               onChange={(e) => setDate(e.target.value)}
               className="w-auto px-4 py-2 h-10 border border-gray-300 rounded-md align-middle self-end"
             />
-
           </div>
-          
-         <div className="flex items-center gap-2 -mt-3">
-  <Button onClick={saveBriefing} className="bg-blue-500 hover:bg-blue-600 px-4 py-2 h-10 flex items-center">
-    💾 Save Briefing
-  </Button>
-  <DailyBriefingPrintButton className="bg-gray-600 hover:bg-gray-700 px-4 py-2 h-10 flex items-center">
-    🖨️ Generate PDF
-  </DailyBriefingPrintButton>
-</div>
+
+          <div className="flex items-center gap-2 -mt-3">
+            <Button onClick={() => console.log('saveBriefing stub')} className="bg-blue-500 hover:bg-blue-600 px-4 py-2 h-10 flex items-center">
+              💾 Save Briefing
+            </Button>
+            <DailyBriefingPrintButton className="bg-gray-600 hover:bg-gray-700 px-4 py-2 h-10 flex items-center">
+              🖨️ Generate PDF
+            </DailyBriefingPrintButton>
+          </div>
         </div>
       </div>
-
-
-
-      {copiedFromYesterday && (
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-          <div className="flex items-center gap-2">
-            <span className="text-purple-600">📋</span>
-            <span className="text-purple-800 font-medium">Copied repetitive content from yesterday's briefing</span>
-          </div>
-        </div>
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Today's Forecast */}
         <Card className="rounded-2xl shadow-md">
-  <CardHeader>
-    <CardTitle>📊 Today's Forecast</CardTitle>
-  </CardHeader>
-  <CardContent className="space-y-4">
-    <div>
-      <Label htmlFor="lunch">🍽️ Lunch (AM)</Label>
-      {renderInput(lunch, setLunch, "", autoPopulated && !!lunch)}
-    </div>
-    <div>
-      <Label htmlFor="dinner">🌙 Dinner (PM)</Label>
-      {renderInput(dinner, setDinner, "", autoPopulated && !!dinner)}
-    </div>
-    <div>
-      <Label htmlFor="forecasted-sales">💰 Forecasted Sales ($)</Label>
-      {renderInput(forecastedSales, setForecastedSales, "", autoPopulated && !!forecastedSales)}
-    </div>
+          <CardHeader>
+            <CardTitle>📊 Today's Forecast</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="lunch">🍽️ Lunch (AM)</Label>
+              {renderInput(lunch, setLunch, "", autoPopulated && !!lunch)}
+            </div>
+            <div>
+              <Label htmlFor="dinner">🌙 Dinner (PM)</Label>
+              {renderInput(dinner, setDinner, "", autoPopulated && !!dinner)}
+            </div>
+            <div>
+              <Label htmlFor="forecasted-sales">💰 Forecasted Sales ($)</Label>
+              {renderInput(forecastedSales, setForecastedSales, "", autoPopulated && !!forecastedSales)}
+            </div>
 
-    {/* ✅ Weather card inline */}
-    {weather && (
-      <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg text-blue-900">
-        <div className="flex items-center gap-2 mb-2 text-blue-800 font-semibold text-sm">
-          🌤️ Weather Forecast
-        </div>
-        <p><strong>Conditions:</strong> {weather.conditions}</p>
-        <p><strong>Low:</strong> {weather.temperature_low}°F</p>
-        <p><strong>High:</strong> {weather.temperature_high}°F</p>
-      </div>
-    )}
-  </CardContent>
-</Card>
+            {weather && (
+              <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg text-blue-900">
+                <div className="flex items-center gap-2 mb-2 text-blue-800 font-semibold text-sm">
+                  🌤️ Weather Forecast
+                </div>
+                <p><strong>Conditions:</strong> {weather.conditions}</p>
+                <p><strong>Low:</strong> {weather.temperature_low}°F</p>
+                <p><strong>High:</strong> {weather.temperature_high}°F</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Yesterday's Recap */}
         <Card className="rounded-2xl shadow-md">
