@@ -18,6 +18,7 @@ const DailyBriefingBuilder = () => {
   const [lunch, setLunch] = useState("");
   const [dinner, setDinner] = useState("");
   const [forecastedSales, setForecastedSales] = useState("");
+  const [forecastNotes, setForecastNotes] = useState(""); // <-- ✅ Add this
   const [copiedFromYesterday, setCopiedFromYesterday] = useState(false);
 
   // Weather
@@ -78,6 +79,7 @@ const DailyBriefingBuilder = () => {
         setDinner(existingBriefing.dinner || "");
         setForecastedSales(existingBriefing.forecasted_sales || "");
         setActualSales(existingBriefing.actual_sales || "");
+        setForecastNotes(existingBriefing.forecast_notes || ""); // ✅ Add th
         setVarianceNotes(existingBriefing.variance_notes || "");
         setShoutout(existingBriefing.shoutout || "");
         setReminders(existingBriefing.reminders || "");
