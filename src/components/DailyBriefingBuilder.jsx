@@ -18,6 +18,7 @@ const DailyBriefingBuilder = () => {
   const [lunch, setLunch] = useState("");
   const [dinner, setDinner] = useState("");
   const [forecastedSales, setForecastedSales] = useState("");
+  const [copiedFromYesterday, setCopiedFromYesterday] = useState(false);
 
   // Weather
   const [weather, setWeather] = useState(null);
