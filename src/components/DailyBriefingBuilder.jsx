@@ -7,48 +7,47 @@ import { useUserAndLocation } from "@/hooks/useUserAndLocation";
 import { supabase } from "@/supabaseClient";
 import DailyBriefingPrintButton from "@/components/briefing/DailyBriefingPrintButton";
 import PrintableBriefingSheet from "@/components/PrintableBriefingSheet";
+import { getWeatherForecast } from "@/lib/weather"; // ✅ Make sure this path is correct
 
 const DailyBriefingBuilder = () => {
   const { userId, locationId, locationUuid } = useUserAndLocation();
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
   const [autoPopulated, setAutoPopulated] = useState(false);
+  const [copiedFromYesterday, setCopiedFromYesterday] = useState(false);
 
-  // Today's Forecast
+  // ✅ Today's Forecast
   const [lunch, setLunch] = useState("");
   const [dinner, setDinner] = useState("");
   const [forecastedSales, setForecastedSales] = useState("");
-  const [forecastNotes, setForecastNotes] = useState(""); // <-- ✅ Add this
-  const [copiedFromYesterday, setCopiedFromYesterday] = useState(false);
+  const [forecastNotes, setForecastNotes] = useState(""); // for AM/PM note
+  const [weather, setWeather] = useState(null); // ✅ only once here
 
-  // Weather
-  const [weather, setWeather] = useState(null);
-
-  // Yesterday's Recap
+  // ✅ Yesterday's Recap
   const [actualSales, setActualSales] = useState("");
   const [varianceNotes, setVarianceNotes] = useState("");
 
-  // Team & Leadership
+  // ✅ Team & Leadership
   const [manager, setManager] = useState("");
   const [shoutout, setShoutout] = useState("");
   const [mindset, setMindset] = useState("");
 
-  // Team Reminders
+  // ✅ Team Reminders
   const [reminders, setReminders] = useState("");
 
-  // Food & Beverage Focus
+  // ✅ Food & Beverage Focus
   const [foodItems, setFoodItems] = useState("");
   const [beverageItems, setBeverageItems] = useState("");
   const [foodImage, setFoodImage] = useState(null);
   const [beverageImage, setBeverageImage] = useState(null);
 
-  // Events & Special Occasions
+  // ✅ Events & Special Occasions
   const [events, setEvents] = useState("");
 
-  // Maintenance & Repairs
+  // ✅ Maintenance & Repairs
   const [repairNotes, setRepairNotes] = useState("");
 
-  // Inspirational Quote
+  // ✅ Inspirational Quote
   const [quote, setQuote] = useState("");
 
   const fetchBriefing = async () => {
