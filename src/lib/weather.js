@@ -3,10 +3,10 @@ import { supabase } from "@/supabaseClient";
 
 export async function getWeatherForecast(locationUuid, date) {
   const { data, error } = await supabase
-    .from("weather_forecast")
+    .from("weather_data") // ✅ use the real table name here
     .select("*")
-    .eq("location_id", locationUuid)
-    .eq("date", date)
+    .eq("location_id", locationUuid) // ✅ still correct
+    .eq("forecast_date", date)       // ✅ use the real column name here
     .single();
 
   if (error) {
