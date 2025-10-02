@@ -313,15 +313,15 @@ const DailyBriefingBuilder = () => {
     </div>
 
     {weather && (
-      <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg text-blue-900">
-        <div className="flex items-center gap-2 mb-2 text-blue-800 font-semibold text-sm">
-          🌤️ Weather Forecast
-        </div>
-        <p><strong>Conditions:</strong> {weather.conditions}</p>
-        <p><strong>Low:</strong> {weather.temperature_low}°F</p>
-        <p><strong>High:</strong> {weather.temperature_high}°F</p>
-      </div>
-    )}
+  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg text-blue-900">
+    <div className="flex items-center gap-2 mb-2 text-blue-800 font-semibold text-sm">
+      🌤️ Weather Forecast
+    </div>
+    <p><strong>Conditions:</strong> {weather.conditions}</p>
+    <p><strong>Low:</strong> {weather.temperature_low}°F</p>
+    <p><strong>High:</strong> {weather.temperature_high}°F</p>
+  </div>
+)}
   </CardContent>
 </Card>
 
