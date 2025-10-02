@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { addDays, format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { ROLES, SHIFT_TIMES } from '@/config/laborScheduleConfig.jsx';
-import { useLaborData } from '@/contexts/DataContext.jsx';
+import { useLaborData } from '@/contexts/LaborDataContext.jsx';
 import { Plus, Edit, Trash2, Save, X, Clock, User } from 'lucide-react';
 
 const shifts = ['AM', 'PM', 'SWING'];
