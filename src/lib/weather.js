@@ -1,12 +1,18 @@
 // src/lib/weather.js
+import { supabase } from "@/supabaseClient";
+
 export async function getWeatherForecast(locationUuid, date) {
-  // Replace this with your real API or Supabase call if needed
-  try {
-    const response = await fetch(`https://wttr.in/?format=3`);
-    const text = await response.text();
-    return text;
-  } catch (error) {
-    console.error("Failed to fetch weather:", error);
+  const { data, error } = await supabase
+    .from("weather_forecast")
+    .select("*")
+    .eq("location_id", locationUuid)
+    .eq("date", date)
+    .single();
+
+  if (error) {
+    console.error("Failed to load weather forecast:", error);
     return null;
   }
+
+  return data;
 }
