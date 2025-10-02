@@ -285,43 +285,51 @@ const DailyBriefingBuilder = () => {
 
      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
   {/* Today's Forecast */}
- <Card className="rounded-2xl shadow-md">
+<Card className="rounded-2xl shadow-md">
   <CardHeader>
     <CardTitle>📊 Today's Forecast</CardTitle>
   </CardHeader>
   <CardContent className="space-y-4">
-    <div>
-      <Label htmlFor="lunch">🍽️ Lunch (AM)</Label>
-      {renderInput(lunch, setLunch, "", autoPopulated && !!lunch)}
+    {/* Lunch and Dinner side by side */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <Label htmlFor="lunch">🍽️ Lunch (AM)</Label>
+        {renderInput(lunch, setLunch, "", autoPopulated && !!lunch)}
+      </div>
+      <div>
+        <Label htmlFor="dinner">🌙 Dinner (PM)</Label>
+        {renderInput(dinner, setDinner, "", autoPopulated && !!dinner)}
+      </div>
     </div>
-    <div>
-      <Label htmlFor="dinner">🌙 Dinner (PM)</Label>
-      {renderInput(dinner, setDinner, "", autoPopulated && !!dinner)}
-    </div>
+
+    {/* Forecasted Sales */}
     <div>
       <Label htmlFor="forecasted-sales">💰 Forecasted Sales ($)</Label>
       {renderInput(forecastedSales, setForecastedSales, "", autoPopulated && !!forecastedSales)}
     </div>
 
+    {/* Weather Summary Block */}
     {weather && (
-  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg text-blue-900 mt-4">
-    <div className="flex items-center gap-4">
-      {weather.icon && (
-        <img
-          src={`https://openweathermap.org/img/wn/${weather.icon}@2x.png`}
-          alt="Weather icon"
-          className="w-12 h-12"
-        />
-      )}
-      <div>
-        <div className="text-sm text-muted-foreground capitalize">{weather.conditions}</div>
-        <div className="text-sm font-medium">
-          High: {weather.temperature_high}°F &nbsp;&nbsp;|&nbsp;&nbsp; Low: {weather.temperature_low}°F
+      <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg text-blue-900 mt-2">
+        <div className="flex items-center gap-4">
+          {weather.icon && (
+            <img
+              src={`https://openweathermap.org/img/wn/${weather.icon}@2x.png`}
+              alt="Weather icon"
+              className="w-12 h-12"
+            />
+          )}
+          <div>
+            <div className="text-sm text-muted-foreground capitalize">
+              {weather.conditions}
+            </div>
+            <div className="text-sm font-medium">
+              High: {weather.temperature_high}°F &nbsp;&nbsp;|&nbsp;&nbsp; Low: {weather.temperature_low}°F
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
-)}
+    )}
   </CardContent>
 </Card>
 
