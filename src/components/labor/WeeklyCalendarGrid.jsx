@@ -3,7 +3,6 @@ import { addDays, format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { ROLES, SHIFT_TIMES } from '@/config/laborScheduleConfig.jsx';
 import { useLaborData } from '@/contexts/LaborDataContext.jsx';
-import { Plus, Edit, Trash2, Save, X, Clock, User } from 'lucide-react';
 
 const shifts = ['AM', 'PM', 'SWING'];
 
@@ -26,6 +25,8 @@ const WeeklyCalendarGrid = ({ weekStartDate, scheduleData, onScheduleChange }) =
 
   // Smart employee filtering with enhanced cross-training
   const getEligibleEmployees = (roleName) => {
+    if (!employees || employees.length === 0) return [];
+    
     return employees.filter(emp => {
       // Exact role match - always allowed
       if (emp.role === roleName) return true;
@@ -198,17 +199,15 @@ const WeeklyCalendarGrid = ({ weekStartDate, scheduleData, onScheduleChange }) =
             <div className="flex space-x-1">
               <button
                 onClick={handleSaveEmployee}
-                className="flex-1 bg-green-600 text-white p-1 rounded text-xs hover:bg-green-700 flex items-center justify-center"
+                className="flex-1 bg-green-600 text-white p-1 rounded text-xs hover:bg-green-700"
               >
-                <Save className="h-3 w-3 mr-1" />
-                Save
+                💾 Save
               </button>
               <button
                 onClick={handleCancelEdit}
-                className="flex-1 bg-slate-500 text-white p-1 rounded text-xs hover:bg-slate-600 flex items-center justify-center"
+                className="flex-1 bg-slate-500 text-white p-1 rounded text-xs hover:bg-slate-600"
               >
-                <X className="h-3 w-3 mr-1" />
-                Cancel
+                ❌ Cancel
               </button>
             </div>
           </div>
@@ -226,8 +225,7 @@ const WeeklyCalendarGrid = ({ weekStartDate, scheduleData, onScheduleChange }) =
       >
         <div className="flex items-center justify-between">
           <div className="font-semibold truncate flex items-center">
-            <User className="h-3 w-3 mr-1" />
-            {emp.name || "Unassigned"}
+            👤 {emp.name || "Unassigned"}
             {isCrossTrained && (
               <span className="ml-1 text-xs opacity-75" title="Cross-training">🔄</span>
             )}
@@ -238,21 +236,20 @@ const WeeklyCalendarGrid = ({ weekStartDate, scheduleData, onScheduleChange }) =
               className="text-blue-200 hover:text-blue-100 p-1"
               title="Edit assignment"
             >
-              <Edit className="h-3 w-3" />
+              ✏️
             </button>
             <button
               onClick={() => handleRemoveEmployee(dayKey, shift, role, emp.id)}
               className="text-red-200 hover:text-red-100 p-1"
               title="Remove assignment"
             >
-              <Trash2 className="h-3 w-3" />
+              🗑️
             </button>
           </div>
         </div>
         
         <div className="flex items-center text-slate-600 dark:text-slate-300 text-xs mt-1">
-          <Clock className="h-3 w-3 mr-1" />
-          {emp.start || SHIFT_TIMES[shift]?.start || "—"} – {emp.end || SHIFT_TIMES[shift]?.end || "—"}
+          🕐 {emp.start || SHIFT_TIMES[shift]?.start || "—"} – {emp.end || SHIFT_TIMES[shift]?.end || "—"}
         </div>
         
         <div className="text-[10px] italic text-slate-500 mt-1">
@@ -319,17 +316,15 @@ const WeeklyCalendarGrid = ({ weekStartDate, scheduleData, onScheduleChange }) =
               <button
                 onClick={handleSaveEmployee}
                 disabled={!selectedEmployee}
-                className="flex-1 bg-green-600 text-white p-1 rounded text-xs hover:bg-green-700 disabled:bg-slate-400 flex items-center justify-center"
+                className="flex-1 bg-green-600 text-white p-1 rounded text-xs hover:bg-green-700 disabled:bg-slate-400"
               >
-                <Save className="h-3 w-3 mr-1" />
-                Add
+                ➕ Add
               </button>
               <button
                 onClick={handleCancelEdit}
-                className="flex-1 bg-slate-500 text-white p-1 rounded text-xs hover:bg-slate-600 flex items-center justify-center"
+                className="flex-1 bg-slate-500 text-white p-1 rounded text-xs hover:bg-slate-600"
               >
-                <X className="h-3 w-3 mr-1" />
-                Cancel
+                ❌ Cancel
               </button>
             </div>
           </div>
@@ -342,8 +337,7 @@ const WeeklyCalendarGrid = ({ weekStartDate, scheduleData, onScheduleChange }) =
         onClick={() => handleAddEmployee(dayKey, shift, role)}
         className="w-full border-2 border-dashed border-slate-300 rounded-md p-2 mb-1 text-xs text-slate-500 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-colors flex items-center justify-center"
       >
-        <Plus className="h-3 w-3 mr-1" />
-        Add Employee
+        ➕ Add Employee
       </button>
     );
   };
