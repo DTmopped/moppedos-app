@@ -187,26 +187,17 @@ const DailyBriefingBuilder = () => {
 
   // Fetch Weather
   useEffect(() => {
-    const fetchWeather = async () => {
-      if (!locationId || !date) return;
+  if (!locationUuid || !date) return;
 
-      const { data, error } = await supabase
-        .from("weather_data")
-        .select("*")
-        .eq("location_id", String(locationId))
-        .eq("forecast_date", date)
-        .maybeSingle();
+  const fetchWeather = async () => {
+    const data = await getWeatherForecast(locationUuid, date);
+    if (data) {
+      setWeather(data);
+    }
+  };
 
-      if (error) {
-        console.error("Weather fetch error:", error);
-      } else {
-        setWeather(data);
-      }
-    };
-
-    fetchWeather();
-  }, [locationId, date]);
-
+  fetchWeather();
+}, [locationUuid, date]);
   const handleImageUpload = (file, type) => {
     if (file) {
       const reader = new FileReader();
