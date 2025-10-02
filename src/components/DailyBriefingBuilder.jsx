@@ -304,13 +304,22 @@ const DailyBriefingBuilder = () => {
     </div>
 
     {weather && (
-  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg text-blue-900">
-    <div className="flex items-center gap-2 mb-2 text-blue-800 font-semibold text-sm">
-      🌤️ Weather Forecast
+  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg text-blue-900 mt-4">
+    <div className="flex items-center gap-4">
+      {weather.icon && (
+        <img
+          src={`https://openweathermap.org/img/wn/${weather.icon}@2x.png`}
+          alt="Weather icon"
+          className="w-12 h-12"
+        />
+      )}
+      <div>
+        <div className="text-sm text-muted-foreground capitalize">{weather.conditions}</div>
+        <div className="text-sm font-medium">
+          High: {weather.temperature_high}°F &nbsp;&nbsp;|&nbsp;&nbsp; Low: {weather.temperature_low}°F
+        </div>
+      </div>
     </div>
-    <p><strong>Conditions:</strong> {weather.conditions}</p>
-    <p><strong>Low:</strong> {weather.temperature_low}°F</p>
-    <p><strong>High:</strong> {weather.temperature_high}°F</p>
   </div>
 )}
   </CardContent>
