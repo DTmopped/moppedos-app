@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
-  Save, FileText, ChevronLeft, ChevronRight, Filter, Clock, AlertCircle
+  Save, FileText, ChevronLeft, ChevronRight, Filter, Clock, AlertCircle, Plus, X, User
 } from 'lucide-react';
 import { useLaborData } from '@/contexts/LaborDataContext';
-import { ROLES, getRolesByDepartment } from '@/config/laborScheduleConfig';
+import { ROLES, getRolesByDepartment, SHIFTS } from '@/config/laborScheduleConfig';
 
 // Badge Component (keeping your exact design)
 const Badge = ({ children, variant = "default", className = "" }) => {
@@ -64,8 +64,10 @@ const WeeklyLaborSchedule = () => {
   const [selectedDepartment, setSelectedDepartment] = useState('ALL');
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [scheduleData, setScheduleData] = useState({});
+  const [showDropdown, setShowDropdown] = useState(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  const { loading, error } = useLaborData();
+  const { employees, loading, error, saveSchedule } = useLaborData();
   const weekStart = getStartOfWeek(currentWeek);
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const day = new Date(weekStart);
@@ -76,6 +78,20 @@ const WeeklyLaborSchedule = () => {
   const filteredRoles = ROLES.filter(
     role => selectedDepartment === 'ALL' || role.department === selectedDepartment
   );
+
+  // Filter employees based on department and availability
+  const getFilteredEmployees = () => {
+    if (!employees) return [];
+    let filtered = employees.filter(emp => emp.is_active);
+    
+    if (selectedDepartment !== 'ALL') {
+      filtered = filtered.filter(emp => emp.department === selectedDepartment);
+    }
+    
+    return filtered;
+  };
+
+  const filteredEmployees = getFilteredEmployees();
 
   // Your exact color functions (preserved)
   const getDepartmentCardColor = (department) => {
@@ -121,26 +137,79 @@ const WeeklyLaborSchedule = () => {
     return 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50';
   };
 
-  // Your exact event handlers (preserved)
+  // Enhanced event handlers
   const handleEmployeeClick = (roleIndex, shiftIndex) => {
     const employeeId = `${roleIndex}-${shiftIndex}`;
     setSelectedEmployee(selectedEmployee === employeeId ? null : employeeId);
   };
 
-  const updateScheduleData = (roleIndex, shiftIndex, dayIndex, field, value) => {
-    const key = `${roleIndex}-${shiftIndex}-${dayIndex}`;
+  const handleAddEmployee = (roleIndex, shiftIndex, dayIndex, employeeId) => {
+    const employee = employees.find(emp => emp.id === employeeId);
+    if (!employee) return;
+
+    const role = filteredRoles[roleIndex];
+    const shift = shiftIndex === 0 ? 'AM' : 'PM';
+    const shiftTimes = SHIFTS[shift] || { start: '9:00', end: '17:00' };
+
+    const scheduleKey = `${roleIndex}-${shiftIndex}-${dayIndex}`;
+    const currentAssignments = scheduleData[scheduleKey]?.employees || [];
+
+    // Check if employee is already assigned
+    if (currentAssignments.find(emp => emp.id === employeeId)) {
+      return; // Employee already assigned
+    }
+
+    const newEmployee = {
+      id: employee.id,
+      name: employee.full_name || employee.name,
+      role: employee.role,
+      department: employee.department,
+      hourly_rate: employee.hourly_rate,
+      start: shiftTimes.start,
+      end: shiftTimes.end
+    };
+
     setScheduleData(prev => ({
       ...prev,
-      [key]: {
-        ...prev[key],
-        [field]: value
+      [scheduleKey]: {
+        ...prev[scheduleKey],
+        employees: [...currentAssignments, newEmployee]
       }
     }));
+
+    setHasUnsavedChanges(true);
+    setShowDropdown(null);
+    console.log('Employee assigned:', newEmployee);
   };
 
-  const handleSaveSchedule = () => {
+  const handleRemoveEmployee = (roleIndex, shiftIndex, dayIndex, employeeId) => {
+    const scheduleKey = `${roleIndex}-${shiftIndex}-${dayIndex}`;
+    const currentAssignments = scheduleData[scheduleKey]?.employees || [];
+    
+    setScheduleData(prev => ({
+      ...prev,
+      [scheduleKey]: {
+        ...prev[scheduleKey],
+        employees: currentAssignments.filter(emp => emp.id !== employeeId)
+      }
+    }));
+
+    setHasUnsavedChanges(true);
+  };
+
+  const handleSaveSchedule = async () => {
     try {
-      localStorage.setItem('weeklyLaborSchedule', JSON.stringify(scheduleData));
+      const weekKey = weekStart.toISOString().split('T')[0];
+      
+      if (saveSchedule) {
+        await saveSchedule(weekKey, scheduleData);
+        console.log('Schedule saved successfully');
+      } else {
+        // Fallback to localStorage
+        localStorage.setItem('weeklyLaborSchedule', JSON.stringify(scheduleData));
+      }
+      
+      setHasUnsavedChanges(false);
       alert('Schedule saved successfully!');
     } catch (error) {
       console.error('Error saving schedule:', error);
@@ -156,6 +225,17 @@ const WeeklyLaborSchedule = () => {
     const newWeek = new Date(currentWeek);
     newWeek.setDate(currentWeek.getDate() + (direction * 7));
     setCurrentWeek(newWeek);
+  };
+
+  const getAssignedEmployees = (roleIndex, shiftIndex, dayIndex) => {
+    const scheduleKey = `${roleIndex}-${shiftIndex}-${dayIndex}`;
+    return scheduleData[scheduleKey]?.employees || [];
+  };
+
+  const getTotalAssignments = () => {
+    return Object.values(scheduleData).reduce((total, day) => {
+      return total + (day.employees?.length || 0);
+    }, 0);
   };
 
   if (loading) {
@@ -182,10 +262,10 @@ const WeeklyLaborSchedule = () => {
 
   return (
     <div className="space-y-8">
-      {/* Filter + Week Nav (keeping your exact design) */}
-      <Card className="bg-white border border-slate-200 shadow-sm rounded-xl">
+      {/* Enhanced Header with Stats */}
+      <Card className="bg-gradient-to-r from-slate-50 to-slate-100 border border-slate-200 shadow-sm rounded-xl">
         <CardContent className="p-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-6">
               <div className="flex items-center space-x-3">
                 <Filter className="h-4 w-4 text-slate-600" />
@@ -226,6 +306,28 @@ const WeeklyLaborSchedule = () => {
               </div>
             </div>
           </div>
+          
+          {/* Live Stats */}
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center space-x-6">
+              <div className="flex items-center space-x-2">
+                <User className="h-4 w-4 text-blue-600" />
+                <span className="text-slate-600">Available Employees:</span>
+                <span className="font-semibold text-slate-900">{filteredEmployees.length}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Clock className="h-4 w-4 text-emerald-600" />
+                <span className="text-slate-600">Total Assignments:</span>
+                <span className="font-semibold text-slate-900">{getTotalAssignments()}</span>
+              </div>
+            </div>
+            {hasUnsavedChanges && (
+              <div className="flex items-center space-x-2 text-amber-600">
+                <AlertCircle className="h-4 w-4" />
+                <span className="text-sm font-medium">Unsaved Changes</span>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -253,7 +355,7 @@ const WeeklyLaborSchedule = () => {
         })}
       </div>
 
-      {/* Schedule Rows (keeping your exact design) */}
+      {/* Enhanced Schedule Rows */}
       <div className="space-y-6">
         {filteredRoles.map((role, roleIndex) => {
           const shifts = [
@@ -285,71 +387,138 @@ const WeeklyLaborSchedule = () => {
                   </Card>
                 </div>
 
-                {/* Day Cards (keeping your exact design) */}
-                {weekDays.map((day, dayIndex) => (
-                  <div key={dayIndex} className="col-span-1 flex">
-                    <Card
-                      className={`${getDepartmentCardColor(role.department)} flex-1 rounded-xl shadow-sm ${
-                        isSelected ? 'ring-2 ring-yellow-400 shadow-lg' : ''
-                      }`}
-                    >
-                      <CardContent className="p-3 flex flex-col justify-between h-full">
-                        {/* Name input */}
-                        <div className="bg-white rounded-lg p-2 shadow-sm border border-slate-200">
-                          <input
-                            type="text"
-                            placeholder="Employee Name"
-                            className="w-full border-0 outline-none text-xs font-medium text-slate-900 placeholder-slate-400 bg-transparent text-center"
-                            onChange={(e) =>
-                              updateScheduleData(roleIndex, shiftIndex, dayIndex, 'employee', e.target.value)
-                            }
-                          />
-                        </div>
-                        {/* Time inline */}
-                        <div className="bg-white rounded-lg p-2 shadow-sm border border-slate-200 mt-2">
-                          <div className="flex items-center justify-center space-x-1 text-xs text-slate-900 font-semibold">
-                            <Clock className="h-3 w-3 text-slate-600" />
-                            <span>{formatTime(`${shift.startTime}:00`)}</span>
-                            <span>–</span>
-                            <span>{formatTime(`${shift.endTime}:00`)}</span>
+                {/* Enhanced Day Cards with Dynamic Employee Assignment */}
+                {weekDays.map((day, dayIndex) => {
+                  const assignedEmployees = getAssignedEmployees(roleIndex, shiftIndex, dayIndex);
+                  const dropdownKey = `${roleIndex}-${shiftIndex}-${dayIndex}`;
+                  
+                  return (
+                    <div key={dayIndex} className="col-span-1 flex">
+                      <Card
+                        className={`${getDepartmentCardColor(role.department)} flex-1 rounded-xl shadow-sm ${
+                          isSelected ? 'ring-2 ring-yellow-400 shadow-lg' : ''
+                        }`}
+                      >
+                        <CardContent className="p-3 flex flex-col justify-between h-full space-y-2">
+                          {/* Assigned Employees */}
+                          {assignedEmployees.map((employee) => (
+                            <div key={employee.id} className="bg-white rounded-lg p-2 shadow-sm border border-slate-200 group relative">
+                              <div className="text-xs font-medium text-slate-900 text-center truncate">
+                                {employee.name}
+                              </div>
+                              <div className="text-xs text-slate-600 text-center">
+                                ${employee.hourly_rate}/hr
+                              </div>
+                              <button
+                                onClick={() => handleRemoveEmployee(roleIndex, shiftIndex, dayIndex, employee.id)}
+                                className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center"
+                              >
+                                <X className="h-2 w-2" />
+                              </button>
+                            </div>
+                          ))}
+                          
+                          {/* Add Employee Button */}
+                          <div className="relative">
+                            <button
+                              onClick={() => setShowDropdown(showDropdown === dropdownKey ? null : dropdownKey)}
+                              className="w-full bg-white rounded-lg p-2 shadow-sm border-2 border-dashed border-slate-300 hover:border-slate-400 hover:bg-slate-50 transition-all duration-200 flex items-center justify-center space-x-1"
+                            >
+                              <Plus className="h-3 w-3 text-slate-600" />
+                              <span className="text-xs text-slate-600 font-medium">Add Employee</span>
+                            </button>
+                            
+                            {/* Enhanced Employee Dropdown */}
+                            {showDropdown === dropdownKey && (
+                              <div className="absolute top-full left-0 right-0 z-20 bg-white border border-slate-300 rounded-lg shadow-xl max-h-48 overflow-y-auto mt-1">
+                                {filteredEmployees.length > 0 ? (
+                                  filteredEmployees.map((employee) => {
+                                    const isAssigned = assignedEmployees.find(emp => emp.id === employee.id);
+                                    return (
+                                      <button
+                                        key={employee.id}
+                                        onClick={() => !isAssigned && handleAddEmployee(roleIndex, shiftIndex, dayIndex, employee.id)}
+                                        disabled={isAssigned}
+                                        className={`w-full text-left px-3 py-2 text-xs border-b border-slate-100 last:border-b-0 transition-colors ${
+                                          isAssigned 
+                                            ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
+                                            : 'hover:bg-slate-50 cursor-pointer'
+                                        }`}
+                                      >
+                                        <div className="font-medium">{employee.full_name || employee.name}</div>
+                                        <div className="text-slate-500">{employee.role} - {employee.department}</div>
+                                        <div className="text-slate-400">${employee.hourly_rate}/hr {isAssigned && '(Assigned)'}</div>
+                                      </button>
+                                    );
+                                  })
+                                ) : (
+                                  <div className="px-3 py-2 text-xs text-slate-500 text-center">
+                                    No employees available{selectedDepartment !== 'ALL' ? ` in ${selectedDepartment}` : ''}
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
-                        </div>
-                        {/* Badge */}
-                        <div className="flex justify-center pt-1">
-                          <Badge variant={role.department.toLowerCase()}>{role.department}</Badge>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                ))}
+                          
+                          {/* Time Display */}
+                          <div className="bg-white rounded-lg p-2 shadow-sm border border-slate-200">
+                            <div className="flex items-center justify-center space-x-1 text-xs text-slate-900 font-semibold">
+                              <Clock className="h-3 w-3 text-slate-600" />
+                              <span>{formatTime(`${shift.startTime}:00`)}</span>
+                              <span>–</span>
+                              <span>{formatTime(`${shift.endTime}:00`)}</span>
+                            </div>
+                          </div>
+                          
+                          {/* Badge */}
+                          <div className="flex justify-center">
+                            <Badge variant={role.department.toLowerCase()}>{role.department}</Badge>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  );
+                })}
               </div>
             );
           });
         })}
       </div>
 
-      {/* Buttons (keeping your exact design) */}
-      <div className="flex justify-end space-x-3">
-        <Button
-          variant="outline"
-          onClick={handlePrintSchedule}
-          className="border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg"
-        >
-          <FileText className="h-4 w-4 mr-2" />
-          Print / PDF
-        </Button>
-        <Button
-          onClick={handleSaveSchedule}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg"
-        >
-          <Save className="h-4 w-4 mr-2" />
-          Save Schedule
-        </Button>
+      {/* Enhanced Action Buttons */}
+      <div className="flex justify-between items-center">
+        <div className="text-sm text-slate-600">
+          {getTotalAssignments() > 0 && (
+            <span>Total assignments: <strong>{getTotalAssignments()}</strong></span>
+          )}
+        </div>
+        <div className="flex space-x-3">
+          <Button
+            variant="outline"
+            onClick={handlePrintSchedule}
+            className="border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg"
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Print / PDF
+          </Button>
+          <Button
+            onClick={handleSaveSchedule}
+            disabled={!hasUnsavedChanges}
+            className={`rounded-lg ${
+              hasUnsavedChanges 
+                ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
+                : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+            }`}
+          >
+            <Save className="h-4 w-4 mr-2" />
+            {hasUnsavedChanges ? 'Save Schedule' : 'No Changes'}
+          </Button>
+        </div>
       </div>
 
-      {/* Selected Employee (keeping your exact design) */}
+      {/* Enhanced Selected Employee Indicator */}
       {selectedEmployee && (
-        <Card className="border-yellow-300 bg-yellow-50 shadow-sm rounded-xl">
+        <Card className="border-yellow-300 bg-gradient-to-r from-yellow-50 to-amber-50 shadow-sm rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center space-x-3">
               <div className="w-4 h-4 bg-yellow-500 rounded-full animate-pulse"></div>
@@ -369,11 +538,16 @@ const WeeklyLaborSchedule = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Click outside to close dropdown */}
+      {showDropdown && (
+        <div 
+          className="fixed inset-0 z-10" 
+          onClick={() => setShowDropdown(null)}
+        />
+      )}
     </div>
   );
 };
 
 export default WeeklyLaborSchedule;
-
-
-
