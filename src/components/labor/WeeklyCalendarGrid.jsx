@@ -6,19 +6,55 @@ import { useLaborData } from '@/contexts/LaborDataContext.jsx';
 
 const shifts = ['AM', 'PM', 'SWING'];
 
-const WeeklyCalendarGrid = ({ weekStartDate, scheduleData, onScheduleChange }) => {
+const WeeklyCalendarGrid = ({ weekStartDate, scheduleData, onScheduleChange, departmentFilter = 'ALL' }) => {
   const { employees } = useLaborData();
   const [showDropdown, setShowDropdown] = useState(null);
+  
+  // Filter employees based on department filter
+  const getFilteredEmployees = () => {
+    if (departmentFilter === 'ALL') {
+      return employees.filter(emp => emp.is_active);
+    }
+    return employees.filter(emp => emp.is_active && emp.department === departmentFilter);
+  };
+  
+  const filteredEmployees = getFilteredEmployees();
   
   const weekDates = Array.from({ length: 7 }, (_, i) => addDays(weekStartDate, i));
 
   const getAllRoles = () => {
-    const roleSet = new Set();
-    ROLES.forEach(role => role.shifts.forEach(shift => roleSet.add(`${role.name}__${shift}`)));
-    return Array.from(roleSet).map(str => {
-      const [name, shift] = str.split('__');
-      return { name, shift };
+    let rolesToShow = ROLES;
+    
+    // Filter roles by department if not showing all
+    if (departmentFilter !== 'ALL') {
+      rolesToShow = ROLES.filter(role => {
+        // Map role names to departments based on your config
+        const roleDepartmentMap = {
+          'Meat Portioner': 'BOH',
+          'Side Portioner': 'BOH', 
+          'Food Gopher': 'BOH',
+          'Dishwasher': 'BOH',
+          'Kitchen Swing': 'BOH',
+          'Cashier': 'FOH',
+          'Server': 'FOH',
+          'Server Assistant': 'FOH',
+          'Busser': 'FOH',
+          'Cashier Swing': 'FOH',
+          'Bartender': 'Bar',
+          'Shift Lead': 'Management',
+          'Manager': 'Management'
+        };
+        return roleDepartmentMap[role.name] === departmentFilter;
+      });
+    }
+    
+    const roleShiftCombinations = [];
+    rolesToShow.forEach(role => {
+      shifts.forEach(shift => {
+        roleShiftCombinations.push({ name: role.name, shift });
+      });
     });
+    return roleShiftCombinations;
   };
 
   const handleAddEmployee = (dayKey, shift, role, employeeId) => {
@@ -27,9 +63,12 @@ const WeeklyCalendarGrid = ({ weekStartDate, scheduleData, onScheduleChange }) =
 
     const newEmployee = {
       id: employee.id,
-      name: employee.full_name,
-      start: SHIFT_TIMES[shift]?.start || "9:00 AM",
-      end: SHIFT_TIMES[shift]?.end || "5:00 PM"
+      name: employee.name, // Use 'name' instead of 'full_name' based on DataContext
+      start: SHIFTS[shift]?.start || "9:00",
+      end: SHIFTS[shift]?.end || "17:00",
+      role: employee.role,
+      department: employee.department,
+      hourly_rate: employee.hourly_rate
     };
 
     // Update schedule data
@@ -39,6 +78,8 @@ const WeeklyCalendarGrid = ({ weekStartDate, scheduleData, onScheduleChange }) =
     if (!updatedSchedule[dayKey][shift][role]) updatedSchedule[dayKey][shift][role] = [];
     
     updatedSchedule[dayKey][shift][role].push(newEmployee);
+    
+    console.log('Schedule updated:', updatedSchedule);
     
     if (onScheduleChange) {
       onScheduleChange(updatedSchedule);
@@ -64,7 +105,7 @@ const WeeklyCalendarGrid = ({ weekStartDate, scheduleData, onScheduleChange }) =
           >
             <div className="font-semibold truncate">{emp.name || "Unassigned"}</div>
             <div className="text-slate-600 dark:text-slate-300 text-xs">
-              {emp.start || SHIFT_TIMES[shift]?.start || "—"} – {emp.end || SHIFT_TIMES[shift]?.end || "—"}
+              {emp.start || SHIFTS[shift]?.start || "—"} – {emp.end || SHIFTS[shift]?.end || "—"}
             </div>
             <div className="text-[10px] italic text-slate-500">
               {roleConfig?.abbreviation || role}
@@ -84,19 +125,22 @@ const WeeklyCalendarGrid = ({ weekStartDate, scheduleData, onScheduleChange }) =
           {/* Simple Dropdown */}
           {showDropdown === dropdownKey && (
             <div className="absolute top-full left-0 right-0 z-10 bg-white border border-slate-300 rounded-md shadow-lg max-h-40 overflow-y-auto">
-              {employees && employees.length > 0 ? (
-                employees.map((employee) => (
+              {filteredEmployees && filteredEmployees.length > 0 ? (
+                filteredEmployees.map((employee) => (
                   <button
                     key={employee.id}
                     onClick={() => handleAddEmployee(dayKey, shift, role, employee.id)}
                     className="w-full text-left px-3 py-2 text-xs hover:bg-slate-100 border-b border-slate-100 last:border-b-0"
                   >
-                    <div className="font-medium">{employee.full_name}</div>
+                    <div className="font-medium">{employee.name}</div>
                     <div className="text-slate-500">{employee.role} - {employee.department}</div>
+                    <div className="text-xs text-slate-400">${employee.hourly_rate}/hr</div>
                   </button>
                 ))
               ) : (
-                <div className="px-3 py-2 text-xs text-slate-500">No employees available</div>
+                <div className="px-3 py-2 text-xs text-slate-500">
+                  No employees available{departmentFilter !== 'ALL' ? ` in ${departmentFilter}` : ''}
+                </div>
               )}
             </div>
           )}
