@@ -5,7 +5,7 @@ import {
   Save, FileText, ChevronLeft, ChevronRight, Filter, Clock, AlertCircle, Plus, X, User
 } from 'lucide-react';
 import { useLaborData } from '@/contexts/LaborDataContext';
-import { ROLES, getRolesByDepartment, SHIFTS } from '@/config/laborScheduleConfig';
+import { ROLES, getRolesByDepartment, SHIFT_TIMES } from '@/config/laborScheduleConfig';
 
 // Badge Component (keeping your exact design)
 const Badge = ({ children, variant = "default", className = "" }) => {
@@ -149,7 +149,7 @@ const WeeklyLaborSchedule = () => {
 
     const role = filteredRoles[roleIndex];
     const shift = shiftIndex === 0 ? 'AM' : 'PM';
-    const shiftTimes = SHIFTS[shift] || { start: '9:00', end: '17:00' };
+    const shiftTimes = SHIFT_TIMES[shift] || { start: '9:00', end: '17:00' };
 
     const scheduleKey = `${roleIndex}-${shiftIndex}-${dayIndex}`;
     const currentAssignments = scheduleData[scheduleKey]?.employees || [];
@@ -359,8 +359,8 @@ const WeeklyLaborSchedule = () => {
       <div className="space-y-6">
         {filteredRoles.map((role, roleIndex) => {
           const shifts = [
-            { name: 'AM Shift', startTime: '9:00', endTime: '17:00' },
-            { name: 'PM Shift', startTime: '15:00', endTime: '23:00' }
+            { name: 'AM Shift', startTime: SHIFT_TIMES.AM.start, endTime: SHIFT_TIMES.AM.end },
+            { name: 'PM Shift', startTime: SHIFT_TIMES.PM.start, endTime: SHIFT_TIMES.PM.end }
           ];
           return shifts.map((shift, shiftIndex) => {
             const employeeId = `${roleIndex}-${shiftIndex}`;
@@ -381,7 +381,7 @@ const WeeklyLaborSchedule = () => {
                       <div className="font-semibold text-slate-900 text-xs">{role.name}</div>
                       <div className="text-slate-700 text-xs">{shift.name}</div>
                       <div className="text-slate-900 text-xs font-medium">
-                        {formatTime(`${shift.startTime}:00`)} – {formatTime(`${shift.endTime}:00`)}
+                        {formatTime(shift.startTime)} – {formatTime(shift.endTime)}
                       </div>
                     </CardContent>
                   </Card>
@@ -464,9 +464,9 @@ const WeeklyLaborSchedule = () => {
                           <div className="bg-white rounded-lg p-2 shadow-sm border border-slate-200">
                             <div className="flex items-center justify-center space-x-1 text-xs text-slate-900 font-semibold">
                               <Clock className="h-3 w-3 text-slate-600" />
-                              <span>{formatTime(`${shift.startTime}:00`)}</span>
+                              <span>{formatTime(shift.startTime)}</span>
                               <span>–</span>
-                              <span>{formatTime(`${shift.endTime}:00`)}</span>
+                              <span>{formatTime(shift.endTime)}</span>
                             </div>
                           </div>
                           
@@ -551,3 +551,4 @@ const WeeklyLaborSchedule = () => {
 };
 
 export default WeeklyLaborSchedule;
+
