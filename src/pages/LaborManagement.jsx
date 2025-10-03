@@ -409,6 +409,8 @@ const EnhancedRolesDisplay = () => {
 // Main Labor Management Component
 const LaborManagementContent = () => {
   const [activeView, setActiveView] = useState('overview');
+  const [scheduleData, setScheduleData] = useState({});  // ADD THIS LINE
+  
   const { 
     isConnected, 
     currentLocation, 
@@ -416,6 +418,11 @@ const LaborManagementContent = () => {
   } = useLaborData();
 
   const pendingCount = getPendingRequestsCount ? getPendingRequestsCount() : 2;
+
+  const handleScheduleChange = (newScheduleData) => {  // ADD THESE LINES
+  setScheduleData(newScheduleData);
+  console.log('Schedule updated:', newScheduleData);
+};
 
   const renderContent = () => {
     switch (activeView) {
