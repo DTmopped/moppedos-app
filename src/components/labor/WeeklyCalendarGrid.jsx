@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { addDays, format } from 'date-fns';
-import { cn } from '@/lib/utils';
-import { ROLES, SHIFT_TIMES } from '@/config/laborScheduleConfig.jsx';
-import { useLaborData } from '@/contexts/LaborDataContext.jsx';
+import { ROLES, SHIFTS } from '../config/laborScheduleConfig.js';
+import { useLaborData } from '../contexts/LaborDataContext.jsx';
+
+// Simple cn utility function
+const cn = (...classes) => classes.filter(Boolean).join(' ');
 
 const shifts = ['AM', 'PM', 'SWING'];
 
@@ -63,7 +65,7 @@ const WeeklyCalendarGrid = ({ weekStartDate, scheduleData, onScheduleChange, dep
 
     const newEmployee = {
       id: employee.id,
-      name: employee.name, // Use 'name' instead of 'full_name' based on DataContext
+      name: employee.full_name || employee.name, // Handle both name formats
       start: SHIFTS[shift]?.start || "9:00",
       end: SHIFTS[shift]?.end || "17:00",
       role: employee.role,
@@ -132,7 +134,7 @@ const WeeklyCalendarGrid = ({ weekStartDate, scheduleData, onScheduleChange, dep
                     onClick={() => handleAddEmployee(dayKey, shift, role, employee.id)}
                     className="w-full text-left px-3 py-2 text-xs hover:bg-slate-100 border-b border-slate-100 last:border-b-0"
                   >
-                    <div className="font-medium">{employee.name}</div>
+                    <div className="font-medium">{employee.full_name || employee.name}</div>
                     <div className="text-slate-500">{employee.role} - {employee.department}</div>
                     <div className="text-xs text-slate-400">${employee.hourly_rate}/hr</div>
                   </button>
