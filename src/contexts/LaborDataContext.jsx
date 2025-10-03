@@ -739,6 +739,22 @@ export const LaborDataProvider = ({ children }) => {
     }
   };
 
+   // Save schedule function for WeeklyCalendarGrid
+  const saveSchedule = async (weekKey, scheduleData) => {
+    try {
+      console.log('Saving schedule for week:', weekKey, scheduleData);
+      // Store in local state for now
+      setSchedules(prev => ({
+        ...prev,
+        [weekKey]: scheduleData
+      }));
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to save schedule:', error);
+      throw error;
+    }
+  };
+
   // AI and Analytics Functions (Mock implementations)
   const getAIForecast = async (date, parameters = {}) => {
     try {
@@ -1104,6 +1120,9 @@ export const LaborDataProvider = ({ children }) => {
     getAIForecast,
     getWeatherImpact,
     getLaborAnalytics,
+
+    // Schedule functions
+    saveSchedule,
     
     // Utility functions
     getSystemStats,
