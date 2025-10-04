@@ -158,44 +158,49 @@ const WeeklyLaborSchedule = () => {
     setSelectedEmployee(selectedEmployee === employeeId ? null : employeeId);
   };
 
-  const handleAddEmployee = (roleIndex, shiftIndex, dayIndex, employeeId) => {
-    const employee = employees.find(emp => emp.id === employeeId);
-    if (!employee) return;
+const handleAddEmployee = (roleIndex, shiftIndex, dayIndex, employeeId) => {
+  const employee = employees.find(emp => emp.id === employeeId);
+  if (!employee) return;
 
-    const role = filteredRoles[roleIndex];
-    const shift = shiftIndex === 0 ? 'AM' : 'PM';
-    const shiftTimes = SHIFT_TIMES[shift] || { start: '9:00', end: '17:00' };
+  // FIX: Use the actual role from the full ROLES array, not filtered
+  const actualRole = filteredRoles[roleIndex];
+  const actualRoleIndex = ROLES.findIndex(role => role.name === actualRole.name);
+  
+  const shift = shiftIndex === 0 ? 'AM' : 'PM';
+  const shiftTimes = SHIFT_TIMES[shift] || { start: '9:00', end: '17:00' };
 
-    const scheduleKey = `${roleIndex}-${shiftIndex}-${dayIndex}`;
-    const currentAssignments = scheduleData[scheduleKey]?.employees || [];
+  // FIX: Use the actual role index for the schedule key
+  const scheduleKey = `${actualRoleIndex}-${shiftIndex}-${dayIndex}`;
+  const currentAssignments = scheduleData[scheduleKey]?.employees || [];
 
-    // Check if employee is already assigned
-    if (currentAssignments.find(emp => emp.id === employeeId)) {
-      return;
-    }
+  // Check if employee is already assigned
+  if (currentAssignments.find(emp => emp.id === employeeId)) {
+    return;
+  }
 
-    const newEmployee = {
-      id: employee.id,
-      name: employee.name,
-      role: employee.role,
-      department: employee.department,
-      hourly_rate: employee.hourly_rate,
-      start: shiftTimes.start,
-      end: shiftTimes.end
-    };
-
-    setScheduleData(prev => ({
-      ...prev,
-      [scheduleKey]: {
-        ...prev[scheduleKey],
-        employees: [...currentAssignments, newEmployee]
-      }
-    }));
-
-    setHasUnsavedChanges(true);
-    setShowDropdown(null);
-    console.log('Employee assigned:', newEmployee);
+  const newEmployee = {
+    id: employee.id,
+    name: employee.name,
+    role: employee.role,
+    department: employee.department,
+    hourly_rate: employee.hourly_rate,
+    start: shiftTimes.start,
+    end: shiftTimes.end
   };
+
+  setScheduleData(prev => ({
+    ...prev,
+    [scheduleKey]: {
+      ...prev[scheduleKey],
+      employees: [...currentAssignments, newEmployee]
+    }
+  }));
+
+  setHasUnsavedChanges(true);
+  setShowDropdown(null);
+  console.log('Employee assigned to actual role index:', actualRoleIndex, newEmployee);
+};
+
 
   const handleRemoveEmployee = (roleIndex, shiftIndex, dayIndex, employeeId) => {
     const scheduleKey = `${roleIndex}-${shiftIndex}-${dayIndex}`;
@@ -242,9 +247,13 @@ const WeeklyLaborSchedule = () => {
   };
 
   const getAssignedEmployees = (roleIndex, shiftIndex, dayIndex) => {
-    const scheduleKey = `${roleIndex}-${shiftIndex}-${dayIndex}`;
-    return scheduleData[scheduleKey]?.employees || [];
-  };
+  // FIX: Use actual role index when in filtered view
+  const actualRole = filteredRoles[roleIndex];
+  const actualRoleIndex = ROLES.findIndex(role => role.name === actualRole.name);
+  const scheduleKey = `${actualRoleIndex}-${shiftIndex}-${dayIndex}`;
+  return scheduleData[scheduleKey]?.employees || [];
+};
+
 
   const getTotalAssignments = () => {
     return Object.values(scheduleData).reduce((total, day) => {
