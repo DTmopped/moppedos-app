@@ -424,64 +424,78 @@ const handleAddEmployee = (roleIndex, shiftIndex, dayIndex, employeeId) => {
                       >
                         <CardContent className="p-3 flex flex-col justify-between h-full space-y-2">
                           {/* Assigned Employees */}
-                          {assignedEmployees.map((employee) => (
-                            <div key={employee.id} className="bg-white rounded-lg p-2 shadow-sm border border-slate-200 group relative">
-                              <div className="text-xs font-medium text-slate-900 text-center truncate">
-                                {employee.name}
-                              </div>
-                              <div className="text-xs text-slate-600 text-center">
-                                ${employee.hourly_rate}/hr
-                              </div>
-                              <button
-                                onClick={() => handleRemoveEmployee(roleIndex, shiftIndex, dayIndex, employee.id)}
-                                className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center"
-                              >
-                                <X className="h-2 w-2" />
-                              </button>
-                            </div>
-                          ))}
-                          
-                          {/* Add Employee Button */}
-                          <div className="relative">
-                            <button
-                              onClick={() => setShowDropdown(showDropdown === dropdownKey ? null : dropdownKey)}
-                              className="w-full bg-white rounded-lg p-2 shadow-sm border-2 border-dashed border-slate-300 hover:border-slate-400 hover:bg-slate-50 transition-all duration-200 flex items-center justify-center space-x-1"
-                            >
-                              <Plus className="h-3 w-3 text-slate-600" />
-                              <span className="text-xs text-slate-600 font-medium">Add Employee</span>
-                            </button>
-                            
-                            {/* Employee Dropdown */}
-                            {showDropdown === dropdownKey && (
-                              <div className="absolute top-full left-0 right-0 z-20 bg-white border border-slate-300 rounded-lg shadow-xl max-h-48 overflow-y-auto mt-1">
-                                {filteredEmployees.length > 0 ? (
-                                  filteredEmployees.map((employee) => {
-                                    const isAssigned = assignedEmployees.find(emp => emp.id === employee.id);
-                                    return (
-                                      <button
-                                        key={employee.id}
-                                        onClick={() => !isAssigned && handleAddEmployee(roleIndex, shiftIndex, dayIndex, employee.id)}
-                                        disabled={isAssigned}
-                                        className={`w-full text-left px-3 py-2 text-xs border-b border-slate-100 last:border-b-0 transition-colors ${
-                                          isAssigned 
-                                            ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
-                                            : 'hover:bg-slate-50 cursor-pointer'
-                                        }`}
-                                      >
-                                        <div className="font-medium">{employee.name}</div>
-                                        <div className="text-slate-500">{employee.role} - {employee.department}</div>
-                                        <div className="text-slate-400">${employee.hourly_rate}/hr {isAssigned && '(Assigned)'}</div>
-                                      </button>
-                                    );
-                                  })
-                                ) : (
-                                  <div className="px-3 py-2 text-xs text-slate-500 text-center">
-                                    No employees available{selectedDepartment !== 'ALL' ? ` in ${selectedDepartment}` : ''}
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
+{assignedEmployees.map((employee) => (
+  <div key={employee.id} className="bg-white rounded-lg p-2 shadow-sm border border-slate-200 group relative">
+    <div className="text-xs font-medium text-slate-900 text-center truncate">
+      {employee.name}
+    </div>
+    <div className="text-xs text-slate-600 text-center">
+      ${employee.hourly_rate}/hr
+    </div>
+    <button
+      onClick={() => handleRemoveEmployee(roleIndex, shiftIndex, dayIndex, employee.id)}
+      className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center"
+    >
+      <X className="h-2 w-2" />
+    </button>
+  </div>
+))}
+
+{/* Add Another Employee Button - show when employees are already assigned */}
+{assignedEmployees.length > 0 && (
+  <button
+    onClick={() => setShowDropdown(showDropdown === dropdownKey ? null : dropdownKey)}
+    className="w-full text-xs border-dashed border-slate-300 text-slate-600 hover:border-slate-400 rounded-lg p-1 mt-1 border bg-white hover:bg-slate-50 transition-colors flex items-center justify-center space-x-1"
+  >
+    <Plus className="h-3 w-3" />
+    <span>Add Employee</span>
+  </button>
+)}
+
+{/* Add Employee Button - only show when no employees assigned */}
+{assignedEmployees.length === 0 && (
+  <div className="relative">
+    <button
+      onClick={() => setShowDropdown(showDropdown === dropdownKey ? null : dropdownKey)}
+      className="w-full bg-white rounded-lg p-2 shadow-sm border-2 border-dashed border-slate-300 hover:border-slate-400 hover:bg-slate-50 transition-all duration-200 flex items-center justify-center space-x-1"
+    >
+      <Plus className="h-3 w-3 text-slate-600" />
+      <span className="text-xs text-slate-600 font-medium">Add Employee</span>
+    </button>
+  </div>
+)}
+
+{/* Employee Dropdown - show when dropdown is open */}
+{showDropdown === dropdownKey && (
+  <div className="absolute top-full left-0 right-0 z-20 bg-white border border-slate-300 rounded-lg shadow-xl max-h-48 overflow-y-auto mt-1">
+    {filteredEmployees.length > 0 ? (
+      filteredEmployees.map((employee) => {
+        const isAssigned = assignedEmployees.find(emp => emp.id === employee.id);
+        return (
+          <button
+            key={employee.id}
+            onClick={() => !isAssigned && handleAddEmployee(roleIndex, shiftIndex, dayIndex, employee.id)}
+            disabled={isAssigned}
+            className={`w-full text-left px-3 py-2 text-xs border-b border-slate-100 last:border-b-0 transition-colors ${
+              isAssigned 
+                ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
+                : 'hover:bg-slate-50 cursor-pointer'
+            }`}
+          >
+            <div className="font-medium">{employee.name}</div>
+            <div className="text-slate-500">{employee.role} - {employee.department}</div>
+            <div className="text-slate-400">${employee.hourly_rate}/hr {isAssigned && '(Assigned)'}</div>
+          </button>
+        );
+      })
+    ) : (
+      <div className="px-3 py-2 text-xs text-slate-500 text-center">
+        No employees available{selectedDepartment !== 'ALL' ? ` in ${selectedDepartment}` : ''}
+      </div>
+    )}
+  </div>
+)}
+
                           
                           {/* Time Display */}
                           <div className="bg-white rounded-lg p-2 shadow-sm border border-slate-200">
