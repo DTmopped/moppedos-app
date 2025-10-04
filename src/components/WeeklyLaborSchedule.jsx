@@ -25,7 +25,7 @@ const Badge = ({ children, variant = "default", className = "" }) => {
   );
 };
 
-// Utilities (keeping your exact functions)
+// Utility functions (keeping your exact functions)
 const getStartOfWeek = (date) => {
   const start = new Date(date);
   const day = start.getDay();
@@ -67,7 +67,17 @@ const WeeklyLaborSchedule = () => {
   const [showDropdown, setShowDropdown] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  const { employees, loading, error, saveSchedule } = useLaborData();
+  // Fixed context usage with proper error handling
+  const contextData = useLaborData();
+  const employees = contextData?.employees || [];
+  const loading = contextData?.loading || false;
+  const error = contextData?.error || null;
+  const saveSchedule = contextData?.saveSchedule;
+
+  console.log('Context data:', contextData);
+  console.log('Employees:', employees);
+  console.log('Employees length:', employees.length);
+  
   const weekStart = getStartOfWeek(currentWeek);
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const day = new Date(weekStart);
@@ -79,15 +89,20 @@ const WeeklyLaborSchedule = () => {
     role => selectedDepartment === 'ALL' || role.department === selectedDepartment
   );
 
-  // Filter employees based on department and availability
+  // Fixed employee filtering
   const getFilteredEmployees = () => {
-    if (!employees) return [];
-    let filtered = employees.filter(emp => emp.is_active);
+    if (!employees || !Array.isArray(employees)) {
+      console.log('No employees array available');
+      return [];
+    }
+
+    let filtered = employees.filter(emp => emp.is_active !== false);
     
     if (selectedDepartment !== 'ALL') {
       filtered = filtered.filter(emp => emp.department === selectedDepartment);
     }
     
+    console.log(`Filtered employees for ${selectedDepartment}:`, filtered);
     return filtered;
   };
 
@@ -137,7 +152,7 @@ const WeeklyLaborSchedule = () => {
     return 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50';
   };
 
-  // Enhanced event handlers
+  // Event handlers
   const handleEmployeeClick = (roleIndex, shiftIndex) => {
     const employeeId = `${roleIndex}-${shiftIndex}`;
     setSelectedEmployee(selectedEmployee === employeeId ? null : employeeId);
@@ -156,12 +171,12 @@ const WeeklyLaborSchedule = () => {
 
     // Check if employee is already assigned
     if (currentAssignments.find(emp => emp.id === employeeId)) {
-      return; // Employee already assigned
+      return;
     }
 
     const newEmployee = {
       id: employee.id,
-      name: employee.full_name || employee.name,
+      name: employee.name,
       role: employee.role,
       department: employee.department,
       hourly_rate: employee.hourly_rate,
@@ -205,7 +220,6 @@ const WeeklyLaborSchedule = () => {
         await saveSchedule(weekKey, scheduleData);
         console.log('Schedule saved successfully');
       } else {
-        // Fallback to localStorage
         localStorage.setItem('weeklyLaborSchedule', JSON.stringify(scheduleData));
       }
       
@@ -331,7 +345,7 @@ const WeeklyLaborSchedule = () => {
         </CardContent>
       </Card>
 
-      {/* Header Row (keeping your exact design) */}
+      {/* Header Row */}
       <div className="grid grid-cols-8 gap-3">
         <div className="col-span-1">
           <Card className="bg-slate-100 border-slate-300 rounded-xl shadow-sm h-full">
@@ -355,7 +369,7 @@ const WeeklyLaborSchedule = () => {
         })}
       </div>
 
-      {/* Enhanced Schedule Rows */}
+      {/* Schedule Rows */}
       <div className="space-y-6">
         {filteredRoles.map((role, roleIndex) => {
           const shifts = [
@@ -368,7 +382,7 @@ const WeeklyLaborSchedule = () => {
 
             return (
               <div key={employeeId} className="grid grid-cols-8 gap-3 items-stretch">
-                {/* Role / Shift (keeping your exact design) */}
+                {/* Role / Shift */}
                 <div className="col-span-1 flex">
                   <Card
                     className={`${getDepartmentRoleColor(role.department)} flex-1 rounded-xl shadow-sm cursor-pointer transition-all duration-200 ${
@@ -387,7 +401,7 @@ const WeeklyLaborSchedule = () => {
                   </Card>
                 </div>
 
-                {/* Enhanced Day Cards with Dynamic Employee Assignment */}
+                {/* Day Cards */}
                 {weekDays.map((day, dayIndex) => {
                   const assignedEmployees = getAssignedEmployees(roleIndex, shiftIndex, dayIndex);
                   const dropdownKey = `${roleIndex}-${shiftIndex}-${dayIndex}`;
@@ -428,7 +442,7 @@ const WeeklyLaborSchedule = () => {
                               <span className="text-xs text-slate-600 font-medium">Add Employee</span>
                             </button>
                             
-                            {/* Enhanced Employee Dropdown */}
+                            {/* Employee Dropdown */}
                             {showDropdown === dropdownKey && (
                               <div className="absolute top-full left-0 right-0 z-20 bg-white border border-slate-300 rounded-lg shadow-xl max-h-48 overflow-y-auto mt-1">
                                 {filteredEmployees.length > 0 ? (
@@ -445,7 +459,7 @@ const WeeklyLaborSchedule = () => {
                                             : 'hover:bg-slate-50 cursor-pointer'
                                         }`}
                                       >
-                                        <div className="font-medium">{employee.full_name || employee.name}</div>
+                                        <div className="font-medium">{employee.name}</div>
                                         <div className="text-slate-500">{employee.role} - {employee.department}</div>
                                         <div className="text-slate-400">${employee.hourly_rate}/hr {isAssigned && '(Assigned)'}</div>
                                       </button>
@@ -485,7 +499,7 @@ const WeeklyLaborSchedule = () => {
         })}
       </div>
 
-      {/* Enhanced Action Buttons */}
+      {/* Action Buttons */}
       <div className="flex justify-between items-center">
         <div className="text-sm text-slate-600">
           {getTotalAssignments() > 0 && (
@@ -516,7 +530,7 @@ const WeeklyLaborSchedule = () => {
         </div>
       </div>
 
-      {/* Enhanced Selected Employee Indicator */}
+      {/* Selected Employee Indicator */}
       {selectedEmployee && (
         <Card className="border-yellow-300 bg-gradient-to-r from-yellow-50 to-amber-50 shadow-sm rounded-xl">
           <CardContent className="p-4">
@@ -551,4 +565,5 @@ const WeeklyLaborSchedule = () => {
 };
 
 export default WeeklyLaborSchedule;
+
 
