@@ -221,7 +221,8 @@ const performSmartAutoPopulation = async (locationUuidString, locationIdString) 
   const saveBriefing = async () => {
   if (!locationId || !date) return;
 
-  const { error } = await supabase.from("daily_briefings").upsert({
+  const { data, error } = await supabase.from("daily_briefings").upsert({...});
+console.log("Save response:", { data, error });
     location_id: locationId,
     date: date,
     lunch: lunch || null,
@@ -248,11 +249,11 @@ const performSmartAutoPopulation = async (locationUuidString, locationIdString) 
   });
 
   if (error) {
-    console.error("Failed to save briefing:", error);
-    alert("❌ Save failed");
-  } else {
-    alert("✅ Briefing saved!");
-  }
+  console.error("❌ Failed to save briefing:", JSON.stringify(error, null, 2));
+  alert("❌ Save failed");
+} else {
+  alert("✅ Briefing saved!");
+}
 };
   const handleImageUpload = (file, type) => {
     if (file) {
