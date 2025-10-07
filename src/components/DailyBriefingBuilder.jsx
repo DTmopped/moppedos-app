@@ -221,34 +221,35 @@ const performSmartAutoPopulation = async (locationUuidString, locationIdString) 
   const saveBriefing = async () => {
   if (!locationId || !date) return;
 
-  const { data, error } = await supabase.from("daily_briefings").upsert({...});
-console.log("Save response:", { data, error });
-    location_id: locationId,
-    date: date,
-    lunch: lunch || null,
-    dinner: dinner || null,
-    forecasted_sales: forecastedSales || null,
-    forecast_notes: forecastNotes || null,
-    actual_sales: actualSales || null,
-    variance_notes: varianceNotes || null,
-    manager: manager || null,
-    shoutout: shoutout || null,
-    mindset: mindset || null,
-    reminders: reminders || null,
-    food_items: foodItems || null,
-    beverage_items: beverageItems || null,
-    events: events || null,
-    repair_notes: repairNotes || null,
-    food_image_url: foodImage || null,
-    beverage_image_url: beverageImage || null,
-    // ✅ Weather
-    weather_icon: weather?.icon || null,
-    weather_conditions: weather?.conditions || null,
-    weather_temp_high: weather?.temperature_high || null,
-    weather_temp_low: weather?.temperature_low || null,
-  });
+const { data, error } = await supabase.from("daily_briefings").upsert({
+  location_id: locationId,
+  date: date,
+  lunch: lunch || null,
+  dinner: dinner || null,
+  forecasted_sales: forecastedSales || null,
+  forecast_notes: forecastNotes || null,
+  actual_sales: actualSales || null,
+  variance_notes: varianceNotes || null,
+  manager: manager || null,
+  shoutout: shoutout || null,
+  mindset: mindset || null,
+  reminders: reminders || null,
+  food_items: foodItems || null,
+  beverage_items: beverageItems || null,
+  events: events || null,
+  repair_notes: repairNotes || null,
+  food_image_url: foodImage || null,
+  beverage_image_url: beverageImage || null,
+  weather_icon: weather?.icon || null,
+  weather_conditions: weather?.conditions || null,
+  weather_temp_high: weather?.temperature_high || null,
+  weather_temp_low: weather?.temperature_low || null,
+});
 
-  if (error) {
+// ✅ Move the log AFTER the upsert call
+console.log("Save response:", { data, error });
+
+if (error) {
   console.error("❌ Failed to save briefing:", JSON.stringify(error, null, 2));
   alert("❌ Save failed");
 } else {
