@@ -218,8 +218,7 @@ const performSmartAutoPopulation = async (locationUuidString, locationIdString) 
 
   fetchWeather();
 }, [locationUuid, date]);
-  const saveBriefing = async () => {
-  if (!locationId || !date) return;
+  
 
 const parseDollarString = (str) => {
   if (!str) return null;
