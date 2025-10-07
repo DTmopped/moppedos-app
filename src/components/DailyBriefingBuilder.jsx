@@ -99,73 +99,93 @@ const DailyBriefingBuilder = () => {
     }
   };
 
-  const performSmartAutoPopulation = async (locationUuidString, locationIdString) => {
-    let hasAutoPopulated = false;
+const performSmartAutoPopulation = async (locationUuidString, locationIdString) => {
+  let hasAutoPopulated = false;
 
-    try {
-      if (locationUuidString) {
-        const { data: forecastData, error: forecastError } = await supabase
-          .from("fva_daily_history")
-          .select("am_guests, pm_guests, forecast_sales, forecast_guests")
-          .eq("location_uuid", locationUuidString)
-          .eq("date", date)
-          .maybeSingle();
+  try {
+    if (locationUuidString) {
+      // Forecast data
+      const { data: forecastData, error: forecastError } = await supabase
+        .from("fva_daily_history")
+        .select("am_guests, pm_guests, forecast_sales, forecast_guests")
+        .eq("location_uuid", locationUuidString)
+        .eq("date", date)
+        .maybeSingle();
 
-        if (!forecastError && forecastData) {
-          if (forecastData.am_guests !== null && forecastData.am_guests !== undefined) {
-            setLunch(forecastData.am_guests.toString());
-            hasAutoPopulated = true;
-          }
-
-          if (forecastData.pm_guests !== null && forecastData.pm_guests !== undefined) {
-            setDinner(forecastData.pm_guests.toString());
-            hasAutoPopulated = true;
-          }
-
-          if (!forecastData.am_guests && !forecastData.pm_guests && forecastData.forecast_guests) {
-            setLunch(forecastData.forecast_guests.toString());
-            setDinner("");
-            hasAutoPopulated = true;
-          }
-
-          if (forecastData.forecast_sales) {
-            const formattedSales = new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-              minimumFractionDigits: 2
-            }).format(forecastData.forecast_sales);
-            setForecastedSales(formattedSales);
-            hasAutoPopulated = true;
-          }
+      if (!forecastError && forecastData) {
+        if (forecastData.am_guests !== null && forecastData.am_guests !== undefined) {
+          setLunch(forecastData.am_guests.toString());
+          hasAutoPopulated = true;
         }
-
-        const yesterday = new Date(date);
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split('T')[0];
-
-        const { data: yesterdayData, error: yesterdayError } = await supabase
-          .from("fva_daily_history")
-          .select("actual_sales")
-          .eq("location_uuid", locationUuidString)
-          .eq("date", yesterdayStr)
-          .maybeSingle();
-
-        if (!yesterdayError && yesterdayData?.actual_sales) {
-          const formattedActualSales = new Intl.NumberFormat('en-US', {
+        if (forecastData.pm_guests !== null && forecastData.pm_guests !== undefined) {
+          setDinner(forecastData.pm_guests.toString());
+          hasAutoPopulated = true;
+        }
+        if (!forecastData.am_guests && !forecastData.pm_guests && forecastData.forecast_guests) {
+          setLunch(forecastData.forecast_guests.toString());
+          setDinner("");
+          hasAutoPopulated = true;
+        }
+        if (forecastData.forecast_sales) {
+          const formattedSales = new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: 'USD',
             minimumFractionDigits: 2
-          }).format(yesterdayData.actual_sales);
-          setActualSales(formattedActualSales);
+          }).format(forecastData.forecast_sales);
+          setForecastedSales(formattedSales);
+          hasAutoPopulated = true;
         }
       }
 
-      setAutoPopulated(hasAutoPopulated);
-    } catch (err) {
-      console.error("Error during auto-population:", err);
-    }
-  };
+      // Yesterday’s actual sales
+      const yesterday = new Date(date);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
 
+      const { data: yesterdayData, error: yesterdayError } = await supabase
+        .from("fva_daily_history")
+        .select("actual_sales")
+        .eq("location_uuid", locationUuidString)
+        .eq("date", yesterdayStr)
+        .maybeSingle();
+
+      if (!yesterdayError && yesterdayData?.actual_sales) {
+        const formattedActualSales = new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+          minimumFractionDigits: 2
+        }).format(yesterdayData.actual_sales);
+        setActualSales(formattedActualSales);
+      }
+
+      // ✅ Carry over notes + images from yesterday’s daily briefing
+      const { data: yesterdayBriefing, error: yesterdayBriefingError } = await supabase
+        .from("daily_briefings")
+        .select("manager, shoutout, mindset, reminders, food_items, beverage_items, events, repair_notes, food_image_url, beverage_image_url")
+        .eq("location_id", locationIdString)
+        .eq("date", yesterdayStr)
+        .maybeSingle();
+
+      if (!yesterdayBriefingError && yesterdayBriefing) {
+        setManager(yesterdayBriefing.manager || "");
+        setShoutout(yesterdayBriefing.shoutout || "");
+        setMindset(yesterdayBriefing.mindset || "");
+        setReminders(yesterdayBriefing.reminders || "");
+        setFoodItems(yesterdayBriefing.food_items || "");
+        setBeverageItems(yesterdayBriefing.beverage_items || "");
+        setEvents(yesterdayBriefing.events || "");
+        setRepairNotes(yesterdayBriefing.repair_notes || "");
+        setFoodImage(yesterdayBriefing.food_image_url || null);
+        setBeverageImage(yesterdayBriefing.beverage_image_url || null);
+        setCopiedFromYesterday(true);
+      }
+    }
+
+    setAutoPopulated(hasAutoPopulated);
+  } catch (err) {
+    console.error("Error during auto-population:", err);
+  }
+};
   useEffect(() => {
     fetchBriefing();
   }, [locationId, date]);
@@ -198,6 +218,42 @@ const DailyBriefingBuilder = () => {
 
   fetchWeather();
 }, [locationUuid, date]);
+  const saveBriefing = async () => {
+  if (!locationId || !date) return;
+
+  const { error } = await supabase.from("daily_briefings").upsert({
+    location_id: locationId,
+    date: date,
+    lunch: lunch || null,
+    dinner: dinner || null,
+    forecasted_sales: forecastedSales || null,
+    forecast_notes: forecastNotes || null,
+    actual_sales: actualSales || null,
+    variance_notes: varianceNotes || null,
+    manager: manager || null,
+    shoutout: shoutout || null,
+    mindset: mindset || null,
+    reminders: reminders || null,
+    food_items: foodItems || null,
+    beverage_items: beverageItems || null,
+    events: events || null,
+    repair_notes: repairNotes || null,
+    food_image_url: foodImage || null,
+    beverage_image_url: beverageImage || null,
+    // ✅ Weather
+    weather_icon: weather?.icon || null,
+    weather_conditions: weather?.conditions || null,
+    weather_temp_high: weather?.temperature_high || null,
+    weather_temp_low: weather?.temperature_low || null,
+  });
+
+  if (error) {
+    console.error("Failed to save briefing:", error);
+    alert("❌ Save failed");
+  } else {
+    alert("✅ Briefing saved!");
+  }
+};
   const handleImageUpload = (file, type) => {
     if (file) {
       const reader = new FileReader();
