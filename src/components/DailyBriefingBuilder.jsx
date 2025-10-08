@@ -225,15 +225,22 @@ const performSmartAutoPopulation = async (locationUuidString, locationIdString) 
     // Get forecast for selected date
     const targetDate = new Date(date).toISOString().split("T")[0]; // e.g., "2025-10-08"
 
-    const morningForecast = data.list.find(entry =>
-      entry.dt_txt.startsWith(targetDate) &&
-      (entry.dt_txt.includes("06:00:00") ||
-       entry.dt_txt.includes("07:00:00") ||
-       entry.dt_txt.includes("08:00:00") ||
-       entry.dt_txt.includes("09:00:00"))
-    );
+    let morningForecast = data.list.find(entry =>
+  entry.dt_txt.startsWith(targetDate) &&
+  (entry.dt_txt.includes("06:00:00") ||
+   entry.dt_txt.includes("07:00:00") ||
+   entry.dt_txt.includes("08:00:00") ||
+   entry.dt_txt.includes("09:00:00"))
+);
 
-    if (!morningForecast) throw new Error("8AM-ish forecast not found");
+// 🔁 Fallback to any block today
+if (!morningForecast) {
+  morningForecast = data.list.find(entry =>
+    entry.dt_txt.startsWith(targetDate)
+  );
+}
+
+if (!morningForecast) throw new Error("No forecast available for today");
 
     setWeather({
       icon: morningForecast.weather[0].icon,
