@@ -210,12 +210,24 @@ const performSmartAutoPopulation = async (locationUuidString, locationIdString) 
   if (!locationUuid || !date) return;
 
   const fetchWeather = async () => {
-    const data = await getWeatherForecast(locationUuid, date);
-    console.log("🌤 Weather fetched:", data); // <-- ADD THIS LINE
-    if (data) {
-      setWeather(data);
-    }
-  };
+  try {
+    const res = await fetch(`https://api.openweathermap.org/data/2.5/forecast?q=YOUR_CITY&appid=YOUR_API_KEY&units=imperial`);
+    const data = await res.json();
+
+    // Example parse logic (you should customize based on your needs):
+    const forecast = data.list[0]; // adjust to match the correct day
+
+    setWeather({
+      icon: forecast.weather[0].icon,
+      conditions: forecast.weather[0].description,
+      temperature_high: forecast.main.temp_max,
+      temperature_low: forecast.main.temp_min,
+    });
+  } catch (err) {
+    console.error("Failed to fetch weather:", err);
+    setWeather(null);
+  }
+};
 
   fetchWeather();
 }, [locationUuid, date]);
