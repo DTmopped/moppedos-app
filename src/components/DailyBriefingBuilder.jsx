@@ -211,7 +211,9 @@ const performSmartAutoPopulation = async (locationUuidString, locationIdString) 
 
   const fetchWeather = async () => {
   try {
-    const res = await fetch(`https://api.openweathermap.org/data/2.5/forecast?q=YOUR_CITY&appid=YOUR_API_KEY&units=imperial`);
+    const res = await fetch(
+  `https://api.openweathermap.org/data/2.5/forecast?q=Los Angeles&appid=319e79c87fd481165e9741ef5ce72766&units=imperial`
+);
     const data = await res.json();
 
     // Example parse logic (you should customize based on your needs):
