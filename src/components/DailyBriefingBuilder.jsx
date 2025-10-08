@@ -211,22 +211,28 @@ const performSmartAutoPopulation = async (locationUuidString, locationIdString) 
 
   const fetchWeather = async () => {
   try {
+    const apiKey = "319e79c87fd481165e9741ef5ce72766"; // Your OpenWeather API key
+    const lat = 40.7128; // NYC latitude
+    const lon = -74.0060; // NYC longitude
+
     const res = await fetch(
-  `https://api.openweathermap.org/data/2.5/forecast?q=Los Angeles&appid=319e79c87fd481165e9741ef5ce72766&units=imperial`
-);
+      `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lon}&exclude=minutely,hourly,alerts&units=imperial&appid=${apiKey}`
+    );
+
     const data = await res.json();
 
-    // Example parse logic (you should customize based on your needs):
-    const forecast = data.list[0]; // adjust to match the correct day
+    const todayForecast = data.daily[0]; // Forecast for today
 
     setWeather({
-      icon: forecast.weather[0].icon,
-      conditions: forecast.weather[0].description,
-      temperature_high: forecast.main.temp_max,
-      temperature_low: forecast.main.temp_min,
+      icon: todayForecast.weather[0].icon,
+      conditions: todayForecast.weather[0].description,
+      temperature_high: todayForecast.temp.max,
+      temperature_low: todayForecast.temp.min,
     });
+
+    console.log("✅ Weather set:", todayForecast);
   } catch (err) {
-    console.error("Failed to fetch weather:", err);
+    console.error("❌ Failed to fetch weather:", err);
     setWeather(null);
   }
 };
