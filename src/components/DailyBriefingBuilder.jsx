@@ -211,34 +211,38 @@ const performSmartAutoPopulation = async (locationUuidString, locationIdString) 
 
  const fetchWeather = async () => {
   try {
-    const apiKey = "319e79c87fd481165e9741ef5ce72766"; // Your real API key
+    const apiKey = "319e79c87fd481165e9741ef5ce72766"; // Your API key
     const lat = 40.7128;
     const lon = -74.0060;
 
     const res = await fetch(
       `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=imperial&appid=${apiKey}`
     );
-
     const data = await res.json();
 
-    if (!data.list) {
-      throw new Error("Forecast data missing or malformed");
-    }
+    if (!data.list) throw new Error("Forecast data missing");
 
-    // Find the 8:00:00 forecast block
-    const forecast = data.list.find(entry => entry.dt_txt.includes("08:00:00"));
+    // Get forecast for selected date
+    const targetDate = new Date(date).toISOString().split("T")[0]; // e.g., "2025-10-08"
 
-    if (!forecast) throw new Error("8AM forecast not found");
+    const morningForecast = data.list.find(entry =>
+      entry.dt_txt.startsWith(targetDate) &&
+      (entry.dt_txt.includes("06:00:00") ||
+       entry.dt_txt.includes("07:00:00") ||
+       entry.dt_txt.includes("08:00:00") ||
+       entry.dt_txt.includes("09:00:00"))
+    );
+
+    if (!morningForecast) throw new Error("8AM-ish forecast not found");
 
     setWeather({
-      icon: forecast.weather[0].icon,
-      conditions: forecast.weather[0].description,
-      temperature_high: forecast.main.temp_max,
-      temperature_low: forecast.main.temp_min,
+      icon: morningForecast.weather[0].icon,
+      conditions: morningForecast.weather[0].description,
+      temperature_high: morningForecast.main.temp_max,
+      temperature_low: morningForecast.main.temp_min,
     });
 
-    console.log("✅ Weather fetched:", forecast);
-
+    console.log("✅ Weather fetched:", morningForecast);
   } catch (err) {
     console.error("❌ Failed to fetch weather:", err);
     setWeather(null);
