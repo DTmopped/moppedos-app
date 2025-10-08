@@ -211,13 +211,21 @@ const performSmartAutoPopulation = async (locationUuidString, locationIdString) 
 
  const fetchWeather = async () => {
   try {
-    const apiKey = "319e79c87fd481165e9741ef5ce72766";
+    const apiKey = "319e79c87fd481165e9741ef5ce72766"; // Your real API key
+    const lat = 40.7128;
+    const lon = -74.0060;
+
     const res = await fetch(
-      `https://api.openweathermap.org/data/2.5/forecast?lat=40.7128&lon=-74.0060&units=imperial&appid=${apiKey}`
+      `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=imperial&appid=${apiKey}`
     );
+
     const data = await res.json();
 
-    // Find the forecast block for 08:00:00
+    if (!data.list) {
+      throw new Error("Forecast data missing or malformed");
+    }
+
+    // Find the 8:00:00 forecast block
     const forecast = data.list.find(entry => entry.dt_txt.includes("08:00:00"));
 
     if (!forecast) throw new Error("8AM forecast not found");
@@ -229,7 +237,8 @@ const performSmartAutoPopulation = async (locationUuidString, locationIdString) 
       temperature_low: forecast.main.temp_min,
     });
 
-    console.log("✅ Weather set (8AM):", forecast);
+    console.log("✅ Weather fetched:", forecast);
+
   } catch (err) {
     console.error("❌ Failed to fetch weather:", err);
     setWeather(null);
