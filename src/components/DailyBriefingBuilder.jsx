@@ -214,10 +214,10 @@ useEffect(() => {
     try {
       // 1. Fetch store row with lat/lon from Supabase
       const { data: store, error } = await supabase
-        .from("store_locations")
-        .select("id, name, latitude, longitude")
-        .eq("id", locationId)
-        .single();
+  .from("store_locations")
+  .select("uuid, name, latitude, longitude")
+  .eq("uuid", locationUuid)
+  .single();
 
       if (error) throw error;
       if (!store?.latitude || !store?.longitude) {
