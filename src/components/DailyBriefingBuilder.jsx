@@ -209,38 +209,40 @@ const performSmartAutoPopulation = async (locationUuidString, locationIdString) 
   useEffect(() => {
   if (!locationUuid || !date) return;
 
- const fetchWeather = async () => {
+const fetchWeather = async () => {
   try {
-    const apiKey = "319e79c87fd481165e9741ef5ce72766"; // Your API key
-    const lat = 40.7128;
-    const lon = -74.0060;
+    const apiKey = "319e79c87fd481165e9741ef5ce72766";
+    const lat = location?.latitude;
+    const lon = location?.longitude;
+
+    if (!lat || !lon) throw new Error("Missing lat/lon for this location");
 
     const res = await fetch(
       `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=imperial&appid=${apiKey}`
     );
+
     const data = await res.json();
 
     if (!data.list) throw new Error("Forecast data missing");
 
-    // Get forecast for selected date
-    const targetDate = new Date(date).toISOString().split("T")[0]; // e.g., "2025-10-08"
+    const targetDate = new Date(date).toISOString().split("T")[0];
 
-    let morningForecast = data.list.find(entry =>
-  entry.dt_txt.startsWith(targetDate) &&
-  (entry.dt_txt.includes("06:00:00") ||
-   entry.dt_txt.includes("07:00:00") ||
-   entry.dt_txt.includes("08:00:00") ||
-   entry.dt_txt.includes("09:00:00"))
-);
+    let morningForecast = data.list.find((entry) =>
+      entry.dt_txt.startsWith(targetDate) &&
+      (entry.dt_txt.includes("06:00:00") ||
+        entry.dt_txt.includes("07:00:00") ||
+        entry.dt_txt.includes("08:00:00") ||
+        entry.dt_txt.includes("09:00:00"))
+    );
 
-// 🔁 Fallback to any block today
-if (!morningForecast) {
-  morningForecast = data.list.find(entry =>
-    entry.dt_txt.startsWith(targetDate)
-  );
-}
+    // fallback
+    if (!morningForecast) {
+      morningForecast = data.list.find((entry) =>
+        entry.dt_txt.startsWith(targetDate)
+      );
+    }
 
-if (!morningForecast) throw new Error("No forecast available for today");
+    if (!morningForecast) throw new Error("No forecast available for today");
 
     setWeather({
       icon: morningForecast.weather[0].icon,
