@@ -211,6 +211,7 @@ const performSmartAutoPopulation = async (locationUuidString, locationIdString) 
 
   const fetchWeather = async () => {
     const data = await getWeatherForecast(locationUuid, date);
+    console.log("🌤 Weather fetched:", data); // <-- ADD THIS LINE
     if (data) {
       setWeather(data);
     }
