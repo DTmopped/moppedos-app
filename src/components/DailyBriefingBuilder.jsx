@@ -14,6 +14,7 @@ const DailyBriefingBuilder = () => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
   const [autoPopulated, setAutoPopulated] = useState(false);
+  const [location, setLocation] = useState(null);
   const [copiedFromYesterday, setCopiedFromYesterday] = useState(false);
 
   // ✅ Today's Forecast
@@ -206,60 +207,69 @@ const performSmartAutoPopulation = async (locationUuidString, locationIdString) 
   }, []);
 
   // Fetch Weather
-  useEffect(() => {
-  if (!locationUuid || !date) return;
+useEffect(() => {
+  if (!locationId || !date) return;
 
-const fetchWeather = async () => {
-  try {
-    const apiKey = "319e79c87fd481165e9741ef5ce72766";
-    const lat = location?.latitude;
-    const lon = location?.longitude;
+  const fetchWeather = async () => {
+    try {
+      // 1. Fetch store row with lat/lon from Supabase
+      const { data: store, error } = await supabase
+        .from("store_locations")
+        .select("id, name, latitude, longitude")
+        .eq("id", locationId)
+        .single();
 
-    if (!lat || !lon) throw new Error("Missing lat/lon for this location");
+      if (error) throw error;
+      if (!store?.latitude || !store?.longitude) {
+        throw new Error("Missing lat/lon for this location in store_locations");
+      }
 
-    const res = await fetch(
-      `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=imperial&appid=${apiKey}`
-    );
+      setLocation(store); // ✅ save it in state
 
-    const data = await res.json();
-
-    if (!data.list) throw new Error("Forecast data missing");
-
-    const targetDate = new Date(date).toISOString().split("T")[0];
-
-    let morningForecast = data.list.find((entry) =>
-      entry.dt_txt.startsWith(targetDate) &&
-      (entry.dt_txt.includes("06:00:00") ||
-        entry.dt_txt.includes("07:00:00") ||
-        entry.dt_txt.includes("08:00:00") ||
-        entry.dt_txt.includes("09:00:00"))
-    );
-
-    // fallback
-    if (!morningForecast) {
-      morningForecast = data.list.find((entry) =>
-        entry.dt_txt.startsWith(targetDate)
+      // 2. Call OpenWeather with the store’s coordinates
+      const apiKey = "319e79c87fd481165e9741ef5ce72766";
+      const res = await fetch(
+        `https://api.openweathermap.org/data/2.5/forecast?lat=${store.latitude}&lon=${store.longitude}&units=imperial&appid=${apiKey}`
       );
+
+      const data = await res.json();
+      if (!data.list) throw new Error("Forecast data missing");
+
+      // 3. Pick 8 AM block (with fallback)
+      const targetDate = new Date(date).toISOString().split("T")[0];
+      let morningForecast = data.list.find(
+        (entry) =>
+          entry.dt_txt.startsWith(targetDate) &&
+          (entry.dt_txt.includes("06:00:00") ||
+            entry.dt_txt.includes("07:00:00") ||
+            entry.dt_txt.includes("08:00:00") ||
+            entry.dt_txt.includes("09:00:00"))
+      );
+
+      if (!morningForecast) {
+        morningForecast = data.list.find((entry) =>
+          entry.dt_txt.startsWith(targetDate)
+        );
+      }
+
+      if (!morningForecast) throw new Error("No forecast available for today");
+
+      setWeather({
+        icon: morningForecast.weather[0].icon,
+        conditions: morningForecast.weather[0].description,
+        temperature_high: morningForecast.main.temp_max,
+        temperature_low: morningForecast.main.temp_min,
+      });
+
+      console.log("✅ Weather fetched:", morningForecast);
+    } catch (err) {
+      console.error("❌ Failed to fetch weather:", err);
+      setWeather(null);
     }
-
-    if (!morningForecast) throw new Error("No forecast available for today");
-
-    setWeather({
-      icon: morningForecast.weather[0].icon,
-      conditions: morningForecast.weather[0].description,
-      temperature_high: morningForecast.main.temp_max,
-      temperature_low: morningForecast.main.temp_min,
-    });
-
-    console.log("✅ Weather fetched:", morningForecast);
-  } catch (err) {
-    console.error("❌ Failed to fetch weather:", err);
-    setWeather(null);
-  }
-};
+  };
 
   fetchWeather();
-}, [locationUuid, date]);
+}, [locationId, date]);
   
 
 const parseDollarString = (str) => {
