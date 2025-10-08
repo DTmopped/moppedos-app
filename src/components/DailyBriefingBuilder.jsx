@@ -209,28 +209,27 @@ const performSmartAutoPopulation = async (locationUuidString, locationIdString) 
   useEffect(() => {
   if (!locationUuid || !date) return;
 
-  const fetchWeather = async () => {
+ const fetchWeather = async () => {
   try {
-    const apiKey = "319e79c87fd481165e9741ef5ce72766"; // Your OpenWeather API key
-    const lat = 40.7128; // NYC latitude
-    const lon = -74.0060; // NYC longitude
-
+    const apiKey = "319e79c87fd481165e9741ef5ce72766";
     const res = await fetch(
-      `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lon}&exclude=minutely,hourly,alerts&units=imperial&appid=${apiKey}`
+      `https://api.openweathermap.org/data/2.5/forecast?lat=40.7128&lon=-74.0060&units=imperial&appid=${apiKey}`
     );
-
     const data = await res.json();
 
-    const todayForecast = data.daily[0]; // Forecast for today
+    // Find the forecast block for 08:00:00
+    const forecast = data.list.find(entry => entry.dt_txt.includes("08:00:00"));
+
+    if (!forecast) throw new Error("8AM forecast not found");
 
     setWeather({
-      icon: todayForecast.weather[0].icon,
-      conditions: todayForecast.weather[0].description,
-      temperature_high: todayForecast.temp.max,
-      temperature_low: todayForecast.temp.min,
+      icon: forecast.weather[0].icon,
+      conditions: forecast.weather[0].description,
+      temperature_high: forecast.main.temp_max,
+      temperature_low: forecast.main.temp_min,
     });
 
-    console.log("✅ Weather set:", todayForecast);
+    console.log("✅ Weather set (8AM):", forecast);
   } catch (err) {
     console.error("❌ Failed to fetch weather:", err);
     setWeather(null);
