@@ -231,6 +231,9 @@ const saveBriefing = async () => {
   const cleanedForecastSales = parseDollarString(forecastedSales);
   const cleanedActualSales = parseDollarString(actualSales);
 
+  // ✅ Add this log before upsert
+  console.log("Saving briefing with weather:", weather);
+
   const { error } = await supabase.from("daily_briefings").upsert({
     location_id: locationId,
     date: date,
