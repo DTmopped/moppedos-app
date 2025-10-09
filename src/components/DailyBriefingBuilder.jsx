@@ -206,7 +206,7 @@ const performSmartAutoPopulation = async (locationUuidString, locationIdString) 
     getQuote();
   }, []);
 
-  // Fetch Weather
+// Fetch Weather
 useEffect(() => {
   if (!locationId || !date) return;
 
@@ -214,10 +214,10 @@ useEffect(() => {
     try {
       // 1. Fetch store row with lat/lon from Supabase
       const { data: store, error } = await supabase
-  .from("store_locations")
-  .select("uuid, name, latitude, longitude")
-  .eq("uuid", locationUuid)
-  .single();
+        .from("store_locations")
+        .select("uuid, name, latitude, longitude")
+        .eq("uuid", locationUuid)
+        .single();
 
       if (error) throw error;
       if (!store?.latitude || !store?.longitude) {
@@ -235,33 +235,36 @@ useEffect(() => {
       const data = await res.json();
       if (!data.list) throw new Error("Forecast data missing");
 
-      // 3. Pick 8 AM block (with fallback)
+      // 3. Filter all blocks for the day
       const targetDate = new Date(date).toISOString().split("T")[0];
-      let morningForecast = data.list.find(
-        (entry) =>
-          entry.dt_txt.startsWith(targetDate) &&
-          (entry.dt_txt.includes("06:00:00") ||
-            entry.dt_txt.includes("07:00:00") ||
-            entry.dt_txt.includes("08:00:00") ||
-            entry.dt_txt.includes("09:00:00"))
+      const dayForecasts = data.list.filter((entry) =>
+        entry.dt_txt.startsWith(targetDate)
       );
 
-      if (!morningForecast) {
-        morningForecast = data.list.find((entry) =>
-          entry.dt_txt.startsWith(targetDate)
-        );
-      }
+      if (!dayForecasts.length) throw new Error("No forecast available for today");
 
-      if (!morningForecast) throw new Error("No forecast available for today");
+      const highTemps = dayForecasts.map((f) => f.main.temp_max);
+      const lowTemps = dayForecasts.map((f) => f.main.temp_min);
+
+      // Create weather pattern summary
+      const amConditions = dayForecasts.slice(0, 4).map(e => e.weather[0].description).join(", ");
+      const pmConditions = dayForecasts.slice(4).map(e => e.weather[0].description).join(", ");
+
+      let summary = "";
+      if (amConditions.includes("rain")) summary += "🌧️ Rainy AM, ";
+      if (pmConditions.includes("clear") || pmConditions.includes("sun")) summary += "☀️ Clear PM, ";
+      summary += `High ${Math.max(...highTemps)}°F, Low ${Math.min(...lowTemps)}°F`;
+
+      const firstBlock = dayForecasts[0];
 
       setWeather({
-        icon: morningForecast.weather[0].icon,
-        conditions: morningForecast.weather[0].description,
-        temperature_high: morningForecast.main.temp_max,
-        temperature_low: morningForecast.main.temp_min,
+        icon: firstBlock.weather[0].icon,
+        conditions: summary,
+        temperature_high: Math.max(...highTemps),
+        temperature_low: Math.min(...lowTemps),
       });
 
-      console.log("✅ Weather fetched:", morningForecast);
+      console.log("✅ Weather fetched:", summary);
     } catch (err) {
       console.error("❌ Failed to fetch weather:", err);
       setWeather(null);
