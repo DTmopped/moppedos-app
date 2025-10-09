@@ -17,7 +17,7 @@ serve(async () => {
 
     // Get all active locations with their UUIDs
     const { data: locations, error: locationErr } = await supabase
-      .from("store_locations")
+      .from("locations")
       .select("id, uuid, name, latitude, longitude")
       .eq("active", true); // Only get active locations if you have this column
 
