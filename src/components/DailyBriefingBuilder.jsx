@@ -100,91 +100,89 @@ const DailyBriefingBuilder = () => {
     }
   };
 
-const performSmartAutoPopulation = async (locationUuidString, locationIdString) => {
+const performSmartAutoPopulation = async (locationUuidString) => {
   let hasAutoPopulated = false;
 
   try {
-    if (locationUuidString) {
-      // Forecast data
-      const { data: forecastData, error: forecastError } = await supabase
-        .from("fva_daily_history")
-        .select("am_guests, pm_guests, forecast_sales, forecast_guests")
-        .eq("location_uuid", locationUuidString)
-        .eq("date", date)
-        .maybeSingle();
+    if (!locationUuidString) return;
 
-      if (!forecastError && forecastData) {
-        if (forecastData.am_guests !== null && forecastData.am_guests !== undefined) {
-          setLunch(forecastData.am_guests.toString());
-          hasAutoPopulated = true;
-        }
-        if (forecastData.pm_guests !== null && forecastData.pm_guests !== undefined) {
-          setDinner(forecastData.pm_guests.toString());
-          hasAutoPopulated = true;
-        }
-        if (!forecastData.am_guests && !forecastData.pm_guests && forecastData.forecast_guests) {
-          setLunch(forecastData.forecast_guests.toString());
-          setDinner("");
-          hasAutoPopulated = true;
-        }
-        if (forecastData.forecast_sales) {
-          const formattedSales = new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            minimumFractionDigits: 2
-          }).format(forecastData.forecast_sales);
-          setForecastedSales(formattedSales);
-          hasAutoPopulated = true;
-        }
+    // 1. Forecast for today
+    const { data: forecastData, error: forecastError } = await supabase
+      .from("fva_daily_history")
+      .select("am_guests, pm_guests, forecast_sales, forecast_guests")
+      .eq("location_uuid", locationUuidString)
+      .eq("date", date)
+      .maybeSingle();
+
+    if (!forecastError && forecastData) {
+      if (forecastData.am_guests !== null) {
+        setLunch(forecastData.am_guests.toString());
+        hasAutoPopulated = true;
       }
-
-      // Yesterday’s actual sales
-      const yesterday = new Date(date);
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().split('T')[0];
-
-      const { data: yesterdayData, error: yesterdayError } = await supabase
-        .from("fva_daily_history")
-        .select("actual_sales")
-        .eq("location_uuid", locationUuidString)
-        .eq("date", yesterdayStr)
-        .maybeSingle();
-
-      if (!yesterdayError && yesterdayData?.actual_sales) {
-        const formattedActualSales = new Intl.NumberFormat('en-US', {
+      if (forecastData.pm_guests !== null) {
+        setDinner(forecastData.pm_guests.toString());
+        hasAutoPopulated = true;
+      }
+      if (!forecastData.am_guests && !forecastData.pm_guests && forecastData.forecast_guests) {
+        setLunch(forecastData.forecast_guests.toString());
+        setDinner("");
+        hasAutoPopulated = true;
+      }
+      if (forecastData.forecast_sales) {
+        const formatted = new Intl.NumberFormat('en-US', {
           style: 'currency',
           currency: 'USD',
-          minimumFractionDigits: 2
-        }).format(yesterdayData.actual_sales);
-        setActualSales(formattedActualSales);
+        }).format(forecastData.forecast_sales);
+        setForecastedSales(formatted);
+        hasAutoPopulated = true;
       }
+    }
 
-      // ✅ Carry over notes + images from yesterday’s daily briefing
-      const { data: yesterdayBriefing, error: yesterdayBriefingError } = await supabase
-        .from("daily_briefings")
-        .select("manager, shoutout, mindset, reminders, food_items, beverage_items, events, repair_notes, food_image_url, beverage_image_url")
-        .eq("location_id", locationIdString)
-        .eq("date", yesterdayStr)
-        .maybeSingle();
+    // 2. Actual sales for yesterday
+    const yesterday = new Date(date);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split("T")[0];
 
-      if (!yesterdayBriefingError && yesterdayBriefing) {
-        setManager(yesterdayBriefing.manager || "");
-        setShoutout(yesterdayBriefing.shoutout || "");
-        setMindset(yesterdayBriefing.mindset || "");
-        setReminders(yesterdayBriefing.reminders || "");
-        setFoodItems(yesterdayBriefing.food_items || "");
-        setBeverageItems(yesterdayBriefing.beverage_items || "");
-        setEvents(yesterdayBriefing.events || "");
-        setRepairNotes(yesterdayBriefing.repair_notes || "");
-        setFoodImage(yesterdayBriefing.food_image_url || null);
-        setBeverageImage(yesterdayBriefing.beverage_image_url || null);
-        setCopiedFromYesterday(true);
-      }
+    const { data: yesterdayData } = await supabase
+      .from("fva_daily_history")
+      .select("actual_sales")
+      .eq("location_uuid", locationUuidString)
+      .eq("date", yesterdayStr)
+      .maybeSingle();
+
+    if (yesterdayData?.actual_sales) {
+      const formattedActual = new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+      }).format(yesterdayData.actual_sales);
+      setActualSales(formattedActual);
+    }
+
+    // 3. Copy forward briefing notes
+    const { data: yesterdayBriefing } = await supabase
+      .from("daily_briefings")
+      .select("manager, shoutout, mindset, reminders, food_items, beverage_items, events, repair_notes, food_image_url, beverage_image_url")
+      .eq("location_id", locationId) // ✅ Still valid if `location_id` is your primary key
+      .eq("date", yesterdayStr)
+      .maybeSingle();
+
+    if (yesterdayBriefing) {
+      setManager(yesterdayBriefing.manager || "");
+      setShoutout(yesterdayBriefing.shoutout || "");
+      setMindset(yesterdayBriefing.mindset || "");
+      setReminders(yesterdayBriefing.reminders || "");
+      setFoodItems(yesterdayBriefing.food_items || "");
+      setBeverageItems(yesterdayBriefing.beverage_items || "");
+      setEvents(yesterdayBriefing.events || "");
+      setRepairNotes(yesterdayBriefing.repair_notes || "");
+      setFoodImage(yesterdayBriefing.food_image_url || null);
+      setBeverageImage(yesterdayBriefing.beverage_image_url || null);
+      setCopiedFromYesterday(true);
     }
 
     setAutoPopulated(hasAutoPopulated);
   } catch (err) {
-    console.error("Error during auto-population:", err);
+    console.error("❌ Smart AutoPopulation Error:", err);
   }
 };
   useEffect(() => {
