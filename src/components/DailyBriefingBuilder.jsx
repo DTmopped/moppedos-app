@@ -210,19 +210,18 @@ useEffect(() => {
 
   const fetchWeather = async () => {
     try {
-      // 1. Fetch store row with lat/lon from Supabase
-      const { data: store, error } = await supabase
-        .from("store_locations")
-        .select("uuid, name, latitude, longitude")
-        .eq("uuid", locationUuid)
-        .single();
+      // 1. Fetch store row with lat/lon from Supabase (safe fallback from `.single()`)
+const { data: stores, error } = await supabase
+  .from("store_locations")
+  .select("uuid, name, latitude, longitude")
+  .eq("uuid", locationUuid);
 
-      if (error) throw error;
-      if (!store?.latitude || !store?.longitude) {
-        throw new Error("Missing lat/lon for this location in store_locations");
-      }
+if (error) throw error;
+if (!stores || stores.length === 0) {
+  throw new Error(`No store found with uuid: ${locationUuid}`);
+}
 
-      setLocation(store); // ✅ save it in state
+const store = stores[0]; // Use first result safely
 
       // 2. Call OpenWeather with the store’s coordinates
       const apiKey = "319e79c87fd481165e9741ef5ce72766";
