@@ -15,10 +15,11 @@ serve(async (req) => {
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toISOString().split("T")[0];
 
-    // Get locations with their coordinates
-    const { data: locations, error: locationErr } = await supabase
-      .from("locations")
-      .select("uuid, name");
+    // Get locations from the store_locations table
+const { data: locations, error: locationErr } = await supabase
+  .from("store_locations")
+  .select("id, name");
+
 
     if (locationErr) {
       console.error("❌ Failed to load locations:", locationErr.message);
