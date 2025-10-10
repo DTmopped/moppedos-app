@@ -7,158 +7,152 @@ const supabase = createClient(
 );
 
 serve(async () => {
-  try {
-    console.log("🔄 Starting daily briefing autofill...");
+  const today = new Date().toISOString().split("T")[0];
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split("T")[0];
 
-    const today = new Date().toISOString().split("T")[0];
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split("T")[0];
+  console.log("🔄 Starting daily briefing autofill...");
 
-    const { data: locations, error: locationErr } = await supabase
-      .from("store_locations")
-      .select("id, name, latitude, longitude")
-      .eq("is_active", true);
+  const { data: locations, error: locErr } = await supabase
+    .from("store_locations")
+    .select("id, name, latitude, longitude")
+    .eq("is_active", true);
 
-    if (locationErr) {
-      console.error("❌ Failed to load store_locations:", locationErr.message);
-      return new Response("Failed to load locations", { status: 500 });
-    }
+  if (locErr || !locations) {
+    console.error("❌ Failed to load store locations:", locErr?.message);
+    return new Response("❌ Failed to load locations", { status: 500 });
+  }
 
-    if (!locations || locations.length === 0) {
-      console.warn("⚠️ No locations found");
-      return new Response("No locations found", { status: 200 });
-    }
+  let successCount = 0;
+  let errorCount = 0;
 
-    let successCount = 0;
-    let errorCount = 0;
+  for (const loc of locations) {
+    try {
+      console.log(`📍 Processing: ${loc.name}`);
 
-    for (const loc of locations) {
-      try {
-        const { data: existingBriefing } = await supabase
-          .from("daily_briefings")
-          .select("id")
-          .eq("location_id", loc.id)
-          .eq("date", today)
-          .maybeSingle();
+      // Skip if already created
+      const { data: exists } = await supabase
+        .from("daily_briefings")
+        .select("id")
+        .eq("location_id", loc.id)
+        .eq("date", today)
+        .maybeSingle();
 
-        if (existingBriefing) {
-          console.log(`⏭️ Briefing already exists for ${loc.name}`);
-          continue;
-        }
+      if (exists) {
+        console.log(`⏭️ Skipping ${loc.name} (already exists)`);
+        continue;
+      }
 
-        let weatherData = {
-          icon: "01d",
-          conditions: "Clear sky, High 75°F, Low 60°F",
-          high: 75,
-          low: 60,
-        };
+      // Default weather
+      let weather = {
+        icon: "01d",
+        conditions: "Clear sky, High 75°F, Low 60°F",
+        high: 75,
+        low: 60,
+      };
 
-        if (loc.latitude && loc.longitude) {
-          try {
-            const apiKey = Deno.env.get("OPENWEATHER_API_KEY");
-            const weatherRes = await fetch(
-              `https://api.openweathermap.org/data/2.5/forecast?lat=${loc.latitude}&lon=${loc.longitude}&units=imperial&appid=${apiKey}`
+      if (loc.latitude && loc.longitude) {
+        try {
+          const apiKey = Deno.env.get("OPENWEATHER_API_KEY");
+          const res = await fetch(
+            `https://api.openweathermap.org/data/2.5/forecast?lat=${loc.latitude}&lon=${loc.longitude}&units=imperial&appid=${apiKey}`
+          );
+
+          if (res.ok) {
+            const json = await res.json();
+            const todayForecasts = json.list.filter((f: any) =>
+              f.dt_txt.startsWith(today)
             );
 
-            if (weatherRes.ok) {
-              const weatherJson = await weatherRes.json();
-              const dayForecasts = weatherJson.list.filter((entry: any) =>
-                entry.dt_txt.startsWith(today)
-              );
+            if (todayForecasts.length > 0) {
+              const high = Math.round(Math.max(...todayForecasts.map((f: any) => f.main.temp_max)));
+              const low = Math.round(Math.min(...todayForecasts.map((f: any) => f.main.temp_min)));
 
-              if (dayForecasts.length > 0) {
-                const high = Math.round(Math.max(...dayForecasts.map((f: any) => f.main.temp_max)));
-                const low = Math.round(Math.min(...dayForecasts.map((f: any) => f.main.temp_min)));
+              const am = todayForecasts.slice(0, 4).map((f: any) => f.weather[0].description).join(", ");
+              const pm = todayForecasts.slice(4).map((f: any) => f.weather[0].description).join(", ");
 
-                const amConditions = dayForecasts.slice(0, 4).map((f: any) => f.weather[0].description).join(", ");
-                const pmConditions = dayForecasts.slice(4).map((f: any) => f.weather[0].description).join(", ");
+              let desc = "";
+              if (am.includes("rain")) desc += "🌧️ Rainy AM, ";
+              if (pm.includes("clear") || pm.includes("sun")) desc += "☀️ Clear PM, ";
+              desc += `High ${high}°F, Low ${low}°F`;
 
-                let conditions = "";
-                if (amConditions.includes("rain")) conditions += "🌧️ Rainy AM, ";
-                if (pmConditions.includes("clear") || pmConditions.includes("sun")) conditions += "☀️ Clear PM, ";
-                conditions += `High ${high}°F, Low ${low}°F`;
-
-                weatherData = {
-                  icon: dayForecasts[0].weather[0].icon,
-                  conditions,
-                  high,
-                  low
-                };
-              }
+              weather = {
+                icon: todayForecasts[0].weather[0].icon,
+                conditions: desc,
+                high,
+                low,
+              };
             }
-          } catch (err) {
-            console.warn(`⚠️ Failed to fetch weather for ${loc.name}:`, err);
           }
+        } catch (err) {
+          console.warn(`⚠️ Weather error for ${loc.name}:`, err.message);
         }
-
-        const { data: yesterdayBriefing } = await supabase
-          .from("daily_briefings")
-          .select("*")
-          .eq("location_id", loc.id)
-          .eq("date", yesterdayStr)
-          .maybeSingle();
-
-        const { data: fvaData } = await supabase
-          .from("fva_daily_history")
-          .select("date, forecast_sales, am_guests, pm_guests, actual_sales")
-          .eq("location_id", loc.id)
-          .in("date", [today, yesterdayStr]);
-
-        const todayData = fvaData?.find((d) => d.date === today);
-        const ydayData = fvaData?.find((d) => d.date === yesterdayStr);
-
-        const { error: upsertErr } = await supabase
-          .from("daily_briefings")
-          .upsert({
-            location_id: loc.id,
-            date: today,
-            lunch: todayData?.am_guests ?? null,
-            dinner: todayData?.pm_guests ?? null,
-            forecasted_sales: todayData?.forecast_sales ?? null,
-            actual_sales: ydayData?.actual_sales ?? null,
-
-            forecast_notes: yesterdayBriefing?.forecast_notes ?? null,
-            reminders: yesterdayBriefing?.reminders ?? null,
-            mindset: yesterdayBriefing?.mindset ?? null,
-            food_items: yesterdayBriefing?.food_items ?? null,
-            food_image_url: yesterdayBriefing?.food_image_url ?? null,
-            beverage_items: yesterdayBriefing?.beverage_items ?? null,
-            beverage_image_url: yesterdayBriefing?.beverage_image_url ?? null,
-            events: yesterdayBriefing?.events ?? null,
-            repair_notes: yesterdayBriefing?.repair_notes ?? null,
-            manager: yesterdayBriefing?.manager ?? null,
-
-            weather_icon: weatherData.icon,
-            weather_conditions: weatherData.conditions,
-            weather_temp_high: weatherData.high,
-            weather_temp_low: weatherData.low,
-            created_at: new Date().toISOString()
-          });
-
-        if (upsertErr) {
-          console.error(`❌ Failed to create briefing for ${loc.name}:`, upsertErr);
-          errorCount++;
-        } else {
-          console.log(`✅ Created briefing for ${loc.name}`);
-          successCount++;
-        }
-
-      } catch (err) {
-        console.error(`❌ Error processing ${loc.name}:`, err);
-        errorCount++;
       }
+
+      // Pull yesterday's content
+      const { data: yesterdayBrief } = await supabase
+        .from("daily_briefings")
+        .select("*")
+        .eq("location_id", loc.id)
+        .eq("date", yesterdayStr)
+        .maybeSingle();
+
+      // Pull forecast & actuals
+      const { data: fva } = await supabase
+        .from("fva_daily_history")
+        .select("date, forecast_sales, actual_sales, am_guests, pm_guests")
+        .eq("location_id", loc.id)
+        .in("date", [today, yesterdayStr]);
+
+      const todayData = fva?.find((r) => r.date === today);
+      const ydayData = fva?.find((r) => r.date === yesterdayStr);
+
+      // Insert new briefing
+      const { error: insertErr } = await supabase
+        .from("daily_briefings")
+        .insert({
+          location_id: loc.id,
+          date: today,
+          lunch: todayData?.am_guests ?? null,
+          dinner: todayData?.pm_guests ?? null,
+          forecasted_sales: todayData?.forecast_sales ?? null,
+          actual_sales: ydayData?.actual_sales ?? null,
+          forecast_notes: yesterdayBrief?.forecast_notes ?? null,
+          reminders: yesterdayBrief?.reminders ?? null,
+          mindset: yesterdayBrief?.mindset ?? null,
+          food_items: yesterdayBrief?.food_items ?? null,
+          food_image_url: yesterdayBrief?.food_image_url ?? null,
+          beverage_items: yesterdayBrief?.beverage_items ?? null,
+          beverage_image_url: yesterdayBrief?.beverage_image_url ?? null,
+          events: yesterdayBrief?.events ?? null,
+          repair_notes: yesterdayBrief?.repair_notes ?? null,
+          manager: yesterdayBrief?.manager ?? null,
+          weather_icon: weather.icon,
+          weather_conditions: weather.conditions,
+          weather_temp_high: weather.high,
+          weather_temp_low: weather.low,
+          created_at: new Date().toISOString(),
+        });
+
+      if (insertErr) {
+        console.error(`❌ Failed to insert for ${loc.name}:`, insertErr.message);
+        errorCount++;
+      } else {
+        console.log(`✅ Briefing created for ${loc.name}`);
+        successCount++;
+      }
+
+    } catch (err) {
+      console.error(`❌ Error processing ${loc.name}:`, err.message);
+      errorCount++;
     }
-
-    return new Response(
-      `✅ Process complete: ${successCount} briefings created, ${errorCount} errors`,
-      { status: 200 }
-    );
-
-  } catch (err) {
-    console.error("❌ Fatal error:", err);
-    return new Response(`Fatal error: ${err.message}`, { status: 500 });
   }
+
+  return new Response(
+    `✅ Processed ${successCount} locations. ❌ Errors: ${errorCount}`,
+    { status: 200 }
+  );
 });
 
    
