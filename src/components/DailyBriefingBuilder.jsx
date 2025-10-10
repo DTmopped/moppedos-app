@@ -278,39 +278,46 @@ const parseDollarString = (str) => {
 };
 
 const saveBriefing = async () => {
-  if (!locationId || !date) return;
+  if (!locationUuid || !date) return;
 
   const cleanedForecastSales = parseDollarString(forecastedSales);
   const cleanedActualSales = parseDollarString(actualSales);
 
-  // ✅ Add this log before upsert
   console.log("Saving briefing with weather:", weather);
 
-  const { error } = await supabase.from("daily_briefings").upsert({
-    location_id: locationId,
-    date: date,
-    lunch: lunch || null,
-    dinner: dinner || null,
-    forecasted_sales: cleanedForecastSales,
-    forecast_notes: forecastNotes || null,
-    actual_sales: cleanedActualSales,
-    variance_notes: varianceNotes || null,
-    manager: manager || null,
-    shoutout: shoutout || null,
-    mindset: mindset || null,
-    reminders: reminders || null,
-    food_items: foodItems || null,
-    beverage_items: beverageItems || null,
-    events: events || null,
-    repair_notes: repairNotes || null,
-    food_image_url: foodImage || null,
-    beverage_image_url: beverageImage || null,
-    // ✅ Weather fields
-    weather_icon: weather?.icon || null,
-    weather_conditions: weather?.conditions || null,
-    weather_temp_high: weather?.temperature_high || null,
-    weather_temp_low: weather?.temperature_low || null,
-  });
+  const { data, error } = await supabase
+    .from("daily_briefings")
+    .upsert(
+      {
+        location_id: locationUuid, // ✅ Use UUID version
+        date,
+        lunch: lunch || null,
+        dinner: dinner || null,
+        forecasted_sales: cleanedForecastSales,
+        forecast_notes: forecastNotes || null,
+        actual_sales: cleanedActualSales,
+        variance_notes: varianceNotes || null,
+        manager: manager || null,
+        shoutout: shoutout || null,
+        mindset: mindset || null,
+        reminders: reminders || null,
+        food_items: foodItems || null,
+        beverage_items: beverageItems || null,
+        events: events || null,
+        repair_notes: repairNotes || null,
+        food_image_url: foodImage || null,
+        beverage_image_url: beverageImage || null,
+        weather_icon: weather?.icon || null,
+        weather_conditions: weather?.conditions || null,
+        weather_temp_high: weather?.temperature_high || null,
+        weather_temp_low: weather?.temperature_low || null,
+      },
+      {
+        onConflict: "location_id,date", // ✅ Required for composite key
+      }
+    );
+
+  console.log("🔄 Upsert result:", data, error);
 
   if (error) {
     console.error("❌ Failed to save briefing:", error);
