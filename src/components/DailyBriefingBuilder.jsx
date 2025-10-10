@@ -213,8 +213,8 @@ useEffect(() => {
       // 1. Fetch store row with lat/lon from Supabase (safe fallback from `.single()`)
 const { data: stores, error } = await supabase
   .from("store_locations")
-  .select("uuid, name, latitude, longitude")
-  .eq("uuid", locationUuid);
+  .select("id, name, latitude, longitude")
+  .eq("id", locationUuid);  // ✅ FIXED LINE
 
 if (error) throw error;
 if (!stores || stores.length === 0) {
