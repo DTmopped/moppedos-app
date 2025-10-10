@@ -6,7 +6,7 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
 );
 
-serve(async () => {
+serve(async (req) => {
   try {
     console.log("🔄 Starting daily briefing autofill...");
     
@@ -15,11 +15,10 @@ serve(async () => {
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toISOString().split("T")[0];
 
-    // Get all active locations with their UUIDs
+    // Get locations from the locations table
     const { data: locations, error: locationErr } = await supabase
       .from("locations")
-      .select("id, uuid, name, latitude, longitude")
-      .eq("active", true); // Only get active locations if you have this column
+      .select("uuid, name");
 
     if (locationErr) {
       console.error("❌ Failed to load locations:", locationErr.message);
@@ -44,7 +43,7 @@ serve(async () => {
         const { data: existingBriefing } = await supabase
           .from("daily_briefings")
           .select("id")
-          .eq("location_uuid", loc.uuid)
+          .eq("location_id", loc.uuid)
           .eq("date", today)
           .maybeSingle();
           
@@ -53,98 +52,127 @@ serve(async () => {
           continue;
         }
 
+        // Get yesterday's briefing to carry over notes and other content
+        const { data: yesterdayBriefing } = await supabase
+          .from("daily_briefings")
+          .select("*")
+          .eq("location_id", loc.uuid)
+          .eq("date", yesterdayStr)
+          .maybeSingle();
+
+        // Get location details including lat/long from store_locations
+        const { data: storeLocation } = await supabase
+          .from("store_locations")
+          .select("id, latitude, longitude")
+          .eq("id", loc.uuid)
+          .maybeSingle();
+
         // Get weather data if we have coordinates
-        let weatherData = null;
-        if (loc.latitude && loc.longitude) {
-          const apiKey = Deno.env.get("OPENWEATHER_API_KEY");
-          if (!apiKey) {
-            console.warn("⚠️ No OpenWeather API key found");
-          } else {
-            console.log(`🌤️ Fetching weather for ${loc.name} at ${loc.latitude},${loc.longitude}`);
-            
-            const weatherRes = await fetch(
-              `https://api.openweathermap.org/data/2.5/forecast?lat=${loc.latitude}&lon=${loc.longitude}&units=imperial&appid=${apiKey}`
-             );
+        let weatherData = {
+          icon: "01d", // default: clear sky
+          conditions: "☀️ Clear day",
+          high: 75,
+          low: 60
+        };
 
-            if (!weatherRes.ok) {
-              console.error(`❌ Weather API error: ${weatherRes.status} ${weatherRes.statusText}`);
-              throw new Error(`Weather API returned ${weatherRes.status}`);
-            }
-
-            weatherData = await weatherRes.json();
-          }
-        }
-
-        // Process weather data
-        let high = null;
-        let low = null;
-        let conditions = "";
-        let icon = null;
-        
-        if (weatherData && weatherData.list) {
-          const dayForecasts = weatherData.list.filter((entry) => 
-            entry.dt_txt.startsWith(today)
-          );
-
-          if (dayForecasts.length > 0) {
-            high = Math.max(...dayForecasts.map((f) => f.main.temp_max));
-            low = Math.min(...dayForecasts.map((f) => f.main.temp_min));
-
-            const amConditions = dayForecasts
-              .slice(0, Math.min(4, dayForecasts.length))
-              .map((f) => f.weather[0].description)
-              .join(", ");
+        if (storeLocation?.latitude && storeLocation?.longitude) {
+          try {
+            const apiKey = Deno.env.get("OPENWEATHER_API_KEY");
+            if (apiKey) {
+              console.log(`🌤️ Fetching weather for ${loc.name} at ${storeLocation.latitude},${storeLocation.longitude}`);
               
-            const pmConditions = dayForecasts
-              .slice(4)
-              .map((f) => f.weather[0].description)
-              .join(", ");
+              const weatherRes = await fetch(
+                `https://api.openweathermap.org/data/2.5/forecast?lat=${storeLocation.latitude}&lon=${storeLocation.longitude}&units=imperial&appid=${apiKey}`
+               );
 
-            if (amConditions.includes("rain")) conditions += "🌧️ Rainy AM, ";
-            if (pmConditions.includes("clear") || pmConditions.includes("sun")) conditions += "☀️ Clear PM, ";
-            conditions += `High ${Math.round(high)}°F, Low ${Math.round(low)}°F`;
+              if (weatherRes.ok) {
+                const weatherJson = await weatherRes.json();
+                const dayForecasts = weatherJson.list.filter((entry: any) =>
+                  entry.dt_txt.startsWith(today)
+                );
 
-            icon = dayForecasts[0].weather[0].icon;
+                if (dayForecasts.length > 0) {
+                  const high = Math.max(...dayForecasts.map((f: any) => f.main.temp_max));
+                  const low = Math.min(...dayForecasts.map((f: any) => f.main.temp_min));
+
+                  const amConditions = dayForecasts
+                    .slice(0, Math.min(4, dayForecasts.length))
+                    .map((f: any) => f.weather[0].description)
+                    .join(", ");
+                    
+                  const pmConditions = dayForecasts
+                    .slice(4)
+                    .map((f: any) => f.weather[0].description)
+                    .join(", ");
+
+                  let conditions = "";
+                  if (amConditions.includes("rain")) conditions += "🌧️ Rainy AM, ";
+                  if (pmConditions.includes("clear") || pmConditions.includes("sun")) conditions += "☀️ Clear PM, ";
+                  conditions += `High ${Math.round(high)}°F, Low ${Math.round(low)}°F`;
+
+                  weatherData = {
+                    icon: dayForecasts[0].weather[0].icon,
+                    conditions: conditions,
+                    high: Math.round(high),
+                    low: Math.round(low)
+                  };
+                }
+              }
+            }
+          } catch (weatherErr) {
+            console.warn(`⚠️ Weather API error for ${loc.name}:`, weatherErr);
+            // Continue with default weather data
           }
         }
 
-        // Pull forecast + actuals
-        const { data: fvaData, error: fvaError } = await supabase
+        // Pull forecast + actuals from fva_daily_history
+        const { data: fvaData } = await supabase
           .from("fva_daily_history")
           .select("forecast_sales, am_guests, pm_guests, actual_sales, date")
           .eq("location_uuid", loc.uuid)
           .in("date", [today, yesterdayStr]);
 
-        if (fvaError) {
-          console.warn(`⚠️ Error fetching FVA data: ${fvaError.message}`);
-        }
-
         const todayData = fvaData?.find((d) => d.date === today);
         const ydayData = fvaData?.find((d) => d.date === yesterdayStr);
 
-        // Upsert briefing - IMPORTANT: Use location_uuid, not location_id
+        // Create the new briefing, carrying over content from yesterday
+        const newBriefing = {
+          location_id: loc.uuid,
+          date: today,
+          lunch: todayData?.am_guests ?? null,
+          dinner: todayData?.pm_guests ?? null,
+          forecasted_sales: todayData?.forecast_sales ?? null,
+          actual_sales: ydayData?.actual_sales ?? null,
+          weather_icon: weatherData.icon,
+          weather_conditions: weatherData.conditions,
+          weather_temp_high: weatherData.high,
+          weather_temp_low: weatherData.low,
+          created_at: new Date().toISOString(),
+          
+          // Carry over content from yesterday's briefing if available
+          forecast_notes: yesterdayBriefing?.forecast_notes ?? null,
+          reminders: yesterdayBriefing?.reminders ?? null,
+          mindset: yesterdayBriefing?.mindset ?? null,
+          food_items: yesterdayBriefing?.food_items ?? null,
+          food_image_url: yesterdayBriefing?.food_image_url ?? null,
+          beverage_items: yesterdayBriefing?.beverage_items ?? null,
+          beverage_image_url: yesterdayBriefing?.beverage_image_url ?? null,
+          events: yesterdayBriefing?.events ?? null,
+          repair_notes: yesterdayBriefing?.repair_notes ?? null,
+          manager: yesterdayBriefing?.manager ?? null,
+        };
+
+        // Insert the new briefing
         const { data: briefing, error: briefingError } = await supabase
           .from("daily_briefings")
-          .upsert({
-            location_uuid: loc.uuid,  // Use UUID, not legacy ID
-            date: today,
-            lunch: todayData?.am_guests ?? null,
-            dinner: todayData?.pm_guests ?? null,
-            forecasted_sales: todayData?.forecast_sales ?? null,
-            actual_sales: ydayData?.actual_sales ?? null,
-            weather_icon: icon,
-            weather_conditions: conditions,
-            weather_temp_high: high,
-            weather_temp_low: low,
-            created_at: new Date().toISOString(),
-          })
+          .upsert(newBriefing)
           .select();
 
         if (briefingError) {
           console.error(`❌ Failed to create briefing for ${loc.name}:`, briefingError);
           errorCount++;
         } else {
-          console.log(`✅ Created briefing for ${loc.name}`);
+          console.log(`✅ Created briefing for ${loc.name} with carried-over content`);
           successCount++;
         }
 
@@ -164,6 +192,7 @@ serve(async () => {
     return new Response(`❌ Fatal error: ${err.message}`, { status: 500 });
   }
 });
+
 
    
   
