@@ -2,24 +2,23 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js";
 
 const supabase = createClient(
-  Deno.env.get("SUPABASE_URL" )!,
+  Deno.env.get("SUPABASE_URL")!,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
 );
 
 serve(async (req) => {
   try {
     console.log("🔄 Starting daily briefing autofill...");
-    
+
     const today = new Date().toISOString().split("T")[0];
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toISOString().split("T")[0];
 
-    // Get locations from the store_locations table
-const { data: locations, error: locationErr } = await supabase
-  .from("store_locations")
-  .select("id, name");
-
+    const { data: locations, error: locationErr } = await supabase
+      .from("locations")
+      .select("id, uuid, name, location_metadata(lat, lon)")
+      .eq("is_active", true);
 
     if (locationErr) {
       console.error("❌ Failed to load locations:", locationErr.message);
@@ -32,19 +31,18 @@ const { data: locations, error: locationErr } = await supabase
     }
 
     console.log(`📍 Found ${locations.length} locations to process`);
-    
+
     let successCount = 0;
     let errorCount = 0;
 
     for (const loc of locations) {
       try {
         console.log(`🔍 Processing location: ${loc.name} (${loc.uuid})`);
-        
-        // Check if briefing already exists for today
+
         const { data: existingBriefing } = await supabase
           .from("daily_briefings")
           .select("id")
-          .eq("location_id", loc.uuid)
+          .eq("location_uuid", loc.uuid)
           .eq("date", today)
           .maybeSingle();
 
@@ -53,14 +51,9 @@ const { data: locations, error: locationErr } = await supabase
           continue;
         }
 
-        // Get location details including coordinates
-        const { data: locationDetails } = await supabase
-          .from("store_locations")
-          .select("id, latitude, longitude")
-          .eq("id", loc.uuid)
-          .maybeSingle();
+        const lat = loc.location_metadata?.lat;
+        const lon = loc.location_metadata?.lon;
 
-        // Hardcoded weather data as fallback
         let weatherData = {
           icon: "01d",
           conditions: "Clear sky, High 75°F, Low 60°F",
@@ -68,18 +61,17 @@ const { data: locations, error: locationErr } = await supabase
           low: 60
         };
 
-        // Try to get real weather data if coordinates are available
-        if (locationDetails?.latitude && locationDetails?.longitude) {
+        if (lat && lon) {
           try {
             const apiKey = Deno.env.get("OPENWEATHER_API_KEY");
             if (apiKey) {
               const weatherRes = await fetch(
-                `https://api.openweathermap.org/data/2.5/forecast?lat=${locationDetails.latitude}&lon=${locationDetails.longitude}&units=imperial&appid=${apiKey}`
-               );
+                `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=imperial&appid=${apiKey}`
+              );
 
               if (weatherRes.ok) {
                 const weatherJson = await weatherRes.json();
-                const dayForecasts = weatherJson.list.filter((entry: any) => 
+                const dayForecasts = weatherJson.list.filter((entry: any) =>
                   entry.dt_txt.startsWith(today)
                 );
 
@@ -106,40 +98,36 @@ const { data: locations, error: locationErr } = await supabase
             }
           } catch (weatherErr) {
             console.error(`⚠️ Weather API error for ${loc.name}:`, weatherErr);
-            // Continue with hardcoded weather data
           }
         }
 
-        // Get yesterday's briefing for carrying over content
         const { data: yesterdayBriefing } = await supabase
           .from("daily_briefings")
           .select("*")
-          .eq("location_id", loc.uuid)
+          .eq("location_uuid", loc.uuid)
           .eq("date", yesterdayStr)
           .maybeSingle();
 
-        // Get forecast and actual sales data
         const { data: fvaData } = await supabase
           .from("fva_daily_history")
-          .select("forecast_sales, am_guests, pm_guests, actual_sales")
+          .select("forecast_sales, am_guests, pm_guests, actual_sales, date")
           .eq("location_uuid", loc.uuid)
           .in("date", [today, yesterdayStr]);
 
         const todayData = fvaData?.find((d) => d.date === today);
         const ydayData = fvaData?.find((d) => d.date === yesterdayStr);
 
-        // Create new briefing
         const { data: briefing, error: briefingError } = await supabase
           .from("daily_briefings")
           .upsert({
-            location_id: loc.uuid,
+            location_id: loc.id, // ✅ Correct use of bigint location_id
+            location_uuid: loc.uuid,
             date: today,
             lunch: todayData?.am_guests ?? null,
             dinner: todayData?.pm_guests ?? null,
             forecasted_sales: todayData?.forecast_sales ?? null,
             actual_sales: ydayData?.actual_sales ?? null,
-            
-            // Carry over content from yesterday
+
             forecast_notes: yesterdayBriefing?.forecast_notes ?? null,
             reminders: yesterdayBriefing?.reminders ?? null,
             mindset: yesterdayBriefing?.mindset ?? null,
@@ -150,13 +138,12 @@ const { data: locations, error: locationErr } = await supabase
             events: yesterdayBriefing?.events ?? null,
             repair_notes: yesterdayBriefing?.repair_notes ?? null,
             manager: yesterdayBriefing?.manager ?? null,
-            
-            // Weather data
+
             weather_icon: weatherData.icon,
             weather_conditions: weatherData.conditions,
             weather_temp_high: weatherData.high,
             weather_temp_low: weatherData.low,
-            
+
             created_at: new Date().toISOString(),
           })
           .select();
@@ -176,16 +163,15 @@ const { data: locations, error: locationErr } = await supabase
     }
 
     return new Response(
-      `✅ Daily briefings process complete: ${successCount} created, ${errorCount} errors`, 
+      `✅ Daily briefings complete: ${successCount} created, ${errorCount} errors`,
       { status: 200 }
     );
-    
+
   } catch (err) {
     console.error("❌ Fatal error:", err);
     return new Response(`❌ Fatal error: ${err.message}`, { status: 500 });
   }
 });
-
 
 
    
