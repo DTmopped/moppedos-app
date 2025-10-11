@@ -22,12 +22,12 @@ export function useUserAndLocation() {
 
       setUser(user);
 
-      // Fetch user_locations with location UUID
+      // FIXED: Use store_locations instead of locations
       const { data: locationData, error: locationError } = await supabase
         .from('user_locations')
         .select(`
           location_id,
-          locations!inner(uuid)
+          store_locations!inner(id, name)
         `)
         .eq('user_id', user.id)
         .maybeSingle();
@@ -35,9 +35,11 @@ export function useUserAndLocation() {
       if (locationError) {
         console.error('Failed to get location:', locationError);
       } else if (locationData) {
-        const locationUuid = locationData.locations.uuid;
-        setLocationId(String(locationUuid));     // Both return the same UUID
-        setLocationUuid(String(locationUuid));   // Both return the same UUID
+        // FIXED: Use location_id directly since it's already the UUID
+        const locationUuid = locationData.location_id;
+        setLocationId(String(locationUuid));
+        setLocationUuid(String(locationUuid));
+        console.log('✅ Location loaded:', locationData.store_locations.name, locationUuid);
       }
 
       setLoading(false);
@@ -48,4 +50,5 @@ export function useUserAndLocation() {
 
   return { user, userId: user?.id, locationId, locationUuid, loading };
 }
+
 
