@@ -273,9 +273,10 @@ const store = stores[0]; // Use first result safely
   
 
 const parseDollarString = (str) => {
-  if (!str) return null;
-  return parseFloat(str.replace(/[^0-9.-]+/g, ""));
+  // Convert to string first, then parse
+  return parseFloat(String(str || '').replace(/[$,]/g, '')) || 0;
 };
+
 
 const saveBriefing = async () => {
   if (!locationUuid || !date) return;
