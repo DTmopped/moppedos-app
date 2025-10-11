@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js";
 
 const supabase = createClient(
-  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SUPABASE_URL" )!,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
 );
 
@@ -51,7 +51,7 @@ serve(async () => {
           const apiKey = Deno.env.get("OPENWEATHER_API_KEY");
           const res = await fetch(
             `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=imperial&appid=${apiKey}`
-          );
+           );
 
           const json = await res.json();
           const todayForecast = json.list.filter((f: any) =>
