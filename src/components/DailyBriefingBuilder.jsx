@@ -129,13 +129,15 @@ const performSmartAutoPopulation = async (locationUuidString) => {
         hasAutoPopulated = true;
       }
       if (forecastData.forecast_sales) {
-        const formatted = new Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: 'USD',
-        }).format(forecastData.forecast_sales);
-        setForecastedSales(formatted);
-        hasAutoPopulated = true;
-      }
+  const formatted = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(forecastData.forecast_sales);
+  setForecastedSales(formatted);
+  hasAutoPopulated = true;
+}
     }
 
     // 2. Actual sales for yesterday
