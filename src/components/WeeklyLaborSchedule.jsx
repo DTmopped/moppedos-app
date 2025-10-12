@@ -9,12 +9,89 @@ import {
 import { useLaborData } from '@/contexts/LaborDataContext';
 import { ROLES, getRolesByDepartment, SHIFT_TIMES } from '@/config/laborScheduleConfig';
 
+// Print-specific CSS
+const printStyles = `
+  @media print {
+    /* Hide everything except the schedule */
+    .no-print {
+      display: none !important;
+    }
+    
+    /* Optimize page layout */
+    body {
+      margin: 0;
+      padding: 20px;
+      font-size: 12px;
+      background: white !important;
+    }
+    
+    /* Schedule grid optimization */
+    .print-schedule {
+      width: 100% !important;
+      max-width: none !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      box-shadow: none !important;
+      border: none !important;
+    }
+    
+    .print-header {
+      text-align: center;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #000;
+      padding-bottom: 10px;
+    }
+    
+    .print-grid {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .print-cell {
+      border: 1px solid #333 !important;
+      padding: 8px !important;
+      vertical-align: top;
+      background: white !important;
+    }
+    
+    .print-role-cell {
+      background: #f5f5f5 !important;
+      font-weight: bold;
+      width: 150px;
+    }
+    
+    .print-employee {
+      margin-bottom: 4px;
+      padding: 4px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background: #f9f9f9;
+    }
+    
+    /* Page breaks */
+    .print-schedule {
+      page-break-inside: avoid;
+    }
+    
+    /* Remove colors for better printing */
+    * {
+      color: black !important;
+      background: white !important;
+    }
+    
+    .print-dept-foh { background: #e3f2fd !important; }
+    .print-dept-boh { background: #e8f5e8 !important; }
+    .print-dept-bar { background: #f3e5f5 !important; }
+    .print-dept-mgmt { background: #fff3e0 !important; }
+  }
+`;
+
 // Enhanced Badge Component with professional styling
 const Badge = ({ children, variant = "default", size = "sm", emoji }) => {
   const baseClasses = "inline-flex items-center font-medium rounded-full transition-all duration-200";
   const sizeClasses = {
-    sm: "px-3 py-1 text-xs",
-    md: "px-4 py-1.5 text-sm"
+    sm: "px-2 py-1 text-xs",
+    md: "px-3 py-1.5 text-sm"
   };
   const variantClasses = {
     default: "bg-slate-100 text-slate-700 hover:bg-slate-200",
@@ -29,7 +106,7 @@ const Badge = ({ children, variant = "default", size = "sm", emoji }) => {
 
   return (
     <span className={`${baseClasses} ${sizeClasses[size]} ${variantClasses[variant]}`}>
-      {emoji && <span className="mr-1.5">{emoji}</span>}
+      {emoji && <span className="mr-1">{emoji}</span>}
       {children}
     </span>
   );
@@ -132,7 +209,7 @@ const TimeSelector = ({ value, onChange, label }) => {
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="text-xs bg-transparent border-none outline-none cursor-pointer hover:bg-slate-50 rounded px-1"
+      className="text-xs bg-transparent border-none outline-none cursor-pointer hover:bg-slate-50 rounded px-1 font-medium"
     >
       {timeOptions.map(time => (
         <option key={time} value={time}>{time}</option>
@@ -280,11 +357,11 @@ const WeeklyLaborSchedule = () => {
   // Enhanced color functions with professional gradients
   const getDepartmentColor = (department) => {
     switch (department) {
-      case 'FOH': return 'bg-blue-50 border-blue-200';
-      case 'BOH': return 'bg-emerald-50 border-emerald-200';
-      case 'Bar': return 'bg-purple-50 border-purple-200';
-      case 'Management': return 'bg-amber-50 border-amber-200';
-      default: return 'bg-slate-50 border-slate-200';
+      case 'FOH': return 'bg-blue-50 border-blue-300';
+      case 'BOH': return 'bg-emerald-50 border-emerald-300';
+      case 'Bar': return 'bg-purple-50 border-purple-300';
+      case 'Management': return 'bg-amber-50 border-amber-300';
+      default: return 'bg-slate-50 border-slate-300';
     }
   };
 
@@ -438,6 +515,11 @@ const WeeklyLaborSchedule = () => {
     }, 0);
   };
 
+  // Print function
+  const handlePrint = () => {
+    window.print();
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-slate-50">
@@ -466,395 +548,414 @@ const WeeklyLaborSchedule = () => {
   const totalStats = getDepartmentStats('ALL');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
-      <div className="max-w-full mx-auto space-y-6">
-        {/* Professional Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-3xl font-bold text-slate-800 flex items-center space-x-3">
-              <Calendar className="h-8 w-8 text-blue-600" />
-              <span>Weekly Schedule</span>
-            </h1>
-            <Button
-              onClick={() => setShowManagerView(!showManagerView)}
-              variant="outline"
-              size="sm"
-              className="flex items-center space-x-2 bg-white shadow-sm hover:shadow-md transition-all duration-200"
-            >
-              {showManagerView ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              <span>{showManagerView ? 'Employee View' : 'Manager View'}</span>
-            </Button>
-          </div>
-          
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-3 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm">
-              <Calendar className="h-5 w-5 text-slate-600" />
-              <span className="font-semibold text-slate-700">
-                Week of {formatDateHeader(weekStart).day}, {formatDateHeader(weekStart).date}
-              </span>
-            </div>
-            <div className="flex space-x-2">
-              <Button variant="outline" size="sm" onClick={() => navigateWeek(-1)} className="bg-white shadow-sm hover:shadow-md">
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => navigateWeek(1)} className="bg-white shadow-sm hover:shadow-md">
-                <ChevronRight className="h-4 w-4" />
+    <>
+      {/* Inject print styles */}
+      <style dangerouslySetInnerHTML={{ __html: printStyles }} />
+      
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+        <div className="max-w-full mx-auto space-y-6">
+          {/* Professional Header */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 no-print">
+            <div className="flex items-center space-x-4">
+              <h1 className="text-3xl font-bold text-slate-800 flex items-center space-x-3">
+                <Calendar className="h-8 w-8 text-blue-600" />
+                <span>Weekly Schedule</span>
+              </h1>
+              <Button
+                onClick={() => setShowManagerView(!showManagerView)}
+                variant="outline"
+                size="sm"
+                className="flex items-center space-x-2 bg-white shadow-sm hover:shadow-md transition-all duration-200"
+              >
+                {showManagerView ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                <span>{showManagerView ? 'Employee View' : 'Manager View'}</span>
               </Button>
             </div>
-          </div>
-        </div>
-
-        {/* Enhanced Quick Stats (Manager View Only) */}
-        {showManagerView && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <QuickStatsCard 
-              title="Total Labor Cost" 
-              value={`$${totalStats.scheduled.toLocaleString()}`}
-              subtitle={`Target: $${totalStats.target.toLocaleString()}`}
-              emoji="💰"
-              color="blue"
-              trend="+5.2% vs last week"
-            />
-            <QuickStatsCard 
-              title="Total Hours" 
-              value={totalStats.hours}
-              subtitle="Scheduled this week"
-              emoji="⏰"
-              color="emerald"
-              trend="Within target range"
-            />
-            <QuickStatsCard 
-              title="Staff Assigned" 
-              value={getTotalAssignments()}
-              subtitle={`${filteredEmployees.length} available`}
-              emoji="👥"
-              color="purple"
-              trend="Optimal coverage"
-            />
-            <QuickStatsCard 
-              title="Budget Status" 
-              value={`${((totalStats.scheduled / totalStats.budget) * 100).toFixed(0)}%`}
-              subtitle="of weekly budget"
-              emoji={totalStats.scheduled <= totalStats.target ? "✅" : "⚠️"}
-              color="amber"
-              trend={totalStats.scheduled <= totalStats.target ? "Under budget" : "Over budget"}
-            />
-          </div>
-        )}
-
-        {/* Enhanced Budget Section (Manager View Only) */}
-        {showManagerView && (
-          <Card className="border-slate-300 shadow-lg bg-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                  <DollarSign className="h-6 w-6 text-slate-600" />
-                  <h3 className="text-xl font-bold text-slate-800">💼 Labor Budget vs Actual</h3>
-                  <Badge variant="default" emoji="📊" size="sm">Live Tracking</Badge>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setBudgetCollapsed(!budgetCollapsed)}
-                  className="text-slate-600 hover:text-slate-800"
-                >
-                  {budgetCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+            
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-3 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm">
+                <Calendar className="h-5 w-5 text-slate-600" />
+                <span className="font-semibold text-slate-700">
+                  Week of {formatDateHeader(weekStart).day}, {formatDateHeader(weekStart).date}
+                </span>
+              </div>
+              <div className="flex space-x-2">
+                <Button variant="outline" size="sm" onClick={() => navigateWeek(-1)} className="bg-white shadow-sm hover:shadow-md">
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => navigateWeek(1)} className="bg-white shadow-sm hover:shadow-md">
+                  <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
-              
-              {!budgetCollapsed && (
-                <div className="space-y-3">
-                  <BudgetRow 
-                    title="FOH" 
-                    scheduled={fohStats.scheduled} 
-                    budget={fohStats.budget} 
-                    color="blue" 
-                    emoji="🍽️"
-                  />
-                  <BudgetRow 
-                    title="BOH" 
-                    scheduled={bohStats.scheduled} 
-                    budget={bohStats.budget} 
-                    color="emerald" 
-                    emoji="👨‍🍳"
-                  />
-                  <BudgetRow 
-                    title="Bar" 
-                    scheduled={barStats.scheduled} 
-                    budget={barStats.budget} 
-                    color="purple" 
-                    emoji="🍸"
-                  />
-                  <div className="border-t-2 border-slate-200 pt-3 mt-4">
+            </div>
+          </div>
+
+          {/* Enhanced Quick Stats (Manager View Only) */}
+          {showManagerView && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 no-print">
+              <QuickStatsCard 
+                title="Total Labor Cost" 
+                value={`$${totalStats.scheduled.toLocaleString()}`}
+                subtitle={`Target: $${totalStats.target.toLocaleString()}`}
+                emoji="💰"
+                color="blue"
+                trend="+5.2% vs last week"
+              />
+              <QuickStatsCard 
+                title="Total Hours" 
+                value={totalStats.hours}
+                subtitle="Scheduled this week"
+                emoji="⏰"
+                color="emerald"
+                trend="Within target range"
+              />
+              <QuickStatsCard 
+                title="Staff Assigned" 
+                value={getTotalAssignments()}
+                subtitle={`${filteredEmployees.length} available`}
+                emoji="👥"
+                color="purple"
+                trend="Optimal coverage"
+              />
+              <QuickStatsCard 
+                title="Budget Status" 
+                value={`${((totalStats.scheduled / totalStats.budget) * 100).toFixed(0)}%`}
+                subtitle="of weekly budget"
+                emoji={totalStats.scheduled <= totalStats.target ? "✅" : "⚠️"}
+                color="amber"
+                trend={totalStats.scheduled <= totalStats.target ? "Under budget" : "Over budget"}
+              />
+            </div>
+          )}
+
+          {/* Enhanced Budget Section (Manager View Only) */}
+          {showManagerView && (
+            <Card className="border-slate-300 shadow-lg bg-white no-print">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <DollarSign className="h-6 w-6 text-slate-600" />
+                    <h3 className="text-xl font-bold text-slate-800">💼 Labor Budget vs Actual</h3>
+                    <Badge variant="default" emoji="📊" size="sm">Live Tracking</Badge>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setBudgetCollapsed(!budgetCollapsed)}
+                    className="text-slate-600 hover:text-slate-800"
+                  >
+                    {budgetCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                  </Button>
+                </div>
+                
+                {!budgetCollapsed && (
+                  <div className="space-y-3">
                     <BudgetRow 
-                      title="Total" 
-                      scheduled={totalStats.scheduled} 
-                      budget={totalStats.budget} 
-                      color="slate" 
-                      emoji="📈"
+                      title="FOH" 
+                      scheduled={fohStats.scheduled} 
+                      budget={fohStats.budget} 
+                      color="blue" 
+                      emoji="🍽️"
                     />
+                    <BudgetRow 
+                      title="BOH" 
+                      scheduled={bohStats.scheduled} 
+                      budget={bohStats.budget} 
+                      color="emerald" 
+                      emoji="👨‍🍳"
+                    />
+                    <BudgetRow 
+                      title="Bar" 
+                      scheduled={barStats.scheduled} 
+                      budget={barStats.budget} 
+                      color="purple" 
+                      emoji="🍸"
+                    />
+                    <div className="border-t-2 border-slate-200 pt-3 mt-4">
+                      <BudgetRow 
+                        title="Total" 
+                        scheduled={totalStats.scheduled} 
+                        budget={totalStats.budget} 
+                        color="slate" 
+                        emoji="📈"
+                      />
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Enhanced Department Filter & Stats */}
+          <Card className="border-slate-300 shadow-lg bg-white no-print">
+            <CardContent className="p-6">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div className="flex items-center space-x-3">
+                    <Filter className="h-5 w-5 text-slate-600" />
+                    <span className="font-bold text-slate-700">Department Filter:</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { id: 'ALL', label: `All (${ROLES.length})`, emoji: '👥' },
+                      { id: 'FOH', label: `FOH (${getRolesByDepartment('FOH').length})`, emoji: '🍽️' },
+                      { id: 'BOH', label: `BOH (${getRolesByDepartment('BOH').length})`, emoji: '👨‍🍳' },
+                      { id: 'Bar', label: `Bar (${getRolesByDepartment('Bar').length})`, emoji: '🍸' },
+                      { id: 'Management', label: `Mgmt (${getRolesByDepartment('Management').length})`, emoji: '👔' }
+                    ].map(dept => (
+                      <Button
+                        key={dept.id}
+                        size="sm"
+                        onClick={() => setSelectedDepartment(dept.id)}
+                        className={getDepartmentFilterStyle(dept.id, selectedDepartment === dept.id)}
+                      >
+                        <span>{dept.emoji}</span>
+                        <span>{dept.label}</span>
+                      </Button>
+                    ))}
                   </div>
                 </div>
-              )}
+                <div className="flex items-center space-x-6 text-sm">
+                  <div className="flex items-center space-x-2">
+                    <User className="h-4 w-4 text-blue-600" />
+                    <span className="text-slate-600 font-medium">Available:</span>
+                    <Badge variant="default" size="sm">{filteredEmployees.length}</Badge>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Clock className="h-4 w-4 text-emerald-600" />
+                    <span className="text-slate-600 font-medium">Assigned:</span>
+                    <Badge variant="default" size="sm">{getTotalAssignments()}</Badge>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
-        )}
 
-        {/* Enhanced Department Filter & Stats */}
-        <Card className="border-slate-300 shadow-lg bg-white">
-          <CardContent className="p-6">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                <div className="flex items-center space-x-3">
-                  <Filter className="h-5 w-5 text-slate-600" />
-                  <span className="font-bold text-slate-700">Department Filter:</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    { id: 'ALL', label: `All (${ROLES.length})`, emoji: '👥' },
-                    { id: 'FOH', label: `FOH (${getRolesByDepartment('FOH').length})`, emoji: '🍽️' },
-                    { id: 'BOH', label: `BOH (${getRolesByDepartment('BOH').length})`, emoji: '👨‍🍳' },
-                    { id: 'Bar', label: `Bar (${getRolesByDepartment('Bar').length})`, emoji: '🍸' },
-                    { id: 'Management', label: `Mgmt (${getRolesByDepartment('Management').length})`, emoji: '👔' }
-                  ].map(dept => (
-                    <Button
-                      key={dept.id}
-                      size="sm"
-                      onClick={() => setSelectedDepartment(dept.id)}
-                      className={getDepartmentFilterStyle(dept.id, selectedDepartment === dept.id)}
-                    >
-                      <span>{dept.emoji}</span>
-                      <span>{dept.label}</span>
-                    </Button>
-                  ))}
-                </div>
-              </div>
-              <div className="flex items-center space-x-6 text-sm">
-                <div className="flex items-center space-x-2">
-                  <User className="h-4 w-4 text-blue-600" />
-                  <span className="text-slate-600 font-medium">Available:</span>
-                  <Badge variant="default" size="sm">{filteredEmployees.length}</Badge>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Clock className="h-4 w-4 text-emerald-600" />
-                  <span className="text-slate-600 font-medium">Assigned:</span>
-                  <Badge variant="default" size="sm">{getTotalAssignments()}</Badge>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+          {/* Print Header (Only visible when printing) */}
+          <div className="print-header" style={{ display: 'none' }}>
+            <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0 0 10px 0' }}>
+              Weekly Staff Schedule
+            </h1>
+            <p style={{ fontSize: '16px', margin: '0' }}>
+              Week of {formatDateHeader(weekStart).day}, {formatDateHeader(weekStart).date}
+            </p>
+          </div>
 
-        {/* EXCEL-INSPIRED Schedule Grid */}
-        <Card className="border-slate-300 shadow-lg bg-white">
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              {/* Date Headers - Matching Width */}
-              <div className="w-full overflow-x-auto">
-                <div className="min-w-[1400px]">
-                  <div className="flex">
-                    {/* Sticky Role Header */}
-                    <div className="w-64 flex-shrink-0 sticky left-0 bg-white z-10 pr-4">
-                      <div className="text-center font-bold text-slate-700 py-4 bg-slate-100 rounded-lg border-2 border-slate-300">
-                        📋 Role / Shift
+          {/* FINAL POLISHED Schedule Grid */}
+          <Card className="border-slate-300 shadow-lg bg-white print-schedule">
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                {/* Date Headers - Perfect Alignment */}
+                <div className="w-full overflow-x-auto">
+                  <div className="min-w-[1400px]">
+                    <div className="flex">
+                      {/* Sticky Role Header */}
+                      <div className="w-64 flex-shrink-0 sticky left-0 bg-white z-10 pr-4">
+                        <div className="text-center font-bold text-slate-700 py-4 bg-slate-100 rounded-lg border-2 border-slate-300 h-16 flex items-center justify-center">
+                          📋 Role / Shift
+                        </div>
+                      </div>
+                      {/* Date Headers */}
+                      <div className="flex-1 grid grid-cols-7 gap-3">
+                        {weekDays.map((day, index) => {
+                          const { day: dayName, date } = formatDateHeader(day);
+                          const isToday = day.toDateString() === new Date().toDateString();
+                          return (
+                            <div key={index} className={`text-center py-4 rounded-lg border-2 font-bold h-16 flex flex-col justify-center ${isToday ? 'bg-blue-100 border-blue-400 text-blue-800' : 'bg-slate-100 border-slate-300 text-slate-700'}`}>
+                              <div className="text-sm">
+                                {dayName} {isToday && '📅'}
+                              </div>
+                              <div className="text-xs opacity-75">
+                                {date}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-                    {/* Date Headers */}
-                    <div className="flex-1 grid grid-cols-7 gap-3">
-                      {weekDays.map((day, index) => {
-                        const { day: dayName, date } = formatDateHeader(day);
-                        const isToday = day.toDateString() === new Date().toDateString();
-                        return (
-                          <div key={index} className={`text-center py-4 rounded-lg border-2 font-bold ${isToday ? 'bg-blue-100 border-blue-400 text-blue-800' : 'bg-slate-100 border-slate-300 text-slate-700'}`}>
-                            <div className="text-sm">
-                              {dayName} {isToday && '📅'}
-                            </div>
-                            <div className="text-xs opacity-75">
-                              {date}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
 
-                  {/* Excel-Style Schedule Rows */}
-                  <div className="mt-4 space-y-3">
-                    {filteredRoles.map((role, roleIndex) => {
-                      return [0, 1].map(shiftIndex => {
-                        const shift = shiftIndex === 0 ? 'AM' : 'PM';
-                        
-                        return (
-                          <div key={`${roleIndex}-${shiftIndex}`} className="flex">
-                            {/* Sticky Role Column */}
-                            <div className="w-64 flex-shrink-0 sticky left-0 bg-white z-10 pr-4">
-                              <div className={`p-4 rounded-lg border-2 ${getDepartmentColor(role.department)} h-24 flex flex-col justify-center shadow-sm`}>
-                                <div className="text-center space-y-1">
-                                  <div className="text-lg">{getDepartmentEmoji(role.department)}</div>
-                                  <div className="font-bold text-slate-900 text-sm">{role.name}</div>
-                                  <div className="text-slate-700 text-xs font-semibold flex items-center justify-center space-x-1">
-                                    <span>{shift === 'AM' ? '🌅' : '🌙'}</span>
-                                    <span>{shift} Shift</span>
+                    {/* Excel-Style Schedule Rows with Department Badges */}
+                    <div className="mt-4 space-y-3">
+                      {filteredRoles.map((role, roleIndex) => {
+                        return [0, 1].map(shiftIndex => {
+                          const shift = shiftIndex === 0 ? 'AM' : 'PM';
+                          
+                          return (
+                            <div key={`${roleIndex}-${shiftIndex}`} className="flex">
+                              {/* Sticky Role Column with Department Badge */}
+                              <div className="w-64 flex-shrink-0 sticky left-0 bg-white z-10 pr-4">
+                                <div className={`p-4 rounded-lg border-2 ${getDepartmentColor(role.department)} h-28 flex flex-col justify-center shadow-sm hover:shadow-md transition-shadow duration-200`}>
+                                  <div className="text-center space-y-2">
+                                    <div className="text-lg">{getDepartmentEmoji(role.department)}</div>
+                                    <div className="font-bold text-slate-900 text-sm">{role.name}</div>
+                                    <div className="text-slate-700 text-xs font-semibold flex items-center justify-center space-x-1">
+                                      <span>{shift === 'AM' ? '🌅' : '🌙'}</span>
+                                      <span>{shift} Shift</span>
+                                    </div>
+                                    {/* DEPARTMENT BADGE - Ultra Clear */}
+                                    <Badge variant={role.department.toLowerCase()} size="sm" emoji={getDepartmentEmoji(role.department)}>
+                                      {role.department}
+                                    </Badge>
                                   </div>
                                 </div>
                               </div>
-                            </div>
 
-                            {/* Excel-Style Day Cells */}
-                            <div className="flex-1 grid grid-cols-7 gap-3">
-                              {weekDays.map((day, dayIndex) => {
-                                const assignedEmployees = getAssignedEmployees(roleIndex, shiftIndex, dayIndex);
-                                const dropdownKey = `${roleIndex}-${shiftIndex}-${dayIndex}`;
-                                const isToday = day.toDateString() === new Date().toDateString();
-                                
-                                return (
-                                  <div key={dayIndex} className={`border-2 rounded-lg h-24 p-2 ${isToday ? 'bg-blue-50 border-blue-300' : 'bg-white border-slate-300'} hover:shadow-md transition-all duration-200`}>
-                                    {assignedEmployees.length > 0 ? (
-                                      <div className="space-y-1 h-full overflow-y-auto">
-                                        {assignedEmployees.map((emp, empIndex) => (
-                                          <div key={empIndex} className={`p-2 rounded-md border ${getDepartmentColor(emp.department)} group hover:shadow-sm transition-all duration-200 relative`}>
-                                            {/* Excel-Style Employee Cell: Name on top, Time on bottom */}
-                                            <div className="space-y-1">
-                                              {/* Employee Name - Editable */}
-                                              <div className="flex items-center justify-between">
-                                                <input
-                                                  type="text"
-                                                  value={emp.name}
-                                                  onChange={(e) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, emp.id, 'name', e.target.value)}
-                                                  className="font-semibold text-xs bg-transparent border-none outline-none w-full"
-                                                  placeholder="Employee Name"
-                                                />
-                                                <Button
-                                                  size="sm"
-                                                  variant="ghost"
-                                                  onClick={() => handleRemoveEmployee(roleIndex, shiftIndex, dayIndex, emp.id)}
-                                                  className="h-4 w-4 p-0 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all duration-200"
-                                                >
-                                                  <X className="h-2 w-2" />
-                                                </Button>
-                                              </div>
-                                              
-                                              {/* Time Range - Editable Dropdowns */}
-                                              <div className="flex items-center space-x-1 text-xs text-slate-600">
-                                                <TimeSelector
-                                                  value={emp.start}
-                                                  onChange={(value) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, emp.id, 'start', value)}
-                                                />
-                                                <span>-</span>
-                                                <TimeSelector
-                                                  value={emp.end}
-                                                  onChange={(value) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, emp.id, 'end', value)}
-                                                />
-                                                <span className="ml-2 font-medium text-slate-700">({emp.hours}h)</span>
+                              {/* Excel-Style Day Cells - Matching Height */}
+                              <div className="flex-1 grid grid-cols-7 gap-3">
+                                {weekDays.map((day, dayIndex) => {
+                                  const assignedEmployees = getAssignedEmployees(roleIndex, shiftIndex, dayIndex);
+                                  const dropdownKey = `${roleIndex}-${shiftIndex}-${dayIndex}`;
+                                  const isToday = day.toDateString() === new Date().toDateString();
+                                  
+                                  return (
+                                    <div key={dayIndex} className={`border-2 rounded-lg h-28 p-3 ${isToday ? 'bg-blue-50 border-blue-300' : 'bg-white border-slate-300'} hover:shadow-md transition-all duration-200 print-cell ${role.department === 'FOH' ? 'print-dept-foh' : role.department === 'BOH' ? 'print-dept-boh' : role.department === 'Bar' ? 'print-dept-bar' : 'print-dept-mgmt'}`}>
+                                      {assignedEmployees.length > 0 ? (
+                                        <div className="space-y-2 h-full overflow-y-auto">
+                                          {assignedEmployees.map((emp, empIndex) => (
+                                            <div key={empIndex} className={`p-2 rounded-md border ${getDepartmentColor(emp.department)} group hover:shadow-sm transition-all duration-200 relative print-employee`}>
+                                              {/* Excel-Style Employee Cell: Name on top, Time on bottom */}
+                                              <div className="space-y-1">
+                                                {/* Employee Name - Editable */}
+                                                <div className="flex items-center justify-between">
+                                                  <input
+                                                    type="text"
+                                                    value={emp.name}
+                                                    onChange={(e) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, emp.id, 'name', e.target.value)}
+                                                    className="font-semibold text-xs bg-transparent border-none outline-none w-full text-slate-900"
+                                                    placeholder="Employee Name"
+                                                  />
+                                                  <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    onClick={() => handleRemoveEmployee(roleIndex, shiftIndex, dayIndex, emp.id)}
+                                                    className="h-4 w-4 p-0 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all duration-200 no-print"
+                                                  >
+                                                    <X className="h-2 w-2" />
+                                                  </Button>
+                                                </div>
+                                                
+                                                {/* Time Range - Editable Dropdowns with Hours */}
+                                                <div className="flex items-center space-x-1 text-xs text-slate-600">
+                                                  <TimeSelector
+                                                    value={emp.start}
+                                                    onChange={(value) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, emp.id, 'start', value)}
+                                                  />
+                                                  <span>-</span>
+                                                  <TimeSelector
+                                                    value={emp.end}
+                                                    onChange={(value) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, emp.id, 'end', value)}
+                                                  />
+                                                  <span className="ml-1 font-bold text-slate-800">({emp.hours}h)</span>
+                                                </div>
                                               </div>
                                             </div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    ) : (
-                                      <div className="h-full flex items-center justify-center">
-                                        <div className="relative">
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => setShowDropdown(showDropdown === dropdownKey ? null : dropdownKey)}
-                                            className="text-slate-600 hover:bg-slate-50 border-dashed border-slate-400 text-xs px-3 py-2 flex items-center space-x-1"
-                                          >
-                                            <Plus className="h-3 w-3" />
-                                            <span>Add Employee</span>
-                                          </Button>
-                                          
-                                          {showDropdown === dropdownKey && (
-                                            <div className="absolute top-full left-0 mt-2 w-72 bg-white border border-slate-300 rounded-lg shadow-xl z-20 max-h-48 overflow-y-auto">
-                                              {filteredEmployees.length > 0 ? (
-                                                filteredEmployees.map(employee => (
-                                                  <button
-                                                    key={employee.id}
-                                                    onClick={() => handleAddEmployee(roleIndex, shiftIndex, dayIndex, employee.id)}
-                                                    className="w-full text-left px-4 py-3 text-xs text-slate-700 hover:bg-slate-50 border-b border-slate-100 last:border-b-0 transition-colors duration-150"
-                                                  >
-                                                    <div className="flex items-center space-x-3">
-                                                      <span>👤</span>
-                                                      <div className="flex-1">
-                                                        <div className="font-semibold text-sm">{employee.name}</div>
-                                                        <div className="text-xs text-slate-500 flex items-center space-x-2 mt-1">
-                                                          <span>💼 {employee.role}</span>
-                                                          <span>•</span>
-                                                          <span>🏢 {employee.department}</span>
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <div className="h-full flex items-center justify-center no-print">
+                                          <div className="relative">
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              onClick={() => setShowDropdown(showDropdown === dropdownKey ? null : dropdownKey)}
+                                              className="text-slate-600 hover:bg-slate-50 border-dashed border-slate-400 text-xs px-3 py-2 flex items-center space-x-1"
+                                            >
+                                              <Plus className="h-3 w-3" />
+                                              <span>Add Employee</span>
+                                            </Button>
+                                            
+                                            {showDropdown === dropdownKey && (
+                                              <div className="absolute top-full left-0 mt-2 w-72 bg-white border border-slate-300 rounded-lg shadow-xl z-20 max-h-48 overflow-y-auto">
+                                                {filteredEmployees.length > 0 ? (
+                                                  filteredEmployees.map(employee => (
+                                                    <button
+                                                      key={employee.id}
+                                                      onClick={() => handleAddEmployee(roleIndex, shiftIndex, dayIndex, employee.id)}
+                                                      className="w-full text-left px-4 py-3 text-xs text-slate-700 hover:bg-slate-50 border-b border-slate-100 last:border-b-0 transition-colors duration-150"
+                                                    >
+                                                      <div className="flex items-center space-x-3">
+                                                        <span>👤</span>
+                                                        <div className="flex-1">
+                                                          <div className="font-semibold text-sm">{employee.name}</div>
+                                                          <div className="text-xs text-slate-500 flex items-center space-x-2 mt-1">
+                                                            <span>💼 {employee.role}</span>
+                                                            <span>•</span>
+                                                            <span>🏢 {employee.department}</span>
+                                                          </div>
                                                         </div>
                                                       </div>
-                                                    </div>
-                                                  </button>
-                                                ))
-                                              ) : (
-                                                <div className="px-4 py-3 text-xs text-slate-500 text-center">
-                                                  <span>😔 No employees available</span>
-                                                </div>
-                                              )}
-                                            </div>
-                                          )}
+                                                    </button>
+                                                  ))
+                                                ) : (
+                                                  <div className="px-4 py-3 text-xs text-slate-500 text-center">
+                                                    <span>😔 No employees available</span>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            )}
+                                          </div>
                                         </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })}
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             </div>
-                          </div>
-                        );
-                      });
-                    })}
+                          );
+                        });
+                      })}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Enhanced Action Bar */}
-        <Card className="border-slate-300 shadow-lg bg-white">
-          <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-              <div className="text-sm text-slate-600">
-                {hasUnsavedChanges ? (
-                  <div className="flex items-center space-x-2 text-amber-600">
-                    <AlertCircle className="h-4 w-4" />
-                    <span className="font-medium">⚠️ You have unsaved changes</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center space-x-2 text-emerald-600">
-                    <span className="font-medium">✅ All changes saved</span>
-                  </div>
-                )}
+          {/* Enhanced Action Bar */}
+          <Card className="border-slate-300 shadow-lg bg-white no-print">
+            <CardContent className="p-4">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                <div className="text-sm text-slate-600">
+                  {hasUnsavedChanges ? (
+                    <div className="flex items-center space-x-2 text-amber-600">
+                      <AlertCircle className="h-4 w-4" />
+                      <span className="font-medium">⚠️ You have unsaved changes</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-2 text-emerald-600">
+                      <span className="font-medium">✅ All changes saved</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex space-x-3">
+                  <Button variant="outline" onClick={handlePrint} className="bg-white shadow-sm hover:shadow-md" size="sm">
+                    <FileText className="h-4 w-4 mr-2" />
+                    🖨️ Print Schedule
+                  </Button>
+                  <Button
+                    onClick={handleSaveSchedule}
+                    disabled={!hasUnsavedChanges}
+                    size="sm"
+                    className={hasUnsavedChanges ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md hover:shadow-lg' : 'bg-slate-300 text-slate-500'}
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    {hasUnsavedChanges ? '💾 Save Schedule' : '✅ Saved'}
+                  </Button>
+                </div>
               </div>
-              <div className="flex space-x-3">
-                <Button variant="outline" onClick={() => window.print()} className="bg-white shadow-sm hover:shadow-md" size="sm">
-                  <FileText className="h-4 w-4 mr-2" />
-                  🖨️ Print Schedule
-                </Button>
-                <Button
-                  onClick={handleSaveSchedule}
-                  disabled={!hasUnsavedChanges}
-                  size="sm"
-                  className={hasUnsavedChanges ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md hover:shadow-lg' : 'bg-slate-300 text-slate-500'}
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  {hasUnsavedChanges ? '💾 Save Schedule' : '✅ Saved'}
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Click outside to close dropdown */}
-        {showDropdown && (
-          <div 
-            className="fixed inset-0 z-10" 
-            onClick={() => setShowDropdown(null)}
-          />
-        )}
+          {/* Click outside to close dropdown */}
+          {showDropdown && (
+            <div 
+              className="fixed inset-0 z-10" 
+              onClick={() => setShowDropdown(null)}
+            />
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
