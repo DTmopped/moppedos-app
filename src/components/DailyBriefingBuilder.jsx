@@ -434,10 +434,23 @@ const saveBriefing = async () => {
     </div>
 
     {/* Forecasted Sales */}
-    <div>
-      <Label htmlFor="forecasted-sales">💰 Forecasted Sales ($)</Label>
-      {renderInput(forecastedSales, setForecastedSales, "", autoPopulated && !!forecastedSales)}
-    </div>
+<div>
+  <Label htmlFor="forecasted-sales">💰 Forecasted Sales ($)</Label>
+  <Input
+    id="forecasted-sales"
+    type="text"
+    value={forecastedSales ? new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(parseDollarString(forecastedSales)) : ''}
+    onChange={(e) => setForecastedSales(e.target.value)}
+    placeholder="Enter forecasted sales"
+    className={autoPopulated && !!forecastedSales ? "bg-green-50 border-green-200" : ""}
+  />
+</div>
+
 
     {/* Weather Summary Block */}
     {weather && (
@@ -617,25 +630,29 @@ const saveBriefing = async () => {
       {/* Hidden Printable Component */}
       <div style={{ display: 'none' }}>
         <PrintableBriefingSheet
-          date={date}
-          manager={manager}
-          lunch={lunch}
-          dinner={dinner}
-          forecastedSales={forecastedSales}
-          forecastNotes={forecastNotes}
-          actualSales={actualSales}
-          varianceNotes={varianceNotes}
-          shoutout={shoutout}
-          reminders={reminders}
-          mindset={mindset}
-          foodItems={foodItems}
-          beverageItems={beverageItems}
-          events={events}
-          repairNotes={repairNotes}
-          foodImage={foodImage}
-          beverageImage={beverageImage}
-          quote={quote}
-        />
+  date={date}
+  manager={manager}
+  lunch={lunch}
+  dinner={dinner}
+  forecastedSales={forecastedSales}
+  forecastNotes={forecastNotes}
+  actualSales={actualSales}
+  varianceNotes={varianceNotes}
+  shoutout={shoutout}
+  reminders={reminders}
+  mindset={mindset}
+  foodItems={foodItems}
+  beverageItems={beverageItems}
+  events={events}
+  repairNotes={repairNotes}
+  foodImage={foodImage}
+  beverageImage={beverageImage}
+  quote={quote}
+  weatherIcon={weather?.icon}
+  weatherConditions={weather?.conditions}
+  weatherTempHigh={weather?.temperature_high}
+  weatherTempLow={weather?.temperature_low}
+/>
       </div>
     </div>
   );
