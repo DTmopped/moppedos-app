@@ -9,114 +9,144 @@ import {
 import { useLaborData } from '@/contexts/LaborDataContext';
 import { ROLES, getRolesByDepartment, SHIFT_TIMES } from '@/config/laborScheduleConfig';
 
-// Optimized Print CSS for Single Page Landscape - FIXED
-const printStyles = `
+// SMART PRINT CSS - Department-based page breaks with date headers on every page
+const smartPrintStyles = `
   @media print {
     @page {
       size: landscape;
-      margin: 0.3in;
+      margin: 0.4in;
     }
     
-    /* Hide everything except the schedule */
+    /* Hide everything except schedule for printing */
     .no-print {
       display: none !important;
     }
     
-    /* Optimize page layout */
+    /* Show only print elements */
+    .print-only {
+      display: block !important;
+    }
+    
+    /* Base print styling */
     body {
       margin: 0;
       padding: 0;
-      font-size: 9px;
+      font-size: 10px;
       background: white !important;
       color: black !important;
-      transform: scale(0.85);
-      transform-origin: top left;
+      font-family: Arial, sans-serif;
     }
     
-    /* Schedule grid optimization for single page */
-    .print-schedule {
-      width: 100% !important;
-      max-width: none !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      box-shadow: none !important;
-      border: none !important;
+    /* Print page container */
+    .print-page {
+      page-break-after: always;
       page-break-inside: avoid;
-    }
-    
-    .print-header {
-      text-align: center;
-      margin-bottom: 10px;
-      border-bottom: 2px solid #000;
-      padding-bottom: 5px;
-    }
-    
-    .print-header h1 {
-      font-size: 16px;
-      font-weight: bold;
-      margin: 0 0 3px 0;
-    }
-    
-    .print-header p {
-      font-size: 12px;
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 0;
       margin: 0;
     }
     
-    /* Optimized table layout - SINGLE PAGE */
-    .print-table {
-      width: 100%;
-      border-collapse: collapse;
-      table-layout: fixed;
-      font-size: 8px;
+    .print-page:last-child {
+      page-break-after: avoid;
     }
     
-    .print-table th,
-    .print-table td {
+    /* Date header on every page */
+    .print-page-header {
+      text-align: center;
+      margin-bottom: 15px;
+      border-bottom: 2px solid #000;
+      padding-bottom: 8px;
+      page-break-inside: avoid;
+    }
+    
+    .print-page-header h1 {
+      font-size: 18px;
+      font-weight: bold;
+      margin: 0 0 5px 0;
+      color: #000;
+    }
+    
+    .print-page-header .week-info {
+      font-size: 14px;
+      margin: 0;
+      color: #333;
+      font-weight: bold;
+    }
+    
+    .print-page-header .department-info {
+      font-size: 12px;
+      margin: 5px 0 0 0;
+      color: #666;
+      font-weight: normal;
+    }
+    
+    /* Date column headers */
+    .print-date-row {
+      display: grid;
+      grid-template-columns: 120px repeat(7, 1fr);
+      gap: 2px;
+      margin-bottom: 10px;
+      page-break-inside: avoid;
+    }
+    
+    .print-date-header {
+      background: #f0f0f0 !important;
       border: 1px solid #333;
-      padding: 3px;
-      vertical-align: top;
-      font-size: 8px;
-      overflow: hidden;
+      padding: 8px 4px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 10px;
     }
     
     .print-role-header {
-      width: 100px;
-      background: #f0f0f0 !important;
-      font-weight: bold;
+      background: #e0e0e0 !important;
+      border: 1px solid #333;
+      padding: 8px 4px;
       text-align: center;
-      font-size: 9px;
+      font-weight: bold;
+      font-size: 10px;
     }
     
-    .print-day-header {
-      background: #f8f8f8 !important;
-      font-weight: bold;
-      text-align: center;
-      font-size: 9px;
-      width: calc((100% - 100px) / 7);
+    /* Schedule rows */
+    .print-schedule-row {
+      display: grid;
+      grid-template-columns: 120px repeat(7, 1fr);
+      gap: 2px;
+      margin-bottom: 3px;
+      page-break-inside: avoid;
     }
     
     .print-role-cell {
       background: #f5f5f5 !important;
-      font-weight: bold;
+      border: 1px solid #333;
+      padding: 6px 4px;
       text-align: center;
-      width: 100px;
-      font-size: 8px;
+      font-weight: bold;
+      font-size: 9px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 45px;
     }
     
     .print-day-cell {
-      width: calc((100% - 100px) / 7);
-      min-height: 50px;
-      max-height: 50px;
+      border: 1px solid #333;
+      padding: 4px;
+      min-height: 45px;
+      background: white !important;
       overflow: hidden;
     }
     
     .print-employee {
       margin-bottom: 2px;
-      padding: 2px;
-      border: 1px solid #ddd;
+      padding: 2px 3px;
+      border: 1px solid #ccc;
       border-radius: 2px;
       background: #f9f9f9 !important;
-      font-size: 7px;
+      font-size: 8px;
       overflow: hidden;
     }
     
@@ -126,6 +156,7 @@ const printStyles = `
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      margin-bottom: 1px;
     }
     
     .print-employee-time {
@@ -136,30 +167,33 @@ const printStyles = `
       text-overflow: ellipsis;
     }
     
-    /* Department colors for print */
-    .print-dept-foh { background: #e3f2fd !important; }
-    .print-dept-boh { background: #e8f5e8 !important; }
-    .print-dept-bar { background: #f3e5f5 !important; }
-    .print-dept-mgmt { background: #fff3e0 !important; }
+    /* Department-specific colors for print */
+    .print-dept-foh .print-role-cell { background: #e3f2fd !important; }
+    .print-dept-boh .print-role-cell { background: #e8f5e8 !important; }
+    .print-dept-bar .print-role-cell { background: #f3e5f5 !important; }
+    .print-dept-mgmt .print-role-cell { background: #fff3e0 !important; }
     
-    /* Force single page */
-    .print-schedule {
-      page-break-after: avoid;
-      page-break-inside: avoid;
-      height: auto;
-      max-height: 100vh;
-    }
+    .print-dept-foh .print-employee { background: #f0f8ff !important; }
+    .print-dept-boh .print-employee { background: #f0fff0 !important; }
+    .print-dept-bar .print-employee { background: #faf0ff !important; }
+    .print-dept-mgmt .print-employee { background: #fffaf0 !important; }
     
-    /* Compact everything for single page */
-    .print-table tr {
-      height: 50px;
-      max-height: 50px;
-    }
-    
-    /* Remove all colors for better printing */
+    /* Force exact colors */
     * {
       -webkit-print-color-adjust: exact !important;
       color-adjust: exact !important;
+    }
+    
+    /* Hide screen elements completely */
+    .screen-only {
+      display: none !important;
+    }
+  }
+  
+  /* Hide print elements on screen */
+  @media screen {
+    .print-only {
+      display: none !important;
     }
   }
 `;
@@ -451,6 +485,20 @@ const WeeklyLaborSchedule = () => {
 
   const filteredEmployees = getFilteredEmployees();
 
+  // Group roles by department for smart printing
+  const getRolesByDepartment = () => {
+    const departments = {};
+    ROLES.forEach(role => {
+      if (!departments[role.department]) {
+        departments[role.department] = [];
+      }
+      departments[role.department].push(role);
+    });
+    return departments;
+  };
+
+  const departmentRoles = getRolesByDepartment();
+
   // Calculate department stats (excluding Management from totals)
   const getDepartmentStats = (department) => {
     const assignments = Object.values(scheduleData).reduce((acc, day) => {
@@ -681,10 +729,11 @@ const WeeklyLaborSchedule = () => {
 
   return (
     <>
-      {/* Inject print styles */}
-      <style dangerouslySetInnerHTML={{ __html: printStyles }} />
+      {/* Inject smart print styles */}
+      <style dangerouslySetInnerHTML={{ __html: smartPrintStyles }} />
       
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+      {/* SCREEN DISPLAY */}
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 screen-only">
         <div className="max-w-full mx-auto space-y-6">
           {/* Professional Header */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 no-print">
@@ -861,75 +910,22 @@ const WeeklyLaborSchedule = () => {
                 </div>
               </div>
             </CardContent>
-          </Card>
-
-          {/* Print Header (Only visible when printing) */}
-          <div className="print-header" style={{ display: 'none' }}>
-            <h1>Weekly Staff Schedule</h1>
-            <p>Week of {formatDateHeader(weekStart).day}, {formatDateHeader(weekStart).date}</p>
           </div>
 
-          {/* FINAL OPTIMIZED Schedule Grid - Perfect Proportions & Single Page Print */}
-          <Card className="border-slate-300 shadow-lg bg-white print-schedule">
+          {/* SCREEN Schedule Grid */}
+          <Card className="border-slate-300 shadow-lg bg-white">
             <CardContent className="p-6">
               <div className="space-y-4">
-                {/* Optimized Print Table (Hidden on screen) - SINGLE PAGE FIXED */}
-                <table className="print-table" style={{ display: 'none' }}>
-                  <thead>
-                    <tr>
-                      <th className="print-role-header">Role / Shift</th>
-                      {weekDays.map((day, index) => {
-                        const { day: dayName, date } = formatDateHeader(day);
-                        return (
-                          <th key={index} className="print-day-header">
-                            {dayName} {date}
-                          </th>
-                        );
-                      })}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredRoles.map((role, roleIndex) => {
-                      return [0, 1].map(shiftIndex => {
-                        const shift = shiftIndex === 0 ? 'AM' : 'PM';
-                        return (
-                          <tr key={`${roleIndex}-${shiftIndex}`}>
-                            <td className="print-role-cell">
-                              <div>{getDepartmentEmoji(role.department)} {role.name}</div>
-                              <div>{shift} Shift</div>
-                              <div>{role.department}</div>
-                            </td>
-                            {weekDays.map((day, dayIndex) => {
-                              const assignedEmployees = getAssignedEmployees(roleIndex, shiftIndex, dayIndex);
-                              return (
-                                <td key={dayIndex} className={`print-day-cell print-dept-${role.department.toLowerCase()}`}>
-                                  {assignedEmployees.map((emp, empIndex) => (
-                                    <div key={empIndex} className="print-employee">
-                                      <div className="print-employee-name">{emp.name}</div>
-                                      <div className="print-employee-time">{emp.start} - {emp.end} ({emp.hours}h)</div>
-                                    </div>
-                                  ))}
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        );
-                      });
-                    })}
-                  </tbody>
-                </table>
-
-                {/* Screen Display - OPTIMIZED PROPORTIONS */}
                 <div className="w-full overflow-x-auto">
-                  <div className="min-w-[1800px]"> {/* Increased for wider day columns */}
+                  <div className="min-w-[1800px]">
                     <div className="flex">
-                      {/* SMALLER Role Header - Optimized Width */}
-                      <div className="w-48 flex-shrink-0 sticky left-0 bg-white z-10 pr-3"> {/* Reduced from w-72 to w-48 */}
+                      {/* Role Header */}
+                      <div className="w-48 flex-shrink-0 sticky left-0 bg-white z-10 pr-3">
                         <div className="text-center font-bold text-slate-800 py-4 bg-slate-100 rounded-lg border-2 border-slate-300 h-16 flex items-center justify-center text-sm">
                           📋 Role / Shift
                         </div>
                       </div>
-                      {/* WIDER Date Headers - More Space */}
+                      {/* Date Headers */}
                       <div className="flex-1 grid grid-cols-7 gap-3">
                         {weekDays.map((day, index) => {
                           const { day: dayName, date } = formatDateHeader(day);
@@ -948,7 +944,7 @@ const WeeklyLaborSchedule = () => {
                       </div>
                     </div>
 
-                    {/* Excel-Style Schedule Rows - WIDER CELLS */}
+                    {/* Schedule Rows */}
                     <div className="mt-6 space-y-4">
                       {filteredRoles.map((role, roleIndex) => {
                         return [0, 1].map(shiftIndex => {
@@ -956,8 +952,8 @@ const WeeklyLaborSchedule = () => {
                           
                           return (
                             <div key={`${roleIndex}-${shiftIndex}`} className="flex">
-                              {/* SMALLER Role Column - EXACT SAME WIDTH */}
-                              <div className="w-48 flex-shrink-0 sticky left-0 bg-white z-10 pr-3"> {/* Matches header exactly */}
+                              {/* Role Column */}
+                              <div className="w-48 flex-shrink-0 sticky left-0 bg-white z-10 pr-3">
                                 <div className={`p-3 rounded-lg border-2 ${getDepartmentColor(role.department)} h-28 flex flex-col justify-center shadow-sm hover:shadow-md transition-shadow duration-200`}>
                                   <div className="text-center space-y-1">
                                     <div className="text-xl">{getDepartmentEmoji(role.department)}</div>
@@ -966,7 +962,6 @@ const WeeklyLaborSchedule = () => {
                                       <span>{shift === 'AM' ? '🌅' : '🌙'}</span>
                                       <span>{shift} Shift</span>
                                     </div>
-                                    {/* DEPARTMENT BADGE - Compact */}
                                     <Badge variant={role.department.toLowerCase()} size="sm" emoji={getDepartmentEmoji(role.department)}>
                                       <span className="font-bold text-xs">{role.department}</span>
                                     </Badge>
@@ -974,7 +969,7 @@ const WeeklyLaborSchedule = () => {
                                 </div>
                               </div>
 
-                              {/* WIDER Day Cells - MORE SPACE FOR TIME */}
+                              {/* Day Cells */}
                               <div className="flex-1 grid grid-cols-7 gap-3">
                                 {weekDays.map((day, dayIndex) => {
                                   const assignedEmployees = getAssignedEmployees(roleIndex, shiftIndex, dayIndex);
@@ -982,16 +977,14 @@ const WeeklyLaborSchedule = () => {
                                   const isToday = day.toDateString() === new Date().toDateString();
                                   
                                   return (
-                                    <div key={dayIndex} className={`border-2 rounded-lg h-28 p-3 min-w-[220px] ${isToday ? 'bg-blue-50 border-blue-300' : 'bg-white border-slate-300'} hover:shadow-md transition-all duration-200 print-cell ${role.department === 'FOH' ? 'print-dept-foh' : role.department === 'BOH' ? 'print-dept-boh' : role.department === 'Bar' ? 'print-dept-bar' : 'print-dept-mgmt'}`}>
+                                    <div key={dayIndex} className={`border-2 rounded-lg h-28 p-3 min-w-[220px] ${isToday ? 'bg-blue-50 border-blue-300' : 'bg-white border-slate-300'} hover:shadow-md transition-all duration-200`}>
                                       {assignedEmployees.length > 0 ? (
                                         <div className="space-y-2 h-full overflow-y-auto">
                                           {assignedEmployees.map((emp, empIndex) => {
                                             const timeValidation = validateTimeRange(emp.start, emp.end);
                                             return (
-                                              <div key={empIndex} className={`p-2 rounded-md border ${getDepartmentColor(emp.department)} group hover:shadow-sm transition-all duration-200 relative print-employee ${!timeValidation.valid ? 'border-red-300 bg-red-50' : ''}`}>
-                                                {/* Excel-Style Employee Cell: WIDER FOR TIME */}
+                                              <div key={empIndex} className={`p-2 rounded-md border ${getDepartmentColor(emp.department)} group hover:shadow-sm transition-all duration-200 relative ${!timeValidation.valid ? 'border-red-300 bg-red-50' : ''}`}>
                                                 <div className="space-y-1">
-                                                  {/* Employee Name - Editable & BOLD */}
                                                   <div className="flex items-center justify-between">
                                                     <input
                                                       type="text"
@@ -1010,7 +1003,6 @@ const WeeklyLaborSchedule = () => {
                                                     </Button>
                                                   </div>
                                                   
-                                                  {/* Time Range - WIDER SPACE & WRAPPING */}
                                                   <div className="flex flex-wrap items-center gap-1 text-xs">
                                                     <TimeSelector
                                                       value={emp.start}
@@ -1026,7 +1018,6 @@ const WeeklyLaborSchedule = () => {
                                                     </span>
                                                   </div>
                                                   
-                                                  {/* Time Validation Error */}
                                                   {!timeValidation.valid && (
                                                     <div className="text-xs text-red-600 font-medium">
                                                       ⚠️ {timeValidation.error}
@@ -1140,6 +1131,69 @@ const WeeklyLaborSchedule = () => {
             />
           )}
         </div>
+      </div>
+
+      {/* SMART PRINT LAYOUT - Department-based pages with date headers */}
+      <div className="print-only">
+        {Object.entries(departmentRoles).map(([department, roles]) => (
+          <div key={department} className="print-page">
+            {/* Page Header with Week Dates */}
+            <div className="print-page-header">
+              <h1>Weekly Staff Schedule</h1>
+              <div className="week-info">
+                Week of {formatDateHeader(weekStart).day}, {formatDateHeader(weekStart).date} - {formatDateHeader(weekDays[6]).day}, {formatDateHeader(weekDays[6]).date}
+              </div>
+              <div className="department-info">
+                {getDepartmentEmoji(department)} {department} Department
+              </div>
+            </div>
+
+            {/* Date Headers Row */}
+            <div className="print-date-row">
+              <div className="print-role-header">Role / Shift</div>
+              {weekDays.map((day, index) => {
+                const { day: dayName, date } = formatDateHeader(day);
+                return (
+                  <div key={index} className="print-date-header">
+                    {dayName}<br/>{date}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Department Schedule Rows */}
+            {roles.map((role, roleIndex) => {
+              const actualRoleIndex = ROLES.findIndex(r => r.name === role.name);
+              return [0, 1].map(shiftIndex => {
+                const shift = shiftIndex === 0 ? 'AM' : 'PM';
+                
+                return (
+                  <div key={`${actualRoleIndex}-${shiftIndex}`} className={`print-schedule-row print-dept-${department.toLowerCase()}`}>
+                    <div className="print-role-cell">
+                      <div>{getDepartmentEmoji(role.department)} {role.name}</div>
+                      <div>{shift} Shift</div>
+                    </div>
+                    {weekDays.map((day, dayIndex) => {
+                      const scheduleKey = `${actualRoleIndex}-${shiftIndex}-${dayIndex}`;
+                      const assignedEmployees = scheduleData[scheduleKey]?.employees || [];
+                      
+                      return (
+                        <div key={dayIndex} className="print-day-cell">
+                          {assignedEmployees.map((emp, empIndex) => (
+                            <div key={empIndex} className="print-employee">
+                              <div className="print-employee-name">{emp.name}</div>
+                              <div className="print-employee-time">{emp.start} - {emp.end} ({emp.hours}h)</div>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              });
+            })}
+          </div>
+        ))}
       </div>
     </>
   );
