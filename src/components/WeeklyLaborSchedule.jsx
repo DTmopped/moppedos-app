@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import {
   Save, FileText, ChevronLeft, ChevronRight, Filter, Clock, AlertCircle, Plus, X, User, 
   Calendar, DollarSign, Target, Eye, EyeOff, TrendingUp, Users, ChevronDown, ChevronUp,
-  Loader2, BarChart3, PieChart, Activity
+  Loader2, BarChart3, PieChart, Activity, Edit3
 } from 'lucide-react';
 import { useLaborData } from '@/contexts/LaborDataContext';
 import { ROLES, getRolesByDepartment, SHIFT_TIMES } from '@/config/laborScheduleConfig';
@@ -35,7 +35,7 @@ const Badge = ({ children, variant = "default", size = "sm", emoji }) => {
   );
 };
 
-// Professional Budget Row Component
+// Professional Budget Row Component (Manager Only)
 const BudgetRow = ({ title, scheduled, budget, color = "slate", emoji, icon: Icon }) => {
   const percentage = budget > 0 ? (scheduled / budget) * 100 : 0;
   
@@ -89,7 +89,7 @@ const BudgetRow = ({ title, scheduled, budget, color = "slate", emoji, icon: Ico
   );
 };
 
-// Professional Stats Card Component
+// Professional Stats Card Component (Manager Only)
 const QuickStatsCard = ({ title, value, subtitle, emoji, color = "blue", trend }) => {
   const colorClasses = {
     blue: "bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 text-blue-800",
@@ -118,6 +118,29 @@ const QuickStatsCard = ({ title, value, subtitle, emoji, color = "blue", trend }
   );
 };
 
+// Time Selector Component
+const TimeSelector = ({ value, onChange, label }) => {
+  const timeOptions = [
+    '6:00 AM', '6:30 AM', '7:00 AM', '7:30 AM', '8:00 AM', '8:30 AM', '9:00 AM', '9:30 AM',
+    '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM', '1:00 PM', '1:30 PM',
+    '2:00 PM', '2:30 PM', '3:00 PM', '3:30 PM', '4:00 PM', '4:30 PM', '5:00 PM', '5:30 PM',
+    '6:00 PM', '6:30 PM', '7:00 PM', '7:30 PM', '8:00 PM', '8:30 PM', '9:00 PM', '9:30 PM',
+    '10:00 PM', '10:30 PM', '11:00 PM', '11:30 PM', '12:00 AM', '12:30 AM', '1:00 AM', '1:30 AM'
+  ];
+
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="text-xs bg-transparent border-none outline-none cursor-pointer hover:bg-slate-50 rounded px-1"
+    >
+      {timeOptions.map(time => (
+        <option key={time} value={time}>{time}</option>
+      ))}
+    </select>
+  );
+};
+
 // Utility functions
 const getStartOfWeek = (date) => {
   const start = new Date(date);
@@ -134,6 +157,37 @@ const formatDateHeader = (date) => {
   });
   const parts = formatted.split(', ');
   return { day: parts[0] || 'Day', date: parts[1] || 'Date' };
+};
+
+// Enhanced time calculation with proper 12-hour format handling
+const calculateHours = (startTime, endTime) => {
+  if (!startTime || !endTime) return 0;
+  
+  const parseTime = (timeStr) => {
+    // Handle various time formats
+    let cleanTime = timeStr.replace(/AM|PM/gi, '').trim();
+    let [hours, minutes = 0] = cleanTime.split(':').map(Number);
+    
+    // Convert to 24-hour format
+    if (timeStr.toUpperCase().includes('PM') && hours !== 12) {
+      hours += 12;
+    } else if (timeStr.toUpperCase().includes('AM') && hours === 12) {
+      hours = 0;
+    }
+    
+    return hours + (minutes / 60);
+  };
+  
+  const start = parseTime(startTime);
+  let end = parseTime(endTime);
+  
+  // Handle overnight shifts (end time is next day)
+  if (end <= start) {
+    end += 24;
+  }
+  
+  const totalHours = end - start;
+  return Math.max(0, Math.round(totalHours * 2) / 2); // Round to nearest 0.5 hour
 };
 
 const formatTime = (timeString) => {
@@ -154,28 +208,6 @@ const formatTime = (timeString) => {
   return `${displayHour}:${min} ${ampm}`;
 };
 
-const calculateHours = (startTime, endTime) => {
-  if (!startTime || !endTime) return 0;
-  
-  const parseTime = (timeStr) => {
-    let cleanTime = timeStr.replace(/AM|PM/gi, '').trim();
-    let [hours, minutes = 0] = cleanTime.split(':').map(Number);
-    
-    if (timeStr.toUpperCase().includes('PM') && hours !== 12) {
-      hours += 12;
-    } else if (timeStr.toUpperCase().includes('AM') && hours === 12) {
-      hours = 0;
-    }
-    
-    return hours + (minutes / 60);
-  };
-  
-  const start = parseTime(startTime);
-  const end = parseTime(endTime);
-  
-  return Math.max(0, end - start);
-};
-
 const WeeklyLaborSchedule = () => {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [selectedDepartment, setSelectedDepartment] = useState('ALL');
@@ -185,6 +217,7 @@ const WeeklyLaborSchedule = () => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showManagerView, setShowManagerView] = useState(true);
   const [budgetCollapsed, setBudgetCollapsed] = useState(false);
+  const [editingCell, setEditingCell] = useState(null);
 
   const contextData = useLaborData();
   const employees = contextData?.employees || [];
@@ -247,11 +280,11 @@ const WeeklyLaborSchedule = () => {
   // Enhanced color functions with professional gradients
   const getDepartmentColor = (department) => {
     switch (department) {
-      case 'FOH': return 'border-blue-300 bg-gradient-to-br from-blue-50 via-blue-100 to-blue-50';
-      case 'BOH': return 'border-emerald-300 bg-gradient-to-br from-emerald-50 via-emerald-100 to-emerald-50';
-      case 'Bar': return 'border-purple-300 bg-gradient-to-br from-purple-50 via-purple-100 to-purple-50';
-      case 'Management': return 'border-amber-300 bg-gradient-to-br from-amber-50 via-amber-100 to-amber-50';
-      default: return 'border-slate-300 bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50';
+      case 'FOH': return 'bg-blue-50 border-blue-200';
+      case 'BOH': return 'bg-emerald-50 border-emerald-200';
+      case 'Bar': return 'bg-purple-50 border-purple-200';
+      case 'Management': return 'bg-amber-50 border-amber-200';
+      default: return 'bg-slate-50 border-slate-200';
     }
   };
 
@@ -288,15 +321,15 @@ const WeeklyLaborSchedule = () => {
     const actualRoleIndex = ROLES.findIndex(role => role.name === actualRole.name);
     
     const shift = shiftIndex === 0 ? 'AM' : 'PM';
-    const shiftTimes = SHIFT_TIMES[shift] || { start: '9:00', end: '17:00' };
+    const shiftTimes = SHIFT_TIMES[shift] || { start: '9:00 AM', end: '5:00 PM' };
 
     const scheduleKey = `${actualRoleIndex}-${shiftIndex}-${dayIndex}`;
     const currentAssignments = scheduleData[scheduleKey]?.employees || [];
 
     if (currentAssignments.find(emp => emp.id === employeeId)) return;
 
-    const startTime = convertTimeToStandard ? convertTimeToStandard(shiftTimes.start) : formatTime(shiftTimes.start);
-    const endTime = convertTimeToStandard ? convertTimeToStandard(shiftTimes.end) : formatTime(shiftTimes.end);
+    const startTime = formatTime(shiftTimes.start);
+    const endTime = formatTime(shiftTimes.end);
 
     const newEmployee = {
       id: employee.id,
@@ -332,6 +365,35 @@ const WeeklyLaborSchedule = () => {
       [scheduleKey]: {
         ...prev[scheduleKey],
         employees: currentAssignments.filter(emp => emp.id !== employeeId)
+      }
+    }));
+
+    setHasUnsavedChanges(true);
+  };
+
+  const handleUpdateEmployee = (roleIndex, shiftIndex, dayIndex, employeeId, field, value) => {
+    const actualRole = filteredRoles[roleIndex];
+    const actualRoleIndex = ROLES.findIndex(role => role.name === actualRole.name);
+    const scheduleKey = `${actualRoleIndex}-${shiftIndex}-${dayIndex}`;
+    const currentAssignments = scheduleData[scheduleKey]?.employees || [];
+    
+    const updatedEmployees = currentAssignments.map(emp => {
+      if (emp.id === employeeId) {
+        const updated = { ...emp, [field]: value };
+        // Recalculate hours if time changed
+        if (field === 'start' || field === 'end') {
+          updated.hours = calculateHours(updated.start, updated.end);
+        }
+        return updated;
+      }
+      return emp;
+    });
+
+    setScheduleData(prev => ({
+      ...prev,
+      [scheduleKey]: {
+        ...prev[scheduleKey],
+        employees: updatedEmployees
       }
     }));
 
@@ -583,149 +645,166 @@ const WeeklyLaborSchedule = () => {
           </CardContent>
         </Card>
 
-        {/* TRULY HORIZONTAL Schedule Grid */}
+        {/* EXCEL-INSPIRED Schedule Grid */}
         <Card className="border-slate-300 shadow-lg bg-white">
           <CardContent className="p-6">
-            <div className="space-y-6">
-              {/* Fixed Day Headers */}
+            <div className="space-y-4">
+              {/* Date Headers - Matching Width */}
               <div className="w-full overflow-x-auto">
-                <div className="min-w-[1600px]">
-                  <div className="grid grid-cols-8 gap-4 mb-6">
-                    <div className="col-span-1 text-center font-bold text-slate-700 py-3">
-                      Role / Shift
+                <div className="min-w-[1400px]">
+                  <div className="flex">
+                    {/* Sticky Role Header */}
+                    <div className="w-64 flex-shrink-0 sticky left-0 bg-white z-10 pr-4">
+                      <div className="text-center font-bold text-slate-700 py-4 bg-slate-100 rounded-lg border-2 border-slate-300">
+                        📋 Role / Shift
+                      </div>
                     </div>
-                    {weekDays.map((day, index) => {
-                      const { day: dayName, date } = formatDateHeader(day);
-                      const isToday = day.toDateString() === new Date().toDateString();
-                      return (
-                        <div key={index} className={`text-center p-3 rounded-lg ${isToday ? 'bg-blue-100 border-2 border-blue-400 shadow-md' : 'bg-slate-50 border border-slate-200'}`}>
-                          <div className={`font-bold text-sm ${isToday ? 'text-blue-800' : 'text-slate-800'}`}>
-                            {dayName} {isToday && '🗓️'}
-                          </div>
-                          <div className={`text-xs ${isToday ? 'text-blue-600' : 'text-slate-600'}`}>
-                            {date}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* HORIZONTAL Schedule Rows - employees flow horizontally, not vertically */}
-                  {filteredRoles.map((role, roleIndex) => {
-                    return [0, 1].map(shiftIndex => {
-                      const shift = shiftIndex === 0 ? 'AM' : 'PM';
-                      const shiftTimes = SHIFT_TIMES[shift] || { start: '9:00', end: '17:00' };
-                      
-                      return (
-                        <div key={`${roleIndex}-${shiftIndex}`} className="grid grid-cols-8 gap-4 mb-4">
-                          {/* Fixed Role Header */}
-                          <div className={`col-span-1 p-4 rounded-lg border-2 ${getDepartmentColor(role.department)} flex flex-col justify-center shadow-sm hover:shadow-md transition-shadow duration-200 h-20`}>
-                            <div className="text-center space-y-1">
-                              <div className="text-lg">{getDepartmentEmoji(role.department)}</div>
-                              <div className="font-bold text-slate-900 text-sm">{role.name}</div>
-                              <div className="text-slate-700 text-xs font-semibold flex items-center justify-center space-x-1">
-                                <span>{shift === 'AM' ? '🌅' : '🌙'}</span>
-                                <span>{shift}</span>
-                              </div>
-                              <Badge variant={role.department.toLowerCase()} size="sm">
-                                {role.department}
-                              </Badge>
+                    {/* Date Headers */}
+                    <div className="flex-1 grid grid-cols-7 gap-3">
+                      {weekDays.map((day, index) => {
+                        const { day: dayName, date } = formatDateHeader(day);
+                        const isToday = day.toDateString() === new Date().toDateString();
+                        return (
+                          <div key={index} className={`text-center py-4 rounded-lg border-2 font-bold ${isToday ? 'bg-blue-100 border-blue-400 text-blue-800' : 'bg-slate-100 border-slate-300 text-slate-700'}`}>
+                            <div className="text-sm">
+                              {dayName} {isToday && '📅'}
+                            </div>
+                            <div className="text-xs opacity-75">
+                              {date}
                             </div>
                           </div>
+                        );
+                      })}
+                    </div>
+                  </div>
 
-                          {/* HORIZONTAL Day Cards - employees arranged horizontally */}
-                          {weekDays.map((day, dayIndex) => {
-                            const assignedEmployees = getAssignedEmployees(roleIndex, shiftIndex, dayIndex);
-                            const dropdownKey = `${roleIndex}-${shiftIndex}-${dayIndex}`;
-                            const isToday = day.toDateString() === new Date().toDateString();
-                            
-                            return (
-                              <div key={dayIndex} className={`p-3 border-2 border-slate-200 rounded-lg h-20 ${isToday ? 'bg-blue-50/50 border-blue-300' : 'bg-white'} hover:shadow-md transition-all duration-200`}>
-                                <div className="h-full flex items-center">
-                                  {assignedEmployees.length > 0 ? (
-                                    /* HORIZONTAL LAYOUT: Employees flow left to right, not top to bottom */
-                                    <div className="flex flex-wrap gap-1 w-full">
-                                      {assignedEmployees.map((emp, empIndex) => (
-                                        <div key={empIndex} className="bg-gradient-to-r from-white to-slate-50 rounded-md px-2 py-1 shadow-sm border border-slate-200 group hover:shadow-md transition-all duration-200 hover:from-blue-50 hover:to-blue-100 flex-shrink-0">
-                                          {/* COMPACT HORIZONTAL EMPLOYEE CARD */}
-                                          <div className="flex items-center space-x-2">
-                                            <div className="flex-1 min-w-0">
-                                              {/* Single line with all info */}
-                                              <div className="flex items-center space-x-1 text-xs">
-                                                <span className="font-bold text-slate-900 truncate max-w-16">{emp.name}</span>
-                                                <span className="text-slate-400">•</span>
-                                                <span className="text-slate-600">{emp.hours}h</span>
-                                                <span className="text-slate-400">•</span>
-                                                <span className="text-emerald-600 font-medium">${(emp.hourly_rate * emp.hours).toFixed(0)}</span>
-                                              </div>
-                                            </div>
-                                            <Button
-                                              size="sm"
-                                              variant="ghost"
-                                              onClick={() => handleRemoveEmployee(roleIndex, shiftIndex, dayIndex, emp.id)}
-                                              className="h-4 w-4 p-0 text-slate-400 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all duration-200 flex-shrink-0"
-                                            >
-                                              <X className="h-2 w-2" />
-                                            </Button>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <div className="w-full flex items-center justify-center">
-                                      <div className="relative">
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          onClick={() => setShowDropdown(showDropdown === dropdownKey ? null : dropdownKey)}
-                                          className="text-slate-600 hover:bg-slate-50 border-dashed border-slate-400 text-xs px-2 py-1 flex items-center space-x-1 shadow-sm hover:shadow-md transition-all duration-200"
-                                        >
-                                          <Plus className="h-3 w-3" />
-                                          <span>Add</span>
-                                        </Button>
-                                        
-                                        {showDropdown === dropdownKey && (
-                                          <div className="absolute top-full left-0 mt-2 w-72 bg-white border border-slate-300 rounded-lg shadow-xl z-20 max-h-48 overflow-y-auto">
-                                            {filteredEmployees.length > 0 ? (
-                                              filteredEmployees.map(employee => (
-                                                <button
-                                                  key={employee.id}
-                                                  onClick={() => handleAddEmployee(roleIndex, shiftIndex, dayIndex, employee.id)}
-                                                  className="w-full text-left px-4 py-3 text-xs text-slate-700 hover:bg-slate-50 border-b border-slate-100 last:border-b-0 transition-colors duration-150"
-                                                >
-                                                  <div className="flex items-center space-x-3">
-                                                    <span>👤</span>
-                                                    <div className="flex-1">
-                                                      <div className="font-semibold text-sm">{employee.name}</div>
-                                                      <div className="text-xs text-slate-500 flex items-center space-x-2 mt-1">
-                                                        <span>💼 {employee.role}</span>
-                                                        <span>•</span>
-                                                        <span>💰 ${employee.hourly_rate}/hr</span>
-                                                        <span>•</span>
-                                                        <span>🏢 {employee.department}</span>
-                                                      </div>
-                                                    </div>
-                                                  </div>
-                                                </button>
-                                              ))
-                                            ) : (
-                                              <div className="px-4 py-3 text-xs text-slate-500 text-center">
-                                                <span>😔 No employees available</span>
-                                              </div>
-                                            )}
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  )}
+                  {/* Excel-Style Schedule Rows */}
+                  <div className="mt-4 space-y-3">
+                    {filteredRoles.map((role, roleIndex) => {
+                      return [0, 1].map(shiftIndex => {
+                        const shift = shiftIndex === 0 ? 'AM' : 'PM';
+                        
+                        return (
+                          <div key={`${roleIndex}-${shiftIndex}`} className="flex">
+                            {/* Sticky Role Column */}
+                            <div className="w-64 flex-shrink-0 sticky left-0 bg-white z-10 pr-4">
+                              <div className={`p-4 rounded-lg border-2 ${getDepartmentColor(role.department)} h-24 flex flex-col justify-center shadow-sm`}>
+                                <div className="text-center space-y-1">
+                                  <div className="text-lg">{getDepartmentEmoji(role.department)}</div>
+                                  <div className="font-bold text-slate-900 text-sm">{role.name}</div>
+                                  <div className="text-slate-700 text-xs font-semibold flex items-center justify-center space-x-1">
+                                    <span>{shift === 'AM' ? '🌅' : '🌙'}</span>
+                                    <span>{shift} Shift</span>
+                                  </div>
                                 </div>
                               </div>
-                            );
-                          })}
-                        </div>
-                      );
-                    });
-                  })}
+                            </div>
+
+                            {/* Excel-Style Day Cells */}
+                            <div className="flex-1 grid grid-cols-7 gap-3">
+                              {weekDays.map((day, dayIndex) => {
+                                const assignedEmployees = getAssignedEmployees(roleIndex, shiftIndex, dayIndex);
+                                const dropdownKey = `${roleIndex}-${shiftIndex}-${dayIndex}`;
+                                const isToday = day.toDateString() === new Date().toDateString();
+                                
+                                return (
+                                  <div key={dayIndex} className={`border-2 rounded-lg h-24 p-2 ${isToday ? 'bg-blue-50 border-blue-300' : 'bg-white border-slate-300'} hover:shadow-md transition-all duration-200`}>
+                                    {assignedEmployees.length > 0 ? (
+                                      <div className="space-y-1 h-full overflow-y-auto">
+                                        {assignedEmployees.map((emp, empIndex) => (
+                                          <div key={empIndex} className={`p-2 rounded-md border ${getDepartmentColor(emp.department)} group hover:shadow-sm transition-all duration-200 relative`}>
+                                            {/* Excel-Style Employee Cell: Name on top, Time on bottom */}
+                                            <div className="space-y-1">
+                                              {/* Employee Name - Editable */}
+                                              <div className="flex items-center justify-between">
+                                                <input
+                                                  type="text"
+                                                  value={emp.name}
+                                                  onChange={(e) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, emp.id, 'name', e.target.value)}
+                                                  className="font-semibold text-xs bg-transparent border-none outline-none w-full"
+                                                  placeholder="Employee Name"
+                                                />
+                                                <Button
+                                                  size="sm"
+                                                  variant="ghost"
+                                                  onClick={() => handleRemoveEmployee(roleIndex, shiftIndex, dayIndex, emp.id)}
+                                                  className="h-4 w-4 p-0 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                                                >
+                                                  <X className="h-2 w-2" />
+                                                </Button>
+                                              </div>
+                                              
+                                              {/* Time Range - Editable Dropdowns */}
+                                              <div className="flex items-center space-x-1 text-xs text-slate-600">
+                                                <TimeSelector
+                                                  value={emp.start}
+                                                  onChange={(value) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, emp.id, 'start', value)}
+                                                />
+                                                <span>-</span>
+                                                <TimeSelector
+                                                  value={emp.end}
+                                                  onChange={(value) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, emp.id, 'end', value)}
+                                                />
+                                                <span className="ml-2 font-medium text-slate-700">({emp.hours}h)</span>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <div className="h-full flex items-center justify-center">
+                                        <div className="relative">
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => setShowDropdown(showDropdown === dropdownKey ? null : dropdownKey)}
+                                            className="text-slate-600 hover:bg-slate-50 border-dashed border-slate-400 text-xs px-3 py-2 flex items-center space-x-1"
+                                          >
+                                            <Plus className="h-3 w-3" />
+                                            <span>Add Employee</span>
+                                          </Button>
+                                          
+                                          {showDropdown === dropdownKey && (
+                                            <div className="absolute top-full left-0 mt-2 w-72 bg-white border border-slate-300 rounded-lg shadow-xl z-20 max-h-48 overflow-y-auto">
+                                              {filteredEmployees.length > 0 ? (
+                                                filteredEmployees.map(employee => (
+                                                  <button
+                                                    key={employee.id}
+                                                    onClick={() => handleAddEmployee(roleIndex, shiftIndex, dayIndex, employee.id)}
+                                                    className="w-full text-left px-4 py-3 text-xs text-slate-700 hover:bg-slate-50 border-b border-slate-100 last:border-b-0 transition-colors duration-150"
+                                                  >
+                                                    <div className="flex items-center space-x-3">
+                                                      <span>👤</span>
+                                                      <div className="flex-1">
+                                                        <div className="font-semibold text-sm">{employee.name}</div>
+                                                        <div className="text-xs text-slate-500 flex items-center space-x-2 mt-1">
+                                                          <span>💼 {employee.role}</span>
+                                                          <span>•</span>
+                                                          <span>🏢 {employee.department}</span>
+                                                        </div>
+                                                      </div>
+                                                    </div>
+                                                  </button>
+                                                ))
+                                              ) : (
+                                                <div className="px-4 py-3 text-xs text-slate-500 text-center">
+                                                  <span>😔 No employees available</span>
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      });
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
