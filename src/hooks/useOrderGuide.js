@@ -28,7 +28,7 @@ export function useOrderGuide({ locationId, category = null } = {}) {
         .select(`
           item_id,
           location_id,
-         category_name as category, -- 👈 this fixes the bug
+         'category_name as category', // ✅ FIXED
           category_rank,
           item_name,
           unit,
