@@ -5,10 +5,54 @@ export const SPEND_PER_GUEST = 45; // Updated from 15 to 45 for Mopped Restauran
 
 export const SHIFT_SPLIT = { AM: 0.5, PM: 0.4, SWING: 0.1 };
 
+// Updated to use standard 12-hour time format instead of military time
 export const SHIFT_TIMES = {
-  AM: { start: "08:30", end: "16:30" },
-  PM: { start: "15:00", end: "23:00" },
-  SWING: { start: "10:00", end: "18:00" }
+  AM: { start: "8:30 AM", end: "4:30 PM", militaryStart: "08:30", militaryEnd: "16:30" },
+  PM: { start: "3:00 PM", end: "11:00 PM", militaryStart: "15:00", militaryEnd: "23:00" },
+  SWING: { start: "10:00 AM", end: "6:00 PM", militaryStart: "10:00", militaryEnd: "18:00" }
+};
+
+// Department mappings for standardization between config and database
+export const DEPARTMENT_MAPPING = {
+  'FOH': 'Front of House',
+  'BOH': 'Back of House', 
+  'Bar': 'Bar & Beverage',
+  'Management': 'Management'
+};
+
+export const REVERSE_DEPARTMENT_MAPPING = {
+  'Front of House': 'FOH',
+  'Back of House': 'BOH',
+  'Bar & Beverage': 'Bar',
+  'Management': 'Management'
+};
+
+// Helper function to convert military time to standard 12-hour format
+export const formatTimeToStandard = (militaryTime) => {
+  if (!militaryTime) return '';
+  
+  const [hours, minutes] = militaryTime.split(':');
+  const hour = parseInt(hours);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const standardHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  return `${standardHour}:${minutes} ${ampm}`;
+};
+
+// Helper function to convert standard time to military format for database storage
+export const formatTimeToMilitary = (standardTime) => {
+  if (!standardTime) return '';
+  
+  const [time, period] = standardTime.split(' ');
+  const [hours, minutes] = time.split(':');
+  let hour = parseInt(hours);
+  
+  if (period === 'PM' && hour !== 12) {
+    hour += 12;
+  } else if (period === 'AM' && hour === 12) {
+    hour = 0;
+  }
+  
+  return `${hour.toString().padStart(2, '0')}:${minutes}`;
 };
 
 // Complete 13-role structure including Dishwasher
@@ -49,14 +93,6 @@ export const DEPARTMENTS = {
   "Management": { name: "Management", color: "slate", bgColor: "bg-slate-50", textColor: "text-slate-700" }
 };
 
-// ADD THIS to your laborScheduleConfig.jsx file:
-export const REVERSE_DEPARTMENT_MAPPING = {
-  'Front of House': 'FOH',
-  'Back of House': 'BOH',
-  'Bar & Beverage': 'Bar',
-  'Management': 'Management'
-};
-
 // Mopped Restaurant Template
 export const MOPPED_RESTAURANT_TEMPLATE = {
   name: 'Mopped Restaurant',
@@ -77,4 +113,18 @@ export const getRolesByDepartment = (department) => {
 
 export const getDepartmentColor = (department) => {
   return DEPARTMENTS[department] || DEPARTMENTS["FOH"];
+};
+
+// Get shift display name with standard time format
+export const getShiftDisplayName = (shiftKey) => {
+  const shift = SHIFT_TIMES[shiftKey];
+  if (!shift) return shiftKey;
+  
+  const shiftNames = {
+    AM: 'Morning Shift',
+    PM: 'Evening Shift', 
+    SWING: 'Swing Shift'
+  };
+  
+  return `${shiftNames[shiftKey] || shiftKey} (${shift.start} - ${shift.end})`;
 };
