@@ -35,7 +35,6 @@ export function useOrderGuide({ locationId, category = null } = {}) {
           on_hand,
           par_level,
           order_quantity,
-          inventory_status,
           item_status,
           unit_cost,
           total_cost,
