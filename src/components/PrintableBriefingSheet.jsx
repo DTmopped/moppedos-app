@@ -58,7 +58,7 @@ const PrintableBriefingSheet = ({
               : "—"}
           </p>
 
-          {(weatherConditions || weatherTempHigh || weatherTempLow) && (
+          {(weatherConditions || weatherTempHigh || weatherTempLow || weatherIcon) && (
             <div className="bg-blue-50 mt-3 border border-blue-200 p-2 rounded-md text-sm">
               {weatherIcon && <span>{weatherIcon} </span>}
               <strong>{weatherConditions || "—"}</strong>, High:{" "}
