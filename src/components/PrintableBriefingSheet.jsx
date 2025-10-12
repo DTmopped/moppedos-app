@@ -44,28 +44,27 @@ const PrintableBriefingSheet = ({
         <p><strong>Manager:</strong> {displayValue(manager)}</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-6 break-inside-avoid">
-        <div className="border p-4 rounded-xl">
-          <h2 className="font-semibold mb-2">📊 Today’s Forecast</h2>
-          <p><strong>🌞 Lunch:</strong> {displayValue(lunch, " guests")}</p>
-          <p><strong>🌙 Dinner:</strong> {displayValue(dinner, " guests")}</p>
-          <p>
-            <strong>💰 Forecasted Sales:</strong>{" "}
-            {forecastedSales
-              ? `$${parseFloat(forecastedSales).toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                })}`
-              : "—"}
-          </p>
-          {(weatherConditions || weatherTempHigh || weatherTempLow) && (
-            <div className="bg-blue-50 mt-3 border border-blue-200 p-2 rounded-md text-sm">
-              {weatherIcon && <span>{weatherIcon} </span>}
-              <strong>{weatherConditions}</strong>, High:{" "}
-              {weatherTempHigh ? `${weatherTempHigh}°F` : "—"} | Low:{" "}
-              {weatherTempLow ? `${weatherTempLow}°F` : "—"}
-            </div>
-          )}
-        </div>
+      <div className="border p-4 rounded-xl">
+  <h2 className="font-semibold mb-2">📊 Today’s Forecast</h2>
+  <p><strong>🌞 Lunch:</strong> {displayValue(lunch, " guests")}</p>
+  <p><strong>🌙 Dinner:</strong> {displayValue(dinner, " guests")}</p>
+  <p>
+    <strong>💰 Forecasted Sales:</strong>{" "}
+    {forecastedSales
+      ? `$${parseFloat(forecastedSales).toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+        })}`
+      : "—"}
+  </p>
+  {(weatherConditions || weatherTempHigh || weatherTempLow) && (
+    <div className="bg-blue-50 mt-3 border border-blue-200 p-2 rounded-md text-sm">
+      {weatherIcon && <span>{weatherIcon} </span>}
+      <strong>{weatherConditions}</strong>, High:{" "}
+      {weatherTempHigh ? `${weatherTempHigh}°F` : "—"} | Low:{" "}
+      {weatherTempLow ? `${weatherTempLow}°F` : "—"}
+    </div>
+  )}
+</div>
 
         <div className="border p-4 rounded-xl">
           <h2 className="font-semibold mb-2">📅 Yesterday’s Recap</h2>
