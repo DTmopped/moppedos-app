@@ -49,6 +49,14 @@ export const DEPARTMENTS = {
   "Management": { name: "Management", color: "slate", bgColor: "bg-slate-50", textColor: "text-slate-700" }
 };
 
+// ADD THIS to your laborScheduleConfig.jsx file:
+export const REVERSE_DEPARTMENT_MAPPING = {
+  'Front of House': 'FOH',
+  'Back of House': 'BOH',
+  'Bar & Beverage': 'Bar',
+  'Management': 'Management'
+};
+
 // Mopped Restaurant Template
 export const MOPPED_RESTAURANT_TEMPLATE = {
   name: 'Mopped Restaurant',
