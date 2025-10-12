@@ -18,8 +18,6 @@ export const useLaborData = () => {
   return context;
 };
 
-// Department mappings are now imported from laborScheduleConfig
-
 // Helper function to convert military time to standard 12-hour format
 const convertTimeToStandard = (militaryTime) => {
   if (!militaryTime) return '';
@@ -89,9 +87,9 @@ export const LaborDataProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
 
-  // Location state
-  const [locationId, setLocationId] = useState(null);
-  const [locationUuid, setLocationUuid] = useState(null);
+  // Location state - NOW USING UUID SYSTEM
+  const [locationId, setLocationId] = useState(null); // This will be the bigint ID
+  const [locationUuid, setLocationUuid] = useState(null); // This will be the UUID for queries
   const [locationName, setLocationName] = useState(null);
   const [loadingLocation, setLoadingLocation] = useState(true);
   const [locationError, setLocationError] = useState(null);
@@ -141,7 +139,7 @@ export const LaborDataProvider = ({ children }) => {
           // Step 2: Get location details from locations table
           const { data: location, error: locationError } = await supabase
             .from('locations')
-            .select('id, uuid, name, address, city, state')
+            .select('id, uuid, name, timezone, organization_id')
             .eq('id', profile.location_id)
             .single();
 
@@ -154,9 +152,9 @@ export const LaborDataProvider = ({ children }) => {
 
           console.log("✅ Location details fetched:", location);
 
-          // Set all location state
-          setLocationId(location.id);
-          setLocationUuid(location.uuid);
+          // Set all location state - CRITICAL: Use UUID for database queries
+          setLocationId(location.id); // Keep the bigint ID for reference
+          setLocationUuid(location.uuid); // Use UUID for all database queries
           setLocationName(location.name);
           setLocationError(null);
           
@@ -181,9 +179,9 @@ export const LaborDataProvider = ({ children }) => {
     fetchUserLocation();
   }, []);
 
-  // Helper function to get current location ID
-  const getCurrentLocationId = async () => {
-    if (locationId) return locationId;
+  // Helper function to get current location UUID (NOT integer ID)
+  const getCurrentLocationUuid = async () => {
+    if (locationUuid) return locationUuid;
     
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) throw new Error('User not authenticated');
@@ -195,23 +193,31 @@ export const LaborDataProvider = ({ children }) => {
       .single();
     
     if (!profile?.location_id) throw new Error('No location assigned to user');
-    return profile.location_id;
+    
+    // Get the UUID from locations table
+    const { data: location } = await supabase
+      .from('locations')
+      .select('uuid')
+      .eq('id', profile.location_id)
+      .single();
+    
+    return location?.uuid;
   };
 
-  // Load all labor data
+  // Load all labor data - UPDATED TO USE UUID
   const loadLaborData = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const locationId = await getCurrentLocationId();
-      console.log('Loading labor data for location:', locationId);
+      const locationUuid = await getCurrentLocationUuid();
+      console.log('Loading labor data for location UUID:', locationUuid);
 
-      // Load employees with enhanced data
+      // Load employees with enhanced data - USE UUID
       const { data: employeesData, error: empError } = await supabase
         .from('employees')
         .select('*')
-        .eq('location_id', locationId)
+        .eq('location_id', locationUuid) // Use UUID here
         .eq('is_active', true);
 
       if (empError) {
@@ -226,7 +232,7 @@ export const LaborDataProvider = ({ children }) => {
           performance_rating: emp.performance_rating || 4.0,
           hourly_rate: emp.hourly_rate || 15.00,
           status: emp.is_active ? 'active' : 'inactive',
-          // Standardize department names
+          // Standardize department names using existing department or mapping
           department: DEPARTMENT_MAPPING[emp.department] || emp.department || 'Front of House'
         }));
         
@@ -235,14 +241,14 @@ export const LaborDataProvider = ({ children }) => {
         console.log('Loaded employees:', enhancedEmployees.length);
       }
 
-      // Load PTO requests
+      // Load PTO requests - USE UUID
       const { data: ptoData, error: ptoError } = await supabase
         .from('pto_requests')
         .select(`
           *,
           employees!inner(id, name, email, role)
         `)
-        .eq('location_id', locationId)
+        .eq('location_id', locationUuid) // Use UUID here
         .order('created_at', { ascending: false });
 
       if (!ptoError && ptoData) {
@@ -256,14 +262,14 @@ export const LaborDataProvider = ({ children }) => {
         console.log('Loaded PTO requests:', enhancedPTO.length);
       }
 
-      // Load schedule requests
+      // Load schedule requests - USE UUID
       const { data: scheduleData, error: scheduleError } = await supabase
         .from('schedule_requests')
         .select(`
           *,
           employees!inner(id, name, role)
         `)
-        .eq('location_id', locationId)
+        .eq('location_id', locationUuid) // Use UUID here
         .order('created_at', { ascending: false });
 
       if (!scheduleError && scheduleData) {
@@ -275,14 +281,14 @@ export const LaborDataProvider = ({ children }) => {
         console.log('Loaded schedule requests:', enhancedScheduleData.length);
       }
 
-      // Load employee availability
+      // Load employee availability - USE UUID
       const { data: availabilityData, error: availError } = await supabase
         .from('employee_availability')
         .select(`
           *,
           employees!inner(id, name, role)
         `)
-        .eq('location_id', locationId);
+        .eq('location_id', locationUuid); // Use UUID here
 
       if (!availError && availabilityData) {
         const enhancedAvailability = availabilityData.map(avail => ({
@@ -291,6 +297,26 @@ export const LaborDataProvider = ({ children }) => {
         }));
         setEmployeeAvailability(enhancedAvailability);
         console.log('Loaded employee availability:', enhancedAvailability.length);
+      }
+
+      // Load existing schedules - USE ACTUAL TABLE NAME AND UUID
+      const { data: existingSchedules, error: schedulesError } = await supabase
+        .from('schedules') // Use actual table name
+        .select('*')
+        .eq('location_id', locationUuid) // Use UUID here
+        .order('week_start_date', { ascending: false });
+
+      if (!schedulesError && existingSchedules) {
+        const schedulesMap = {};
+        existingSchedules.forEach(schedule => {
+          const weekKey = schedule.week_start_date;
+          schedulesMap[weekKey] = {
+            ...schedule,
+            schedule_data: schedule.schedule_data || {}
+          };
+        });
+        setSchedules(schedulesMap);
+        console.log('Loaded schedules:', existingSchedules.length);
       }
 
     } catch (err) {
@@ -311,22 +337,22 @@ export const LaborDataProvider = ({ children }) => {
     return diffDays;
   };
 
-  // Load data when location is available
+  // Load data when location UUID is available
   useEffect(() => {
-    if (locationId && !loadingLocation) {
+    if (locationUuid && !loadingLocation) {
       loadLaborData();
     }
-  }, [locationId, loadingLocation]);
+  }, [locationUuid, loadingLocation]);
 
-  // Employee Management Functions
+  // Employee Management Functions - UPDATED TO USE UUID
   const addEmployee = async (employeeData) => {
     try {
       setLoading(true);
-      const locationId = await getCurrentLocationId();
+      const locationUuid = await getCurrentLocationUuid();
       
       const newEmployee = {
         ...employeeData,
-        location_id: locationId,
+        location_id: locationUuid, // Use UUID
         hire_date: employeeData.hire_date || new Date().toISOString().split('T')[0],
         hourly_rate: employeeData.hourly_rate || 15,
         performance_rating: employeeData.performance_rating || 4.0,
@@ -364,10 +390,10 @@ export const LaborDataProvider = ({ children }) => {
     }
   };
 
-  // Enhanced Smart Forecasting System
+  // Enhanced Smart Forecasting System - UPDATED TO USE UUID
   const getSmartForecast = async (date, parameters = {}) => {
     try {
-      const locationId = await getCurrentLocationId();
+      const locationUuid = await getCurrentLocationUuid();
       
       // Get historical data for the same day of week over past 8 weeks
       const targetDate = new Date(date);
@@ -378,23 +404,23 @@ export const LaborDataProvider = ({ children }) => {
       let validWeeks = 0;
       let baseLaborHours = 140;
 
-      // Collect 8 weeks of historical data
+      // Collect 8 weeks of historical data - USE UUID
       for (let week = 1; week <= 8; week++) {
         const historicalDate = getDateWeeksAgo(date, week);
         
         const { data: salesData } = await supabase
-          .from('daily_sales')
-          .select('guest_count, total_revenue, labor_hours')
-          .eq('location_id', locationId)
+          .from('forecast_data') // Use actual table name
+          .select('forecast_total, actual_total, labor_cost')
+          .eq('location_id', locationUuid) // Use UUID
           .eq('date', historicalDate)
           .single();
 
-        if (salesData && salesData.guest_count > 0) {
-          totalGuests += salesData.guest_count;
-          totalRevenue += salesData.total_revenue || (salesData.guest_count * MOPPED_RESTAURANT_TEMPLATE.spend_per_guest);
+        if (salesData && salesData.actual_total > 0) {
+          totalGuests += Math.round(salesData.actual_total / MOPPED_RESTAURANT_TEMPLATE.spend_per_guest);
+          totalRevenue += salesData.actual_total;
           
-          if (salesData.labor_hours) {
-            baseLaborHours = Math.round(baseLaborCost / 18);
+          if (salesData.labor_cost) {
+            baseLaborHours = Math.round(salesData.labor_cost / 18);
           }
           validWeeks++;
         }
@@ -506,73 +532,21 @@ export const LaborDataProvider = ({ children }) => {
     return { multiplier, recommendations };
   };
 
-  // Day-specific recommendations
-  const getDayRecommendations = (date) => {
-    const targetDate = new Date(date);
-    const dayOfWeek = targetDate.getDay();
-    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const dayName = dayNames[dayOfWeek];
-
-    const recommendations = [];
-
-    // Holiday-specific recommendations
-    const holidayMultiplier = getHolidayMultiplier(date);
-    
-    if (holidayMultiplier < 0.5) {
-      recommendations.push({
-        type: 'holiday',
-        title: 'Holiday Closure Consideration',
-        description: `${date} appears to be a slow holiday. Consider reduced hours or minimal staffing.`,
-        impact: 'Very low customer volume expected',
-        action: 'Consider modified hours or skeleton crew'
-      });
-    } else if (holidayMultiplier > 1.5) {
-      recommendations.push({
-        type: 'holiday',
-        title: 'Holiday Rush Preparation',
-        description: `${date} is a high-traffic holiday. Prepare for increased volume.`,
-        impact: 'Significantly higher customer volume',
-        action: 'Full staffing, extra prep, extended hours consideration'
-      });
-    }
-
-    // Day-specific recommendations
-    if (dayOfWeek === 5 || dayOfWeek === 6) { // Friday or Saturday
-      recommendations.push({
-        type: 'weekend',
-        title: `${dayName} Rush Preparation`,
-        description: `${dayName} is one of your busiest days. Ensure full staffing, extra prep, and all stations are fully stocked.`,
-        impact: 'High volume expected',
-        action: 'Full staffing recommended, extra inventory'
-      });
-    } else if (dayOfWeek === 1 || dayOfWeek === 2) { // Monday or Tuesday
-      recommendations.push({
-        type: 'weekday',
-        title: `${dayName} Efficiency Focus`,
-        description: `${dayName} typically has lower volume. Focus on efficiency, training, and prep work.`,
-        impact: 'Lower volume, good for training',
-        action: 'Reduced staffing, focus on prep and training'
-      });
-    }
-
-    return recommendations;
-  };
-
-  // Enhanced Labor Analytics
+  // Enhanced Labor Analytics - UPDATED TO USE UUID AND ACTUAL TABLES
   const getLaborAnalytics = async (startDate, endDate) => {
     try {
-      const locationId = await getCurrentLocationId();
+      const locationUuid = await getCurrentLocationUuid();
       
-      // Get actual scheduled hours and costs from database
-      const { data: scheduleData, error } = await supabase
-        .from('schedules')
+      // Get actual scheduled hours and costs from shifts table - USE UUID
+      const { data: shiftsData, error } = await supabase
+        .from('shifts')
         .select(`
           *,
           employees(name, hourly_rate, department, role)
         `)
-        .eq('location_id', locationId)
-        .gte('date', startDate)
-        .lte('date', endDate);
+        .eq('location_id', locationUuid) // Use UUID
+        .gte('day', startDate)
+        .lte('day', endDate);
 
       if (error) throw error;
 
@@ -586,22 +560,20 @@ export const LaborDataProvider = ({ children }) => {
         'Management': { cost: 0, hours: 0, efficiency: 0 }
       };
 
-      scheduleData?.forEach(schedule => {
-        schedule.employees?.forEach(emp => {
-          if (emp.start && emp.end) {
-            const hours = calculateShiftHours(emp.start, emp.end);
-            const cost = hours * (emp.hourly_rate || 15);
-            
-            totalCost += cost;
-            totalHours += hours;
-            
-            const dept = REVERSE_DEPARTMENT_MAPPING[emp.department] || 'FOH';
-            if (departmentBreakdown[dept]) {
-              departmentBreakdown[dept].cost += cost;
-              departmentBreakdown[dept].hours += hours;
-            }
+      shiftsData?.forEach(shift => {
+        if (shift.hours && shift.rate) {
+          const hours = shift.hours;
+          const cost = hours * shift.rate;
+          
+          totalCost += cost;
+          totalHours += hours;
+          
+          const dept = REVERSE_DEPARTMENT_MAPPING[shift.department] || 'FOH';
+          if (departmentBreakdown[dept]) {
+            departmentBreakdown[dept].cost += cost;
+            departmentBreakdown[dept].hours += hours;
           }
-        });
+        }
       });
 
       // Calculate efficiency for each department
@@ -665,15 +637,15 @@ export const LaborDataProvider = ({ children }) => {
     return Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100; // Hours with 2 decimal places
   };
 
-  // Enhanced PTO Management Functions
+  // Enhanced PTO Management Functions - UPDATED TO USE UUID
   const addPTORequest = async (ptoData) => {
     try {
       setLoading(true);
-      const locationId = await getCurrentLocationId();
+      const locationUuid = await getCurrentLocationUuid();
       
       const newPTO = {
         ...ptoData,
-        location_id: locationId,
+        location_id: locationUuid, // Use UUID
         status: 'pending',
         created_at: new Date().toISOString()
       };
@@ -738,11 +710,11 @@ export const LaborDataProvider = ({ children }) => {
     }
   };
 
-  // Schedule Management Functions with Standard Time Format
+  // Schedule Management Functions - UPDATED TO USE ACTUAL TABLE AND UUID
   const saveSchedule = async (weekKey, scheduleData) => {
     try {
       setLoading(true);
-      const locationId = await getCurrentLocationId();
+      const locationUuid = await getCurrentLocationUuid();
       
       // Convert any standard time formats to military time for database storage
       const processedScheduleData = JSON.parse(JSON.stringify(scheduleData));
@@ -762,15 +734,15 @@ export const LaborDataProvider = ({ children }) => {
       });
       
       const scheduleEntry = {
-        week_start: weekKey,
+        week_start_date: weekKey, // Use actual column name
         schedule_data: processedScheduleData,
-        location_id: locationId,
+        location_id: locationUuid, // Use UUID
         updated_at: new Date().toISOString()
       };
 
       const { data, error } = await supabase
-        .from('weekly_schedules')
-        .upsert(scheduleEntry, { onConflict: ['week_start', 'location_id'] })
+        .from('schedules') // Use actual table name
+        .upsert(scheduleEntry, { onConflict: ['week_start_date', 'location_id'] })
         .select()
         .single();
       
@@ -807,10 +779,10 @@ export const LaborDataProvider = ({ children }) => {
     }
   };
 
-  // NEW: Missing getSystemStats function
+  // System Stats Function - UPDATED TO USE UUID
   const getSystemStats = async () => {
     try {
-      const currentLocationId = await getCurrentLocationId();
+      const currentLocationUuid = await getCurrentLocationUuid();
       
       // Get current date for calculations
       const today = new Date().toISOString().split('T')[0];
@@ -848,14 +820,15 @@ export const LaborDataProvider = ({ children }) => {
         lastDataLoad: new Date().toISOString(),
         
         // Location Info
-        locationId: currentLocationId,
+        locationId: locationId,
+        locationUuid: currentLocationUuid,
         locationName: locationName || 'Unknown Location'
       };
 
       // Get today's schedule stats if available
       const todayScheduleKey = Object.keys(schedules).find(key => 
-        schedules[key]?.week_start && 
-        new Date(schedules[key].week_start) <= new Date(today)
+        schedules[key]?.week_start_date && 
+        new Date(schedules[key].week_start_date) <= new Date(today)
       );
       
       if (todayScheduleKey && schedules[todayScheduleKey]) {
@@ -881,19 +854,18 @@ export const LaborDataProvider = ({ children }) => {
         };
       }
 
-      // Try to get sales data for additional metrics
+      // Try to get sales data for additional metrics - USE UUID
       try {
         const { data: salesData } = await supabase
-          .from('daily_sales')
-          .select('guest_count, total_revenue, labor_hours')
-          .eq('location_id', currentLocationId)
+          .from('forecast_data')
+          .select('actual_total, labor_cost')
+          .eq('location_id', currentLocationUuid) // Use UUID
           .eq('date', today)
           .single();
 
         if (salesData) {
-          stats.todayStats.guestCount = salesData.guest_count || 0;
-          stats.todayStats.revenue = salesData.total_revenue || 0;
-          stats.todayStats.laborHours = salesData.labor_hours || 0;
+          stats.todayStats.revenue = salesData.actual_total || 0;
+          stats.todayStats.laborCost = salesData.labor_cost || 0;
         }
       } catch (salesError) {
         // Sales data not available, continue without it
@@ -945,9 +917,9 @@ export const LaborDataProvider = ({ children }) => {
     error,
     isConnected,
 
-    // Location state
-    locationId,
-    locationUuid,
+    // Location state - NOW INCLUDES BOTH ID AND UUID
+    locationId, // bigint ID for reference
+    locationUuid, // UUID for database queries
     locationName,
     loadingLocation,
     locationError,
@@ -969,7 +941,7 @@ export const LaborDataProvider = ({ children }) => {
     updatePTOStatus,
 
     // System functions
-    getSystemStats, // ← ADDED THE MISSING FUNCTION HERE
+    getSystemStats,
 
     // Helper functions
     calculateShiftHours,
