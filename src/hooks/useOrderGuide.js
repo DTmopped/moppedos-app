@@ -28,7 +28,7 @@ export function useOrderGuide({ locationId, category = null } = {}) {
         .select(`
           item_id,
           location_id,
-         'category_name as category', // ✅ FIXED
+          category_name,
           category_rank,
           item_name,
           unit,
@@ -48,7 +48,7 @@ export function useOrderGuide({ locationId, category = null } = {}) {
         .order('category_rank', { ascending: true })
         .order('item_name', { ascending: true });
 
-      if (category) query = query.eq('category', category);
+      if (category) query = query.eq('category_name', category);
 
       const { data, error: qErr } = await query;
       if (qErr) throw qErr;
@@ -71,7 +71,7 @@ export function useOrderGuide({ locationId, category = null } = {}) {
     console.log('🧾 Raw rows from Supabase:', rows);
 
     for (const r of rows) {
-      const cat = r.category || 'Uncategorized';
+      const cat = r.category_name || 'Uncategorized';
       if (!grouped[cat]) grouped[cat] = [];
 
       const actual = Number(r.on_hand ?? 0);
