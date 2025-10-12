@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   Save, FileText, ChevronLeft, ChevronRight, Filter, Clock, AlertCircle, Plus, X, User, 
-  Calendar, DollarSign, Target, Eye, EyeOff, TrendingUp, Users
+  Calendar, DollarSign, Target, Eye, EyeOff, TrendingUp, Users, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { useLaborData } from '@/contexts/LaborDataContext';
 import { ROLES, getRolesByDepartment, SHIFT_TIMES } from '@/config/laborScheduleConfig';
@@ -12,15 +12,15 @@ import { ROLES, getRolesByDepartment, SHIFT_TIMES } from '@/config/laborSchedule
 const Badge = ({ children, variant = "default", size = "sm" }) => {
   const baseClasses = "inline-flex items-center font-medium rounded-full";
   const sizeClasses = {
-    sm: "px-2 py-1 text-xs",
+    sm: "px-2.5 py-1 text-xs",
     md: "px-3 py-1.5 text-sm"
   };
   const variantClasses = {
     default: "bg-slate-100 text-slate-700",
-    foh: "bg-blue-100 text-blue-700",
-    boh: "bg-emerald-100 text-emerald-700", 
-    bar: "bg-purple-100 text-purple-700",
-    management: "bg-amber-100 text-amber-700"
+    foh: "bg-blue-100 text-blue-700 border border-blue-200",
+    boh: "bg-emerald-100 text-emerald-700 border border-emerald-200", 
+    bar: "bg-purple-100 text-purple-700 border border-purple-200",
+    management: "bg-amber-100 text-amber-700 border border-amber-200"
   };
 
   return (
@@ -30,80 +30,39 @@ const Badge = ({ children, variant = "default", size = "sm" }) => {
   );
 };
 
-// Budget Card Component
-const BudgetCard = ({ title, budget, scheduled, hours, targetHours, color = "blue" }) => {
-  const budgetUsed = budget > 0 ? (scheduled / budget) * 100 : 0;
-  const hoursProgress = targetHours > 0 ? (hours / targetHours) * 100 : 0;
+// Simplified Budget Row Component
+const BudgetRow = ({ title, scheduled, budget, color = "slate" }) => {
+  const percentage = budget > 0 ? (scheduled / budget) * 100 : 0;
   
-  const getStatusColor = (percentage) => {
-    if (percentage <= 80) return "text-emerald-600";
-    if (percentage <= 100) return "text-amber-600";
+  const getStatusColor = (pct) => {
+    if (pct <= 80) return "text-emerald-600";
+    if (pct <= 100) return "text-amber-600";
     return "text-red-600";
   };
 
-  const colorClasses = {
-    blue: "border-blue-200 bg-blue-50",
-    emerald: "border-emerald-200 bg-emerald-50",
-    purple: "border-purple-200 bg-purple-50",
-    amber: "border-amber-200 bg-amber-50"
+  const getProgressColor = (pct) => {
+    if (pct <= 80) return "bg-emerald-500";
+    if (pct <= 100) return "bg-amber-500";
+    return "bg-red-500";
   };
 
   return (
-    <div className={`${colorClasses[color]} border rounded-lg p-4`}>
-      <h4 className="font-semibold text-slate-800 mb-3">{title}</h4>
-      
-      {/* Budget Section */}
-      <div className="space-y-2 mb-4">
-        <div className="flex justify-between text-sm">
-          <span className="text-slate-600">Budget:</span>
-          <span className="font-medium">${budget.toLocaleString()}</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-slate-600">Scheduled:</span>
-          <span className="font-medium">${scheduled.toLocaleString()}</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-slate-600">Used:</span>
-          <span className={`font-bold ${getStatusColor(budgetUsed)}`}>
-            {budgetUsed.toFixed(1)}%
-          </span>
-        </div>
-        <div className="w-full bg-slate-200 rounded-full h-2">
-          <div 
-            className={`h-2 rounded-full transition-all duration-300 ${
-              budgetUsed <= 80 ? 'bg-emerald-500' : 
-              budgetUsed <= 100 ? 'bg-amber-500' : 'bg-red-500'
-            }`}
-            style={{ width: `${Math.min(budgetUsed, 100)}%` }}
-          />
-        </div>
+    <div className="flex items-center justify-between py-2">
+      <div className="flex items-center space-x-3 flex-1">
+        <div className={`w-3 h-3 rounded-full bg-${color}-500`}></div>
+        <span className="font-medium text-slate-700 w-20">{title}:</span>
+        <span className="text-slate-900">
+          ${scheduled.toLocaleString()} / ${budget.toLocaleString()}
+        </span>
+        <span className={`font-bold ${getStatusColor(percentage)}`}>
+          ({percentage.toFixed(1)}%)
+        </span>
       </div>
-
-      {/* Hours Section */}
-      <div className="space-y-2">
-        <div className="flex justify-between text-sm">
-          <span className="text-slate-600">Target:</span>
-          <span className="font-medium">{targetHours}h</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-slate-600">Scheduled:</span>
-          <span className="font-medium">{hours}h</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-slate-600">Progress:</span>
-          <span className={`font-bold ${getStatusColor(hoursProgress)}`}>
-            {hoursProgress.toFixed(1)}%
-          </span>
-        </div>
-        <div className="w-full bg-slate-200 rounded-full h-2">
-          <div 
-            className={`h-2 rounded-full transition-all duration-300 ${
-              hoursProgress <= 80 ? 'bg-emerald-500' : 
-              hoursProgress <= 100 ? 'bg-amber-500' : 'bg-red-500'
-            }`}
-            style={{ width: `${Math.min(hoursProgress, 100)}%` }}
-          />
-        </div>
+      <div className="w-32 bg-slate-200 rounded-full h-2">
+        <div 
+          className={`h-2 rounded-full transition-all duration-300 ${getProgressColor(percentage)}`}
+          style={{ width: `${Math.min(percentage, 100)}%` }}
+        />
       </div>
     </div>
   );
@@ -175,6 +134,7 @@ const WeeklyLaborSchedule = () => {
   const [showDropdown, setShowDropdown] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showManagerView, setShowManagerView] = useState(true);
+  const [budgetCollapsed, setBudgetCollapsed] = useState(false);
 
   const contextData = useLaborData();
   const employees = contextData?.employees || [];
@@ -205,11 +165,11 @@ const WeeklyLaborSchedule = () => {
 
   const filteredEmployees = getFilteredEmployees();
 
-  // Calculate department stats
+  // Calculate department stats (excluding Management from totals)
   const getDepartmentStats = (department) => {
     const assignments = Object.values(scheduleData).reduce((acc, day) => {
       const deptEmployees = (day.employees || []).filter(emp => 
-        department === 'ALL' || emp.department === department
+        department === 'ALL' ? emp.department !== 'Management' : emp.department === department
       );
       return acc.concat(deptEmployees);
     }, []);
@@ -219,29 +179,26 @@ const WeeklyLaborSchedule = () => {
 
     // Mock budget data - in real app, pull from FVA/Forecast
     const budgets = {
-      'FOH': { budget: 800, targetHours: 50 },
-      'BOH': { budget: 1200, targetHours: 75 },
-      'Bar': { budget: 300, targetHours: 20 },
-      'Management': { budget: 400, targetHours: 25 },
-      'ALL': { budget: 2700, targetHours: 170 }
+      'FOH': { budget: 800 },
+      'BOH': { budget: 1200 },
+      'Bar': { budget: 300 },
+      'ALL': { budget: 2300 } // FOH + BOH + Bar (excluding Management)
     };
 
     return {
       scheduled: Math.round(totalCost),
-      hours: Math.round(totalHours),
-      budget: budgets[department]?.budget || 0,
-      targetHours: budgets[department]?.targetHours || 0
+      budget: budgets[department]?.budget || 0
     };
   };
 
   // Enhanced color functions
   const getDepartmentColor = (department) => {
     switch (department) {
-      case 'FOH': return 'border-blue-200 bg-blue-50';
-      case 'BOH': return 'border-emerald-200 bg-emerald-50';
-      case 'Bar': return 'border-purple-200 bg-purple-50';
-      case 'Management': return 'border-amber-200 bg-amber-50';
-      default: return 'border-slate-200 bg-slate-50';
+      case 'FOH': return 'border-blue-200 bg-blue-50/50';
+      case 'BOH': return 'border-emerald-200 bg-emerald-50/50';
+      case 'Bar': return 'border-purple-200 bg-purple-50/50';
+      case 'Management': return 'border-amber-200 bg-amber-50/50';
+      default: return 'border-slate-200 bg-slate-50/50';
     }
   };
 
@@ -249,14 +206,14 @@ const WeeklyLaborSchedule = () => {
     const baseStyle = "px-4 py-2 rounded-lg font-medium transition-all duration-200";
     if (isSelected) {
       switch (deptId) {
-        case 'FOH': return `${baseStyle} bg-blue-600 text-white`;
-        case 'BOH': return `${baseStyle} bg-emerald-600 text-white`;
-        case 'Bar': return `${baseStyle} bg-purple-600 text-white`;
-        case 'Management': return `${baseStyle} bg-amber-600 text-white`;
-        default: return `${baseStyle} bg-slate-600 text-white`;
+        case 'FOH': return `${baseStyle} bg-blue-600 text-white shadow-sm`;
+        case 'BOH': return `${baseStyle} bg-emerald-600 text-white shadow-sm`;
+        case 'Bar': return `${baseStyle} bg-purple-600 text-white shadow-sm`;
+        case 'Management': return `${baseStyle} bg-amber-600 text-white shadow-sm`;
+        default: return `${baseStyle} bg-slate-700 text-white shadow-sm`;
       }
     }
-    return `${baseStyle} bg-white text-slate-700 border border-slate-300 hover:bg-slate-50`;
+    return `${baseStyle} bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 hover:border-slate-400`;
   };
 
   // Event handlers
@@ -381,7 +338,6 @@ const WeeklyLaborSchedule = () => {
   const fohStats = getDepartmentStats('FOH');
   const bohStats = getDepartmentStats('BOH');
   const barStats = getDepartmentStats('Bar');
-  const mgmtStats = getDepartmentStats('Management');
   const totalStats = getDepartmentStats('ALL');
 
   return (
@@ -419,64 +375,42 @@ const WeeklyLaborSchedule = () => {
         </div>
       </div>
 
-      {/* Manager Budget Section */}
+      {/* Simplified Budget Section (Manager View Only) */}
       {showManagerView && (
         <Card className="border-slate-200 shadow-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-3 mb-6">
-              <DollarSign className="h-5 w-5 text-slate-600" />
-              <h3 className="text-lg font-semibold text-slate-800">Labor Budget vs Actual</h3>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <DollarSign className="h-5 w-5 text-slate-600" />
+                <h3 className="text-lg font-semibold text-slate-800">Labor Budget vs Actual</h3>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setBudgetCollapsed(!budgetCollapsed)}
+                className="text-slate-600 hover:text-slate-800"
+              >
+                {budgetCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+              </Button>
             </div>
             
-            <div className="grid grid-cols-5 gap-4">
-              <BudgetCard 
-                title="FOH" 
-                budget={fohStats.budget}
-                scheduled={fohStats.scheduled}
-                hours={fohStats.hours}
-                targetHours={fohStats.targetHours}
-                color="blue"
-              />
-              <BudgetCard 
-                title="BOH" 
-                budget={bohStats.budget}
-                scheduled={bohStats.scheduled}
-                hours={bohStats.hours}
-                targetHours={bohStats.targetHours}
-                color="emerald"
-              />
-              <BudgetCard 
-                title="Bar" 
-                budget={barStats.budget}
-                scheduled={barStats.scheduled}
-                hours={barStats.hours}
-                targetHours={barStats.targetHours}
-                color="purple"
-              />
-              <BudgetCard 
-                title="Management" 
-                budget={mgmtStats.budget}
-                scheduled={mgmtStats.scheduled}
-                hours={mgmtStats.hours}
-                targetHours={mgmtStats.targetHours}
-                color="amber"
-              />
-              <BudgetCard 
-                title="TOTAL" 
-                budget={totalStats.budget}
-                scheduled={totalStats.scheduled}
-                hours={totalStats.hours}
-                targetHours={totalStats.targetHours}
-                color="blue"
-              />
-            </div>
+            {!budgetCollapsed && (
+              <div className="mt-4 space-y-1">
+                <BudgetRow title="FOH" scheduled={fohStats.scheduled} budget={fohStats.budget} color="blue" />
+                <BudgetRow title="BOH" scheduled={bohStats.scheduled} budget={bohStats.budget} color="emerald" />
+                <BudgetRow title="Bar" scheduled={barStats.scheduled} budget={barStats.budget} color="purple" />
+                <div className="border-t border-slate-200 pt-2 mt-3">
+                  <BudgetRow title="Total" scheduled={totalStats.scheduled} budget={totalStats.budget} color="slate" />
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
 
       {/* Department Filter & Stats */}
       <Card className="border-slate-200 shadow-sm">
-        <CardContent className="p-6">
+        <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-6">
               <div className="flex items-center space-x-3">
@@ -517,12 +451,12 @@ const WeeklyLaborSchedule = () => {
         </CardContent>
       </Card>
 
-      {/* Schedule Grid */}
-      <div className="space-y-4">
+      {/* Clean Schedule Grid */}
+      <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
         {/* Header Row */}
-        <div className="grid grid-cols-8 gap-3">
-          <div className="col-span-1">
-            <div className="bg-slate-100 border border-slate-200 rounded-lg p-3 text-center">
+        <div className="grid grid-cols-8 border-b border-slate-200">
+          <div className="col-span-1 p-4 bg-slate-50 border-r border-slate-200">
+            <div className="text-center">
               <span className="font-semibold text-slate-800 text-sm">Role / Shift</span>
             </div>
           </div>
@@ -530,16 +464,14 @@ const WeeklyLaborSchedule = () => {
             const headerInfo = formatDateHeader(day);
             const isToday = day.toDateString() === new Date().toDateString();
             return (
-              <div key={index}>
-                <div className={`${isToday ? 'bg-blue-100 border-blue-300' : 'bg-slate-100 border-slate-200'} border rounded-lg p-3 text-center`}>
-                  <div className={`font-semibold text-xs ${isToday ? 'text-blue-800' : 'text-slate-800'}`}>
-                    {headerInfo.day}
-                  </div>
-                  <div className={`text-xs mt-1 ${isToday ? 'text-blue-600' : 'text-slate-600'}`}>
-                    {headerInfo.date}
-                  </div>
-                  {isToday && <div className="text-xs text-blue-500 font-medium mt-1">Today</div>}
+              <div key={index} className={`p-4 text-center border-r border-slate-200 last:border-r-0 ${isToday ? 'bg-blue-50' : 'bg-slate-50'}`}>
+                <div className={`font-semibold text-sm ${isToday ? 'text-blue-800' : 'text-slate-800'}`}>
+                  {headerInfo.day}
                 </div>
+                <div className={`text-xs mt-1 ${isToday ? 'text-blue-600' : 'text-slate-600'}`}>
+                  {headerInfo.date}
+                </div>
+                {isToday && <div className="text-xs text-blue-500 font-medium mt-1">Today</div>}
               </div>
             );
           })}
@@ -553,16 +485,17 @@ const WeeklyLaborSchedule = () => {
           ];
           
           return shifts.map((shift, shiftIndex) => (
-            <div key={`${roleIndex}-${shiftIndex}`} className="grid grid-cols-8 gap-3">
+            <div key={`${roleIndex}-${shiftIndex}`} className="grid grid-cols-8 border-b border-slate-200 last:border-b-0">
               {/* Role Card */}
-              <div className="col-span-1">
-                <div className={`${getDepartmentColor(role.department)} border rounded-lg p-3 h-24 flex flex-col justify-center`}>
-                  <div className="text-center">
-                    <div className="font-semibold text-slate-900 text-sm">{role.name}</div>
-                    <div className="text-slate-600 text-xs mt-1">{shift.name} Shift</div>
-                    <div className="text-slate-700 text-xs font-medium mt-1">
-                      {formatTime(shift.startTime)} - {formatTime(shift.endTime)}
-                    </div>
+              <div className="col-span-1 p-4 bg-slate-50 border-r border-slate-200">
+                <div className="text-center space-y-1">
+                  <div className="font-semibold text-slate-900 text-sm">{role.name}</div>
+                  <div className="text-slate-600 text-xs">{shift.name} Shift</div>
+                  <div className="text-slate-700 text-xs font-medium">
+                    {formatTime(shift.startTime)} - {formatTime(shift.endTime)}
+                  </div>
+                  <div className="text-slate-500 text-xs">
+                    {calculateHours(shift.startTime, shift.endTime)}h shift
                   </div>
                 </div>
               </div>
@@ -574,22 +507,22 @@ const WeeklyLaborSchedule = () => {
                 const isToday = day.toDateString() === new Date().toDateString();
                 
                 return (
-                  <div key={dayIndex} className="col-span-1">
-                    <div className={`${getDepartmentColor(role.department)} border rounded-lg p-2 h-24 ${isToday ? 'ring-2 ring-blue-300' : ''}`}>
+                  <div key={dayIndex} className={`p-4 border-r border-slate-200 last:border-r-0 min-h-[120px] ${isToday ? 'bg-blue-50/30' : ''}`}>
+                    <div className="h-full flex flex-col">
                       {assignedEmployees.length > 0 ? (
-                        <div className="space-y-1">
+                        <div className="space-y-2 flex-1">
                           {assignedEmployees.map((emp, empIndex) => (
-                            <div key={empIndex} className="bg-white rounded p-2 text-xs">
+                            <div key={empIndex} className="bg-white rounded-lg p-3 shadow-sm border border-slate-200">
                               <div className="flex items-center justify-between">
                                 <div className="flex-1 min-w-0">
-                                  <div className="font-semibold text-slate-900 truncate">{emp.name}</div>
-                                  <div className="text-slate-600">{emp.hours}h</div>
+                                  <div className="font-semibold text-slate-900 text-sm truncate">{emp.name}</div>
+                                  <div className="text-slate-600 text-xs">{emp.role} • {emp.hours}h</div>
                                 </div>
                                 <Button
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => handleRemoveEmployee(roleIndex, shiftIndex, dayIndex, emp.id)}
-                                  className="h-5 w-5 p-0 text-slate-400 hover:text-red-500"
+                                  className="h-6 w-6 p-0 text-slate-400 hover:text-red-500 hover:bg-red-50"
                                 >
                                   <X className="h-3 w-3" />
                                 </Button>
@@ -602,29 +535,29 @@ const WeeklyLaborSchedule = () => {
                           <div className="relative">
                             <Button
                               size="sm"
-                              variant="ghost"
+                              variant="outline"
                               onClick={() => setShowDropdown(showDropdown === dropdownKey ? null : dropdownKey)}
-                              className="text-slate-600 hover:bg-white/70 border border-dashed border-slate-300 text-xs px-2 py-1"
+                              className="text-slate-600 hover:bg-slate-50 border-dashed border-slate-300 text-xs px-3 py-2"
                             >
                               <Plus className="h-3 w-3 mr-1" />
-                              Add
+                              Add Employee
                             </Button>
                             
                             {showDropdown === dropdownKey && (
-                              <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-20 max-h-40 overflow-y-auto">
+                              <div className="absolute top-full left-0 mt-1 w-56 bg-white border border-slate-200 rounded-lg shadow-lg z-20 max-h-48 overflow-y-auto">
                                 {filteredEmployees.length > 0 ? (
                                   filteredEmployees.map(employee => (
                                     <button
                                       key={employee.id}
                                       onClick={() => handleAddEmployee(roleIndex, shiftIndex, dayIndex, employee.id)}
-                                      className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 border-b border-slate-100 last:border-b-0"
+                                      className="w-full text-left px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 border-b border-slate-100 last:border-b-0"
                                     >
                                       <div className="font-medium">{employee.name}</div>
-                                      <div className="text-xs text-slate-500">{employee.role}</div>
+                                      <div className="text-xs text-slate-500">{employee.role} • ${employee.hourly_rate}/hr</div>
                                     </button>
                                   ))
                                 ) : (
-                                  <div className="px-3 py-2 text-sm text-slate-500">No employees available</div>
+                                  <div className="px-4 py-3 text-sm text-slate-500">No employees available</div>
                                 )}
                               </div>
                             )}
@@ -633,7 +566,7 @@ const WeeklyLaborSchedule = () => {
                       )}
                       
                       {/* Department Badge */}
-                      <div className="mt-1 flex justify-center">
+                      <div className="mt-2 flex justify-center">
                         <Badge variant={role.department.toLowerCase()} size="sm">
                           {role.department}
                         </Badge>
