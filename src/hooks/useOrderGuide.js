@@ -24,18 +24,17 @@ export function useOrderGuide({ locationId, category = null } = {}) {
 
     try {
       let query = supabase
-        .from('v_order_guide_current') // ✅ canonical view
+        .from('v_order_guide_current')
         .select(`
           item_id,
           location_id,
-          category_name,
+          category_name as category,
           category_rank,
           item_name,
           unit,
           on_hand,
           par_level,
           order_quantity,
-          item_status,
           unit_cost,
           total_cost,
           vendor_name,
@@ -47,7 +46,7 @@ export function useOrderGuide({ locationId, category = null } = {}) {
         .order('category_rank', { ascending: true })
         .order('item_name', { ascending: true });
 
-      if (category) query = query.eq('category_name', category);
+      if (category) query = query.eq('category', category);
 
       const { data, error: qErr } = await query;
       if (qErr) throw qErr;
@@ -66,11 +65,10 @@ export function useOrderGuide({ locationId, category = null } = {}) {
 
   const itemsByCategory = useMemo(() => {
     const grouped = {};
-
     console.log('🧾 Raw rows from Supabase:', rows);
 
     for (const r of rows) {
-      const cat = r.category_name || 'Uncategorized';
+      const cat = r.category || 'Uncategorized';
       if (!grouped[cat]) grouped[cat] = [];
 
       const actual = Number(r.on_hand ?? 0);
@@ -84,7 +82,7 @@ export function useOrderGuide({ locationId, category = null } = {}) {
         actual,
         forecast,
         variance,
-        status: String(r.inventory_status || r.item_status || 'auto').toLowerCase(),
+        // ✅ Removed inventory_status and item_status (they don't exist in the view)
         on_hand: r.on_hand ?? null,
         par_level: r.par_level ?? null,
         order_quantity: r.order_quantity ?? null,
@@ -96,6 +94,7 @@ export function useOrderGuide({ locationId, category = null } = {}) {
         last_ordered_at: r.last_ordered_at ?? null,
       });
     }
+
     return grouped;
   }, [rows]);
 
@@ -103,7 +102,7 @@ export function useOrderGuide({ locationId, category = null } = {}) {
     isLoading,
     error,
     itemsByCategory,
-    groupedData: itemsByCategory, // legacy alias
+    groupedData: itemsByCategory,
     refresh: fetchData,
   };
 }
