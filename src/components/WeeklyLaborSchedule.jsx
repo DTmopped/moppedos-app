@@ -9,12 +9,12 @@ import {
 import { useLaborData } from '@/contexts/LaborDataContext';
 import { ROLES, getRolesByDepartment, SHIFT_TIMES } from '@/config/laborScheduleConfig';
 
-// Optimized Print CSS for Single Page Landscape
+// Optimized Print CSS for Single Page Landscape - FIXED
 const printStyles = `
   @media print {
     @page {
       size: landscape;
-      margin: 0.5in;
+      margin: 0.3in;
     }
     
     /* Hide everything except the schedule */
@@ -26,9 +26,11 @@ const printStyles = `
     body {
       margin: 0;
       padding: 0;
-      font-size: 11px;
+      font-size: 9px;
       background: white !important;
       color: black !important;
+      transform: scale(0.85);
+      transform-origin: top left;
     }
     
     /* Schedule grid optimization for single page */
@@ -44,80 +46,94 @@ const printStyles = `
     
     .print-header {
       text-align: center;
-      margin-bottom: 15px;
+      margin-bottom: 10px;
       border-bottom: 2px solid #000;
-      padding-bottom: 8px;
+      padding-bottom: 5px;
     }
     
     .print-header h1 {
-      font-size: 20px;
+      font-size: 16px;
       font-weight: bold;
-      margin: 0 0 5px 0;
+      margin: 0 0 3px 0;
     }
     
     .print-header p {
-      font-size: 14px;
+      font-size: 12px;
       margin: 0;
     }
     
-    /* Optimized table layout */
+    /* Optimized table layout - SINGLE PAGE */
     .print-table {
       width: 100%;
       border-collapse: collapse;
       table-layout: fixed;
+      font-size: 8px;
     }
     
     .print-table th,
     .print-table td {
       border: 1px solid #333;
-      padding: 6px;
+      padding: 3px;
       vertical-align: top;
-      font-size: 10px;
+      font-size: 8px;
+      overflow: hidden;
     }
     
     .print-role-header {
-      width: 140px;
+      width: 100px;
       background: #f0f0f0 !important;
       font-weight: bold;
       text-align: center;
+      font-size: 9px;
     }
     
     .print-day-header {
       background: #f8f8f8 !important;
       font-weight: bold;
       text-align: center;
-      font-size: 11px;
+      font-size: 9px;
+      width: calc((100% - 100px) / 7);
     }
     
     .print-role-cell {
       background: #f5f5f5 !important;
       font-weight: bold;
       text-align: center;
-      width: 140px;
+      width: 100px;
+      font-size: 8px;
     }
     
     .print-day-cell {
-      width: calc((100% - 140px) / 7);
-      min-height: 70px;
+      width: calc((100% - 100px) / 7);
+      min-height: 50px;
+      max-height: 50px;
+      overflow: hidden;
     }
     
     .print-employee {
-      margin-bottom: 3px;
-      padding: 3px;
+      margin-bottom: 2px;
+      padding: 2px;
       border: 1px solid #ddd;
-      border-radius: 3px;
+      border-radius: 2px;
       background: #f9f9f9 !important;
-      font-size: 9px;
+      font-size: 7px;
+      overflow: hidden;
     }
     
     .print-employee-name {
       font-weight: bold;
-      font-size: 10px;
+      font-size: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     
     .print-employee-time {
-      font-size: 9px;
+      font-size: 7px;
       color: #666 !important;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     
     /* Department colors for print */
@@ -130,6 +146,14 @@ const printStyles = `
     .print-schedule {
       page-break-after: avoid;
       page-break-inside: avoid;
+      height: auto;
+      max-height: 100vh;
+    }
+    
+    /* Compact everything for single page */
+    .print-table tr {
+      height: 50px;
+      max-height: 50px;
     }
     
     /* Remove all colors for better printing */
@@ -263,7 +287,7 @@ const TimeSelector = ({ value, onChange, label }) => {
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="text-sm font-bold bg-transparent border-none outline-none cursor-pointer hover:bg-slate-50 rounded px-1 text-slate-800 min-w-[80px]"
+      className="text-xs font-bold bg-transparent border-none outline-none cursor-pointer hover:bg-slate-50 rounded px-1 text-slate-800 min-w-[70px]"
     >
       {timeOptions.map(time => (
         <option key={time} value={time}>{time}</option>
@@ -845,11 +869,11 @@ const WeeklyLaborSchedule = () => {
             <p>Week of {formatDateHeader(weekStart).day}, {formatDateHeader(weekStart).date}</p>
           </div>
 
-          {/* PERFECT FINAL Schedule Grid - Optimized Proportions & Bold Text */}
+          {/* FINAL OPTIMIZED Schedule Grid - Perfect Proportions & Single Page Print */}
           <Card className="border-slate-300 shadow-lg bg-white print-schedule">
             <CardContent className="p-6">
               <div className="space-y-4">
-                {/* Optimized Print Table (Hidden on screen) */}
+                {/* Optimized Print Table (Hidden on screen) - SINGLE PAGE FIXED */}
                 <table className="print-table" style={{ display: 'none' }}>
                   <thead>
                     <tr>
@@ -895,23 +919,23 @@ const WeeklyLaborSchedule = () => {
                   </tbody>
                 </table>
 
-                {/* Screen Display - PERFECT PROPORTIONS & BOLD TEXT */}
+                {/* Screen Display - OPTIMIZED PROPORTIONS */}
                 <div className="w-full overflow-x-auto">
-                  <div className="min-w-[1600px]"> {/* Optimized total width */}
+                  <div className="min-w-[1800px]"> {/* Increased for wider day columns */}
                     <div className="flex">
-                      {/* Smaller Role Header - Optimized Width */}
-                      <div className="w-72 flex-shrink-0 sticky left-0 bg-white z-10 pr-4"> {/* Reduced from w-96 to w-72 */}
-                        <div className="text-center font-bold text-slate-800 py-4 bg-slate-100 rounded-lg border-2 border-slate-300 h-16 flex items-center justify-center text-base"> {/* Increased font size */}
+                      {/* SMALLER Role Header - Optimized Width */}
+                      <div className="w-48 flex-shrink-0 sticky left-0 bg-white z-10 pr-3"> {/* Reduced from w-72 to w-48 */}
+                        <div className="text-center font-bold text-slate-800 py-4 bg-slate-100 rounded-lg border-2 border-slate-300 h-16 flex items-center justify-center text-sm">
                           📋 Role / Shift
                         </div>
                       </div>
-                      {/* Date Headers - More Space */}
-                      <div className="flex-1 grid grid-cols-7 gap-4">
+                      {/* WIDER Date Headers - More Space */}
+                      <div className="flex-1 grid grid-cols-7 gap-3">
                         {weekDays.map((day, index) => {
                           const { day: dayName, date } = formatDateHeader(day);
                           const isToday = day.toDateString() === new Date().toDateString();
                           return (
-                            <div key={index} className={`text-center py-4 rounded-lg border-2 font-bold h-16 flex flex-col justify-center min-w-[180px] text-base ${isToday ? 'bg-blue-100 border-blue-400 text-blue-800' : 'bg-slate-100 border-slate-300 text-slate-800'}`}>
+                            <div key={index} className={`text-center py-4 rounded-lg border-2 font-bold h-16 flex flex-col justify-center min-w-[220px] text-base ${isToday ? 'bg-blue-100 border-blue-400 text-blue-800' : 'bg-slate-100 border-slate-300 text-slate-800'}`}>
                               <div className="text-sm font-bold">
                                 {dayName} {isToday && '📅'}
                               </div>
@@ -924,7 +948,7 @@ const WeeklyLaborSchedule = () => {
                       </div>
                     </div>
 
-                    {/* Excel-Style Schedule Rows - PERFECT PROPORTIONS */}
+                    {/* Excel-Style Schedule Rows - WIDER CELLS */}
                     <div className="mt-6 space-y-4">
                       {filteredRoles.map((role, roleIndex) => {
                         return [0, 1].map(shiftIndex => {
@@ -932,40 +956,40 @@ const WeeklyLaborSchedule = () => {
                           
                           return (
                             <div key={`${roleIndex}-${shiftIndex}`} className="flex">
-                              {/* Smaller Role Column - EXACT SAME WIDTH */}
-                              <div className="w-72 flex-shrink-0 sticky left-0 bg-white z-10 pr-4"> {/* Matches header exactly */}
-                                <div className={`p-4 rounded-lg border-2 ${getDepartmentColor(role.department)} h-32 flex flex-col justify-center shadow-sm hover:shadow-md transition-shadow duration-200`}>
-                                  <div className="text-center space-y-2">
-                                    <div className="text-2xl">{getDepartmentEmoji(role.department)}</div>
-                                    <div className="font-bold text-slate-900 text-base">{role.name}</div> {/* Increased font size */}
-                                    <div className="text-slate-800 text-sm font-bold flex items-center justify-center space-x-2"> {/* Made bolder */}
+                              {/* SMALLER Role Column - EXACT SAME WIDTH */}
+                              <div className="w-48 flex-shrink-0 sticky left-0 bg-white z-10 pr-3"> {/* Matches header exactly */}
+                                <div className={`p-3 rounded-lg border-2 ${getDepartmentColor(role.department)} h-28 flex flex-col justify-center shadow-sm hover:shadow-md transition-shadow duration-200`}>
+                                  <div className="text-center space-y-1">
+                                    <div className="text-xl">{getDepartmentEmoji(role.department)}</div>
+                                    <div className="font-bold text-slate-900 text-sm">{role.name}</div>
+                                    <div className="text-slate-800 text-xs font-bold flex items-center justify-center space-x-1">
                                       <span>{shift === 'AM' ? '🌅' : '🌙'}</span>
                                       <span>{shift} Shift</span>
                                     </div>
-                                    {/* DEPARTMENT BADGE - Ultra Clear & Bold */}
-                                    <Badge variant={role.department.toLowerCase()} size="md" emoji={getDepartmentEmoji(role.department)}>
-                                      <span className="font-bold">{role.department}</span>
+                                    {/* DEPARTMENT BADGE - Compact */}
+                                    <Badge variant={role.department.toLowerCase()} size="sm" emoji={getDepartmentEmoji(role.department)}>
+                                      <span className="font-bold text-xs">{role.department}</span>
                                     </Badge>
                                   </div>
                                 </div>
                               </div>
 
-                              {/* Excel-Style Day Cells - MORE SPACE & BOLD TEXT */}
-                              <div className="flex-1 grid grid-cols-7 gap-4">
+                              {/* WIDER Day Cells - MORE SPACE FOR TIME */}
+                              <div className="flex-1 grid grid-cols-7 gap-3">
                                 {weekDays.map((day, dayIndex) => {
                                   const assignedEmployees = getAssignedEmployees(roleIndex, shiftIndex, dayIndex);
                                   const dropdownKey = `${roleIndex}-${shiftIndex}-${dayIndex}`;
                                   const isToday = day.toDateString() === new Date().toDateString();
                                   
                                   return (
-                                    <div key={dayIndex} className={`border-2 rounded-lg h-32 p-3 min-w-[180px] ${isToday ? 'bg-blue-50 border-blue-300' : 'bg-white border-slate-300'} hover:shadow-md transition-all duration-200 print-cell ${role.department === 'FOH' ? 'print-dept-foh' : role.department === 'BOH' ? 'print-dept-boh' : role.department === 'Bar' ? 'print-dept-bar' : 'print-dept-mgmt'}`}>
+                                    <div key={dayIndex} className={`border-2 rounded-lg h-28 p-3 min-w-[220px] ${isToday ? 'bg-blue-50 border-blue-300' : 'bg-white border-slate-300'} hover:shadow-md transition-all duration-200 print-cell ${role.department === 'FOH' ? 'print-dept-foh' : role.department === 'BOH' ? 'print-dept-boh' : role.department === 'Bar' ? 'print-dept-bar' : 'print-dept-mgmt'}`}>
                                       {assignedEmployees.length > 0 ? (
                                         <div className="space-y-2 h-full overflow-y-auto">
                                           {assignedEmployees.map((emp, empIndex) => {
                                             const timeValidation = validateTimeRange(emp.start, emp.end);
                                             return (
                                               <div key={empIndex} className={`p-2 rounded-md border ${getDepartmentColor(emp.department)} group hover:shadow-sm transition-all duration-200 relative print-employee ${!timeValidation.valid ? 'border-red-300 bg-red-50' : ''}`}>
-                                                {/* Excel-Style Employee Cell: BOLD NAME & TIME */}
+                                                {/* Excel-Style Employee Cell: WIDER FOR TIME */}
                                                 <div className="space-y-1">
                                                   {/* Employee Name - Editable & BOLD */}
                                                   <div className="flex items-center justify-between">
@@ -973,21 +997,21 @@ const WeeklyLaborSchedule = () => {
                                                       type="text"
                                                       value={emp.name}
                                                       onChange={(e) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, emp.id, 'name', e.target.value)}
-                                                      className="font-bold text-base bg-transparent border-none outline-none w-full text-slate-900 pr-2" /* Increased font size and made bold */
+                                                      className="font-bold text-sm bg-transparent border-none outline-none w-full text-slate-900 pr-2"
                                                       placeholder="Employee Name"
                                                     />
                                                     <Button
                                                       size="sm"
                                                       variant="ghost"
                                                       onClick={() => handleRemoveEmployee(roleIndex, shiftIndex, dayIndex, emp.id)}
-                                                      className="h-5 w-5 p-0 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all duration-200 no-print flex-shrink-0"
+                                                      className="h-4 w-4 p-0 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all duration-200 no-print flex-shrink-0"
                                                     >
                                                       <X className="h-3 w-3" />
                                                     </Button>
                                                   </div>
                                                   
-                                                  {/* Time Range - BOLD & COMPLETE AM/PM */}
-                                                  <div className="flex items-center space-x-1 text-sm">
+                                                  {/* Time Range - WIDER SPACE & WRAPPING */}
+                                                  <div className="flex flex-wrap items-center gap-1 text-xs">
                                                     <TimeSelector
                                                       value={emp.start}
                                                       onChange={(value) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, emp.id, 'start', value)}
@@ -997,7 +1021,7 @@ const WeeklyLaborSchedule = () => {
                                                       value={emp.end}
                                                       onChange={(value) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, emp.id, 'end', value)}
                                                     />
-                                                    <span className={`ml-1 font-bold whitespace-nowrap ${timeValidation.valid ? 'text-slate-900' : 'text-red-600'}`}>
+                                                    <span className={`font-bold whitespace-nowrap ${timeValidation.valid ? 'text-slate-900' : 'text-red-600'}`}>
                                                       ({emp.hours}h)
                                                     </span>
                                                   </div>
@@ -1020,9 +1044,9 @@ const WeeklyLaborSchedule = () => {
                                               size="sm"
                                               variant="outline"
                                               onClick={() => setShowDropdown(showDropdown === dropdownKey ? null : dropdownKey)}
-                                              className="text-slate-700 hover:bg-slate-50 border-dashed border-slate-400 text-sm px-3 py-2 flex items-center space-x-2 font-medium" /* Made text darker and bolder */
+                                              className="text-slate-700 hover:bg-slate-50 border-dashed border-slate-400 text-xs px-3 py-2 flex items-center space-x-2 font-medium"
                                             >
-                                              <Plus className="h-4 w-4" />
+                                              <Plus className="h-3 w-3" />
                                               <span>Add Employee</span>
                                             </Button>
                                             
@@ -1033,13 +1057,13 @@ const WeeklyLaborSchedule = () => {
                                                     <button
                                                       key={employee.id}
                                                       onClick={() => handleAddEmployee(roleIndex, shiftIndex, dayIndex, employee.id)}
-                                                      className="w-full text-left px-4 py-3 text-sm text-slate-800 hover:bg-slate-50 border-b border-slate-100 last:border-b-0 transition-colors duration-150" /* Made text darker */
+                                                      className="w-full text-left px-4 py-3 text-sm text-slate-800 hover:bg-slate-50 border-b border-slate-100 last:border-b-0 transition-colors duration-150"
                                                     >
                                                       <div className="flex items-center space-x-3">
                                                         <span className="text-lg">👤</span>
                                                         <div className="flex-1">
-                                                          <div className="font-bold text-base text-slate-900">{employee.name}</div> {/* Made bold and darker */}
-                                                          <div className="text-sm text-slate-600 flex items-center space-x-3 mt-1 font-medium"> {/* Made darker */}
+                                                          <div className="font-bold text-sm text-slate-900">{employee.name}</div>
+                                                          <div className="text-xs text-slate-600 flex items-center space-x-3 mt-1 font-medium">
                                                             <span>💼 {employee.role}</span>
                                                             <span>•</span>
                                                             <span>🏢 {employee.department}</span>
@@ -1049,7 +1073,7 @@ const WeeklyLaborSchedule = () => {
                                                     </button>
                                                   ))
                                                 ) : (
-                                                  <div className="px-4 py-3 text-sm text-slate-600 text-center font-medium"> {/* Made darker */}
+                                                  <div className="px-4 py-3 text-sm text-slate-600 text-center font-medium">
                                                     <span>😔 No employees available</span>
                                                   </div>
                                                 )}
