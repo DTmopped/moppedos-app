@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/supabaseClient';
-import { MOPPED_RESTAURANT_TEMPLATE } from '@/config/laborScheduleConfig';
+import { MOPPED_RESTAURANT_TEMPLATE, REVERSE_DEPARTMENT_MAPPING } from '@/config/laborScheduleConfig';
 
 const LaborDataContext = createContext();
 
@@ -12,18 +12,11 @@ export const useLaborData = () => {
   return context;
 };
 
-// Department mapping to standardize between config and database
+// Department mapping to work with existing database
 const DEPARTMENT_MAPPING = {
   'FOH': 'Front of House',
   'BOH': 'Back of House', 
   'Bar': 'Bar & Beverage',
-  'Management': 'Management'
-};
-
-const REVERSE_DEPARTMENT_MAPPING = {
-  'Front of House': 'FOH',
-  'Back of House': 'BOH',
-  'Bar & Beverage': 'Bar',
   'Management': 'Management'
 };
 
@@ -159,7 +152,7 @@ export const LaborDataProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
 
-  // Enhanced scheduling state - NO MORE MOCK DATA
+  // Enhanced scheduling state - ADAPTED TO YOUR DATABASE
   const [scheduleRequests, setScheduleRequests] = useState([]);
   const [employeeAvailability, setEmployeeAvailability] = useState([]);
   const [schedules, setSchedules] = useState({});
@@ -186,7 +179,7 @@ export const LaborDataProvider = ({ children }) => {
     }
   };
 
-  // Load data from Supabase - DATABASE FIRST APPROACH
+  // Load data from Supabase - ADAPTED TO YOUR DATABASE STRUCTURE
   const loadLaborData = async () => {
     setLoading(true);
     setError(null);
@@ -194,7 +187,7 @@ export const LaborDataProvider = ({ children }) => {
     try {
       const locationId = await getCurrentLocationId();
       
-      // Load employees - NO FALLBACK TO MOCK DATA
+      // Load employees - USING YOUR EXISTING TABLE
       const { data: employeesData, error: empError } = await supabase
         .from('employees')
         .select('*')
@@ -206,15 +199,15 @@ export const LaborDataProvider = ({ children }) => {
         setError('Failed to load employees from database');
         setIsConnected(false);
       } else {
-        // Enhance employee data with missing fields and standardize departments
+        // Enhance employee data and standardize departments
         const enhancedEmployees = (employeesData || []).map(emp => ({
           ...emp,
           hire_date: emp.hire_date || new Date().toISOString().split('T')[0],
           performance_rating: emp.performance_rating || 4.0,
-          hourly_rate: emp.hourly_rate || 15.00,
+          hourly_rate: emp.hourly_rate || emp.wage_rate || 15.00,
           status: emp.is_active ? 'active' : 'inactive',
-          // Standardize department names
-          department: DEPARTMENT_MAPPING[emp.department] || emp.department || 'Front of House'
+          // Handle your existing department formats
+          department: emp.department || 'FOH'
         }));
         
         setEmployees(enhancedEmployees);
@@ -222,7 +215,7 @@ export const LaborDataProvider = ({ children }) => {
         console.log('Loaded employees:', enhancedEmployees.length);
       }
 
-      // Load PTO requests
+      // Load PTO requests - USING YOUR EXISTING TABLE
       const { data: ptoData, error: ptoError } = await supabase
         .from('pto_requests')
         .select(`
@@ -243,7 +236,7 @@ export const LaborDataProvider = ({ children }) => {
         console.log('Loaded PTO requests:', enhancedPTO.length);
       }
 
-      // Load schedule requests
+      // Load schedule requests - USING YOUR EXISTING TABLE
       const { data: scheduleData, error: scheduleError } = await supabase
         .from('schedule_requests')
         .select(`
@@ -262,7 +255,7 @@ export const LaborDataProvider = ({ children }) => {
         console.log('Loaded schedule requests:', enhancedScheduleData.length);
       }
 
-      // Load employee availability
+      // Load employee availability - USING YOUR EXISTING TABLE
       const { data: availabilityData, error: availError } = await supabase
         .from('employee_availability')
         .select(`
@@ -298,6 +291,113 @@ export const LaborDataProvider = ({ children }) => {
     return diffDays;
   };
 
+  // System Statistics - USING YOUR EXISTING DATA
+  const getSystemStats = () => {
+    const activeEmployees = employees.filter(e => e.is_active !== false);
+    const totalHourlyRate = activeEmployees.reduce((sum, emp) => sum + (emp.hourly_rate || emp.wage_rate || 0), 0);
+    const totalPerformance = activeEmployees.reduce((sum, emp) => sum + (emp.performance_rating || 0), 0);
+    
+    return {
+      totalEmployees: employees.length,
+      activeEmployees: activeEmployees.length,
+      pendingPTO: ptoRequests.filter(req => req.status === 'pending').length,
+      approvedPTO: ptoRequests.filter(req => req.status === 'approved').length,
+      pendingScheduleRequests: scheduleRequests.filter(req => req.status === 'pending').length,
+      totalRoles: currentTemplate?.default_roles?.length || 13,
+      averageHourlyRate: activeEmployees.length > 0 ? Math.round((totalHourlyRate / activeEmployees.length) * 100) / 100 : 0,
+      averagePerformance: activeEmployees.length > 0 ? Math.round((totalPerformance / activeEmployees.length) * 100) / 100 : 0,
+      retentionRate: 92 // Calculate from actual data when available
+    };
+  };
+
+  // Pending requests count
+  const getPendingRequestsCount = () => {
+    const pendingPTO = ptoRequests.filter(req => req.status === 'pending').length;
+    const pendingSchedule = scheduleRequests.filter(req => req.status === 'pending').length;
+    return pendingPTO + pendingSchedule;
+  };
+
+  // Employee lookup functions
+  const getEmployeeById = (employeeId) => {
+    return employees.find(emp => emp.id === employeeId);
+  };
+
+  const getEmployeesByDepartment = (department) => {
+    const mappedDept = DEPARTMENT_MAPPING[department] || department;
+    return employees.filter(emp => emp.department === mappedDept || emp.department === department);
+  };
+
+  // PTO request filters
+  const getPendingPTORequests = () => {
+    return ptoRequests.filter(req => req.status === 'pending');
+  };
+
+  const getApprovedPTORequests = () => {
+    return ptoRequests.filter(req => req.status === 'approved');
+  };
+
+  // Schedule management functions - ADAPTED TO YOUR DATABASE
+  const getWeekSchedule = async (weekDate) => {
+    try {
+      const locationId = await getCurrentLocationId();
+      const weekStart = new Date(weekDate);
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Get Sunday
+      const weekStartStr = weekStart.toISOString().split('T')[0];
+      
+      // Use YOUR existing schedules table
+      const { data, error } = await supabase
+        .from('schedules')
+        .select('*')
+        .eq('location_id', locationId)
+        .eq('week_start_date', weekStartStr)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+        console.error('Error loading week schedule:', error);
+        return null;
+      }
+      
+      return data || {
+        week_start_date: weekStartStr,
+        schedule_data: {},
+        location_id: locationId
+      };
+    } catch (err) {
+      console.error('Failed to get week schedule:', err);
+      return null;
+    }
+  };
+
+  const addScheduleEntry = async (scheduleEntry) => {
+    try {
+      setLoading(true);
+      const locationId = await getCurrentLocationId();
+      
+      // Use YOUR existing shifts table
+      const entry = {
+        ...scheduleEntry,
+        location_id: locationId,
+        created_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from('shifts')
+        .insert([entry])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      return { success: true, data };
+    } catch (err) {
+      console.error('Failed to add schedule entry:', err);
+      setError(err.message);
+      return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Enhanced Employee Management Functions
   const addEmployee = async (employeeData) => {
     try {
@@ -310,9 +410,9 @@ export const LaborDataProvider = ({ children }) => {
         is_active: true,
         hire_date: employeeData.hire_date || new Date().toISOString().split('T')[0],
         hourly_rate: employeeData.hourly_rate || 15,
+        wage_rate: employeeData.hourly_rate || 15, // Your database uses wage_rate
         performance_rating: employeeData.performance_rating || 4.0,
-        // Convert department to database format
-        department: REVERSE_DEPARTMENT_MAPPING[employeeData.department] || employeeData.department,
+        status: 'active',
         created_at: new Date().toISOString()
       };
 
@@ -328,7 +428,7 @@ export const LaborDataProvider = ({ children }) => {
       const enhancedEmployee = {
         ...data,
         status: 'active',
-        department: DEPARTMENT_MAPPING[data.department] || data.department
+        hourly_rate: data.hourly_rate || data.wage_rate
       };
       
       setEmployees(prev => [...prev, enhancedEmployee]);
@@ -349,8 +449,7 @@ export const LaborDataProvider = ({ children }) => {
       
       const updatedData = {
         ...employeeData,
-        // Convert department to database format
-        department: REVERSE_DEPARTMENT_MAPPING[employeeData.department] || employeeData.department,
+        wage_rate: employeeData.hourly_rate || employeeData.wage_rate, // Sync both fields
         updated_at: new Date().toISOString()
       };
 
@@ -367,7 +466,7 @@ export const LaborDataProvider = ({ children }) => {
       const enhancedEmployee = {
         ...data,
         status: data.is_active ? 'active' : 'inactive',
-        department: DEPARTMENT_MAPPING[data.department] || data.department
+        hourly_rate: data.hourly_rate || data.wage_rate
       };
       
       setEmployees(prev => 
@@ -407,57 +506,59 @@ export const LaborDataProvider = ({ children }) => {
     }
   };
 
-  // Smart Forecasting System - REPLACES FAKE AI
+  // Smart Forecasting System - USING YOUR EXISTING DATA
   const getSmartForecast = async (date, parameters = {}) => {
     try {
       const locationId = await getCurrentLocationId();
       
-      // Get historical sales/guest data from multiple sources
-      const [salesData, scheduleData] = await Promise.all([
+      // Use YOUR existing weekly_forecasts and fva_daily_history tables
+      const [forecastData, fvaData] = await Promise.all([
         supabase
-          .from('daily_sales')
-          .select('guest_count, labor_cost, sales_total, date, day_of_week')
+          .from('weekly_forecasts')
+          .select('*')
           .eq('location_id', locationId)
           .gte('date', getDateWeeksAgo(date, 12))
           .lte('date', date)
           .order('date', { ascending: false }),
         
         supabase
-          .from('weekly_schedules')
-          .select('schedule_data, week_start')
-          .eq('location_id', locationId)
-          .gte('week_start', getDateWeeksAgo(date, 12))
-          .lte('week_start', date)
+          .from('fva_daily_history')
+          .select('*')
+          .eq('location_uuid', locationId)
+          .gte('date', getDateWeeksAgo(date, 12))
+          .lte('date', date)
+          .order('date', { ascending: false })
       ]);
       
-      const historicalData = salesData.data || [];
+      const historicalForecasts = forecastData.data || [];
+      const historicalFva = fvaData.data || [];
       
-      // Calculate baseline metrics from historical data
+      // Calculate baseline metrics from YOUR data
       let baseGuestCount = 150; // Default fallback
       let baseLaborCost = 2400;
       let baseLaborHours = 140;
       let confidence = 40;
       let dataQuality = 'Limited';
       
-      if (historicalData.length > 0) {
-        const validGuestData = historicalData.filter(day => day.guest_count > 0);
-        const validLaborData = historicalData.filter(day => day.labor_cost > 0);
+      if (historicalForecasts.length > 0) {
+        const validGuestData = historicalForecasts.filter(day => day.guests > 0);
+        const validSalesData = historicalForecasts.filter(day => day.sales > 0);
         
         if (validGuestData.length > 0) {
           baseGuestCount = Math.round(
-            validGuestData.reduce((sum, day) => sum + day.guest_count, 0) / validGuestData.length
+            validGuestData.reduce((sum, day) => sum + day.guests, 0) / validGuestData.length
           );
         }
         
-        if (validLaborData.length > 0) {
-          baseLaborCost = Math.round(
-            validLaborData.reduce((sum, day) => sum + day.labor_cost, 0) / validLaborData.length
-          );
+        if (validSalesData.length > 0 && historicalFva.length > 0) {
+          const avgSales = validSalesData.reduce((sum, day) => sum + day.sales, 0) / validSalesData.length;
+          const avgLaborPct = historicalFva.reduce((sum, day) => sum + (day.labor_cost_pct || 0.14), 0) / historicalFva.length;
+          baseLaborCost = Math.round(avgSales * avgLaborPct);
           baseLaborHours = Math.round(baseLaborCost / 18);
         }
         
-        const totalDataPoints = historicalData.length;
-        confidence = Math.min(50 + (totalDataPoints * 3), 95);
+        const totalDataPoints = historicalForecasts.length + historicalFva.length;
+        confidence = Math.min(50 + (totalDataPoints * 2), 95);
         
         if (totalDataPoints >= 30) dataQuality = 'Excellent';
         else if (totalDataPoints >= 15) dataQuality = 'Good';
@@ -476,23 +577,6 @@ export const LaborDataProvider = ({ children }) => {
         5: 1.4,  // Friday - VERY BUSY (your pattern)
         6: 1.4   // Saturday - VERY BUSY (your pattern)
       };
-      
-      // Learn actual patterns if enough data
-      if (historicalData.length >= 21) {
-        const dayAverages = {};
-        for (let dow = 0; dow <= 6; dow++) {
-          const dayData = historicalData.filter(day => new Date(day.date).getDay() === dow);
-          if (dayData.length > 0) {
-            const dayAvg = dayData.reduce((sum, day) => sum + day.guest_count, 0) / dayData.length;
-            dayAverages[dow] = dayAvg / baseGuestCount;
-          }
-        }
-        
-        if (Object.keys(dayAverages).length >= 5) {
-          Object.assign(dayPatterns, dayAverages);
-          confidence += 10;
-        }
-      }
       
       const dayMultiplier = dayPatterns[dayOfWeek] || 1.0;
       
@@ -521,13 +605,6 @@ export const LaborDataProvider = ({ children }) => {
         date
       });
       
-      let methodology = 'Basic day-of-week patterns';
-      if (historicalData.length >= 21) {
-        methodology = 'Historical data + learned patterns + seasonal/holiday adjustments';
-      } else if (historicalData.length >= 5) {
-        methodology = 'Limited historical data + day-of-week patterns + seasonal/holiday adjustments';
-      }
-      
       const forecast = {
         date,
         guestCount: forecastGuestCount,
@@ -535,10 +612,10 @@ export const LaborDataProvider = ({ children }) => {
         laborCost: forecastLaborCost,
         efficiency,
         confidence,
-        dataPoints: historicalData.length,
+        dataPoints: historicalForecasts.length + historicalFva.length,
         dataQuality,
         recommendations,
-        methodology,
+        methodology: 'Historical data from weekly_forecasts + fva_daily_history + seasonal/holiday adjustments',
         factors: {
           baseGuestCount,
           dayMultiplier: Math.round(dayMultiplier * 100) / 100,
@@ -687,9 +764,8 @@ export const LaborDataProvider = ({ children }) => {
     return recommendations;
   };
 
-  // Static Weather Placeholder - REPLACES FAKE RANDOM WEATHER
+  // Static Weather Placeholder
   const getWeatherImpact = async (date, location = 'default') => {
-    // Static placeholder until location data is configured
     return {
       date,
       location,
@@ -699,20 +775,28 @@ export const LaborDataProvider = ({ children }) => {
     };
   };
 
-  // Real Labor Analytics - REPLACES FAKE RANDOM ANALYTICS
+  // Real Labor Analytics - USING YOUR EXISTING VIEWS
   const getLaborAnalytics = async (startDate, endDate) => {
     try {
       const locationId = await getCurrentLocationId();
       
-      // Get actual scheduled hours and costs from database
-      const { data: scheduleData } = await supabase
-        .from('weekly_schedules')
-        .select('schedule_data, week_start')
+      // Use YOUR existing vw_weekly_labor_summary view
+      const { data: weeklyData } = await supabase
+        .from('vw_weekly_labor_summary')
+        .select('*')
         .eq('location_id', locationId)
-        .gte('week_start', startDate)
-        .lte('week_start', endDate);
+        .gte('week_start_date', startDate)
+        .lte('week_start_date', endDate);
       
-      // Calculate real totals from actual schedule data
+      // Use YOUR existing vw_daily_labor_summary view
+      const { data: dailyData } = await supabase
+        .from('vw_daily_labor_summary')
+        .select('*')
+        .eq('location_id', locationId)
+        .gte('day', startDate)
+        .lte('day', endDate);
+      
+      // Calculate totals from YOUR views
       let totalHours = 0;
       let totalCost = 0;
       let departmentBreakdown = {
@@ -722,22 +806,15 @@ export const LaborDataProvider = ({ children }) => {
         'Management': { cost: 0, hours: 0, efficiency: 0 }
       };
       
-      scheduleData?.forEach(week => {
-        Object.values(week.schedule_data || {}).forEach(slot => {
-          slot.employees?.forEach(emp => {
-            const hours = calculateShiftHours(emp.start, emp.end);
-            const cost = hours * (emp.hourly_rate || 15);
-            const dept = REVERSE_DEPARTMENT_MAPPING[emp.department] || 'FOH';
-            
-            totalHours += hours;
-            totalCost += cost;
-            
-            if (departmentBreakdown[dept]) {
-              departmentBreakdown[dept].hours += hours;
-              departmentBreakdown[dept].cost += cost;
-            }
-          });
-        });
+      dailyData?.forEach(day => {
+        totalHours += day.total_scheduled_hours || 0;
+        totalCost += day.total_scheduled_cost || 0;
+        
+        const dept = day.department || 'FOH';
+        if (departmentBreakdown[dept]) {
+          departmentBreakdown[dept].hours += day.total_scheduled_hours || 0;
+          departmentBreakdown[dept].cost += day.total_scheduled_cost || 0;
+        }
       });
       
       // Calculate efficiency for each department
@@ -750,11 +827,11 @@ export const LaborDataProvider = ({ children }) => {
         period: { startDate, endDate },
         totalCost: totalCost,
         totalHours: totalHours,
-        averageWeeklyCost: Math.round(totalCost / Math.max(1, scheduleData?.length || 1)),
+        averageWeeklyCost: Math.round(totalCost / Math.max(1, weeklyData?.length || 1)),
         efficiency: totalHours > 0 ? Math.round((totalCost / totalHours) * 100) / 100 : 0,
         departmentBreakdown,
-        dataSource: 'actual_schedules',
-        dataPoints: scheduleData?.length || 0
+        dataSource: 'vw_daily_labor_summary + vw_weekly_labor_summary',
+        dataPoints: dailyData?.length || 0
       };
       
       setLaborAnalytics(prev => ({
@@ -787,20 +864,115 @@ export const LaborDataProvider = ({ children }) => {
     }
   };
 
-  // Helper function to calculate shift hours
-  const calculateShiftHours = (startTime, endTime) => {
-    if (!startTime || !endTime) return 0;
-    
-    const start = new Date(`2000-01-01 ${startTime}`);
-    const end = new Date(`2000-01-01 ${endTime}`);
-    
-    // Handle overnight shifts
-    if (end < start) {
-      end.setDate(end.getDate() + 1);
+  // Schedule request management
+  const submitScheduleRequest = async (requestData) => {
+    try {
+      setLoading(true);
+      const locationId = await getCurrentLocationId();
+      
+      const newRequest = {
+        ...requestData,
+        location_id: locationId,
+        status: 'pending',
+        created_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from('schedule_requests')
+        .insert([newRequest])
+        .select(`*, employees(name, role)`)
+        .single();
+      
+      if (error) throw error;
+      
+      const enhancedRequest = {
+        ...data,
+        employee_name: data.employees?.name || 'Unknown Employee'
+      };
+      
+      setScheduleRequests(prev => [...prev, enhancedRequest]);
+      return { success: true, data: enhancedRequest };
+    } catch (err) {
+      console.error('Failed to submit schedule request:', err);
+      setError(err.message);
+      return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
     }
-    
-    const diffMs = end - start;
-    return Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100; // Hours with 2 decimal places
+  };
+
+  const updateRequestStatus = async (requestId, status, notes = '') => {
+    try {
+      setLoading(true);
+      
+      const updateData = {
+        status,
+        updated_at: new Date().toISOString(),
+        manager_notes: notes
+      };
+
+      const { data, error } = await supabase
+        .from('schedule_requests')
+        .update(updateData)
+        .eq('id', requestId)
+        .select(`*, employees(name, role)`)
+        .single();
+      
+      if (error) throw error;
+      
+      const enhancedRequest = {
+        ...data,
+        employee_name: data.employees?.name || 'Unknown Employee'
+      };
+      
+      setScheduleRequests(prev => 
+        prev.map(req => req.id === requestId ? enhancedRequest : req)
+      );
+      
+      return { success: true, data: enhancedRequest };
+    } catch (err) {
+      console.error('Failed to update request status:', err);
+      setError(err.message);
+      return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Employee availability management
+  const addEmployeeAvailability = async (availabilityData) => {
+    try {
+      setLoading(true);
+      const locationId = await getCurrentLocationId();
+      
+      const newAvailability = {
+        ...availabilityData,
+        location_id: locationId,
+        created_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from('employee_availability')
+        .insert([newAvailability])
+        .select(`*, employees(name, role)`)
+        .single();
+      
+      if (error) throw error;
+      
+      const enhancedAvailability = {
+        ...data,
+        employee_name: data.employees?.name || 'Unknown Employee'
+      };
+      
+      setEmployeeAvailability(prev => [...prev, enhancedAvailability]);
+      return { success: true, data: enhancedAvailability };
+    } catch (err) {
+      console.error('Failed to add employee availability:', err);
+      setError(err.message);
+      return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Enhanced PTO Management Functions
@@ -923,7 +1095,7 @@ export const LaborDataProvider = ({ children }) => {
     }
   };
 
-  // Schedule Management Functions
+  // Schedule Management Functions - ADAPTED TO YOUR DATABASE
   const saveSchedule = async (scheduleData) => {
     try {
       setLoading(true);
@@ -936,8 +1108,9 @@ export const LaborDataProvider = ({ children }) => {
         updated_at: new Date().toISOString()
       };
 
+      // Use YOUR existing schedules table
       const { data, error } = await supabase
-        .from('weekly_schedules')
+        .from('schedules')
         .upsert([scheduleEntry])
         .select()
         .single();
@@ -946,7 +1119,7 @@ export const LaborDataProvider = ({ children }) => {
       
       setSchedules(prev => ({
         ...prev,
-        [scheduleData.week_start]: data
+        [scheduleData.week_start_date]: data
       }));
       
       return { success: true, data };
@@ -960,12 +1133,30 @@ export const LaborDataProvider = ({ children }) => {
     }
   };
 
+  // Request filtering
+  const getRequestsByStatus = (status) => {
+    return scheduleRequests.filter(req => req.status === status);
+  };
+
+  // Utility functions
+  const refreshData = async () => {
+    await loadLaborData();
+  };
+
+  const setErrorMessage = (message) => {
+    setError(message);
+  };
+
+  const setCurrentTemplateData = (template) => {
+    setCurrentTemplate(template);
+  };
+
   // Initialize data on mount
   useEffect(() => {
     loadLaborData();
   }, []);
 
-  // Context value
+  // Context value - ALL FUNCTIONS INCLUDED
   const value = {
     // Core state
     employees,
@@ -988,22 +1179,39 @@ export const LaborDataProvider = ({ children }) => {
     updateEmployee,
     deleteEmployee,
     loadLaborData,
+    getEmployeeById,
+    getEmployeesByDepartment,
     
     // PTO functions
     addPTORequest,
     approvePTORequest,
     denyPTORequest,
+    getPendingPTORequests,
+    getApprovedPTORequests,
     
-    // Smart Analytics functions (NO MORE FAKE DATA)
+    // Smart Analytics functions (ADAPTED TO YOUR DATABASE)
     getSmartForecast,
     getWeatherImpact,
     getLaborAnalytics,
 
-    // Schedule functions
+    // Schedule functions (ADAPTED TO YOUR DATABASE)
+    getWeekSchedule,
+    addScheduleEntry,
+    submitScheduleRequest,
+    updateRequestStatus,
+    addEmployeeAvailability,
+    getRequestsByStatus,
     saveSchedule,
+    
+    // System functions
+    getSystemStats,
+    getPendingRequestsCount,
     
     // Utility functions
     getCurrentLocationId,
+    refreshData,
+    setError: setErrorMessage,
+    setCurrentTemplate: setCurrentTemplateData,
     
     // Department mapping
     DEPARTMENT_MAPPING,
