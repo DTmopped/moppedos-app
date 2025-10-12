@@ -583,14 +583,14 @@ const WeeklyLaborSchedule = () => {
           </CardContent>
         </Card>
 
-        {/* FIXED Schedule Grid with proper layout */}
+        {/* TRULY HORIZONTAL Schedule Grid */}
         <Card className="border-slate-300 shadow-lg bg-white">
           <CardContent className="p-6">
             <div className="space-y-6">
               {/* Fixed Day Headers */}
               <div className="w-full overflow-x-auto">
-                <div className="min-w-[1200px]">
-                  <div className="grid grid-cols-8 gap-3 mb-6">
+                <div className="min-w-[1600px]">
+                  <div className="grid grid-cols-8 gap-4 mb-6">
                     <div className="col-span-1 text-center font-bold text-slate-700 py-3">
                       Role / Shift
                     </div>
@@ -610,25 +610,22 @@ const WeeklyLaborSchedule = () => {
                     })}
                   </div>
 
-                  {/* Fixed Schedule Rows */}
+                  {/* HORIZONTAL Schedule Rows - employees flow horizontally, not vertically */}
                   {filteredRoles.map((role, roleIndex) => {
                     return [0, 1].map(shiftIndex => {
                       const shift = shiftIndex === 0 ? 'AM' : 'PM';
                       const shiftTimes = SHIFT_TIMES[shift] || { start: '9:00', end: '17:00' };
                       
                       return (
-                        <div key={`${roleIndex}-${shiftIndex}`} className="grid grid-cols-8 gap-3 mb-4">
+                        <div key={`${roleIndex}-${shiftIndex}`} className="grid grid-cols-8 gap-4 mb-4">
                           {/* Fixed Role Header */}
-                          <div className={`col-span-1 p-4 rounded-lg border-2 ${getDepartmentColor(role.department)} flex flex-col justify-center shadow-sm hover:shadow-md transition-shadow duration-200 min-h-[120px]`}>
-                            <div className="text-center space-y-2">
+                          <div className={`col-span-1 p-4 rounded-lg border-2 ${getDepartmentColor(role.department)} flex flex-col justify-center shadow-sm hover:shadow-md transition-shadow duration-200 h-20`}>
+                            <div className="text-center space-y-1">
                               <div className="text-lg">{getDepartmentEmoji(role.department)}</div>
                               <div className="font-bold text-slate-900 text-sm">{role.name}</div>
                               <div className="text-slate-700 text-xs font-semibold flex items-center justify-center space-x-1">
                                 <span>{shift === 'AM' ? '🌅' : '🌙'}</span>
                                 <span>{shift}</span>
-                              </div>
-                              <div className="text-slate-600 text-xs">
-                                {formatTime(shiftTimes.start)} - {formatTime(shiftTimes.end)}
                               </div>
                               <Badge variant={role.department.toLowerCase()} size="sm">
                                 {role.department}
@@ -636,77 +633,77 @@ const WeeklyLaborSchedule = () => {
                             </div>
                           </div>
 
-                          {/* Fixed Day Cards */}
+                          {/* HORIZONTAL Day Cards - employees arranged horizontally */}
                           {weekDays.map((day, dayIndex) => {
                             const assignedEmployees = getAssignedEmployees(roleIndex, shiftIndex, dayIndex);
                             const dropdownKey = `${roleIndex}-${shiftIndex}-${dayIndex}`;
                             const isToday = day.toDateString() === new Date().toDateString();
                             
                             return (
-                              <div key={dayIndex} className={`p-3 border-2 border-slate-200 rounded-lg min-h-[120px] ${isToday ? 'bg-blue-50/50 border-blue-300' : 'bg-white'} hover:shadow-md transition-all duration-200`}>
-                                <div className="h-full flex flex-col">
+                              <div key={dayIndex} className={`p-3 border-2 border-slate-200 rounded-lg h-20 ${isToday ? 'bg-blue-50/50 border-blue-300' : 'bg-white'} hover:shadow-md transition-all duration-200`}>
+                                <div className="h-full flex items-center">
                                   {assignedEmployees.length > 0 ? (
-                                    <div className="space-y-2 flex-1">
+                                    /* HORIZONTAL LAYOUT: Employees flow left to right, not top to bottom */
+                                    <div className="flex flex-wrap gap-1 w-full">
                                       {assignedEmployees.map((emp, empIndex) => (
-                                        <div key={empIndex} className="bg-white rounded-lg p-3 shadow-sm border border-slate-200 group hover:shadow-lg transition-all duration-200">
-                                          <div className="flex items-center justify-between">
+                                        <div key={empIndex} className="bg-gradient-to-r from-white to-slate-50 rounded-md px-2 py-1 shadow-sm border border-slate-200 group hover:shadow-md transition-all duration-200 hover:from-blue-50 hover:to-blue-100 flex-shrink-0">
+                                          {/* COMPACT HORIZONTAL EMPLOYEE CARD */}
+                                          <div className="flex items-center space-x-2">
                                             <div className="flex-1 min-w-0">
-                                              <div className="font-bold text-slate-900 text-xs truncate flex items-center space-x-1">
-                                                <span>👤</span>
-                                                <span>{emp.name}</span>
-                                              </div>
-                                              <div className="text-slate-600 text-xs flex items-center space-x-1 mt-1">
-                                                <span>💼</span>
-                                                <span>{emp.role}</span>
-                                                <span>•</span>
-                                                <span>⏱️ {emp.hours}h</span>
-                                              </div>
-                                              <div className="text-slate-500 text-xs flex items-center space-x-1 mt-1">
-                                                <span>💰</span>
-                                                <span>${emp.hourly_rate}/hr</span>
+                                              {/* Single line with all info */}
+                                              <div className="flex items-center space-x-1 text-xs">
+                                                <span className="font-bold text-slate-900 truncate max-w-16">{emp.name}</span>
+                                                <span className="text-slate-400">•</span>
+                                                <span className="text-slate-600">{emp.hours}h</span>
+                                                <span className="text-slate-400">•</span>
+                                                <span className="text-emerald-600 font-medium">${(emp.hourly_rate * emp.hours).toFixed(0)}</span>
                                               </div>
                                             </div>
                                             <Button
                                               size="sm"
                                               variant="ghost"
                                               onClick={() => handleRemoveEmployee(roleIndex, shiftIndex, dayIndex, emp.id)}
-                                              className="h-6 w-6 p-0 text-slate-400 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                                              className="h-4 w-4 p-0 text-slate-400 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all duration-200 flex-shrink-0"
                                             >
-                                              <X className="h-3 w-3" />
+                                              <X className="h-2 w-2" />
                                             </Button>
                                           </div>
                                         </div>
                                       ))}
                                     </div>
                                   ) : (
-                                    <div className="h-full flex items-center justify-center">
+                                    <div className="w-full flex items-center justify-center">
                                       <div className="relative">
                                         <Button
                                           size="sm"
                                           variant="outline"
                                           onClick={() => setShowDropdown(showDropdown === dropdownKey ? null : dropdownKey)}
-                                          className="text-slate-600 hover:bg-slate-50 border-dashed border-slate-400 text-xs px-3 py-2 flex items-center space-x-1 shadow-sm hover:shadow-md transition-all duration-200"
+                                          className="text-slate-600 hover:bg-slate-50 border-dashed border-slate-400 text-xs px-2 py-1 flex items-center space-x-1 shadow-sm hover:shadow-md transition-all duration-200"
                                         >
                                           <Plus className="h-3 w-3" />
-                                          <span>Add Employee</span>
+                                          <span>Add</span>
                                         </Button>
                                         
                                         {showDropdown === dropdownKey && (
-                                          <div className="absolute top-full left-0 mt-2 w-64 bg-white border border-slate-300 rounded-lg shadow-xl z-20 max-h-48 overflow-y-auto">
+                                          <div className="absolute top-full left-0 mt-2 w-72 bg-white border border-slate-300 rounded-lg shadow-xl z-20 max-h-48 overflow-y-auto">
                                             {filteredEmployees.length > 0 ? (
                                               filteredEmployees.map(employee => (
                                                 <button
                                                   key={employee.id}
                                                   onClick={() => handleAddEmployee(roleIndex, shiftIndex, dayIndex, employee.id)}
-                                                  className="w-full text-left px-4 py-3 text-xs text-slate-700 hover:bg-slate-50 border-b border-slate-100 last:border-b-0 flex items-center space-x-2 transition-colors duration-150"
+                                                  className="w-full text-left px-4 py-3 text-xs text-slate-700 hover:bg-slate-50 border-b border-slate-100 last:border-b-0 transition-colors duration-150"
                                                 >
-                                                  <span>👤</span>
-                                                  <div className="flex-1">
-                                                    <div className="font-semibold">{employee.name}</div>
-                                                    <div className="text-xs text-slate-500 flex items-center space-x-1">
-                                                      <span>💼 {employee.role}</span>
-                                                      <span>•</span>
-                                                      <span>💰 ${employee.hourly_rate}/hr</span>
+                                                  <div className="flex items-center space-x-3">
+                                                    <span>👤</span>
+                                                    <div className="flex-1">
+                                                      <div className="font-semibold text-sm">{employee.name}</div>
+                                                      <div className="text-xs text-slate-500 flex items-center space-x-2 mt-1">
+                                                        <span>💼 {employee.role}</span>
+                                                        <span>•</span>
+                                                        <span>💰 ${employee.hourly_rate}/hr</span>
+                                                        <span>•</span>
+                                                        <span>🏢 {employee.department}</span>
+                                                      </div>
                                                     </div>
                                                   </div>
                                                 </button>
