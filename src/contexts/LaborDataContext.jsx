@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '@/supabaseClient'; // Your existing Supabase client
+import { supabase } from '@/supabaseClient';
 import { MOPPED_RESTAURANT_TEMPLATE } from '@/config/laborScheduleConfig';
 
 const LaborDataContext = createContext();
@@ -12,234 +12,158 @@ export const useLaborData = () => {
   return context;
 };
 
-// Enhanced mock data for demo/fallback - 8 employees with complete data
-const mockEmployees = [
-  { 
-    id: '1', 
-    name: 'John Smith', 
-    email: 'john@moppedrestaurant.com', 
-    phone: '555-0101', 
-    is_active: true, 
-    role: 'Server', 
-    department: 'FOH', 
-    hourly_rate: 15.00,
-    hire_date: '2024-01-15',
-    performance_rating: 4.2,
-    created_at: '2024-01-15T10:00:00Z'
-  },
-  { 
-    id: '2', 
-    name: 'Sarah Johnson', 
-    email: 'sarah@moppedrestaurant.com', 
-    phone: '555-0102', 
-    is_active: true, 
-    role: 'Meat Portioner', 
-    department: 'BOH', 
-    hourly_rate: 18.00,
-    hire_date: '2024-01-20',
-    performance_rating: 4.5,
-    created_at: '2024-01-20T10:00:00Z'
-  },
-  { 
-    id: '3', 
-    name: 'Mike Davis', 
-    email: 'mike@moppedrestaurant.com', 
-    phone: '555-0103', 
-    is_active: true, 
-    role: 'Dishwasher', 
-    department: 'BOH', 
-    hourly_rate: 15.50,
-    hire_date: '2024-02-01',
-    performance_rating: 4.0,
-    created_at: '2024-02-01T10:00:00Z'
-  },
-  { 
-    id: '4', 
-    name: 'Lisa Wilson', 
-    email: 'lisa@moppedrestaurant.com', 
-    phone: '555-0104', 
-    is_active: true, 
-    role: 'Cashier', 
-    department: 'FOH', 
-    hourly_rate: 16.50,
-    hire_date: '2024-02-10',
-    performance_rating: 4.3,
-    created_at: '2024-02-10T10:00:00Z'
-  },
-  { 
-    id: '5', 
-    name: 'Tom Brown', 
-    email: 'tom@moppedrestaurant.com', 
-    phone: '555-0105', 
-    is_active: true, 
-    role: 'Bartender', 
-    department: 'Bar', 
-    hourly_rate: 18.50,
-    hire_date: '2024-02-15',
-    performance_rating: 4.1,
-    created_at: '2024-02-15T10:00:00Z'
-  },
-  { 
-    id: '6', 
-    name: 'Emma Garcia', 
-    email: 'emma@moppedrestaurant.com', 
-    phone: '555-0106', 
-    is_active: true, 
-    role: 'Manager', 
-    department: 'Management', 
-    hourly_rate: 28.00,
-    hire_date: '2024-01-01',
-    performance_rating: 4.7,
-    created_at: '2024-01-01T10:00:00Z'
-  },
-  { 
-    id: '7', 
-    name: 'David Lee', 
-    email: 'david@moppedrestaurant.com', 
-    phone: '555-0107', 
-    is_active: true, 
-    role: 'Side Portioner', 
-    department: 'BOH', 
-    hourly_rate: 17.00,
-    hire_date: '2024-03-01',
-    performance_rating: 4.0,
-    created_at: '2024-03-01T10:00:00Z'
-  },
-  { 
-    id: '8', 
-    name: 'Maria Rodriguez', 
-    email: 'maria@moppedrestaurant.com', 
-    phone: '555-0108', 
-    is_active: true, 
-    role: 'Server Assistant', 
-    department: 'FOH', 
-    hourly_rate: 15.00,
-    hire_date: '2024-03-15',
-    performance_rating: 4.4,
-    created_at: '2024-03-15T10:00:00Z'
-  }
-];
+// Department mapping to standardize between config and database
+const DEPARTMENT_MAPPING = {
+  'FOH': 'Front of House',
+  'BOH': 'Back of House', 
+  'Bar': 'Bar & Beverage',
+  'Management': 'Management'
+};
 
-const mockPTORequests = [
-  { 
-    id: '1', 
-    employee_id: '1', 
-    employee_name: 'John Smith', 
-    start_date: '2025-10-01', 
-    end_date: '2025-10-03', 
-    status: 'pending', 
-    reason: 'Family vacation',
-    created_at: '2025-09-20T10:00:00Z',
-    days_requested: 3
-  },
-  { 
-    id: '2', 
-    employee_id: '3', 
-    employee_name: 'Mike Davis', 
-    start_date: '2025-10-15', 
-    end_date: '2025-10-15', 
-    status: 'approved', 
-    reason: 'Doctor appointment',
-    created_at: '2025-09-22T14:30:00Z',
-    approved_at: '2025-09-23T09:15:00Z',
-    days_requested: 1
-  },
-  { 
-    id: '3', 
-    employee_id: '5', 
-    employee_name: 'Tom Brown', 
-    start_date: '2025-11-01', 
-    end_date: '2025-11-05', 
-    status: 'pending', 
-    reason: 'Personal time',
-    created_at: '2025-09-25T09:15:00Z',
-    days_requested: 5
-  }
-];
+const REVERSE_DEPARTMENT_MAPPING = {
+  'Front of House': 'FOH',
+  'Back of House': 'BOH',
+  'Bar & Beverage': 'Bar',
+  'Management': 'Management'
+};
 
-// Mock schedule requests for demo
-const mockScheduleRequests = [
-  { 
-    id: '1', 
-    employee_id: '1', 
-    employee_name: 'John Smith', 
-    request_type: 'time_off', 
-    requested_date: '2025-10-05', 
-    status: 'pending', 
-    reason: 'Personal appointment',
-    created_at: '2025-09-28T10:00:00Z'
-  },
-  { 
-    id: '2', 
-    employee_id: '2', 
-    employee_name: 'Sarah Johnson', 
-    request_type: 'shift_preference', 
-    requested_date: '2025-10-08', 
-    status: 'approved', 
-    reason: 'Prefer morning shift',
-    created_at: '2025-09-27T14:00:00Z',
-    approved_at: '2025-09-28T09:00:00Z'
-  },
-  { 
-    id: '3', 
-    employee_id: '4', 
-    employee_name: 'Lisa Wilson', 
-    request_type: 'shift_swap', 
-    requested_date: '2025-10-10', 
-    status: 'pending', 
-    reason: 'Need to swap with Tom',
-    created_at: '2025-09-26T16:30:00Z'
-  }
-];
+// Helper function to get date weeks ago
+const getDateWeeksAgo = (date, weeks) => {
+  const targetDate = new Date(date);
+  targetDate.setDate(targetDate.getDate() - (weeks * 7));
+  return targetDate.toISOString().split('T')[0];
+};
 
-// Mock availability data
-const mockAvailability = [
-  { 
-    id: '1', 
-    employee_id: '1', 
-    employee_name: 'John Smith', 
-    day_of_week: 1, 
-    available_start: '09:00', 
-    available_end: '17:00', 
-    preferred_departments: ['FOH'],
-    created_at: '2024-01-15T10:00:00Z'
-  },
-  { 
-    id: '2', 
-    employee_id: '2', 
-    employee_name: 'Sarah Johnson', 
-    day_of_week: 2, 
-    available_start: '08:00', 
-    available_end: '16:00', 
-    preferred_departments: ['BOH'],
-    created_at: '2024-01-20T10:00:00Z'
-  },
-  { 
-    id: '3', 
-    employee_id: '3', 
-    employee_name: 'Mike Davis', 
-    day_of_week: 3, 
-    available_start: '10:00', 
-    available_end: '18:00', 
-    preferred_departments: ['BOH'],
-    created_at: '2024-02-01T10:00:00Z'
-  }
-];
+// Comprehensive holiday detection system
+const getHolidayMultiplier = (date) => {
+  const targetDate = new Date(date);
+  const year = targetDate.getFullYear();
+  
+  // Fixed date holidays
+  const fixedHolidays = {
+    [`${year}-01-01`]: 0.3, // New Year's Day
+    [`${year}-12-31`]: 1.8, // New Year's Eve
+    [`${year}-02-14`]: 2.2, // Valentine's Day
+    [`${year}-02-13`]: 1.4, // Day before Valentine's
+    [`${year}-03-17`]: 1.6, // St. Patrick's Day
+    [`${year}-07-04`]: 1.3, // July 4th
+    [`${year}-07-03`]: 1.2, // Day before July 4th
+    [`${year}-10-31`]: 1.5, // Halloween
+    [`${year}-12-24`]: 0.2, // Christmas Eve
+    [`${year}-12-25`]: 0.1, // Christmas Day
+    [`${year}-12-26`]: 0.4, // Day after Christmas
+  };
+  
+  // Calculate floating holidays
+  const floatingHolidays = {};
+  
+  // Mother's Day (second Sunday in May)
+  const mothersDay = getNthSundayOfMonth(year, 5, 2);
+  floatingHolidays[mothersDay] = 2.5; // Busiest day of year
+  floatingHolidays[getDateBefore(mothersDay, 1)] = 1.8; // Saturday before
+  
+  // Father's Day (third Sunday in June)
+  const fathersDay = getNthSundayOfMonth(year, 6, 3);
+  floatingHolidays[fathersDay] = 1.9;
+  floatingHolidays[getDateBefore(fathersDay, 1)] = 1.4;
+  
+  // Easter Sunday
+  const easter = getEasterDate(year);
+  floatingHolidays[easter] = 1.8;
+  floatingHolidays[getDateBefore(easter, 1)] = 1.3;
+  
+  // Thanksgiving (fourth Thursday in November)
+  const thanksgiving = getNthThursdayOfMonth(year, 11, 4);
+  floatingHolidays[thanksgiving] = 0.1;
+  floatingHolidays[getDateBefore(thanksgiving, 1)] = 0.3;
+  floatingHolidays[getDateAfter(thanksgiving, 1)] = 0.8; // Black Friday
+  
+  const dateStr = targetDate.toISOString().split('T')[0];
+  return fixedHolidays[dateStr] || floatingHolidays[dateStr] || 1.0;
+};
+
+// Holiday calculation helper functions
+const getNthSundayOfMonth = (year, month, n) => {
+  const firstDay = new Date(year, month - 1, 1);
+  const firstSunday = new Date(firstDay);
+  firstSunday.setDate(1 + (7 - firstDay.getDay()) % 7);
+  firstSunday.setDate(firstSunday.getDate() + (n - 1) * 7);
+  return firstSunday.toISOString().split('T')[0];
+};
+
+const getNthThursdayOfMonth = (year, month, n) => {
+  const firstDay = new Date(year, month - 1, 1);
+  const firstThursday = new Date(firstDay);
+  firstThursday.setDate(1 + (4 - firstDay.getDay() + 7) % 7);
+  firstThursday.setDate(firstThursday.getDate() + (n - 1) * 7);
+  return firstThursday.toISOString().split('T')[0];
+};
+
+const getDateBefore = (dateStr, days) => {
+  const date = new Date(dateStr);
+  date.setDate(date.getDate() - days);
+  return date.toISOString().split('T')[0];
+};
+
+const getDateAfter = (dateStr, days) => {
+  const date = new Date(dateStr);
+  date.setDate(date.getDate() + days);
+  return date.toISOString().split('T')[0];
+};
+
+// Easter calculation
+const getEasterDate = (year) => {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  
+  return new Date(year, month - 1, day).toISOString().split('T')[0];
+};
+
+// Seasonal adjustments
+const getSeasonalMultiplier = (month) => {
+  const seasonalFactors = {
+    0: 0.80,  // January - post-holiday slow
+    1: 0.85,  // February - still slow, Valentine's boost
+    2: 0.95,  // March - spring pickup
+    3: 1.05,  // April - spring busy season
+    4: 1.15,  // May - Mother's Day and spring peak
+    5: 1.20,  // June - summer season starts
+    6: 1.25,  // July - peak summer
+    7: 1.20,  // August - still summer busy
+    8: 1.10,  // September - back to school
+    9: 1.05,  // October - fall season
+    10: 1.15, // November - Thanksgiving boost
+    11: 1.10  // December - holiday parties
+  };
+  return seasonalFactors[month] || 1.0;
+};
 
 export const LaborDataProvider = ({ children }) => {
-  // Core state
-  const [employees, setEmployees] = useState(mockEmployees);
-  const [ptoRequests, setPtoRequests] = useState(mockPTORequests);
+  // Core state - NO MORE MOCK DATA
+  const [employees, setEmployees] = useState([]);
+  const [ptoRequests, setPtoRequests] = useState([]);
   const [currentTemplate, setCurrentTemplate] = useState(MOPPED_RESTAURANT_TEMPLATE);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
 
-  // Enhanced scheduling state
-  const [scheduleRequests, setScheduleRequests] = useState(mockScheduleRequests);
-  const [employeeAvailability, setEmployeeAvailability] = useState(mockAvailability);
+  // Enhanced scheduling state - NO MORE MOCK DATA
+  const [scheduleRequests, setScheduleRequests] = useState([]);
+  const [employeeAvailability, setEmployeeAvailability] = useState([]);
   const [schedules, setSchedules] = useState({});
-  const [aiForecasts, setAiForecasts] = useState({});
+  const [smartForecasts, setSmartForecasts] = useState({});
   const [weatherData, setWeatherData] = useState({});
   const [laborAnalytics, setLaborAnalytics] = useState({});
 
@@ -247,7 +171,7 @@ export const LaborDataProvider = ({ children }) => {
   const getCurrentLocationId = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return 'a8e559f8-fdb4-435b-bd1f-ccba5d175f2b'; // Your test location
+      if (!user) return 'a8e559f8-fdb4-435b-bd1f-ccba5d175f2b'; // Fallback location
       
       const { data: profile } = await supabase
         .from('user_profiles')
@@ -262,7 +186,7 @@ export const LaborDataProvider = ({ children }) => {
     }
   };
 
-  // Load data from Supabase with enhanced error handling
+  // Load data from Supabase - DATABASE FIRST APPROACH
   const loadLaborData = async () => {
     setLoading(true);
     setError(null);
@@ -270,40 +194,53 @@ export const LaborDataProvider = ({ children }) => {
     try {
       const locationId = await getCurrentLocationId();
       
-      // Try to load employees
+      // Load employees - NO FALLBACK TO MOCK DATA
       const { data: employeesData, error: empError } = await supabase
         .from('employees')
         .select('*')
-        .eq('location_id', locationId);
+        .eq('location_id', locationId)
+        .eq('is_active', true);
 
-      if (!empError && employeesData?.length > 0) {
-        // Enhance employee data with missing fields
-        const enhancedEmployees = employeesData.map(emp => ({
+      if (empError) {
+        console.error('Error loading employees:', empError);
+        setError('Failed to load employees from database');
+        setIsConnected(false);
+      } else {
+        // Enhance employee data with missing fields and standardize departments
+        const enhancedEmployees = (employeesData || []).map(emp => ({
           ...emp,
-          hire_date: emp.hire_date || '2024-01-01',
+          hire_date: emp.hire_date || new Date().toISOString().split('T')[0],
           performance_rating: emp.performance_rating || 4.0,
-          hourly_rate: emp.hourly_rate || 15.00
+          hourly_rate: emp.hourly_rate || 15.00,
+          status: emp.is_active ? 'active' : 'inactive',
+          // Standardize department names
+          department: DEPARTMENT_MAPPING[emp.department] || emp.department || 'Front of House'
         }));
+        
         setEmployees(enhancedEmployees);
         setIsConnected(true);
-      } else {
-        console.log('Using mock employee data - Supabase data not available');
-        setIsConnected(false);
+        console.log('Loaded employees:', enhancedEmployees.length);
       }
 
-      // Try to load PTO requests
+      // Load PTO requests
       const { data: ptoData, error: ptoError } = await supabase
         .from('pto_requests')
-        .select(`*, employees(name, email)`)
-        .eq('location_id', locationId);
+        .select(`
+          *,
+          employees!inner(id, name, email, role)
+        `)
+        .eq('location_id', locationId)
+        .order('created_at', { ascending: false });
 
       if (!ptoError && ptoData) {
         const enhancedPTO = ptoData.map(pto => ({
           ...pto,
           employee_name: pto.employees?.name || 'Unknown Employee',
+          employee_role: pto.employees?.role || 'Employee',
           days_requested: pto.days_requested || calculateDays(pto.start_date, pto.end_date)
         }));
         setPtoRequests(enhancedPTO);
+        console.log('Loaded PTO requests:', enhancedPTO.length);
       }
 
       // Load schedule requests
@@ -322,6 +259,7 @@ export const LaborDataProvider = ({ children }) => {
           employee_name: req.employees?.name || 'Unknown Employee'
         }));
         setScheduleRequests(enhancedScheduleData);
+        console.log('Loaded schedule requests:', enhancedScheduleData.length);
       }
 
       // Load employee availability
@@ -339,11 +277,12 @@ export const LaborDataProvider = ({ children }) => {
           employee_name: avail.employees?.name || 'Unknown Employee'
         }));
         setEmployeeAvailability(enhancedAvailability);
+        console.log('Loaded employee availability:', enhancedAvailability.length);
       }
 
     } catch (err) {
       console.error('Error loading labor data:', err);
-      setError('Using demo data - Supabase connection failed');
+      setError('Database connection failed - check your internet connection');
       setIsConnected(false);
     } finally {
       setLoading(false);
@@ -372,29 +311,28 @@ export const LaborDataProvider = ({ children }) => {
         hire_date: employeeData.hire_date || new Date().toISOString().split('T')[0],
         hourly_rate: employeeData.hourly_rate || 15,
         performance_rating: employeeData.performance_rating || 4.0,
+        // Convert department to database format
+        department: REVERSE_DEPARTMENT_MAPPING[employeeData.department] || employeeData.department,
         created_at: new Date().toISOString()
       };
 
-      if (isConnected) {
-        const { data, error } = await supabase
-          .from('employees')
-          .insert([newEmployee])
-          .select()
-          .single();
-        
-        if (error) throw error;
-        
-        setEmployees(prev => [...prev, data]);
-        return { success: true, data };
-      } else {
-        // Fallback to local state
-        const localEmployee = {
-          ...newEmployee,
-          id: Date.now().toString()
-        };
-        setEmployees(prev => [...prev, localEmployee]);
-        return { success: true, data: localEmployee };
-      }
+      const { data, error } = await supabase
+        .from('employees')
+        .insert([newEmployee])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Enhance the returned data for display
+      const enhancedEmployee = {
+        ...data,
+        status: 'active',
+        department: DEPARTMENT_MAPPING[data.department] || data.department
+      };
+      
+      setEmployees(prev => [...prev, enhancedEmployee]);
+      return { success: true, data: enhancedEmployee };
       
     } catch (err) {
       console.error('Failed to add employee:', err);
@@ -411,34 +349,31 @@ export const LaborDataProvider = ({ children }) => {
       
       const updatedData = {
         ...employeeData,
+        // Convert department to database format
+        department: REVERSE_DEPARTMENT_MAPPING[employeeData.department] || employeeData.department,
         updated_at: new Date().toISOString()
       };
 
-      if (isConnected) {
-        const { data, error } = await supabase
-          .from('employees')
-          .update(updatedData)
-          .eq('id', employeeId)
-          .select()
-          .single();
-        
-        if (error) throw error;
-        
-        setEmployees(prev => 
-          prev.map(emp => emp.id === employeeId ? data : emp)
-        );
-        return { success: true, data };
-      } else {
-        // Fallback to local state
-        const updatedEmployee = {
-          ...employees.find(emp => emp.id === employeeId),
-          ...updatedData
-        };
-        setEmployees(prev => 
-          prev.map(emp => emp.id === employeeId ? updatedEmployee : emp)
-        );
-        return { success: true, data: updatedEmployee };
-      }
+      const { data, error } = await supabase
+        .from('employees')
+        .update(updatedData)
+        .eq('id', employeeId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Enhance the returned data for display
+      const enhancedEmployee = {
+        ...data,
+        status: data.is_active ? 'active' : 'inactive',
+        department: DEPARTMENT_MAPPING[data.department] || data.department
+      };
+      
+      setEmployees(prev => 
+        prev.map(emp => emp.id === employeeId ? enhancedEmployee : emp)
+      );
+      return { success: true, data: enhancedEmployee };
       
     } catch (err) {
       console.error('Failed to update employee:', err);
@@ -453,14 +388,12 @@ export const LaborDataProvider = ({ children }) => {
     try {
       setLoading(true);
       
-      if (isConnected) {
-        const { error } = await supabase
-          .from('employees')
-          .delete()
-          .eq('id', employeeId);
-        
-        if (error) throw error;
-      }
+      const { error } = await supabase
+        .from('employees')
+        .delete()
+        .eq('id', employeeId);
+      
+      if (error) throw error;
       
       setEmployees(prev => prev.filter(emp => emp.id !== employeeId));
       return { success: true };
@@ -472,6 +405,402 @@ export const LaborDataProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Smart Forecasting System - REPLACES FAKE AI
+  const getSmartForecast = async (date, parameters = {}) => {
+    try {
+      const locationId = await getCurrentLocationId();
+      
+      // Get historical sales/guest data from multiple sources
+      const [salesData, scheduleData] = await Promise.all([
+        supabase
+          .from('daily_sales')
+          .select('guest_count, labor_cost, sales_total, date, day_of_week')
+          .eq('location_id', locationId)
+          .gte('date', getDateWeeksAgo(date, 12))
+          .lte('date', date)
+          .order('date', { ascending: false }),
+        
+        supabase
+          .from('weekly_schedules')
+          .select('schedule_data, week_start')
+          .eq('location_id', locationId)
+          .gte('week_start', getDateWeeksAgo(date, 12))
+          .lte('week_start', date)
+      ]);
+      
+      const historicalData = salesData.data || [];
+      
+      // Calculate baseline metrics from historical data
+      let baseGuestCount = 150; // Default fallback
+      let baseLaborCost = 2400;
+      let baseLaborHours = 140;
+      let confidence = 40;
+      let dataQuality = 'Limited';
+      
+      if (historicalData.length > 0) {
+        const validGuestData = historicalData.filter(day => day.guest_count > 0);
+        const validLaborData = historicalData.filter(day => day.labor_cost > 0);
+        
+        if (validGuestData.length > 0) {
+          baseGuestCount = Math.round(
+            validGuestData.reduce((sum, day) => sum + day.guest_count, 0) / validGuestData.length
+          );
+        }
+        
+        if (validLaborData.length > 0) {
+          baseLaborCost = Math.round(
+            validLaborData.reduce((sum, day) => sum + day.labor_cost, 0) / validLaborData.length
+          );
+          baseLaborHours = Math.round(baseLaborCost / 18);
+        }
+        
+        const totalDataPoints = historicalData.length;
+        confidence = Math.min(50 + (totalDataPoints * 3), 95);
+        
+        if (totalDataPoints >= 30) dataQuality = 'Excellent';
+        else if (totalDataPoints >= 15) dataQuality = 'Good';
+        else if (totalDataPoints >= 5) dataQuality = 'Fair';
+        else dataQuality = 'Limited';
+      }
+      
+      // Apply day-of-week patterns (YOUR business: Thu-Sat busy)
+      const dayOfWeek = new Date(date).getDay();
+      const dayPatterns = {
+        0: 1.1,  // Sunday - moderate
+        1: 0.6,  // Monday - slowest day
+        2: 0.7,  // Tuesday - slow
+        3: 0.8,  // Wednesday - building up
+        4: 1.3,  // Thursday - BUSY (your pattern)
+        5: 1.4,  // Friday - VERY BUSY (your pattern)
+        6: 1.4   // Saturday - VERY BUSY (your pattern)
+      };
+      
+      // Learn actual patterns if enough data
+      if (historicalData.length >= 21) {
+        const dayAverages = {};
+        for (let dow = 0; dow <= 6; dow++) {
+          const dayData = historicalData.filter(day => new Date(day.date).getDay() === dow);
+          if (dayData.length > 0) {
+            const dayAvg = dayData.reduce((sum, day) => sum + day.guest_count, 0) / dayData.length;
+            dayAverages[dow] = dayAvg / baseGuestCount;
+          }
+        }
+        
+        if (Object.keys(dayAverages).length >= 5) {
+          Object.assign(dayPatterns, dayAverages);
+          confidence += 10;
+        }
+      }
+      
+      const dayMultiplier = dayPatterns[dayOfWeek] || 1.0;
+      
+      // Apply seasonal and holiday adjustments
+      const month = new Date(date).getMonth();
+      const seasonalMultiplier = getSeasonalMultiplier(month);
+      const holidayMultiplier = getHolidayMultiplier(date);
+      
+      // Calculate final forecast
+      const totalMultiplier = dayMultiplier * seasonalMultiplier * holidayMultiplier;
+      const forecastGuestCount = Math.round(baseGuestCount * totalMultiplier);
+      const forecastLaborCost = Math.round(baseLaborCost * totalMultiplier);
+      const forecastLaborHours = Math.round(baseLaborHours * totalMultiplier);
+      
+      const efficiency = forecastLaborHours > 0 ? 
+        Math.round((forecastGuestCount / forecastLaborHours) * 100) / 100 : 1.0;
+      
+      // Generate smart recommendations
+      const recommendations = generateSmartRecommendations({
+        guestCount: forecastGuestCount,
+        laborCost: forecastLaborCost,
+        dayOfWeek,
+        historicalAverage: baseGuestCount,
+        confidence,
+        holidayMultiplier,
+        date
+      });
+      
+      let methodology = 'Basic day-of-week patterns';
+      if (historicalData.length >= 21) {
+        methodology = 'Historical data + learned patterns + seasonal/holiday adjustments';
+      } else if (historicalData.length >= 5) {
+        methodology = 'Limited historical data + day-of-week patterns + seasonal/holiday adjustments';
+      }
+      
+      const forecast = {
+        date,
+        guestCount: forecastGuestCount,
+        laborHours: forecastLaborHours,
+        laborCost: forecastLaborCost,
+        efficiency,
+        confidence,
+        dataPoints: historicalData.length,
+        dataQuality,
+        recommendations,
+        methodology,
+        factors: {
+          baseGuestCount,
+          dayMultiplier: Math.round(dayMultiplier * 100) / 100,
+          seasonalMultiplier: Math.round(seasonalMultiplier * 100) / 100,
+          holidayMultiplier: Math.round(holidayMultiplier * 100) / 100,
+          totalMultiplier: Math.round(totalMultiplier * 100) / 100
+        }
+      };
+      
+      // Cache the forecast
+      setSmartForecasts(prev => ({
+        ...prev,
+        [date]: forecast
+      }));
+      
+      return forecast;
+      
+    } catch (err) {
+      console.error('Failed to generate smart forecast:', err);
+      
+      // Fallback to basic logic
+      const dayOfWeek = new Date(date).getDay();
+      const isThursdayToSaturday = dayOfWeek >= 4 && dayOfWeek <= 6;
+      const holidayMultiplier = getHolidayMultiplier(date);
+      
+      const baseGuests = isThursdayToSaturday ? 195 : 120;
+      const adjustedGuests = Math.round(baseGuests * holidayMultiplier);
+      
+      return {
+        date,
+        guestCount: adjustedGuests,
+        laborHours: Math.round(adjustedGuests * 0.8),
+        laborCost: Math.round(adjustedGuests * 14.4),
+        efficiency: 1.25,
+        confidence: 35,
+        dataPoints: 0,
+        dataQuality: 'None - using fallback logic',
+        recommendations: [
+          "Connect sales data to improve forecasting accuracy",
+          "Track daily guest counts for better predictions"
+        ],
+        methodology: 'Basic Thu-Sat busy pattern + holiday detection',
+        factors: {
+          baseGuestCount: baseGuests,
+          dayMultiplier: isThursdayToSaturday ? 1.4 : 0.8,
+          seasonalMultiplier: 1.0,
+          holidayMultiplier,
+          totalMultiplier: holidayMultiplier
+        }
+      };
+    }
+  };
+
+  // Smart recommendations generator
+  const generateSmartRecommendations = ({ 
+    guestCount, 
+    laborCost, 
+    dayOfWeek, 
+    historicalAverage, 
+    confidence, 
+    holidayMultiplier,
+    date 
+  }) => {
+    const recommendations = [];
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayName = dayNames[dayOfWeek];
+    
+    // High confidence recommendations
+    if (confidence > 70) {
+      if (guestCount > historicalAverage * 1.3) {
+        const extraStaff = Math.ceil((guestCount - historicalAverage) / 25);
+        recommendations.push({
+          id: 'high-volume',
+          type: 'staffing',
+          priority: 'high',
+          title: 'High Volume Expected',
+          description: `Forecast shows ${guestCount} guests (${Math.round(((guestCount - historicalAverage) / historicalAverage) * 100)}% above average). Consider adding ${extraStaff} extra staff members.`,
+          impact: 'Improved service quality, avoid wait times',
+          confidence: confidence
+        });
+      }
+      
+      if (guestCount < historicalAverage * 0.7) {
+        const reduceStaff = Math.ceil((historicalAverage - guestCount) / 30);
+        const savings = reduceStaff * 120;
+        recommendations.push({
+          id: 'low-volume',
+          type: 'cost-saving',
+          priority: 'medium',
+          title: 'Lower Volume Expected',
+          description: `Forecast shows ${guestCount} guests (${Math.round(((historicalAverage - guestCount) / historicalAverage) * 100)}% below average). Consider reducing staff by ${reduceStaff} position(s).`,
+          impact: `Save ~$${savings} in labor costs`,
+          confidence: confidence
+        });
+      }
+    }
+    
+    // Holiday-specific recommendations
+    if (holidayMultiplier > 1.5) {
+      recommendations.push({
+        id: 'major-holiday',
+        type: 'preparation',
+        priority: 'critical',
+        title: 'Major Holiday - High Volume Expected',
+        description: `${date} appears to be a major holiday. Expect ${Math.round((holidayMultiplier - 1) * 100)}% increase in volume.`,
+        impact: 'Avoid service failures on busy holiday',
+        confidence: 90
+      });
+    } else if (holidayMultiplier < 0.5) {
+      recommendations.push({
+        id: 'slow-holiday',
+        type: 'cost-saving',
+        priority: 'high',
+        title: 'Holiday - Very Low Volume Expected',
+        description: `${date} appears to be a slow holiday. Consider reduced hours or minimal staffing.`,
+        impact: 'Significant labor cost savings',
+        confidence: 85
+      });
+    }
+    
+    // Day-specific recommendations
+    if (dayOfWeek === 1) {
+      recommendations.push({
+        id: 'monday-prep',
+        type: 'operational',
+        priority: 'medium',
+        title: 'Monday Prep Focus',
+        description: 'Mondays are typically your slowest day. Focus on prep work, deep cleaning, and inventory management.',
+        impact: 'Better preparation for busy Thursday-Saturday period',
+        confidence: 85
+      });
+    }
+    
+    if (dayOfWeek >= 4 && dayOfWeek <= 6) {
+      recommendations.push({
+        id: 'busy-period-prep',
+        type: 'preparation',
+        priority: 'high',
+        title: `${dayName} Rush Preparation`,
+        description: `${dayName} is one of your busiest days. Ensure full staffing, extra prep, and all stations are fully stocked.`,
+        impact: 'Smooth service during peak volume',
+        confidence: 90
+      });
+    }
+    
+    return recommendations;
+  };
+
+  // Static Weather Placeholder - REPLACES FAKE RANDOM WEATHER
+  const getWeatherImpact = async (date, location = 'default') => {
+    // Static placeholder until location data is configured
+    return {
+      date,
+      location,
+      forecast: "Weather integration available - configure location data to enable real weather forecasting",
+      recommendation: "Add location coordinates to enable weather-based staffing recommendations",
+      status: 'placeholder'
+    };
+  };
+
+  // Real Labor Analytics - REPLACES FAKE RANDOM ANALYTICS
+  const getLaborAnalytics = async (startDate, endDate) => {
+    try {
+      const locationId = await getCurrentLocationId();
+      
+      // Get actual scheduled hours and costs from database
+      const { data: scheduleData } = await supabase
+        .from('weekly_schedules')
+        .select('schedule_data, week_start')
+        .eq('location_id', locationId)
+        .gte('week_start', startDate)
+        .lte('week_start', endDate);
+      
+      // Calculate real totals from actual schedule data
+      let totalHours = 0;
+      let totalCost = 0;
+      let departmentBreakdown = {
+        'FOH': { cost: 0, hours: 0, efficiency: 0 },
+        'BOH': { cost: 0, hours: 0, efficiency: 0 },
+        'Bar': { cost: 0, hours: 0, efficiency: 0 },
+        'Management': { cost: 0, hours: 0, efficiency: 0 }
+      };
+      
+      scheduleData?.forEach(week => {
+        Object.values(week.schedule_data || {}).forEach(slot => {
+          slot.employees?.forEach(emp => {
+            const hours = calculateShiftHours(emp.start, emp.end);
+            const cost = hours * (emp.hourly_rate || 15);
+            const dept = REVERSE_DEPARTMENT_MAPPING[emp.department] || 'FOH';
+            
+            totalHours += hours;
+            totalCost += cost;
+            
+            if (departmentBreakdown[dept]) {
+              departmentBreakdown[dept].hours += hours;
+              departmentBreakdown[dept].cost += cost;
+            }
+          });
+        });
+      });
+      
+      // Calculate efficiency for each department
+      Object.keys(departmentBreakdown).forEach(dept => {
+        const deptData = departmentBreakdown[dept];
+        deptData.efficiency = deptData.hours > 0 ? Math.round((deptData.cost / deptData.hours) * 100) / 100 : 0;
+      });
+      
+      const analytics = {
+        period: { startDate, endDate },
+        totalCost: totalCost,
+        totalHours: totalHours,
+        averageWeeklyCost: Math.round(totalCost / Math.max(1, scheduleData?.length || 1)),
+        efficiency: totalHours > 0 ? Math.round((totalCost / totalHours) * 100) / 100 : 0,
+        departmentBreakdown,
+        dataSource: 'actual_schedules',
+        dataPoints: scheduleData?.length || 0
+      };
+      
+      setLaborAnalytics(prev => ({
+        ...prev,
+        [`${startDate}-${endDate}`]: analytics
+      }));
+      
+      return analytics;
+      
+    } catch (err) {
+      console.error('Failed to calculate labor analytics:', err);
+      
+      // Return basic structure if calculation fails
+      return {
+        period: { startDate, endDate },
+        totalCost: 0,
+        totalHours: 0,
+        averageWeeklyCost: 0,
+        efficiency: 0,
+        departmentBreakdown: {
+          'FOH': { cost: 0, hours: 0, efficiency: 0 },
+          'BOH': { cost: 0, hours: 0, efficiency: 0 },
+          'Bar': { cost: 0, hours: 0, efficiency: 0 },
+          'Management': { cost: 0, hours: 0, efficiency: 0 }
+        },
+        dataSource: 'calculation_failed',
+        dataPoints: 0,
+        error: err.message
+      };
+    }
+  };
+
+  // Helper function to calculate shift hours
+  const calculateShiftHours = (startTime, endTime) => {
+    if (!startTime || !endTime) return 0;
+    
+    const start = new Date(`2000-01-01 ${startTime}`);
+    const end = new Date(`2000-01-01 ${endTime}`);
+    
+    // Handle overnight shifts
+    if (end < start) {
+      end.setDate(end.getDate() + 1);
+    }
+    
+    const diffMs = end - start;
+    return Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100; // Hours with 2 decimal places
   };
 
   // Enhanced PTO Management Functions
@@ -488,33 +817,21 @@ export const LaborDataProvider = ({ children }) => {
         created_at: new Date().toISOString()
       };
 
-      if (isConnected) {
-        const { data, error } = await supabase
-          .from('pto_requests')
-          .insert([newPTORequest])
-          .select(`*, employees(name, email)`)
-          .single();
-        
-        if (error) throw error;
-        
-        const enhancedPTO = {
-          ...data,
-          employee_name: data.employees?.name || 'Unknown Employee'
-        };
-        
-        setPtoRequests(prev => [...prev, enhancedPTO]);
-        return { success: true, data: enhancedPTO };
-      } else {
-        // Fallback to local state
-        const employee = employees.find(emp => emp.id === ptoData.employee_id);
-        const localPTO = {
-          ...newPTORequest,
-          id: Date.now().toString(),
-          employee_name: employee?.name || 'Unknown Employee'
-        };
-        setPtoRequests(prev => [...prev, localPTO]);
-        return { success: true, data: localPTO };
-      }
+      const { data, error } = await supabase
+        .from('pto_requests')
+        .insert([newPTORequest])
+        .select(`*, employees(name, email)`)
+        .single();
+      
+      if (error) throw error;
+      
+      const enhancedPTO = {
+        ...data,
+        employee_name: data.employees?.name || 'Unknown Employee'
+      };
+      
+      setPtoRequests(prev => [...prev, enhancedPTO]);
+      return { success: true, data: enhancedPTO };
       
     } catch (err) {
       console.error('Failed to add PTO request:', err);
@@ -537,36 +854,24 @@ export const LaborDataProvider = ({ children }) => {
         ...approvalData
       };
 
-      if (isConnected) {
-        const { data, error } = await supabase
-          .from('pto_requests')
-          .update(updateData)
-          .eq('id', requestId)
-          .select(`*, employees(name, email)`)
-          .single();
-        
-        if (error) throw error;
-        
-        const enhancedPTO = {
-          ...data,
-          employee_name: data.employees?.name || 'Unknown Employee'
-        };
-        
-        setPtoRequests(prev => 
-          prev.map(req => req.id === requestId ? enhancedPTO : req)
-        );
-        return { success: true, data: enhancedPTO };
-      } else {
-        // Fallback to local state
-        const approvedRequest = {
-          ...ptoRequests.find(req => req.id === requestId),
-          ...updateData
-        };
-        setPtoRequests(prev => 
-          prev.map(req => req.id === requestId ? approvedRequest : req)
-        );
-        return { success: true, data: approvedRequest };
-      }
+      const { data, error } = await supabase
+        .from('pto_requests')
+        .update(updateData)
+        .eq('id', requestId)
+        .select(`*, employees(name, email)`)
+        .single();
+      
+      if (error) throw error;
+      
+      const enhancedPTO = {
+        ...data,
+        employee_name: data.employees?.name || 'Unknown Employee'
+      };
+      
+      setPtoRequests(prev => 
+        prev.map(req => req.id === requestId ? enhancedPTO : req)
+      );
+      return { success: true, data: enhancedPTO };
       
     } catch (err) {
       console.error('Failed to approve PTO request:', err);
@@ -590,36 +895,24 @@ export const LaborDataProvider = ({ children }) => {
         ...denialData
       };
 
-      if (isConnected) {
-        const { data, error } = await supabase
-          .from('pto_requests')
-          .update(updateData)
-          .eq('id', requestId)
-          .select(`*, employees(name, email)`)
-          .single();
-        
-        if (error) throw error;
-        
-        const enhancedPTO = {
-          ...data,
-          employee_name: data.employees?.name || 'Unknown Employee'
-        };
-        
-        setPtoRequests(prev => 
-          prev.map(req => req.id === requestId ? enhancedPTO : req)
-        );
-        return { success: true, data: enhancedPTO };
-      } else {
-        // Fallback to local state
-        const deniedRequest = {
-          ...ptoRequests.find(req => req.id === requestId),
-          ...updateData
-        };
-        setPtoRequests(prev => 
-          prev.map(req => req.id === requestId ? deniedRequest : req)
-        );
-        return { success: true, data: deniedRequest };
-      }
+      const { data, error } = await supabase
+        .from('pto_requests')
+        .update(updateData)
+        .eq('id', requestId)
+        .select(`*, employees(name, email)`)
+        .single();
+      
+      if (error) throw error;
+      
+      const enhancedPTO = {
+        ...data,
+        employee_name: data.employees?.name || 'Unknown Employee'
+      };
+      
+      setPtoRequests(prev => 
+        prev.map(req => req.id === requestId ? enhancedPTO : req)
+      );
+      return { success: true, data: enhancedPTO };
       
     } catch (err) {
       console.error('Failed to deny PTO request:', err);
@@ -631,445 +924,40 @@ export const LaborDataProvider = ({ children }) => {
   };
 
   // Schedule Management Functions
-  const getWeekSchedule = async (weekDate) => {
+  const saveSchedule = async (scheduleData) => {
     try {
-      if (isConnected) {
-        const { data, error } = await supabase
-          .from('schedules')
-          .select(`
-            *,
-            employees(id, name, role)
-          `)
-          .gte('date', weekDate)
-          .lt('date', new Date(new Date(weekDate).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
-        
-        if (error) throw error;
-        
-        const weekSchedule = {
-          week: weekDate,
-          entries: data || [],
-          totalHours: data?.reduce((sum, entry) => sum + (entry.hours || 0), 0) || 0,
-          totalCost: data?.reduce((sum, entry) => sum + (entry.cost || 0), 0) || 0
-        };
-        
-        setSchedules(prev => ({
-          ...prev,
-          [weekDate]: weekSchedule
-        }));
-        
-        return weekSchedule;
-      } else {
-        // Mock schedule data
-        const weekSchedule = {
-          week: weekDate,
-          entries: [],
-          totalHours: 0,
-          totalCost: 0
-        };
-        
-        setSchedules(prev => ({
-          ...prev,
-          [weekDate]: weekSchedule
-        }));
-        
-        return weekSchedule;
-      }
-      
-    } catch (err) {
-      console.error('Failed to get week schedule:', err);
-      throw err;
-    }
-  };
-
-  const addScheduleEntry = async (scheduleData) => {
-    try {
+      setLoading(true);
       const locationId = await getCurrentLocationId();
       
-      const newEntry = {
+      const scheduleEntry = {
         ...scheduleData,
         location_id: locationId,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
 
-      if (isConnected) {
-        const { data, error } = await supabase
-          .from('schedules')
-          .insert([newEntry])
-          .select(`
-            *,
-            employees(id, name, role)
-          `)
-          .single();
-        
-        if (error) throw error;
-        
-        // Update local schedule state
-        const weekDate = scheduleData.date;
-        setSchedules(prev => ({
-          ...prev,
-          [weekDate]: {
-            ...prev[weekDate],
-            entries: [...(prev[weekDate]?.entries || []), data]
-          }
-        }));
-        
-        return { success: true, data };
-      } else {
-        // Fallback to local state
-        const localEntry = {
-          ...newEntry,
-          id: Date.now().toString()
-        };
-        
-        const weekDate = scheduleData.date;
-        setSchedules(prev => ({
-          ...prev,
-          [weekDate]: {
-            ...prev[weekDate],
-            entries: [...(prev[weekDate]?.entries || []), localEntry]
-          }
-        }));
-        
-        return { success: true, data: localEntry };
-      }
+      const { data, error } = await supabase
+        .from('weekly_schedules')
+        .upsert([scheduleEntry])
+        .select()
+        .single();
       
-    } catch (err) {
-      console.error('Failed to add schedule entry:', err);
-      return { success: false, error: err.message };
-    }
-  };
-
-   // Save schedule function for WeeklyCalendarGrid
-  const saveSchedule = async (weekKey, scheduleData) => {
-    try {
-      console.log('Saving schedule for week:', weekKey, scheduleData);
-      // Store in local state for now
+      if (error) throw error;
+      
       setSchedules(prev => ({
         ...prev,
-        [weekKey]: scheduleData
-      }));
-      return { success: true };
-    } catch (error) {
-      console.error('Failed to save schedule:', error);
-      throw error;
-    }
-  };
-
-  // AI and Analytics Functions (Mock implementations)
-  const getAIForecast = async (date, parameters = {}) => {
-    try {
-      // Mock AI forecast data - replace with actual API call when available
-      const forecast = {
-        date,
-        guestCount: 187 + Math.floor(Math.random() * 40) - 20, // 167-207 range
-        laborHours: 142 + Math.floor(Math.random() * 20) - 10, // 132-152 range
-        laborCost: 2556 + Math.floor(Math.random() * 400) - 200, // 2356-2756 range
-        efficiency: 94 + Math.floor(Math.random() * 10) - 5, // 89-99 range
-        confidence: 89 + Math.floor(Math.random() * 8), // 89-97 range
-        recommendations: [
-          {
-            id: '1',
-            type: 'staffing',
-            priority: 'high',
-            title: 'Optimize Kitchen Swing Shifts',
-            description: 'Reduce kitchen swing staff by 1 position during 2-4 PM low period',
-            impact: 'Save $45/day',
-            confidence: 87
-          },
-          {
-            id: '2',
-            type: 'scheduling',
-            priority: 'medium',
-            title: 'Adjust FOH Coverage',
-            description: 'Add 1 server during 6-8 PM peak period',
-            impact: 'Improve service quality',
-            confidence: 92
-          }
-        ],
-        trends: {
-          guestCountTrend: 12,
-          laborHoursTrend: -5,
-          laborCostTrend: -8,
-          efficiencyTrend: 3
-        }
-      };
-      
-      setAiForecasts(prev => ({
-        ...prev,
-        [date]: forecast
+        [scheduleData.week_start]: data
       }));
       
-      return forecast;
+      return { success: true, data };
       
     } catch (err) {
-      console.error('Failed to get AI forecast:', err);
-      throw err;
-    }
-  };
-
-  const getWeatherImpact = async (date, location = 'default') => {
-    try {
-      // Mock weather data - replace with actual API call when available
-      const weatherConditions = ['sunny', 'cloudy', 'rainy', 'partly-cloudy'];
-      const baseTemp = 70;
-      
-      const forecast = Array.from({ length: 7 }, (_, i) => {
-        const forecastDate = new Date(date);
-        forecastDate.setDate(forecastDate.getDate() + i);
-        const condition = weatherConditions[Math.floor(Math.random() * weatherConditions.length)];
-        const temp = baseTemp + Math.floor(Math.random() * 20) - 10;
-        
-        let guestImpact = 170;
-        if (condition === 'sunny') guestImpact += 15;
-        if (condition === 'rainy') guestImpact -= 75;
-        if (condition === 'cloudy') guestImpact -= 10;
-        
-        return {
-          date: forecastDate.toISOString().split('T')[0],
-          condition,
-          temp,
-          guestImpact: Math.max(guestImpact, 80) // Minimum 80 guests
-        };
-      });
-      
-      const weatherData = {
-        date,
-        location,
-        forecast,
-        recommendation: forecast.some(f => f.condition === 'rainy') 
-          ? "Rainy weather expected this week. Consider reducing FOH staff by 2-3 positions on rainy days."
-          : "Good weather conditions expected. Maintain normal staffing levels."
-      };
-      
-      setWeatherData(prev => ({
-        ...prev,
-        [date]: weatherData
-      }));
-      
-      return weatherData;
-      
-    } catch (err) {
-      console.error('Failed to get weather impact:', err);
-      throw err;
-    }
-  };
-
-  const getLaborAnalytics = async (startDate, endDate) => {
-    try {
-      // Mock analytics data - replace with actual calculations when available
-      const analytics = {
-        period: { startDate, endDate },
-        totalCost: 31185 + Math.floor(Math.random() * 2000) - 1000,
-        totalHours: 1733 + Math.floor(Math.random() * 100) - 50,
-        averageWeeklyCost: 6237 + Math.floor(Math.random() * 400) - 200,
-        efficiency: 94 + Math.floor(Math.random() * 8) - 4,
-        trends: {
-          costTrend: Math.floor(Math.random() * 20) - 10,
-          hoursTrend: Math.floor(Math.random() * 16) - 8,
-          efficiencyTrend: Math.floor(Math.random() * 10) - 5
-        },
-        departmentBreakdown: {
-          'FOH': { 
-            cost: 12474 + Math.floor(Math.random() * 1000) - 500, 
-            hours: 693 + Math.floor(Math.random() * 50) - 25, 
-            efficiency: 92 + Math.floor(Math.random() * 6) - 3 
-          },
-          'BOH': { 
-            cost: 15592 + Math.floor(Math.random() * 1200) - 600, 
-            hours: 866 + Math.floor(Math.random() * 60) - 30, 
-            efficiency: 96 + Math.floor(Math.random() * 4) - 2 
-          },
-          'Bar': { 
-            cost: 2080 + Math.floor(Math.random() * 200) - 100, 
-            hours: 104 + Math.floor(Math.random() * 10) - 5, 
-            efficiency: 90 + Math.floor(Math.random() * 8) - 4 
-          },
-          'Management': { 
-            cost: 1039 + Math.floor(Math.random() * 100) - 50, 
-            hours: 70 + Math.floor(Math.random() * 8) - 4, 
-            efficiency: 98 + Math.floor(Math.random() * 3) - 1 
-          }
-        }
-      };
-      
-      setLaborAnalytics(prev => ({
-        ...prev,
-        [`${startDate}-${endDate}`]: analytics
-      }));
-      
-      return analytics;
-      
-    } catch (err) {
-      console.error('Failed to get labor analytics:', err);
-      throw err;
-    }
-  };
-
-  // Existing scheduling functions (preserved from your original code)
-  const submitScheduleRequest = async (requestData) => {
-    try {
-      setLoading(true);
-      const locationId = await getCurrentLocationId();
-      
-      if (isConnected) {
-        const { data, error } = await supabase
-          .from('schedule_requests')
-          .insert([{
-            ...requestData,
-            location_id: locationId,
-            organization_id: requestData.organization_id || crypto.randomUUID(),
-            status: 'pending'
-          }])
-          .select();
-        
-        if (error) throw error;
-        
-        // Refresh data
-        await loadLaborData();
-        return { success: true, data };
-      } else {
-        // Fallback to local state
-        const newRequest = {
-          ...requestData,
-          id: Date.now().toString(),
-          location_id: locationId,
-          status: 'pending',
-          created_at: new Date().toISOString()
-        };
-        setScheduleRequests(prev => [...prev, newRequest]);
-        return { success: true, data: newRequest };
-      }
-    } catch (error) {
-      console.error('Error submitting request:', error);
-      setError(error.message);
-      return { success: false, error };
+      console.error('Failed to save schedule:', err);
+      setError(err.message);
+      return { success: false, error: err.message };
     } finally {
       setLoading(false);
     }
-  };
-
-  const updateRequestStatus = async (requestId, status, managerNotes = '') => {
-    try {
-      setLoading(true);
-      
-      const updateData = {
-        status,
-        manager_notes: managerNotes,
-        approved_at: status === 'approved' ? new Date().toISOString() : null
-      };
-
-      if (isConnected) {
-        const { data, error } = await supabase
-          .from('schedule_requests')
-          .update(updateData)
-          .eq('id', requestId)
-          .select();
-        
-        if (error) throw error;
-        
-        // Refresh data
-        await loadLaborData();
-        return { success: true, data };
-      } else {
-        // Fallback to local state
-        const updatedRequest = {
-          ...scheduleRequests.find(req => req.id === requestId),
-          ...updateData
-        };
-        setScheduleRequests(prev => 
-          prev.map(req => req.id === requestId ? updatedRequest : req)
-        );
-        return { success: true, data: updatedRequest };
-      }
-    } catch (error) {
-      console.error('Error updating request:', error);
-      setError(error.message);
-      return { success: false, error };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const addEmployeeAvailability = async (availabilityData) => {
-    try {
-      setLoading(true);
-      const locationId = await getCurrentLocationId();
-      
-      const newAvailability = {
-        ...availabilityData,
-        location_id: locationId,
-        created_at: new Date().toISOString()
-      };
-
-      if (isConnected) {
-        const { data, error } = await supabase
-          .from('employee_availability')
-          .insert([newAvailability])
-          .select();
-        
-        if (error) throw error;
-        
-        // Refresh data
-        await loadLaborData();
-        return { success: true, data };
-      } else {
-        // Fallback to local state
-        const localAvailability = {
-          ...newAvailability,
-          id: Date.now().toString()
-        };
-        setEmployeeAvailability(prev => [...prev, localAvailability]);
-        return { success: true, data: localAvailability };
-      }
-    } catch (error) {
-      console.error('Error adding availability:', error);
-      setError(error.message);
-      return { success: false, error };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Utility Functions
-  const getEmployeeById = (employeeId) => {
-    return employees.find(emp => emp.id === employeeId);
-  };
-
-  const getEmployeesByDepartment = (department) => {
-    return employees.filter(emp => emp.department === department);
-  };
-
-  const getPendingPTORequests = () => {
-    return ptoRequests.filter(req => req.status === 'pending');
-  };
-
-  const getApprovedPTORequests = () => {
-    return ptoRequests.filter(req => req.status === 'approved');
-  };
-
-  const getPendingRequestsCount = () => {
-    return scheduleRequests.filter(req => req.status === 'pending').length;
-  };
-
-  const getRequestsByStatus = (status) => {
-    return scheduleRequests.filter(req => req.status === status);
-  };
-
-  const getSystemStats = () => ({
-    totalEmployees: employees.length,
-    activeEmployees: employees.filter(e => e.is_active).length,
-    pendingPTO: ptoRequests.filter(req => req.status === 'pending').length,
-    approvedPTO: ptoRequests.filter(req => req.status === 'approved').length,
-    pendingScheduleRequests: scheduleRequests.filter(req => req.status === 'pending').length,
-    totalRoles: currentTemplate?.default_roles?.length || 13,
-    averageHourlyRate: employees.reduce((sum, emp) => sum + (emp.hourly_rate || 0), 0) / employees.length,
-    averagePerformance: employees.reduce((sum, emp) => sum + (emp.performance_rating || 0), 0) / employees.length,
-    retentionRate: 92 // Mock retention rate - calculate from actual data when available
-  });
-
-  // Refresh all data
-  const refreshData = async () => {
-    await loadLaborData();
   };
 
   // Initialize data on mount
@@ -1077,8 +965,8 @@ export const LaborDataProvider = ({ children }) => {
     loadLaborData();
   }, []);
 
-  // Enhanced context value with all functions
-  const contextValue = {
+  // Context value
+  const value = {
     // Core state
     employees,
     ptoRequests,
@@ -1089,7 +977,7 @@ export const LaborDataProvider = ({ children }) => {
     
     // Enhanced state
     schedules,
-    aiForecasts,
+    smartForecasts,
     weatherData,
     laborAnalytics,
     scheduleRequests,
@@ -1099,25 +987,15 @@ export const LaborDataProvider = ({ children }) => {
     addEmployee,
     updateEmployee,
     deleteEmployee,
-    getEmployeeById,
-    getEmployeesByDepartment,
+    loadLaborData,
     
     // PTO functions
     addPTORequest,
     approvePTORequest,
     denyPTORequest,
-    getPendingPTORequests,
-    getApprovedPTORequests,
     
-    // Schedule functions
-    getWeekSchedule,
-    addScheduleEntry,
-    submitScheduleRequest,
-    updateRequestStatus,
-    addEmployeeAvailability,
-    
-    // AI and Analytics functions
-    getAIForecast,
+    // Smart Analytics functions (NO MORE FAKE DATA)
+    getSmartForecast,
     getWeatherImpact,
     getLaborAnalytics,
 
@@ -1125,17 +1003,15 @@ export const LaborDataProvider = ({ children }) => {
     saveSchedule,
     
     // Utility functions
-    getSystemStats,
-    getPendingRequestsCount,
-    getRequestsByStatus,
-    refreshData,
-    loadLaborData,
-    setError,
-    setCurrentTemplate
+    getCurrentLocationId,
+    
+    // Department mapping
+    DEPARTMENT_MAPPING,
+    REVERSE_DEPARTMENT_MAPPING
   };
 
   return (
-    <LaborDataContext.Provider value={contextValue}>
+    <LaborDataContext.Provider value={value}>
       {children}
     </LaborDataContext.Provider>
   );
