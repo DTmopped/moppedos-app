@@ -26,7 +26,7 @@ const printStyles = `
     body {
       margin: 0;
       padding: 0;
-      font-size: 10px;
+      font-size: 11px;
       background: white !important;
       color: black !important;
     }
@@ -50,13 +50,13 @@ const printStyles = `
     }
     
     .print-header h1 {
-      font-size: 18px;
+      font-size: 20px;
       font-weight: bold;
       margin: 0 0 5px 0;
     }
     
     .print-header p {
-      font-size: 12px;
+      font-size: 14px;
       margin: 0;
     }
     
@@ -70,13 +70,13 @@ const printStyles = `
     .print-table th,
     .print-table td {
       border: 1px solid #333;
-      padding: 4px;
+      padding: 6px;
       vertical-align: top;
-      font-size: 9px;
+      font-size: 10px;
     }
     
     .print-role-header {
-      width: 120px;
+      width: 140px;
       background: #f0f0f0 !important;
       font-weight: bold;
       text-align: center;
@@ -86,37 +86,37 @@ const printStyles = `
       background: #f8f8f8 !important;
       font-weight: bold;
       text-align: center;
-      font-size: 10px;
+      font-size: 11px;
     }
     
     .print-role-cell {
       background: #f5f5f5 !important;
       font-weight: bold;
       text-align: center;
-      width: 120px;
+      width: 140px;
     }
     
     .print-day-cell {
-      width: calc((100% - 120px) / 7);
-      min-height: 60px;
+      width: calc((100% - 140px) / 7);
+      min-height: 70px;
     }
     
     .print-employee {
-      margin-bottom: 2px;
-      padding: 2px;
+      margin-bottom: 3px;
+      padding: 3px;
       border: 1px solid #ddd;
-      border-radius: 2px;
+      border-radius: 3px;
       background: #f9f9f9 !important;
-      font-size: 8px;
+      font-size: 9px;
     }
     
     .print-employee-name {
       font-weight: bold;
-      font-size: 9px;
+      font-size: 10px;
     }
     
     .print-employee-time {
-      font-size: 8px;
+      font-size: 9px;
       color: #666 !important;
     }
     
@@ -249,7 +249,7 @@ const QuickStatsCard = ({ title, value, subtitle, emoji, color = "blue", trend }
   );
 };
 
-// Time Selector Component
+// Enhanced Time Selector Component with full AM/PM display
 const TimeSelector = ({ value, onChange, label }) => {
   const timeOptions = [
     '6:00 AM', '6:30 AM', '7:00 AM', '7:30 AM', '8:00 AM', '8:30 AM', '9:00 AM', '9:30 AM',
@@ -263,7 +263,7 @@ const TimeSelector = ({ value, onChange, label }) => {
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="text-xs bg-transparent border-none outline-none cursor-pointer hover:bg-slate-50 rounded px-1 font-medium min-w-[60px]"
+      className="text-sm font-bold bg-transparent border-none outline-none cursor-pointer hover:bg-slate-50 rounded px-1 text-slate-800 min-w-[80px]"
     >
       {timeOptions.map(time => (
         <option key={time} value={time}>{time}</option>
@@ -290,23 +290,46 @@ const formatDateHeader = (date) => {
   return { day: parts[0] || 'Day', date: parts[1] || 'Date' };
 };
 
-// Enhanced time calculation with proper 12-hour format handling
+// Enhanced time calculation with proper validation and error checking
 const calculateHours = (startTime, endTime) => {
   if (!startTime || !endTime) return 0;
   
   const parseTime = (timeStr) => {
-    // Handle various time formats
-    let cleanTime = timeStr.replace(/AM|PM/gi, '').trim();
-    let [hours, minutes = 0] = cleanTime.split(':').map(Number);
-    
-    // Convert to 24-hour format
-    if (timeStr.toUpperCase().includes('PM') && hours !== 12) {
-      hours += 12;
-    } else if (timeStr.toUpperCase().includes('AM') && hours === 12) {
-      hours = 0;
+    try {
+      // Handle various time formats and ensure AM/PM is present
+      let cleanTime = timeStr.trim();
+      
+      // If no AM/PM, assume it's in 24-hour format or add default
+      if (!cleanTime.toUpperCase().includes('AM') && !cleanTime.toUpperCase().includes('PM')) {
+        const hour = parseInt(cleanTime.split(':')[0]);
+        if (hour >= 0 && hour < 12) {
+          cleanTime += ' AM';
+        } else {
+          cleanTime += ' PM';
+        }
+      }
+      
+      let timePart = cleanTime.replace(/AM|PM/gi, '').trim();
+      let [hours, minutes = 0] = timePart.split(':').map(Number);
+      
+      // Validate hours and minutes
+      if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 12 || minutes < 0 || minutes >= 60) {
+        console.warn(`Invalid time format: ${timeStr}`);
+        return 0;
+      }
+      
+      // Convert to 24-hour format
+      if (cleanTime.toUpperCase().includes('PM') && hours !== 12) {
+        hours += 12;
+      } else if (cleanTime.toUpperCase().includes('AM') && hours === 12) {
+        hours = 0;
+      }
+      
+      return hours + (minutes / 60);
+    } catch (error) {
+      console.error(`Error parsing time: ${timeStr}`, error);
+      return 0;
     }
-    
-    return hours + (minutes / 60);
   };
   
   const start = parseTime(startTime);
@@ -318,25 +341,50 @@ const calculateHours = (startTime, endTime) => {
   }
   
   const totalHours = end - start;
+  
+  // Validate result
+  if (totalHours < 0 || totalHours > 24) {
+    console.warn(`Invalid shift duration: ${startTime} to ${endTime} = ${totalHours} hours`);
+    return 0;
+  }
+  
   return Math.max(0, Math.round(totalHours * 2) / 2); // Round to nearest 0.5 hour
 };
 
+// Enhanced time formatting to ensure AM/PM is always shown
 const formatTime = (timeString) => {
   if (!timeString) return '';
-  if (timeString.includes('AM') || timeString.includes('PM')) return timeString;
   
+  // If already has AM/PM, return as is
+  if (timeString.toUpperCase().includes('AM') || timeString.toUpperCase().includes('PM')) {
+    return timeString;
+  }
+  
+  // Parse and add AM/PM
   let hours, minutes;
   if (timeString.includes(':')) {
     [hours, minutes] = timeString.split(':');
-  } else return timeString;
+  } else {
+    return timeString; // Return as is if can't parse
+  }
 
   const hour = parseInt(hours);
   const min = minutes || '00';
+  
   if (isNaN(hour)) return timeString;
 
   const ampm = hour >= 12 ? 'PM' : 'AM';
   const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
   return `${displayHour}:${min} ${ampm}`;
+};
+
+// Time validation helper
+const validateTimeRange = (startTime, endTime) => {
+  const hours = calculateHours(startTime, endTime);
+  if (hours === 0) return { valid: false, error: 'Invalid time format' };
+  if (hours > 16) return { valid: false, error: 'Shift too long (>16h)' };
+  if (hours < 0.5) return { valid: false, error: 'Shift too short (<30min)' };
+  return { valid: true, hours };
 };
 
 const WeeklyLaborSchedule = () => {
@@ -513,7 +561,13 @@ const WeeklyLaborSchedule = () => {
         const updated = { ...emp, [field]: value };
         // Recalculate hours if time changed
         if (field === 'start' || field === 'end') {
-          updated.hours = calculateHours(updated.start, updated.end);
+          const validation = validateTimeRange(updated.start, updated.end);
+          if (validation.valid) {
+            updated.hours = validation.hours;
+          } else {
+            console.warn(`Time validation error: ${validation.error}`);
+            // Keep the old hours if validation fails
+          }
         }
         return updated;
       }
@@ -791,7 +845,7 @@ const WeeklyLaborSchedule = () => {
             <p>Week of {formatDateHeader(weekStart).day}, {formatDateHeader(weekStart).date}</p>
           </div>
 
-          {/* ULTIMATE FINAL Schedule Grid - Perfect Cell Matching */}
+          {/* PERFECT FINAL Schedule Grid - Optimized Proportions & Bold Text */}
           <Card className="border-slate-300 shadow-lg bg-white print-schedule">
             <CardContent className="p-6">
               <div className="space-y-4">
@@ -841,27 +895,27 @@ const WeeklyLaborSchedule = () => {
                   </tbody>
                 </table>
 
-                {/* Screen Display - PERFECTLY MATCHED WIDTHS */}
+                {/* Screen Display - PERFECT PROPORTIONS & BOLD TEXT */}
                 <div className="w-full overflow-x-auto">
-                  <div className="min-w-[1800px]"> {/* Increased for even wider cells */}
+                  <div className="min-w-[1600px]"> {/* Optimized total width */}
                     <div className="flex">
-                      {/* Sticky Role Header - Generous Width */}
-                      <div className="w-96 flex-shrink-0 sticky left-0 bg-white z-10 pr-6"> {/* Increased from w-80 to w-96 */}
-                        <div className="text-center font-bold text-slate-700 py-4 bg-slate-100 rounded-lg border-2 border-slate-300 h-16 flex items-center justify-center">
+                      {/* Smaller Role Header - Optimized Width */}
+                      <div className="w-72 flex-shrink-0 sticky left-0 bg-white z-10 pr-4"> {/* Reduced from w-96 to w-72 */}
+                        <div className="text-center font-bold text-slate-800 py-4 bg-slate-100 rounded-lg border-2 border-slate-300 h-16 flex items-center justify-center text-base"> {/* Increased font size */}
                           📋 Role / Shift
                         </div>
                       </div>
-                      {/* Date Headers - Matching Width */}
-                      <div className="flex-1 grid grid-cols-7 gap-6"> {/* Increased gap from 4 to 6 */}
+                      {/* Date Headers - More Space */}
+                      <div className="flex-1 grid grid-cols-7 gap-4">
                         {weekDays.map((day, index) => {
                           const { day: dayName, date } = formatDateHeader(day);
                           const isToday = day.toDateString() === new Date().toDateString();
                           return (
-                            <div key={index} className={`text-center py-4 rounded-lg border-2 font-bold h-16 flex flex-col justify-center min-w-[200px] ${isToday ? 'bg-blue-100 border-blue-400 text-blue-800' : 'bg-slate-100 border-slate-300 text-slate-700'}`}>
-                              <div className="text-sm">
+                            <div key={index} className={`text-center py-4 rounded-lg border-2 font-bold h-16 flex flex-col justify-center min-w-[180px] text-base ${isToday ? 'bg-blue-100 border-blue-400 text-blue-800' : 'bg-slate-100 border-slate-300 text-slate-800'}`}>
+                              <div className="text-sm font-bold">
                                 {dayName} {isToday && '📅'}
                               </div>
-                              <div className="text-xs opacity-75">
+                              <div className="text-xs font-semibold opacity-75">
                                 {date}
                               </div>
                             </div>
@@ -870,82 +924,94 @@ const WeeklyLaborSchedule = () => {
                       </div>
                     </div>
 
-                    {/* Excel-Style Schedule Rows - PERFECTLY MATCHED */}
-                    <div className="mt-6 space-y-4"> {/* Increased spacing */}
+                    {/* Excel-Style Schedule Rows - PERFECT PROPORTIONS */}
+                    <div className="mt-6 space-y-4">
                       {filteredRoles.map((role, roleIndex) => {
                         return [0, 1].map(shiftIndex => {
                           const shift = shiftIndex === 0 ? 'AM' : 'PM';
                           
                           return (
                             <div key={`${roleIndex}-${shiftIndex}`} className="flex">
-                              {/* Sticky Role Column - EXACT SAME WIDTH */}
-                              <div className="w-96 flex-shrink-0 sticky left-0 bg-white z-10 pr-6"> {/* Matches header exactly */}
-                                <div className={`p-4 rounded-lg border-2 ${getDepartmentColor(role.department)} h-36 flex flex-col justify-center shadow-sm hover:shadow-md transition-shadow duration-200`}>
+                              {/* Smaller Role Column - EXACT SAME WIDTH */}
+                              <div className="w-72 flex-shrink-0 sticky left-0 bg-white z-10 pr-4"> {/* Matches header exactly */}
+                                <div className={`p-4 rounded-lg border-2 ${getDepartmentColor(role.department)} h-32 flex flex-col justify-center shadow-sm hover:shadow-md transition-shadow duration-200`}>
                                   <div className="text-center space-y-2">
-                                    <div className="text-xl">{getDepartmentEmoji(role.department)}</div>
-                                    <div className="font-bold text-slate-900 text-base">{role.name}</div>
-                                    <div className="text-slate-700 text-sm font-semibold flex items-center justify-center space-x-2">
+                                    <div className="text-2xl">{getDepartmentEmoji(role.department)}</div>
+                                    <div className="font-bold text-slate-900 text-base">{role.name}</div> {/* Increased font size */}
+                                    <div className="text-slate-800 text-sm font-bold flex items-center justify-center space-x-2"> {/* Made bolder */}
                                       <span>{shift === 'AM' ? '🌅' : '🌙'}</span>
                                       <span>{shift} Shift</span>
                                     </div>
-                                    {/* DEPARTMENT BADGE - Ultra Clear */}
+                                    {/* DEPARTMENT BADGE - Ultra Clear & Bold */}
                                     <Badge variant={role.department.toLowerCase()} size="md" emoji={getDepartmentEmoji(role.department)}>
-                                      {role.department}
+                                      <span className="font-bold">{role.department}</span>
                                     </Badge>
                                   </div>
                                 </div>
                               </div>
 
-                              {/* Excel-Style Day Cells - PERFECTLY MATCHED WIDTH */}
-                              <div className="flex-1 grid grid-cols-7 gap-6"> {/* Matches header gap exactly */}
+                              {/* Excel-Style Day Cells - MORE SPACE & BOLD TEXT */}
+                              <div className="flex-1 grid grid-cols-7 gap-4">
                                 {weekDays.map((day, dayIndex) => {
                                   const assignedEmployees = getAssignedEmployees(roleIndex, shiftIndex, dayIndex);
                                   const dropdownKey = `${roleIndex}-${shiftIndex}-${dayIndex}`;
                                   const isToday = day.toDateString() === new Date().toDateString();
                                   
                                   return (
-                                    <div key={dayIndex} className={`border-2 rounded-lg h-36 p-4 min-w-[200px] ${isToday ? 'bg-blue-50 border-blue-300' : 'bg-white border-slate-300'} hover:shadow-md transition-all duration-200 print-cell ${role.department === 'FOH' ? 'print-dept-foh' : role.department === 'BOH' ? 'print-dept-boh' : role.department === 'Bar' ? 'print-dept-bar' : 'print-dept-mgmt'}`}>
+                                    <div key={dayIndex} className={`border-2 rounded-lg h-32 p-3 min-w-[180px] ${isToday ? 'bg-blue-50 border-blue-300' : 'bg-white border-slate-300'} hover:shadow-md transition-all duration-200 print-cell ${role.department === 'FOH' ? 'print-dept-foh' : role.department === 'BOH' ? 'print-dept-boh' : role.department === 'Bar' ? 'print-dept-bar' : 'print-dept-mgmt'}`}>
                                       {assignedEmployees.length > 0 ? (
-                                        <div className="space-y-3 h-full overflow-y-auto">
-                                          {assignedEmployees.map((emp, empIndex) => (
-                                            <div key={empIndex} className={`p-3 rounded-md border ${getDepartmentColor(emp.department)} group hover:shadow-sm transition-all duration-200 relative print-employee`}>
-                                              {/* Excel-Style Employee Cell: Name on top, Time on bottom */}
-                                              <div className="space-y-2">
-                                                {/* Employee Name - Editable with more space */}
-                                                <div className="flex items-center justify-between">
-                                                  <input
-                                                    type="text"
-                                                    value={emp.name}
-                                                    onChange={(e) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, emp.id, 'name', e.target.value)}
-                                                    className="font-semibold text-sm bg-transparent border-none outline-none w-full text-slate-900 pr-2"
-                                                    placeholder="Employee Name"
-                                                  />
-                                                  <Button
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    onClick={() => handleRemoveEmployee(roleIndex, shiftIndex, dayIndex, emp.id)}
-                                                    className="h-5 w-5 p-0 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all duration-200 no-print flex-shrink-0"
-                                                  >
-                                                    <X className="h-3 w-3" />
-                                                  </Button>
-                                                </div>
-                                                
-                                                {/* Time Range - Editable Dropdowns with Hours - More Space */}
-                                                <div className="flex items-center space-x-2 text-sm text-slate-600">
-                                                  <TimeSelector
-                                                    value={emp.start}
-                                                    onChange={(value) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, emp.id, 'start', value)}
-                                                  />
-                                                  <span>-</span>
-                                                  <TimeSelector
-                                                    value={emp.end}
-                                                    onChange={(value) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, emp.id, 'end', value)}
-                                                  />
-                                                  <span className="ml-2 font-bold text-slate-800 whitespace-nowrap">({emp.hours}h)</span>
+                                        <div className="space-y-2 h-full overflow-y-auto">
+                                          {assignedEmployees.map((emp, empIndex) => {
+                                            const timeValidation = validateTimeRange(emp.start, emp.end);
+                                            return (
+                                              <div key={empIndex} className={`p-2 rounded-md border ${getDepartmentColor(emp.department)} group hover:shadow-sm transition-all duration-200 relative print-employee ${!timeValidation.valid ? 'border-red-300 bg-red-50' : ''}`}>
+                                                {/* Excel-Style Employee Cell: BOLD NAME & TIME */}
+                                                <div className="space-y-1">
+                                                  {/* Employee Name - Editable & BOLD */}
+                                                  <div className="flex items-center justify-between">
+                                                    <input
+                                                      type="text"
+                                                      value={emp.name}
+                                                      onChange={(e) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, emp.id, 'name', e.target.value)}
+                                                      className="font-bold text-base bg-transparent border-none outline-none w-full text-slate-900 pr-2" /* Increased font size and made bold */
+                                                      placeholder="Employee Name"
+                                                    />
+                                                    <Button
+                                                      size="sm"
+                                                      variant="ghost"
+                                                      onClick={() => handleRemoveEmployee(roleIndex, shiftIndex, dayIndex, emp.id)}
+                                                      className="h-5 w-5 p-0 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all duration-200 no-print flex-shrink-0"
+                                                    >
+                                                      <X className="h-3 w-3" />
+                                                    </Button>
+                                                  </div>
+                                                  
+                                                  {/* Time Range - BOLD & COMPLETE AM/PM */}
+                                                  <div className="flex items-center space-x-1 text-sm">
+                                                    <TimeSelector
+                                                      value={emp.start}
+                                                      onChange={(value) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, emp.id, 'start', value)}
+                                                    />
+                                                    <span className="font-bold text-slate-700">-</span>
+                                                    <TimeSelector
+                                                      value={emp.end}
+                                                      onChange={(value) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, emp.id, 'end', value)}
+                                                    />
+                                                    <span className={`ml-1 font-bold whitespace-nowrap ${timeValidation.valid ? 'text-slate-900' : 'text-red-600'}`}>
+                                                      ({emp.hours}h)
+                                                    </span>
+                                                  </div>
+                                                  
+                                                  {/* Time Validation Error */}
+                                                  {!timeValidation.valid && (
+                                                    <div className="text-xs text-red-600 font-medium">
+                                                      ⚠️ {timeValidation.error}
+                                                    </div>
+                                                  )}
                                                 </div>
                                               </div>
-                                            </div>
-                                          ))}
+                                            );
+                                          })}
                                         </div>
                                       ) : (
                                         <div className="h-full flex items-center justify-center no-print">
@@ -954,26 +1020,26 @@ const WeeklyLaborSchedule = () => {
                                               size="sm"
                                               variant="outline"
                                               onClick={() => setShowDropdown(showDropdown === dropdownKey ? null : dropdownKey)}
-                                              className="text-slate-600 hover:bg-slate-50 border-dashed border-slate-400 text-sm px-4 py-3 flex items-center space-x-2"
+                                              className="text-slate-700 hover:bg-slate-50 border-dashed border-slate-400 text-sm px-3 py-2 flex items-center space-x-2 font-medium" /* Made text darker and bolder */
                                             >
                                               <Plus className="h-4 w-4" />
                                               <span>Add Employee</span>
                                             </Button>
                                             
                                             {showDropdown === dropdownKey && (
-                                              <div className="absolute top-full left-0 mt-2 w-96 bg-white border border-slate-300 rounded-lg shadow-xl z-20 max-h-60 overflow-y-auto"> {/* Increased width and height */}
+                                              <div className="absolute top-full left-0 mt-2 w-80 bg-white border border-slate-300 rounded-lg shadow-xl z-20 max-h-60 overflow-y-auto">
                                                 {filteredEmployees.length > 0 ? (
                                                   filteredEmployees.map(employee => (
                                                     <button
                                                       key={employee.id}
                                                       onClick={() => handleAddEmployee(roleIndex, shiftIndex, dayIndex, employee.id)}
-                                                      className="w-full text-left px-5 py-4 text-sm text-slate-700 hover:bg-slate-50 border-b border-slate-100 last:border-b-0 transition-colors duration-150"
+                                                      className="w-full text-left px-4 py-3 text-sm text-slate-800 hover:bg-slate-50 border-b border-slate-100 last:border-b-0 transition-colors duration-150" /* Made text darker */
                                                     >
-                                                      <div className="flex items-center space-x-4">
+                                                      <div className="flex items-center space-x-3">
                                                         <span className="text-lg">👤</span>
                                                         <div className="flex-1">
-                                                          <div className="font-semibold text-base">{employee.name}</div>
-                                                          <div className="text-sm text-slate-500 flex items-center space-x-3 mt-1">
+                                                          <div className="font-bold text-base text-slate-900">{employee.name}</div> {/* Made bold and darker */}
+                                                          <div className="text-sm text-slate-600 flex items-center space-x-3 mt-1 font-medium"> {/* Made darker */}
                                                             <span>💼 {employee.role}</span>
                                                             <span>•</span>
                                                             <span>🏢 {employee.department}</span>
@@ -983,7 +1049,7 @@ const WeeklyLaborSchedule = () => {
                                                     </button>
                                                   ))
                                                 ) : (
-                                                  <div className="px-5 py-4 text-sm text-slate-500 text-center">
+                                                  <div className="px-4 py-3 text-sm text-slate-600 text-center font-medium"> {/* Made darker */}
                                                     <span>😔 No employees available</span>
                                                   </div>
                                                 )}
