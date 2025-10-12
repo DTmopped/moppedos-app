@@ -2,10 +2,9 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 import { supabase } from '@/supabaseClient';
 
 /**
- * Fetch and group order guide rows from view v_order_guide.
- * - Respects category_rank from the view for stable top->bottom ordering
- * - Maps (on_hand -> actual) and (par_level -> forecast) for your UI
- * - Includes cost, vendor, and admin fields
+ * Fetch and group order guide rows from canonical view v_order_guide_current.
+ * - Respects category_rank from the view for stable ordering
+ * - Maps (on_hand -> actual) and (par_level -> forecast) for UI
  */
 export function useOrderGuide({ locationId, category = null } = {}) {
   const [rows, setRows] = useState([]);
@@ -13,49 +12,44 @@ export function useOrderGuide({ locationId, category = null } = {}) {
   const [error, setError] = useState(null);
 
   const fetchData = useCallback(async () => {
-  if (!locationId) {
-    console.warn('⛔ No locationId provided to useOrderGuide');
-    setRows([]);
-    setLoading(false);
-    return;
-  }
-
-  // ✅ Log to verify UUID format
-  console.log('🧪 Fetching with locationId:', locationId);
-  console.log('📏 Length:', locationId.length);
-  console.log('🔤 Valid UUID regex:', /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(locationId));
+    if (!locationId) {
+      console.warn('⛔ No locationId provided to useOrderGuide');
+      setRows([]);
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     setError(null);
 
     try {
       let query = supabase
-  .from('v1_order_guide')
-  .select([
-    'item_id',
-    'location_id',
-    'category',
-    'category_rank',
-    'item_name',
-    'unit',
-    'on_hand',
-    'par_level',
-    'order_quantity',
-    'inventory_status',
-    'item_status',
-    'unit_cost',
-    'total_cost',
-    'vendor_name',
-    'brand',
-    'notes',
-    'last_ordered_at',
-  ].join(','))
-  .eq('location_id', locationId) // ✅ no cleanup needed here anymore
-  .order('category_rank', { ascending: true })
-  .order('item_name', { ascending: true });
+        .from('v_order_guide_current') // ✅ canonical view
+        .select(`
+          item_id,
+          location_id,
+          category,
+          category_rank,
+          item_name,
+          unit,
+          on_hand,
+          par_level,
+          order_quantity,
+          inventory_status,
+          item_status,
+          unit_cost,
+          total_cost,
+          vendor_name,
+          brand,
+          notes,
+          last_ordered_at
+        `)
+        .eq('location_id', locationId)
+        .order('category_rank', { ascending: true })
+        .order('item_name', { ascending: true });
 
-      // TEMPORARILY DISABLE CATEGORY FILTER FOR DEBUG
-// if (category) query = query.eq('category', category);
+      if (category) query = query.eq('category', category);
+
       const { data, error: qErr } = await query;
       if (qErr) throw qErr;
 
@@ -74,7 +68,6 @@ export function useOrderGuide({ locationId, category = null } = {}) {
   const itemsByCategory = useMemo(() => {
     const grouped = {};
 
-    // ✅ DEBUG: Output full raw rows from Supabase for troubleshooting
     console.log('🧾 Raw rows from Supabase:', rows);
 
     for (const r of rows) {
@@ -87,7 +80,6 @@ export function useOrderGuide({ locationId, category = null } = {}) {
 
       grouped[cat].push({
         item_id: r.item_id ?? null,
-        itemId: r.item_id ?? null, // compatibility
         name: r.item_name || '',
         unit: r.unit ?? '',
         actual,
@@ -115,4 +107,4 @@ export function useOrderGuide({ locationId, category = null } = {}) {
     groupedData: itemsByCategory, // legacy alias
     refresh: fetchData,
   };
-} 
+}
