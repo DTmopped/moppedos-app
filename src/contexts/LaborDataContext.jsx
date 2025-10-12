@@ -807,6 +807,132 @@ export const LaborDataProvider = ({ children }) => {
     }
   };
 
+  // NEW: Missing getSystemStats function
+  const getSystemStats = async () => {
+    try {
+      const currentLocationId = await getCurrentLocationId();
+      
+      // Get current date for calculations
+      const today = new Date().toISOString().split('T')[0];
+      const startOfWeek = new Date();
+      startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+      const weekStart = startOfWeek.toISOString().split('T')[0];
+      
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      const monthStart = startOfMonth.toISOString().split('T')[0];
+
+      // Initialize stats object
+      const stats = {
+        // Employee Statistics
+        totalEmployees: employees.length,
+        activeEmployees: employees.filter(emp => emp.status === 'active').length,
+        
+        // Department Breakdown
+        departmentBreakdown: {
+          'Front of House': employees.filter(emp => emp.department === 'Front of House').length,
+          'Back of House': employees.filter(emp => emp.department === 'Back of House').length,
+          'Bar & Beverage': employees.filter(emp => emp.department === 'Bar & Beverage').length,
+          'Management': employees.filter(emp => emp.department === 'Management').length
+        },
+        
+        // PTO Statistics
+        pendingPTORequests: ptoRequests.filter(pto => pto.status === 'pending').length,
+        approvedPTORequests: ptoRequests.filter(pto => pto.status === 'approved').length,
+        
+        // Schedule Statistics
+        totalSchedules: Object.keys(schedules).length,
+        
+        // System Health
+        databaseConnected: isConnected,
+        lastDataLoad: new Date().toISOString(),
+        
+        // Location Info
+        locationId: currentLocationId,
+        locationName: locationName || 'Unknown Location'
+      };
+
+      // Get today's schedule stats if available
+      const todayScheduleKey = Object.keys(schedules).find(key => 
+        schedules[key]?.week_start && 
+        new Date(schedules[key].week_start) <= new Date(today)
+      );
+      
+      if (todayScheduleKey && schedules[todayScheduleKey]) {
+        const todaySchedule = schedules[todayScheduleKey].schedule_data || {};
+        let scheduledEmployeesToday = 0;
+        let totalShiftsToday = 0;
+        
+        Object.values(todaySchedule).forEach(slot => {
+          if (slot.employees && Array.isArray(slot.employees)) {
+            scheduledEmployeesToday += slot.employees.length;
+            totalShiftsToday += slot.employees.length;
+          }
+        });
+        
+        stats.todayStats = {
+          scheduledEmployees: scheduledEmployeesToday,
+          totalShifts: totalShiftsToday
+        };
+      } else {
+        stats.todayStats = {
+          scheduledEmployees: 0,
+          totalShifts: 0
+        };
+      }
+
+      // Try to get sales data for additional metrics
+      try {
+        const { data: salesData } = await supabase
+          .from('daily_sales')
+          .select('guest_count, total_revenue, labor_hours')
+          .eq('location_id', currentLocationId)
+          .eq('date', today)
+          .single();
+
+        if (salesData) {
+          stats.todayStats.guestCount = salesData.guest_count || 0;
+          stats.todayStats.revenue = salesData.total_revenue || 0;
+          stats.todayStats.laborHours = salesData.labor_hours || 0;
+        }
+      } catch (salesError) {
+        // Sales data not available, continue without it
+        console.log('Sales data not available for today');
+      }
+
+      // Calculate average hourly rate
+      const totalHourlyRates = employees.reduce((sum, emp) => sum + (emp.hourly_rate || 0), 0);
+      stats.averageHourlyRate = employees.length > 0 ? 
+        Math.round((totalHourlyRates / employees.length) * 100) / 100 : 0;
+
+      // Performance metrics
+      stats.performance = {
+        dataLoadTime: loading ? 'Loading...' : 'Ready',
+        errorCount: error ? 1 : 0,
+        lastError: error || null
+      };
+
+      return {
+        success: true,
+        stats: stats,
+        timestamp: new Date().toISOString()
+      };
+
+    } catch (err) {
+      console.error('Error getting system stats:', err);
+      return {
+        success: false,
+        error: err.message,
+        stats: {
+          totalEmployees: employees.length || 0,
+          activeEmployees: 0,
+          databaseConnected: false,
+          locationName: 'Error Loading'
+        }
+      };
+    }
+  };
+
   // Context value with all functions and state
   const value = {
     // Core state
@@ -841,6 +967,9 @@ export const LaborDataProvider = ({ children }) => {
     // PTO functions
     addPTORequest,
     updatePTOStatus,
+
+    // System functions
+    getSystemStats, // ← ADDED THE MISSING FUNCTION HERE
 
     // Helper functions
     calculateShiftHours,
