@@ -27,14 +27,6 @@ const PrintableBriefingSheet = ({
   const displayValue = (val, suffix = "") =>
     val && val.toString().trim() !== "" ? `${val}${suffix}` : "—";
 
-  const displayCurrency = (val) =>
-    val && !isNaN(val)
-      ? `$${parseFloat(val).toLocaleString(undefined, {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })}`
-      : "—";
-
   return (
     <div
       id="briefing-content"
@@ -48,50 +40,38 @@ const PrintableBriefingSheet = ({
       </p>
 
       <div className="flex justify-between text-sm mb-6">
-        <p>
-          <strong>Date:</strong> {displayValue(date)}
-        </p>
-        <p>
-          <strong>Manager:</strong> {displayValue(manager)}
-        </p>
+        <p><strong>Date:</strong> {displayValue(date)}</p>
+        <p><strong>Manager:</strong> {displayValue(manager)}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-6 break-inside-avoid">
-        {/* Today’s Forecast */}
         <div className="border p-4 rounded-xl">
           <h2 className="font-semibold mb-2">📊 Today’s Forecast</h2>
-          <p>
-            <strong>🌞 Lunch:</strong> {displayValue(lunch, " guests")}
-          </p>
-          <p>
-            <strong>🌙 Dinner:</strong> {displayValue(dinner, " guests")}
-          </p>
+          <p><strong>🌞 Lunch:</strong> {displayValue(lunch, " guests")}</p>
+          <p><strong>🌙 Dinner:</strong> {displayValue(dinner, " guests")}</p>
           <p>
             <strong>💰 Forecasted Sales:</strong>{" "}
-            {displayCurrency(forecastedSales)}
+            {forecastedSales
+              ? `$${parseFloat(forecastedSales).toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                })}`
+              : "—"}
           </p>
-          {/* Weather inside forecast card */}
           {(weatherConditions || weatherTempHigh || weatherTempLow) && (
-            <p className="mt-2 text-sm text-slate-600">
-              {weatherIcon ? (
-                <img
-                  src={`https://openweathermap.org/img/wn/${weatherIcon}@2x.png`}
-                  alt="Weather"
-                  className="inline w-6 h-6 mr-2 align-middle"
-                />
-              ) : null}
-              {weatherConditions || "—"} | High:{" "}
+            <div className="bg-blue-50 mt-3 border border-blue-200 p-2 rounded-md text-sm">
+              {weatherIcon && <span>{weatherIcon} </span>}
+              <strong>{weatherConditions}</strong>, High:{" "}
               {weatherTempHigh ? `${weatherTempHigh}°F` : "—"} | Low:{" "}
               {weatherTempLow ? `${weatherTempLow}°F` : "—"}
-            </p>
+            </div>
           )}
         </div>
 
-        {/* Yesterday’s Recap */}
         <div className="border p-4 rounded-xl">
           <h2 className="font-semibold mb-2">📅 Yesterday’s Recap</h2>
           <p>
-            <strong>Actual Sales:</strong> {displayCurrency(actualSales)}
+            <strong>Actual Sales:</strong>{" "}
+            {displayValue(actualSales, "$")}
           </p>
           <p>
             <strong>⚠️ Variance Notes:</strong> {displayValue(varianceNotes)}
@@ -99,14 +79,12 @@ const PrintableBriefingSheet = ({
         </div>
       </div>
 
-      {/* Quote */}
       {quote && (
         <div className="bg-gray-100 rounded-lg shadow-sm p-4 text-center italic mb-6 break-inside-avoid">
           ✨ {quote}
         </div>
       )}
 
-      {/* Team sections */}
       <div className="grid grid-cols-3 gap-4 mb-6 break-inside-avoid">
         <div className="border p-4 rounded-xl">
           <h2 className="font-semibold mb-2">🎉 Shout-Out</h2>
@@ -122,7 +100,6 @@ const PrintableBriefingSheet = ({
         </div>
       </div>
 
-      {/* Food & Beverage */}
       <div className="grid grid-cols-2 gap-4 mb-6 break-inside-avoid">
         <div className="border p-4 rounded-xl">
           <h2 className="font-semibold mb-2">🥦 Food Items</h2>
@@ -148,7 +125,6 @@ const PrintableBriefingSheet = ({
         </div>
       </div>
 
-      {/* Events & Repairs */}
       <div className="grid grid-cols-2 gap-4 mb-6 break-inside-avoid">
         <div className="border p-4 rounded-xl">
           <h2 className="font-semibold mb-2">📅 Events & Holidays</h2>
@@ -160,7 +136,6 @@ const PrintableBriefingSheet = ({
         </div>
       </div>
 
-      {/* Last updated */}
       {lastUpdated && (
         <p className="text-xs text-muted-foreground text-right italic mt-4">
           🕓 Last updated: {new Date(lastUpdated).toLocaleString()}
