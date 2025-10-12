@@ -437,20 +437,19 @@ const WeeklyLaborSchedule = () => {
                       >
                         <CardContent className="p-3 flex flex-col justify-between h-full space-y-2">
                           
-                          {/* FIXED: Assigned Employees Section - Now at the TOP */}
+                          {/* CLEANED: Assigned Employees Section - No duplicate times */}
                           <div className="space-y-1 flex-1">
                             {assignedEmployees.length > 0 ? (
                               assignedEmployees.map((emp, empIndex) => (
                                 <div key={empIndex} className="bg-white rounded-lg p-2 shadow-sm border border-slate-200">
                                   <div className="flex items-center justify-between">
                                     <div className="flex-1 min-w-0">
-                                      {/* FIXED: Show employee name and time range */}
+                                      {/* CLEANED: Show only employee name - times are in role column */}
                                       <div className="text-xs font-semibold text-slate-900 truncate">
                                         {emp.name}
                                       </div>
-                                      <div className="text-xs text-slate-600 flex items-center space-x-1">
-                                        <Clock className="h-3 w-3" />
-                                        <span>{emp.start} - {emp.end}</span>
+                                      <div className="text-xs text-slate-500">
+                                        {emp.role}
                                       </div>
                                     </div>
                                     <Button
@@ -503,17 +502,7 @@ const WeeklyLaborSchedule = () => {
                             )}
                           </div>
 
-                          {/* FIXED: Shift Time Display - Now at the BOTTOM */}
-                          <div className="bg-white rounded-lg p-2 shadow-sm border border-slate-200">
-                            <div className="flex items-center justify-center space-x-1 text-xs text-slate-900 font-semibold">
-                              <Clock className="h-3 w-3 text-slate-600" />
-                              <span>{formatTime(shift.startTime)}</span>
-                              <span>–</span>
-                              <span>{formatTime(shift.endTime)}</span>
-                            </div>
-                          </div>
-                          
-                          {/* Badge */}
+                          {/* CLEANED: Department Badge Only - No duplicate times */}
                           <div className="flex justify-center">
                             <Badge variant={role.department.toLowerCase()}>{role.department}</Badge>
                           </div>
