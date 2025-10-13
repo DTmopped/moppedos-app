@@ -23,7 +23,7 @@ export function useOrderGuide({ locationId, category = null } = {}) {
     setError(null);
 
     try {
-      let query = supabase
+     let query = supabase
   .from('v_order_guide_current')
   .select(`
     item_id,
