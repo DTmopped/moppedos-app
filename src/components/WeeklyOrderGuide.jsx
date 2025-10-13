@@ -1,6 +1,7 @@
-// src/components/WeeklyOrderGuide.jsx
+// Multi-tenant WeeklyOrderGuide - dynamically gets user's location (no hardcoding)
 import React, { useEffect, useMemo, useRef, useCallback } from 'react';
 import { useData } from '@/contexts/DataContext';
+import { useUserAndLocation } from '@/hooks/useUserAndLocation';
 import { Button } from '@/components/ui/button.jsx';
 import { Printer, TrendingUp, AlertTriangle, CheckCircle2, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,8 +18,8 @@ const CATEGORY_ORDER = [
   'Bread',
   'Sweets',
   'Condiments',
-  'Dry Goods',      // ← Add this
-  'Produce',        // ← Add this
+  'Dry Goods',
+  'Produce',
   'PaperGoods',
   'CleaningSupplies',
   'Dairy',
@@ -72,11 +73,26 @@ const WeeklyOrderGuide = () => {
     setPrintDate,
   } = useData();
 
- const locationId = '00fe305a-6b02-4eaa-9bfe-cbc2d46d9e17';
+  // Multi-tenant: Get user's location dynamically (no hardcoding)
+  const { user, locationId, locationName, loading: locationLoading, error: locationError } = useUserAndLocation();
+  
+  // Only fetch order guide data if we have a valid location
+  const { isLoading, error, itemsByCategory, refresh } = useOrderGuide({ 
+    locationId: locationId || null 
+  });
 
-console.log('✅ Cleaned locationId:', locationId); // should be 36 characters
-  const { isLoading, error, itemsByCategory, refresh } = useOrderGuide({ locationId });
   const printableRef = useRef();
+
+  // Debug logging for multi-tenant setup
+  useEffect(() => {
+    console.log('🏢 Multi-tenant Order Guide:', {
+      user: user?.email,
+      locationId,
+      locationName,
+      locationLoading,
+      locationError: locationError?.message
+    });
+  }, [user, locationId, locationName, locationLoading, locationError]);
 
   useEffect(() => {
     setPrintDate?.(new Date());
@@ -103,37 +119,37 @@ console.log('✅ Cleaned locationId:', locationId); // should be 36 characters
   }, []);
 
   const uiGuideData = useMemo(() => {
-  if (!itemsByCategory) return {}; // safety check
+    if (!itemsByCategory) return {};
 
-  const normalized = {};
-  Object.entries(itemsByCategory ?? {}).forEach(([key, value]) => {
-    const cleanKey = key?.trim().toLowerCase() || '';
+    const normalized = {};
+    Object.entries(itemsByCategory ?? {}).forEach(([key, value]) => {
+      const cleanKey = key?.trim().toLowerCase() || '';
 
-    // Find alias (e.g., 'dry goods' → 'Dry Goods')
-    const alias = CATEGORY_ALIASES[cleanKey];
+      // Find alias (e.g., 'dry goods' → 'Dry Goods')
+      const alias = CATEGORY_ALIASES[cleanKey];
 
-    // Fallback to Title Case if alias not found
-    const titleCasedKey = key
-      ? key
-          .toLowerCase()
-          .split(' ')
-          .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-          .join(' ')
-      : 'Uncategorized';
+      // Fallback to Title Case if alias not found
+      const titleCasedKey = key
+        ? key
+            .toLowerCase()
+            .split(' ')
+            .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+            .join(' ')
+        : 'Uncategorized';
 
-    const finalKey = alias || titleCasedKey;
+      const finalKey = alias || titleCasedKey;
 
-    // Merge if already exists
-    if (normalized[finalKey]) {
-      normalized[finalKey] = [...normalized[finalKey], ...value];
-    } else {
-      normalized[finalKey] = value;
-    }
-  });
+      // Merge if already exists
+      if (normalized[finalKey]) {
+        normalized[finalKey] = [...normalized[finalKey], ...value];
+      } else {
+        normalized[finalKey] = value;
+      }
+    });
 
-  console.log('✅ Final normalized categories in UI:', Object.keys(normalized));
-  return normalized;
-}, [itemsByCategory]);
+    console.log('✅ Final normalized categories in UI:', Object.keys(normalized));
+    return normalized;
+  }, [itemsByCategory]);
 
   const orderedEntries = useMemo(() => {
     return CATEGORY_ORDER
@@ -141,11 +157,76 @@ console.log('✅ Cleaned locationId:', locationId); // should be 36 characters
       .map(cat => [cat, uiGuideData[cat]]);
   }, [uiGuideData]);
 
-  useEffect(() => {
-    if (!isLoading && !error && (!itemsByCategory || Object.keys(itemsByCategory).length === 0)) {
-      console.warn('⚠️ Order Guide is empty. Check Supabase data, category mappings, or view logic.');
+  // Enhanced error handling for multi-tenant issues
+  const renderError = () => {
+    if (locationError) {
+      return (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+          <div className="text-sm text-red-600 mb-2">
+            <strong>Location Access Error:</strong> {String(locationError?.message ?? locationError)}
+          </div>
+          <div className="text-xs text-red-500">
+            <strong>Multi-tenant Debug:</strong>
+            <br />• User: {user?.email || 'Not logged in'}
+            <br />• User ID: {user?.id || 'None'}
+            <br />• Location ID: {locationId || 'Not found'}
+            <br />• Location Name: {locationName || 'Not found'}
+          </div>
+          <div className="text-xs text-blue-600 mt-2">
+            💡 This user may need to be assigned to a location in the user_locations table.
+          </div>
+        </div>
+      );
     }
-  }, [itemsByCategory, isLoading, error]);
+
+    if (error) {
+      return (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+          <div className="text-sm text-red-600 mb-2">
+            <strong>Order Guide Error:</strong> {String(error?.message ?? error)}
+          </div>
+          <div className="text-xs text-red-500">
+            <strong>Debug Info:</strong>
+            <br />• Location ID: {locationId}
+            <br />• Location Name: {locationName}
+            <br />• User: {user?.email}
+          </div>
+          <Button className="mt-2" size="sm" onClick={refresh}>Retry</Button>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  // Show loading state while getting user location
+  if (locationLoading) {
+    return (
+      <div className="p-4 md:p-6">
+        <div className="text-sm text-slate-600 flex items-center gap-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          Loading user location...
+        </div>
+      </div>
+    );
+  }
+
+  // Show error if no location found
+  if (!locationId && !locationLoading) {
+    return (
+      <div className="p-4 md:p-6">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="text-sm text-yellow-800 mb-2">
+            <strong>No Location Assigned</strong>
+          </div>
+          <div className="text-xs text-yellow-700">
+            This user ({user?.email}) is not assigned to any location.
+            <br />Please contact your administrator to assign a location.
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-6">
@@ -174,16 +255,22 @@ console.log('✅ Cleaned locationId:', locationId); // should be 36 characters
         </div>
       </div>
 
-      {isLoading && <div className="text-sm text-slate-600">Loading order guide…</div>}
+      {/* Multi-tenant location info */}
+      <div className="text-xs text-slate-500 mb-4 no-print">
+        📍 Location: {locationName || 'Unknown'} ({locationId})
+        <br />👤 User: {user?.email}
+      </div>
 
-      {error && (
-        <div className="text-sm text-red-600">
-          Sorry — couldn’t load the order guide. {String(error?.message ?? error)}
-          <Button className="ml-2" size="sm" onClick={refresh}>Retry</Button>
+      {isLoading && (
+        <div className="text-sm text-slate-600 flex items-center gap-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          Loading order guide for {locationName}...
         </div>
       )}
 
-      {!isLoading && !error && (
+      {renderError()}
+
+      {!isLoading && !error && !locationError && (
         <AnimatePresence>
           <motion.div
             key="order-guide"
@@ -192,20 +279,33 @@ console.log('✅ Cleaned locationId:', locationId); // should be 36 characters
             exit={{ opacity: 0 }}
             className="space-y-6"
           >
-            {orderedEntries.map(([category, items], index) => (
-              <div key={category} className={index !== 0 ? 'print-break' : ''}>
-                <h2 className="text-xl font-bold mb-2">{category}</h2>
-                <OrderGuideCategory
-                  categoryTitle={category}
-                  items={items}
-                  getStatusClass={getStatusClass}
-                  getStatusIcon={getStatusIcon}
-                  parBasedCategories={parBasedCategories}
-                  locationId={locationId}
-                  onRefresh={refresh}
-                />
+            {orderedEntries.length === 0 ? (
+              <div className="text-center py-8 text-slate-500">
+                <p className="text-lg mb-2">No order guide items found</p>
+                <p className="text-sm">
+                  This could mean:
+                  <br />• No items are assigned to {locationName}
+                  <br />• Database view needs to be fixed
+                  <br />• RLS policies are blocking access
+                </p>
+                <Button className="mt-4" onClick={refresh}>Refresh</Button>
               </div>
-            ))}
+            ) : (
+              orderedEntries.map(([category, items], index) => (
+                <div key={category} className={index !== 0 ? 'print-break' : ''}>
+                  <h2 className="text-xl font-bold mb-2">{category}</h2>
+                  <OrderGuideCategory
+                    categoryTitle={category}
+                    items={items}
+                    getStatusClass={getStatusClass}
+                    getStatusIcon={getStatusIcon}
+                    parBasedCategories={parBasedCategories}
+                    locationId={locationId}
+                    onRefresh={refresh}
+                  />
+                </div>
+              ))
+            )}
           </motion.div>
         </AnimatePresence>
       )}
@@ -222,4 +322,3 @@ console.log('✅ Cleaned locationId:', locationId); // should be 36 characters
 };
 
 export default WeeklyOrderGuide;
-
