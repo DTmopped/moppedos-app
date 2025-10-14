@@ -37,7 +37,7 @@ export function useOrderGuide({ locationId, category = null } = {}) {
         .select([
           'item_id',
           'location_id',
-          'category_name:category',      // ✅ FIXED: Proper PostgREST aliasing
+          'category_name',           // Use actual column name directl
           'category_rank',
           'item_name',
           'unit',
