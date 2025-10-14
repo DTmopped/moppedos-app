@@ -2,14 +2,12 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 import { supabase } from '@/supabaseClient';
 
 /**
- * Order Guide Hook - Clean UI Version
+ * COMPLETE FIX - Order Guide Hook
  * 
- * This version:
- * 1. Only fetches columns that exist in the database
- * 2. Maintains the same clean, user-friendly UI you designed
- * 3. Maps database columns to UI expectations
+ * This version queries order_guide_items directly (113 items) instead of 
+ * the incomplete v_order_guide_current view (5 items).
  * 
- * The UI stays exactly the same - we're just fixing the database query.
+ * This will restore ALL your v1 Order Guide items!
  */
 export function useOrderGuide({ locationId, category = null } = {}) {
   const [rows, setRows] = useState([]);
@@ -24,38 +22,45 @@ export function useOrderGuide({ locationId, category = null } = {}) {
       return;
     }
 
-    console.log('🔍 Fetching Order Guide with locationId:', locationId);
+    console.log('🔍 Fetching Order Guide from order_guide_items with locationId:', locationId);
 
     setLoading(true);
     setError(null);
 
     try {
-      // ✅ Fetch only essential columns for the clean UI
-      // We'll add more columns as we confirm they exist
+      // ✅ COMPLETE FIX: Query order_guide_items directly (has all 113 items)
       let query = supabase
-        .from('v_order_guide_current')
+        .from('order_guide_items')
         .select([
-          'item_id',
-          'location_id',
-          'category_name',
+          'id',
           'item_name',
+          'category',
           'unit',
-          'on_hand',
           'par_level',
-          // Try to include these if they exist, but don't fail if they don't
-          'order_quantity',
+          'actual',
+          'forecast',
+          'variance',
           'unit_cost',
-          'vendor_name'
+          'cost_per_unit',
+          'vendor',
+          'brand',
+          'distributor',
+          'category_rank',
+          'status',
+          'description',
+          'sku',
+          'location_id',
+          'is_active'
         ].join(','))
-        .eq('location_id', locationId);
+        .eq('location_id', locationId)
+        .eq('is_active', true) // Only active items
+        .order('category_rank', { ascending: true })
+        .order('item_name', { ascending: true });
 
       // Apply category filter if specified
       if (category) {
-        query = query.eq('category_name', category);
+        query = query.eq('category', category);
       }
-
-      // Order by item_name for consistent display
-      query = query.order('item_name', { ascending: true });
 
       const { data, error: queryError } = await query;
       
@@ -65,9 +70,9 @@ export function useOrderGuide({ locationId, category = null } = {}) {
       }
 
       setRows(Array.isArray(data) ? data : []);
-      console.log('✅ Order Guide loaded successfully:', data?.length || 0, 'items');
+      console.log('✅ Order Guide loaded successfully:', data?.length || 0, 'items from order_guide_items');
       
-      // Log available columns for debugging (can be removed later)
+      // Log available columns for debugging
       if (data && data.length > 0) {
         console.log('📋 Available columns:', Object.keys(data[0]));
       }
@@ -88,37 +93,39 @@ export function useOrderGuide({ locationId, category = null } = {}) {
     const grouped = {};
 
     for (const row of rows) {
-      const categoryName = row.category_name || 'Uncategorized';
+      // ✅ Use 'category' field from order_guide_items
+      const categoryName = row.category || 'Uncategorized';
       
       if (!grouped[categoryName]) {
         grouped[categoryName] = [];
       }
 
-      const actual = Number(row.on_hand ?? 0);
-      const forecast = Number(row.par_level ?? 0);
-      const variance = Number((actual - forecast).toFixed(1));
+      // ✅ Map order_guide_items columns to UI expectations
+      const actual = Number(row.actual ?? row.par_level ?? 0);
+      const forecast = Number(row.forecast ?? row.par_level ?? 0);
+      const variance = Number(row.variance ?? (actual - forecast).toFixed(1));
 
-      // ✅ Map database columns to clean UI expectations
       grouped[categoryName].push({
-        item_id: row.item_id ?? null,
-        itemId: row.item_id ?? null, // compatibility
+        item_id: row.id ?? null,
+        itemId: row.id ?? null, // compatibility
         name: row.item_name || '',
         unit: row.unit ?? '',
         actual,
         forecast,
         variance,
-        status: 'auto', // Clean default status
+        status: String(row.status || 'auto').toLowerCase(),
         
-        // Include additional data if available, with clean defaults
-        on_hand: row.on_hand ?? null,
+        // ✅ Include rich data from order_guide_items
+        on_hand: row.actual ?? row.par_level ?? null,
         par_level: row.par_level ?? null,
-        order_quantity: row.order_quantity ?? 0,
-        unit_cost: row.unit_cost ?? 0,
-        total_cost: (row.unit_cost && row.on_hand) ? (row.unit_cost * row.on_hand) : 0,
-        vendor_name: row.vendor_name ?? '',
+        order_quantity: variance > 0 ? 0 : Math.abs(variance), // Calculate order quantity
+        unit_cost: row.unit_cost ?? row.cost_per_unit ?? 0,
+        total_cost: (row.unit_cost ?? row.cost_per_unit ?? 0) * actual,
+        vendor_name: row.vendor ?? row.distributor ?? '',
         brand: row.brand ?? '',
-        notes: row.notes ?? '',
-        last_ordered_at: row.last_ordered_at ?? null,
+        notes: row.description ?? '',
+        sku: row.sku ?? '',
+        last_ordered_at: null, // Not available in order_guide_items
       });
     }
 
@@ -133,3 +140,4 @@ export function useOrderGuide({ locationId, category = null } = {}) {
     refresh: fetchData,
   };
 }
+
