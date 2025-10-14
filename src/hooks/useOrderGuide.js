@@ -74,8 +74,7 @@ export function useOrderGuide({ locationId, category = null } = {}) {
           'status',
           'description',
           'sku',
-          'location_id',
-          'is_active'
+          'location_id'
         ].join(','))
         .eq('location_id', locationId)
         // ✅ DEBUG: Remove is_active filter to see all items
