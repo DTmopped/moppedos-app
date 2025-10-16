@@ -399,3 +399,6 @@ export const useCompleteOrderGuide = ({
 
 // Default export for backward compatibility
 export default useFoodOrderGuide;
+
+// ✅ ADD THIS LINE:
+export const useOrderGuide = useFoodOrderGuide;
