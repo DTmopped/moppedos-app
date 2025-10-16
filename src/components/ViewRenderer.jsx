@@ -18,7 +18,8 @@ const componentImportMap = {
   DailyBriefingBuilder: lazy(() => import('./DailyBriefingBuilder.jsx')),
   ForecastCenter: lazy(() => import('./ForecastEmailParserBot.jsx')), // Use the correct path to your new file
   LaborManagement: lazy(() => import('../pages/LaborManagement.jsx')),
-
+  // ✅ ADD THIS LINE: Order Guide Test component
+  OrderGuideTest: lazy(() => import('./OrderGuideTest.jsx')),
 };
 
 const ViewRenderer = ({ viewsConfig }) => {
