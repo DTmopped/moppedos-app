@@ -90,9 +90,10 @@ const OrderGuideItemTable = ({
             const variance0 = Number((actual0 - forecast0).toFixed(1));
 
             return (
-              <tr key={`${row.item_id ?? row.name}-${idx}`} className="border-b dark:border-gray-700">
+              <tr key={`${row.item_id ?? row.item_name ?? row.name}-${idx}`}
+ className="border-b dark:border-gray-700">
                 <td className="px-4 py-2 font-medium text-gray-900 whitespace-nowrap bg-yellow-50">
-                  {row.name || 'Unnamed'}
+                  {row.item_name || row.name || 'Unnamed'}
                   {isParItem && (
                     <span className="ml-2 inline-flex items-center rounded bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
                       PAR Item
