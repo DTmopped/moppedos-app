@@ -6,6 +6,7 @@ import AppInitializer from "@/components/AppInitializer";
 import { views } from "@/config/views";
 import Login from "@/pages/Login";
 import { supabase } from "@/supabaseClient"; // ✅ correct path
+import OrderGuideTest from '@/components/OrderGuideTest';
 
 const App = () => {
   const [loading, setLoading] = useState(true);
@@ -51,6 +52,7 @@ const App = () => {
         <Route path="/*" element={<AppLayout />}>
           <Route index element={<Navigate to="/dashboard" />} />
           <Route path="*" element={<ViewRenderer viewsConfig={views} />} />
+          <Route path="/debug-order-guide" element={<OrderGuideTest />} />
         </Route>
       </Routes>
     </>
