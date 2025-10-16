@@ -45,16 +45,16 @@ const App = () => {
       <AppInitializer />
 
       <Routes>
-        <Route path="/login" element={<Login />} />
+  <Route path="/login" element={<Login />} />
+  <Route path="/debug-order-guide" element={<OrderGuideTest />} />  {/* ✅ Move here */}
+  <Route path="/" element={<Navigate to="/dashboard" />} />
 
-        <Route path="/" element={<Navigate to="/dashboard" />} />
+  <Route path="/*" element={<AppLayout />}>
+    <Route index element={<Navigate to="/dashboard" />} />
+    <Route path="*" element={<ViewRenderer viewsConfig={views} />} />
+  </Route>
+</Routes>
 
-        <Route path="/*" element={<AppLayout />}>
-          <Route index element={<Navigate to="/dashboard" />} />
-          <Route path="*" element={<ViewRenderer viewsConfig={views} />} />
-          <Route path="/debug-order-guide" element={<OrderGuideTest />} />
-        </Route>
-      </Routes>
     </>
   );
 };
