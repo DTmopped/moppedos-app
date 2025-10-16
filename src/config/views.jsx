@@ -1,6 +1,6 @@
 import React from 'react';
-// ✅ 1. Add MailCheck to this import list
-import { Home, FileText, Users, ShoppingBasket, BarChartBig, Calculator, ClipboardList, MailCheck } from 'lucide-react';
+// ✅ Add TestTube icon for the Order Guide Test
+import { Home, FileText, Users, ShoppingBasket, BarChartBig, Calculator, ClipboardList, MailCheck, TestTube } from 'lucide-react';
 
 export const views = [
   {
@@ -13,7 +13,6 @@ export const views = [
     isDefault: true,
   },
   {
-    // ✅ 2. This block is now correct and will work because MailCheck is imported.
     id: 'WEEKLY_FORECAST_CENTER',
     path: '/weekly-forecast',
     label: 'Forecast Center',
@@ -41,7 +40,7 @@ export const views = [
     id: 'WEEKLY_LABOR_SCHEDULE',
     path: '/labor-schedule',
     label: 'Labor Schedule',
-    componentName: 'LaborManagement', // Updated to new enhanced component
+    componentName: 'LaborManagement',
     icon: <Users size={20} strokeWidth={2.5} />,
     showInNav: true,
   },
@@ -62,6 +61,15 @@ export const views = [
     showInNav: true,
   },
   {
+    // ✅ NEW: Order Guide Test - Add this entire block
+    id: 'ORDER_GUIDE_TEST',
+    path: '/order-guide-test',
+    label: 'Order Guide Test',
+    componentName: 'OrderGuideTest',
+    icon: <TestTube size={20} strokeWidth={2.5} />,
+    showInNav: true,
+  },
+  {
     id: 'SMART_PREP_GUIDE',
     path: '/full-prep-guide',
     label: 'Full Prep Guide',
@@ -73,4 +81,3 @@ export const views = [
 
 export const defaultViewId = views.find(v => v.isDefault)?.id || (views.length > 0 ? views[0].id : null);
 export const defaultViewPath = views.find(v => v.isDefault)?.path || (views.length > 0 ? views[0].path : "/");
-
