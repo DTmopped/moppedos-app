@@ -80,6 +80,7 @@ const WeeklyOrderGuide = () => {
   const { isLoading, error, itemsByCategory, refresh } = useOrderGuide({ 
     locationId: locationId || null 
   });
+console.log('🔍 WeeklyOrderGuide data:', { itemsByCategory, isLoading, error });
 
   const printableRef = useRef();
 
