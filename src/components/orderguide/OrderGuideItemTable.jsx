@@ -27,24 +27,35 @@ const OrderGuideItemTable = ({
     return supabase.functions.invoke(fnName, { body: payload });
   };
 
-  const updateOnHand = async (row, newVal) => {
-    if (!row.item_id || !locationId) return;
-    setWorking((w) => ({ ...w, [row.item_id]: 'on_hand' }));
-    try {
-      await callEdge('update-on-hand', {
+  // Replace the updateOnHand function with this:
+const updateOnHand = async (row, newVal ) => {
+  if (!row.item_id || !locationId) return;
+  setWorking((w) => ({ ...w, [row.item_id]: 'on_hand' }));
+  try {
+    const { error } = await supabase
+      .from('order_guide_status')
+      .upsert({
         item_id: row.item_id,
         location_id: locationId,
         on_hand: Number(newVal),
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'item_id,location_id'
       });
-      onRefresh?.();
-    } finally {
-      setWorking((w) => {
-        const c = { ...w };
-        delete c[row.item_id];
-        return c;
-      });
-    }
-  };
+    
+    if (error) throw error;
+    onRefresh?.();
+  } catch (error) {
+    console.error('Error updating on_hand:', error);
+  } finally {
+    setWorking((w) => {
+      const c = { ...w };
+      delete c[row.item_id];
+      return c;
+    });
+  }
+};
+
 
   const updateParLevel = async (row, newVal) => {
     if (!isAdminMode || !row.item_id || !locationId) return;
