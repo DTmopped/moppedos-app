@@ -402,3 +402,126 @@ export default useFoodOrderGuide;
 
 // ✅ ADD THIS LINE:
 export const useOrderGuide = useFoodOrderGuide;
+
+// Add this NEW hook at the end of your existing useOrderGuide.js file
+// (keep all your existing code, just add this at the bottom)
+
+// ✅ NEW: AI-Powered Order Suggestions Hook
+export const useAIOrderGuide = ({ locationId, enableRealtime = true }) => {
+  const [suggestions, setSuggestions] = useState([]);
+  const [summary, setSummary] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch AI-powered order suggestions
+  const fetchSuggestions = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      
+      // Get vendor-optimized suggestions
+      const { data: suggestionsData, error: suggestionsError } = await supabase
+        .rpc('generate_vendor_optimized_suggestions', { 
+          p_location_id: locationId 
+        });
+
+      if (suggestionsError) throw suggestionsError;
+
+      // Get executive summary
+      const { data: summaryData, error: summaryError } = await supabase
+        .from('v_order_summary')
+        .select('*')
+        .single();
+
+      if (summaryError) throw summaryError;
+
+      setSuggestions(suggestionsData || []);
+      setSummary(summaryData);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching AI suggestions:', err);
+      setError(err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [locationId]);
+
+  // Group suggestions by priority
+  const suggestionsByPriority = useMemo(() => {
+    const grouped = {
+      urgent: suggestions.filter(s => s.priority_score === 1),
+      high: suggestions.filter(s => s.priority_score === 2),
+      normal: suggestions.filter(s => s.priority_score === 3)
+    };
+    return grouped;
+  }, [suggestions]);
+
+  // Approve order function
+  const approveOrder = useCallback(async (item) => {
+    try {
+      // Update order_guide_status with approved quantity
+      const { error } = await supabase
+        .from('order_guide_status')
+        .upsert({
+          item_id: item.item_id,
+          location_id: locationId,
+          order_quantity: item.total_units,
+          last_ordered_at: new Date().toISOString()
+        }, {
+          onConflict: 'item_id,location_id'
+        });
+
+      if (error) throw error;
+      
+      // Refresh suggestions
+      await fetchSuggestions();
+      
+      return { success: true };
+    } catch (err) {
+      console.error('Error approving order:', err);
+      return { success: false, error: err.message };
+    }
+  }, [locationId, fetchSuggestions]);
+
+  // Refresh AI suggestions
+  const refreshAI = useCallback(async () => {
+    try {
+      await supabase.rpc('refresh_order_suggestions');
+      await fetchSuggestions();
+    } catch (err) {
+      console.error('Error refreshing AI:', err);
+    }
+  }, [fetchSuggestions]);
+
+  useEffect(() => {
+    if (locationId) {
+      fetchSuggestions();
+    }
+  }, [locationId, fetchSuggestions]);
+
+  // Real-time updates
+  useEffect(() => {
+    if (!enableRealtime || !locationId) return;
+
+    const subscription = supabase
+      .channel('ai-order-suggestions')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'order_guide_status' },
+        () => fetchSuggestions()
+      )
+      .subscribe();
+
+    return () => subscription.unsubscribe();
+  }, [enableRealtime, locationId, fetchSuggestions]);
+
+  return {
+    suggestions,
+    suggestionsByPriority,
+    summary,
+    isLoading,
+    error,
+    approveOrder,
+    refreshAI,
+    refetch: fetchSuggestions
+  };
+};
+
