@@ -1,6 +1,6 @@
 import React from 'react';
-// ✅ Add TestTube icon for the Order Guide Test
-import { Home, FileText, Users, ShoppingBasket, BarChartBig, Calculator, ClipboardList, MailCheck, TestTube } from 'lucide-react';
+// ✅ Add Brain icon to the import (keep TestTube if you want to keep Order Guide Test)
+import { Home, FileText, Users, ShoppingBasket, BarChartBig, Calculator, ClipboardList, MailCheck, TestTube, Brain } from 'lucide-react';
 
 export const views = [
   {
@@ -61,12 +61,20 @@ export const views = [
     showInNav: true,
   },
   {
-    // ✅ NEW: Order Guide Test - Add this entire block
     id: 'ORDER_GUIDE_TEST',
     path: '/order-guide-test',
     label: 'Order Guide Test',
     componentName: 'OrderGuideTest',
     icon: <TestTube size={20} strokeWidth={2.5} />,
+    showInNav: true,
+  },
+  {
+    // ✅ ADD THIS NEW ENTRY FOR SMART ORDER DASHBOARD
+    id: 'SMART_ORDER_DASHBOARD',
+    path: '/smart-order-dashboard',
+    label: 'Smart Order Dashboard',
+    componentName: 'AIOrderDashboard',
+    icon: <Brain size={20} strokeWidth={2.5} />,
     showInNav: true,
   },
   {
