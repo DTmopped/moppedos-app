@@ -403,125 +403,226 @@ export default useFoodOrderGuide;
 // ✅ ADD THIS LINE:
 export const useOrderGuide = useFoodOrderGuide;
 
-// Add this NEW hook at the end of your existing useOrderGuide.js file
-// (keep all your existing code, just add this at the bottom)
+// Updated useAIOrderGuide Hook - Compatible with existing schema
+// Replace the existing useAIOrderGuide function in your useOrderGuide.js file
 
-// ✅ NEW: AI-Powered Order Suggestions Hook
 export const useAIOrderGuide = ({ locationId, enableRealtime = true }) => {
-  const [suggestions, setSuggestions] = useState([]);
-  const [summary, setSummary] = useState(null);
+  const [aiSuggestions, setAiSuggestions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
-  // Fetch AI-powered order suggestions
-  const fetchSuggestions = useCallback(async () => {
+  const fetchAISuggestions = useCallback(async () => {
+    if (!locationId) {
+      console.warn('⛔ No locationId provided to useAIOrderGuide');
+      setAiSuggestions([]);
+      setIsLoading(false);
+      return;
+    }
+
+    console.log('🧠 Fetching Smart order suggestions for locationId:', locationId);
+
+    setIsLoading(true);
+    setError(null);
+
     try {
-      setIsLoading(true);
-      
-      // Get vendor-optimized suggestions
-      const { data: suggestionsData, error: suggestionsError } = await supabase
-        .rpc('generate_vendor_optimized_suggestions', { 
-          p_location_id: locationId 
-        });
-
-      if (suggestionsError) throw suggestionsError;
-
-      // Get executive summary
-      const { data: summaryData, error: summaryError } = await supabase
-        .from('v_order_summary')
+      // Use the same successful query structure as Order Guide Test
+      const { data, error: fetchError } = await supabase
+        .from('v_order_guide_clean')
         .select('*')
-        .single();
+        .eq('is_active', true)
+        .neq('item_type', 'beverage')
+        .or(`location_id.eq.${locationId},location_id.is.null`)
+        .order('category_rank')
+        .order('item_name');
 
-      if (summaryError) throw summaryError;
+      if (fetchError) {
+        console.error('❌ Error fetching Smart suggestions:', fetchError);
+        setError(fetchError);
+        setAiSuggestions([]);
+      } else {
+        console.log(`✅ Smart suggestions loaded: ${data?.length || 0} items analyzed`);
+        
+        // Transform the data into AI suggestions format
+        const smartSuggestions = data
+          .filter(item => {
+            // Only include items that need attention (smart filtering)
+            const needsOrder = item.needsorder;
+            const isOverstocked = item.isoverstocked;
+            const hasLowStock = item.actual < item.forecast * 0.3; // Very low stock
+            
+            return needsOrder || isOverstocked || hasLowStock;
+          })
+          .map(item => {
+            // Determine priority based on stock situation
+            const stockRatio = item.forecast > 0 ? item.actual / item.forecast : 1;
+            const variance = item.variance || 0;
+            
+            let priority = 'normal';
+            let daysUntilStockout = 999;
+            
+            if (stockRatio < 0.2 || variance < -10) {
+              priority = 'urgent';
+              daysUntilStockout = Math.max(1, Math.floor(item.actual / 2)); // Estimate
+            } else if (stockRatio < 0.5 || variance < -5) {
+              priority = 'high';
+              daysUntilStockout = Math.max(2, Math.floor(item.actual / 1.5));
+            }
 
-      setSuggestions(suggestionsData || []);
-      setSummary(summaryData);
-      setError(null);
+            // Calculate recommended order quantity
+            const recommendedQuantity = Math.max(0, item.forecast - item.actual);
+            
+            // Generate smart reasoning
+            let reasoning = '';
+            if (item.needsorder) {
+              const percentBelow = Math.round((1 - stockRatio) * 100);
+              reasoning = `Stock is ${percentBelow}% below target level. `;
+            }
+            if (item.isoverstocked) {
+              reasoning = 'Currently overstocked - consider reducing next order. ';
+            }
+            if (daysUntilStockout < 7 && daysUntilStockout < 999) {
+              reasoning += `Projected to run out in ${daysUntilStockout} days. `;
+            }
+            if (reasoning === '') {
+              reasoning = 'Standard reorder recommendation based on current inventory levels.';
+            }
+
+            // Vendor optimization (simplified)
+            let vendorOptimization = null;
+            if (item.unit_cost > 5) { // For higher cost items
+              const potentialSavings = Math.round(item.unit_cost * 0.1 * recommendedQuantity);
+              if (potentialSavings > 10) {
+                vendorOptimization = `Review vendor pricing - potential savings of $${potentialSavings} available`;
+              }
+            }
+
+            return {
+              item_id: item.item_id,
+              item_name: item.item_name,
+              category_name: item.category_name || 'General',
+              unit: item.unit || 'each',
+              current_stock: item.actual || 0,
+              par_level: item.forecast || 0,
+              recommended_quantity: recommendedQuantity,
+              estimated_cost: (item.unit_cost || 0) * recommendedQuantity,
+              vendor_name: item.vendor || item.brand || 'Standard Vendor',
+              priority: priority,
+              days_until_stockout: daysUntilStockout,
+              usage_trend: variance > 2 ? 'increasing' : variance < -2 ? 'decreasing' : 'stable',
+              vendor_optimization: vendorOptimization,
+              potential_savings: vendorOptimization ? Math.round(item.unit_cost * 0.1 * recommendedQuantity) : 0,
+              ai_reasoning: reasoning.trim()
+            };
+          });
+
+        setAiSuggestions(smartSuggestions);
+        setError(null);
+        setLastUpdated(new Date());
+      }
+
+      setIsLoading(false);
     } catch (err) {
-      console.error('Error fetching AI suggestions:', err);
+      console.error('❌ Unexpected error in useAIOrderGuide:', err);
       setError(err);
-    } finally {
+      setAiSuggestions([]);
       setIsLoading(false);
     }
   }, [locationId]);
 
-  // Group suggestions by priority
-  const suggestionsByPriority = useMemo(() => {
-    const grouped = {
-      urgent: suggestions.filter(s => s.priority_score === 1),
-      high: suggestions.filter(s => s.priority_score === 2),
-      normal: suggestions.filter(s => s.priority_score === 3)
-    };
-    return grouped;
-  }, [suggestions]);
+  useEffect(() => {
+    fetchAISuggestions();
+  }, [fetchAISuggestions]);
 
-  // Approve order function
-  const approveOrder = useCallback(async (item) => {
+  // Approve an order suggestion
+  const approveOrder = useCallback(async (itemId) => {
+    if (!locationId || !itemId) {
+      console.error('❌ Missing locationId or itemId for order approval');
+      return { success: false, error: 'Missing required parameters' };
+    }
+
     try {
-      // Update order_guide_status with approved quantity
-      const { error } = await supabase
+      console.log(`✅ Approving order for item ${itemId}`);
+
+      // Find the suggestion to get the recommended quantity
+      const suggestion = aiSuggestions.find(s => s.item_id === itemId);
+      if (!suggestion) {
+        return { success: false, error: 'Suggestion not found' };
+      }
+
+      // Update the order_guide_status with the recommended order quantity
+      const { error: updateError } = await supabase
         .from('order_guide_status')
         .upsert({
-          item_id: item.item_id,
+          item_id: itemId,
           location_id: locationId,
-          order_quantity: item.total_units,
-          last_ordered_at: new Date().toISOString()
+          order_quantity: suggestion.recommended_quantity,
+          last_ordered_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         }, {
           onConflict: 'item_id,location_id'
         });
 
-      if (error) throw error;
-      
-      // Refresh suggestions
-      await fetchSuggestions();
-      
+      if (updateError) {
+        console.error('❌ Error approving order:', updateError);
+        return { success: false, error: updateError.message };
+      }
+
+      console.log('✅ Order approved successfully');
       return { success: true };
     } catch (err) {
-      console.error('Error approving order:', err);
+      console.error('❌ Unexpected error approving order:', err);
       return { success: false, error: err.message };
     }
-  }, [locationId, fetchSuggestions]);
+  }, [locationId, aiSuggestions]);
 
-  // Refresh AI suggestions
-  const refreshAI = useCallback(async () => {
-    try {
-      await supabase.rpc('refresh_order_suggestions');
-      await fetchSuggestions();
-    } catch (err) {
-      console.error('Error refreshing AI:', err);
+  // Calculate summary statistics
+  const summary = useMemo(() => {
+    if (!aiSuggestions || aiSuggestions.length === 0) {
+      return {
+        totalSuggestions: 0,
+        potentialSavings: 0,
+        vendorOptimizations: 0,
+        urgentItems: 0
+      };
     }
-  }, [fetchSuggestions]);
 
-  useEffect(() => {
-    if (locationId) {
-      fetchSuggestions();
-    }
-  }, [locationId, fetchSuggestions]);
+    const stats = {
+      totalSuggestions: aiSuggestions.length,
+      potentialSavings: 0,
+      vendorOptimizations: 0,
+      urgentItems: 0
+    };
 
-  // Real-time updates
-  useEffect(() => {
-    if (!enableRealtime || !locationId) return;
+    aiSuggestions.forEach(suggestion => {
+      if (suggestion.priority === 'urgent') stats.urgentItems++;
+      if (suggestion.vendor_optimization) stats.vendorOptimizations++;
+      if (suggestion.potential_savings) stats.potentialSavings += suggestion.potential_savings;
+    });
 
-    const subscription = supabase
-      .channel('ai-order-suggestions')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'order_guide_status' },
-        () => fetchSuggestions()
-      )
-      .subscribe();
-
-    return () => subscription.unsubscribe();
-  }, [enableRealtime, locationId, fetchSuggestions]);
+    return stats;
+  }, [aiSuggestions]);
 
   return {
-    suggestions,
-    suggestionsByPriority,
-    summary,
+    // Smart Data
+    aiSuggestions,
     isLoading,
     error,
+    summary,
+    
+    // Smart Actions
+    refresh: fetchAISuggestions,
     approveOrder,
-    refreshAI,
-    refetch: fetchSuggestions
+    
+    // Status
+    hasAISuggestions: aiSuggestions.length > 0,
+    isEmpty: aiSuggestions.length === 0 && !isLoading && !error,
+    
+    // Metadata
+    lastUpdated
   };
 };
+
+
+
 
