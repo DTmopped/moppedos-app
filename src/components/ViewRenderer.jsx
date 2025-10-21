@@ -2,6 +2,8 @@ import React, { Suspense, lazy } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
+
+
 const LoadingFallback = () => (
   <div className="flex justify-center items-center h-full w-full">
     <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -20,6 +22,8 @@ const componentImportMap = {
   LaborManagement: lazy(() => import('../pages/LaborManagement.jsx')),
   // ✅ ADD THIS LINE: Order Guide Test component
   OrderGuideTest: lazy(() => import('./OrderGuideTest.jsx')),
+  AIOrderDashboard: lazy(() => import('./orderguide/AIOrderDashboard.jsx')),
+
 };
 
 const ViewRenderer = ({ viewsConfig }) => {
