@@ -55,14 +55,6 @@ export const views = [
     showInNav: true,
   },
   {
-    id: 'WEEKLY_ORDER_GUIDE',
-    path: '/weekly-order-guide',
-    label: 'Order Guide',
-    componentName: 'WeeklyOrderGuide',
-    icon: <ClipboardList size={20} strokeWidth={2.5} />,
-    showInNav: true,
-  },
-  {
     // CHANGE these 4 lines:
    id: 'INVENTORY_MANAGEMENT',           // was 'ORDER_GUIDE_TEST'
    path: '/inventory-management',        // was '/order-guide-test'  
