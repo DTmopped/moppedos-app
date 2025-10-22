@@ -63,12 +63,12 @@ export const views = [
     showInNav: true,
   },
   {
-    id: 'ORDER_GUIDE_TEST',
-    path: '/order-guide-test',
-    label: 'Order Guide Test',
-    componentName: 'OrderGuideTest',
-    icon: <TestTube size={20} strokeWidth={2.5} />,
-    showInNav: true,
+    // CHANGE these 4 lines:
+   id: 'INVENTORY_MANAGEMENT',           // was 'ORDER_GUIDE_TEST'
+   path: '/inventory-management',        // was '/order-guide-test'  
+   label: 'Inventory Management',        // was 'Order Guide Test'
+   icon: <Package size={20} strokeWidth={2.5} />,  // was <TestTube
+   showInNav: true,
   },
   {
     // ✅ ADD THIS NEW ENTRY FOR SMART ORDER DASHBOARD
