@@ -21,7 +21,7 @@ const componentImportMap = {
   ForecastCenter: lazy(() => import('./ForecastEmailParserBot.jsx')), // Use the correct path to your new file
   LaborManagement: lazy(() => import('../pages/LaborManagement.jsx')),
   // ✅ ADD THIS LINE: Order Guide Test component
-  OrderGuideTest: lazy(() => import('./OrderGuideTest.jsx')),
+ InventoryManagement: lazy(() => import('./OrderGuideTest.jsx')),
   AIOrderDashboard: lazy(() => import('./orderguide/AIOrderDashboard.jsx')),
 
 };
