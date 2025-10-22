@@ -737,7 +737,6 @@ export const useAIOrderGuide = ({ locationId, enableRealtime = true }) => {
   }, [locationId]);
 
 
-  return {
 
 
   return {
