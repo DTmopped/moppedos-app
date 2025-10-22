@@ -5,6 +5,8 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../supabaseClient'; // Adjust path as needed
+import VendorExportService from '../lib/VendorExportService';
+
 
 /**
  * Enhanced useOrderGuide Hook with Multi-Operator Support
@@ -719,6 +721,7 @@ export const useAIOrderGuide = ({ locationId, enableRealtime = true }) => {
     // Smart Actions
     refresh: fetchAISuggestions,
     approveOrder,
+    exportOrdersByVendor,  // <-- ADD THIS LINE
     
     // Status
     hasAISuggestions: aiSuggestions.length > 0,
