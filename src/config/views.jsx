@@ -1,6 +1,8 @@
 import React from 'react';
 // ✅ Add Brain icon to the import (keep TestTube if you want to keep Order Guide Test)
-import { Home, FileText, Users, ShoppingBasket, BarChartBig, Calculator, ClipboardList, MailCheck, TestTube, Brain } from 'lucide-react';
+// ADD Package to the end:
+import { Home, FileText, Users, ShoppingBasket, BarChartBig, Calculator, ClipboardList, MailCheck, TestTube, Brain, Package } from 'lucide-react';
+
 
 export const views = [
   {
