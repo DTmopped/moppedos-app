@@ -105,6 +105,34 @@ useEffect(() => {
     return items;
   }, [deduplicatedItems, itemsByCleanCategory, selectedCategory, searchTerm, showOnlyNeedsOrder]);
 
+  const handleExportInventory = () => {
+  // Create CSV content
+  const headers = ['Item Name', 'Category', 'Current Stock', 'Target Level', 'Variance', 'Status', 'Brand'];
+  const csvContent = [
+    headers.join(','),
+    ...filteredItems.map(item => [
+      `"${item.item_name}"`,
+      `"${item.category_name || 'Uncategorized'}"`,
+      item.on_hand || 0,
+      item.par_level || 0,
+      (item.on_hand || 0) - (item.par_level || 0),
+      getStatusText(item),
+      `"${item.brand || ''}"`
+    ].join(','))
+  ].join('\n');
+
+  // Download CSV
+  const blob = new Blob([csvContent], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `inventory-${new Date().toISOString().split('T')[0]}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
+};
+
   const handleQuantityChange = async (itemId, field, value) => {
     const numValue = parseInt(value) || 0;
     await updateInventoryCount(itemId, field, numValue);
@@ -153,27 +181,31 @@ useEffect(() => {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">📦 Inventory Management</h1>
-            <p className="text-gray-600">Complete inventory tracking and management system</p>
-          </div>
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={refresh}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-            >
-              Refresh
-            </button>
-            <button className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
-              <Download className="w-4 h-4 inline mr-1" />
-              Export
-            </button>
-          </div>
-        </div>
-      </div>
+     {/* Header */}
+<div className="mb-6">
+  <div className="flex items-center justify-between">
+    <div>
+      <h1 className="text-3xl font-bold text-gray-900">📦 Inventory Management</h1>
+      <p className="text-gray-600">Complete inventory tracking and management system</p>
+    </div>
+    <div className="flex items-center space-x-3">
+      <button
+        onClick={refresh}
+        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+      >
+        Refresh
+      </button>
+      <button 
+        onClick={handleExportInventory}
+        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+      >
+        <Download className="w-4 h-4 inline mr-1" />
+        Export
+      </button>
+    </div>
+  </div>
+</div>
+
 
       {/* Summary Cards */}
       {summary && (
