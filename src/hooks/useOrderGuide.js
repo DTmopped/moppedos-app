@@ -711,7 +711,7 @@ export const useAIOrderGuide = ({ locationId, enableRealtime = true }) => {
     return stats;
   }, [aiSuggestions]);
 
-    // EXPORT ORDERS BY VENDOR - New functionality
+  // EXPORT ORDERS BY VENDOR - New functionality
   const exportOrdersByVendor = useCallback(async () => {
     try {
       console.log('🚀 Starting vendor export...');
@@ -736,6 +736,7 @@ export const useAIOrderGuide = ({ locationId, enableRealtime = true }) => {
       alert('Error exporting orders: ' + err.message);
     }
   }, [locationId]);
+
 
   return {
 
