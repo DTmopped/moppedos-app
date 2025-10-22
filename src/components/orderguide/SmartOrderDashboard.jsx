@@ -201,6 +201,21 @@ const SmartOrderDashboard = () => {
         </div>
       </div>
 
+      {/* Export Orders Section */}
+      <div className="mb-6 flex justify-between items-center bg-gray-50 p-4 rounded-lg">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">Order Management</h3>
+          <p className="text-sm text-gray-600">Export approved orders for vendor processing</p>
+        </div>
+        <button
+          onClick={exportOrdersByVendor}
+          className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
+        >
+          <Download className="w-4 h-4" />
+          <span>Export Orders</span>
+        </button>
+      </div>
+
       {/* FVA Warning */}
       {fvaImpact.warning && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
