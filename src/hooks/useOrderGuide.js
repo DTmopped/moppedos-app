@@ -534,7 +534,7 @@ export const useAIOrderGuide = ({ locationId, enableRealtime = true }) => {
     fetchAISuggestions();
   }, [fetchAISuggestions]);
 
-  // Approve an order suggestion
+   // NEW APPROVE ORDER FUNCTION - Creates real orders in the new workflow system
   const approveOrder = useCallback(async (itemId) => {
     if (!locationId || !itemId) {
       console.error('❌ Missing locationId or itemId for order approval');
@@ -544,37 +544,143 @@ export const useAIOrderGuide = ({ locationId, enableRealtime = true }) => {
     try {
       console.log(`✅ Approving order for item ${itemId}`);
 
-      // Find the suggestion to get the recommended quantity
+      // Find the suggestion to get the recommended quantity and details
       const suggestion = aiSuggestions.find(s => s.item_id === itemId);
       if (!suggestion) {
         return { success: false, error: 'Suggestion not found' };
       }
 
-      // Update the order_guide_status with the recommended order quantity
-      const { error: updateError } = await supabase
-        .from('order_guide_status')
-        .upsert({
-          item_id: itemId,
-          location_id: locationId,
-          order_quantity: suggestion.recommended_quantity,
-          last_ordered_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'item_id,location_id'
-        });
+      const vendorName = suggestion.vendor_name || 'Standard Vendor';
 
-      if (updateError) {
-        console.error('❌ Error approving order:', updateError);
-        return { success: false, error: updateError.message };
+      // 1. Find or create draft order for this vendor
+      let { data: existingOrder, error: findError } = await supabase
+        .from('order_headers')
+        .select('id, total_items, estimated_total')
+        .eq('location_id', locationId)
+        .eq('vendor_name', vendorName)
+        .eq('status', 'draft')
+        .single();
+
+      if (findError && findError.code !== 'PGRST116') { // PGRST116 = no rows found
+        console.error('❌ Error finding existing order:', findError);
+        return { success: false, error: findError.message };
       }
 
+      let orderId;
+
+      if (!existingOrder) {
+        // Create new draft order
+        const { data: newOrder, error: createError } = await supabase
+          .from('order_headers')
+          .insert({
+            location_id: locationId,
+            vendor_name: vendorName,
+            status: 'draft',
+            budget_period: 'weekly',
+            notes: 'AI-generated order from Smart Dashboard'
+          })
+          .select('id')
+          .single();
+
+        if (createError) {
+          console.error('❌ Error creating order:', createError);
+          return { success: false, error: createError.message };
+        }
+
+        orderId = newOrder.id;
+
+        // Record the order source
+        await supabase
+          .from('order_sources')
+          .insert({
+            order_id: orderId,
+            source_type: 'ai_suggestion',
+            source_data: {
+              ai_reasoning: suggestion.ai_reasoning,
+              priority: suggestion.priority,
+              confidence: 0.85,
+              original_suggestion: suggestion
+            }
+          });
+
+      } else {
+        orderId = existingOrder.id;
+      }
+
+      // 2. Check if this item is already in the order
+      const { data: existingLine, error: lineCheckError } = await supabase
+        .from('order_lines')
+        .select('id, requested_qty')
+        .eq('order_id', orderId)
+        .eq('item_id', itemId)
+        .single();
+
+      if (lineCheckError && lineCheckError.code !== 'PGRST116') {
+        console.error('❌ Error checking existing line:', lineCheckError);
+        return { success: false, error: lineCheckError.message };
+      }
+
+      if (existingLine) {
+        // Update existing line with new quantity
+        const { error: updateLineError } = await supabase
+          .from('order_lines')
+          .update({
+            requested_qty: suggestion.recommended_quantity,
+            approved_qty: suggestion.recommended_quantity,
+            estimated_unit_cost: suggestion.estimated_cost / suggestion.recommended_quantity,
+            estimated_line_total: suggestion.estimated_cost,
+            priority: suggestion.priority,
+            ai_reasoning: suggestion.ai_reasoning,
+            status: 'approved'
+          })
+          .eq('id', existingLine.id);
+
+        if (updateLineError) {
+          console.error('❌ Error updating order line:', updateLineError);
+          return { success: false, error: updateLineError.message };
+        }
+
+      } else {
+        // Add new line to order
+        const { error: insertLineError } = await supabase
+          .from('order_lines')
+          .insert({
+            order_id: orderId,
+            item_id: itemId,
+            item_name: suggestion.item_name,
+            brand: suggestion.vendor_name || '',
+            unit: suggestion.unit || 'each',
+            case_size: 1,
+            requested_qty: suggestion.recommended_quantity,
+            approved_qty: suggestion.recommended_quantity,
+            estimated_unit_cost: suggestion.estimated_cost / suggestion.recommended_quantity,
+            estimated_line_total: suggestion.estimated_cost,
+            priority: suggestion.priority,
+            ai_reasoning: suggestion.ai_reasoning,
+            status: 'approved'
+          });
+
+        if (insertLineError) {
+          console.error('❌ Error inserting order line:', insertLineError);
+          return { success: false, error: insertLineError.message };
+        }
+      }
+
+      // 3. Order totals will be automatically calculated by the trigger
+
       console.log('✅ Order approved successfully');
-      return { success: true };
+      return { 
+        success: true, 
+        orderId: orderId,
+        message: `Added ${suggestion.item_name} to ${vendorName} order`
+      };
+
     } catch (err) {
       console.error('❌ Unexpected error approving order:', err);
       return { success: false, error: err.message };
     }
   }, [locationId, aiSuggestions]);
+
 
   // Calculate summary statistics
   const summary = useMemo(() => {
