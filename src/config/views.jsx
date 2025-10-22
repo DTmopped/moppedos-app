@@ -67,6 +67,7 @@ export const views = [
    id: 'INVENTORY_MANAGEMENT',           // was 'ORDER_GUIDE_TEST'
    path: '/inventory-management',        // was '/order-guide-test'  
    label: 'Inventory Management',        // was 'Order Guide Test'
+   componentName: 'InventoryManagement', // ADD THIS LINE!
    icon: <Package size={20} strokeWidth={2.5} />,  // was <TestTube
    showInNav: true,
   },
