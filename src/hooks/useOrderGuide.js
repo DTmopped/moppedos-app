@@ -711,6 +711,35 @@ export const useAIOrderGuide = ({ locationId, enableRealtime = true }) => {
     return stats;
   }, [aiSuggestions]);
 
+    // EXPORT ORDERS BY VENDOR - New functionality
+  const exportOrdersByVendor = useCallback(async () => {
+    try {
+      console.log('🚀 Starting vendor export...');
+      
+      const exportService = new VendorExportService(supabase);
+      const result = await exportService.exportOrdersByVendor(locationId);
+      
+      if (result.success) {
+        const message = `Successfully exported ${result.exportedCount} vendor orders:\n\n` +
+          result.results
+            .filter(r => r.success)
+            .map(r => `✅ ${r.vendor}: ${r.lineCount} items`)
+            .join('\n');
+        
+        alert(message);
+      } else {
+        throw new Error('Export failed');
+      }
+      
+    } catch (err) {
+      console.error('❌ Error in exportOrdersByVendor:', err);
+      alert('Error exporting orders: ' + err.message);
+    }
+  }, [locationId]);
+
+  return {
+
+
   return {
     // Smart Data
     aiSuggestions,
