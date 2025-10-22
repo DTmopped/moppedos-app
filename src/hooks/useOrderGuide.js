@@ -5,7 +5,8 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../supabaseClient'; // Adjust path as needed
-// import VendorExportService from '../lib/VendorExportService';
+import VendorExportService from '../lib/VendorExportService';
+
 
 /**
  * Enhanced useOrderGuide Hook with Multi-Operator Support
