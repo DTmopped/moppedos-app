@@ -21,6 +21,11 @@ const OrderGuideTest = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showOnlyNeedsOrder, setShowOnlyNeedsOrder] = useState(false);
 
+  // ADD THIS RIGHT HERE (after line 22):
+useEffect(() => {
+  document.title = 'Inventory Management - Mopped OS';
+}, []);
+
   // Deduplicate items by item_id and item_name combination
   const deduplicatedItems = useMemo(() => {
     if (!allItems || allItems.length === 0) return [];
