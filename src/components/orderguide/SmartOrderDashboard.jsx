@@ -255,8 +255,32 @@ const SmartOrderDashboard = () => {
           </nav>
         </div>
 
-        {/* Suggestions List */}
-        <div className="p-6">
+        {/* Main Content Tabs - Suggestions vs Approved Orders */}
+        <div className="mb-6">
+          <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+            <button
+              onClick={() => setActiveTab('suggestions')}
+              className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                activeTab === 'suggestions' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              AI Suggestions
+            </button>
+            
+            <button
+              onClick={() => setActiveTab('approved')}
+              className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                activeTab === 'approved' ? 'bg-white text-green-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Approved Orders
+            </button>
+          </div>
+        </div>
+
+        {/* Content based on active tab */}
+{activeTab === 'suggestions' ? (
+  <div className="p-6">
           {filteredSuggestions.length === 0 ? (
             <div className="text-center py-12">
               <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -338,7 +362,18 @@ const SmartOrderDashboard = () => {
         </div>
       </div>
     </div>
-  );
+  ) : (
+    /* Approved Orders Section */
+    <div className="p-6">
+      <h3 className="text-lg font-semibold mb-4 text-green-700">Approved Orders</h3>
+      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+        <p className="text-green-800">🎉 Your approved orders will appear here!</p>
+        <p className="text-sm text-green-600 mt-2">Orders you approve will be shown grouped by vendor for easy management.</p>
+      </div>
+    </div>
+  )}
+  </div>
+);
 };
 
 export default SmartOrderDashboard;
