@@ -140,7 +140,7 @@ const SmartOrderDashboard = () => {
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center space-x-3">
             <Brain className="w-8 h-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">Smart Order Dashboard</h1>
+            <h1 className="text-3xl font-bold text-gray-900">TEST - Smart Order Dashboard</h1>
           </div>
           <div className="flex items-center space-x-3">
             <button
