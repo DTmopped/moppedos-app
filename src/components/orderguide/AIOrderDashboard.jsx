@@ -15,7 +15,7 @@ import {
   Truck,
   Star
 } from 'lucide-react';
-import { useAIOrderGuide } from '../hooks/useOrderGuide';
+import { useAIOrderGuide } from '../../hooks/useOrderGuide';
 
 const SmartOrderDashboard = () => {
   const locationId = 'a8e559f8-fdb4-435b-bd1f-ccba5d175f2b'; // Mopped Test Site
