@@ -89,7 +89,12 @@ const AIOrderDashboard = () => {
       return;
     }
     
-    await exportOrdersByVendor();
+    try {
+      await exportOrdersByVendor();
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('Error exporting orders. Please check the console for details.');
+    }
   };
 
   const getPriorityColor = (priority) => {
@@ -166,7 +171,7 @@ const AIOrderDashboard = () => {
               <RefreshCw className="w-4 h-4" />
               <span>Refresh</span>
             </button>
-            {/* ALWAYS SHOW EXPORT BUTTON - but disable when no orders */}
+            {/* SINGLE EXPORT BUTTON - ONLY IN HEADER */}
             <button
               onClick={handleExportOrders}
               disabled={!hasApprovedOrders}
@@ -270,24 +275,14 @@ const AIOrderDashboard = () => {
         {/* Smart Suggestions List */}
         <div className="space-y-4 mb-8">
           {filteredSuggestions.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-              <Lightbulb className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Smart Suggestions</h3>
-              <p className="text-gray-600">
+            /* MINIMAL EMPTY STATE */
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 text-center">
+              <p className="text-gray-600 text-sm">
                 {selectedPriority === 'all' 
-                  ? 'All inventory levels appear optimal based on current usage patterns.'
+                  ? 'All inventory levels appear optimal. Items will appear here when stock levels fall below recommended thresholds.'
                   : `No ${selectedPriority} priority items found.`
                 }
               </p>
-              <p className="text-sm text-gray-500 mt-2">
-                Items will appear here when stock levels fall below recommended thresholds.
-              </p>
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm text-blue-700">
-                  💡 <strong>Tip:</strong> To test the system, lower some inventory counts in your Inventory Management, 
-                  then return here to see smart suggestions appear.
-                </p>
-              </div>
             </div>
           ) : (
             filteredSuggestions.map((suggestion) => (
@@ -383,32 +378,14 @@ const AIOrderDashboard = () => {
             <CheckCircle className="w-6 h-6 text-green-600" />
             <span>Approved Orders</span>
           </h2>
-          {hasApprovedOrders && (
-            <button
-              onClick={handleExportOrders}
-              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              <span>Export All Orders</span>
-            </button>
-          )}
+          {/* NO DUPLICATE EXPORT BUTTON HERE */}
         </div>
 
         {!hasApprovedOrders ? (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-            <CheckCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Approved Orders</h3>
-            <p className="text-gray-600">
-              Approved orders will appear here after you approve smart suggestions.
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 text-center">
+            <p className="text-gray-600 text-sm">
+              Approved orders will appear here after you approve smart suggestions above.
             </p>
-            <p className="text-sm text-gray-500 mt-2">
-              Use the "Approve Order" button on suggestions above to create orders.
-            </p>
-            <div className="mt-4 p-3 bg-green-50 rounded-lg">
-              <p className="text-sm text-green-700">
-                💡 <strong>Tip:</strong> The Export button above is always visible but will be disabled until you have approved orders.
-              </p>
-            </div>
           </div>
         ) : (
           <>
