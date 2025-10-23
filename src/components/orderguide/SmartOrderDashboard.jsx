@@ -239,6 +239,7 @@ const SmartOrderDashboard = () => {
               { key: 'urgent', label: 'Urgent', count: priorityCounts.urgent },
               { key: 'high', label: 'High Priority', count: priorityCounts.high },
               { key: 'normal', label: 'Normal', count: priorityCounts.normal }
+              { key: 'approved', label: 'Approved Orders', count: approvedItems.size }
             ].map((tab) => (
               <button
                 key={tab.key}
