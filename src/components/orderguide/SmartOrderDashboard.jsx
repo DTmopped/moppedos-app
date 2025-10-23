@@ -280,7 +280,7 @@ const SmartOrderDashboard = () => {
         </div>
 
         {/* Content based on active tab */}
-{activeTab === 'suggestions' ? (
+{selectedPriority !== 'approved' ? (
   <div className="p-6">
           {filteredSuggestions.length === 0 ? (
             <div className="text-center py-12">
