@@ -85,7 +85,7 @@ const SmartOrderDashboard = () => {
 
   const handleExportOrders = async () => {
     if (!hasApprovedOrders) {
-      alert('No approved orders to export');
+      alert('No approved orders to export. Create some approved orders first by approving AI suggestions.');
       return;
     }
     
@@ -166,15 +166,25 @@ const SmartOrderDashboard = () => {
               <RefreshCw className="w-4 h-4" />
               <span>Refresh</span>
             </button>
-            {hasApprovedOrders && (
-              <button
-                onClick={handleExportOrders}
-                className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-              >
-                <Download className="w-4 h-4" />
-                <span>Export Orders</span>
-              </button>
-            )}
+            {/* ALWAYS SHOW EXPORT BUTTON - but disable when no orders */}
+            <button
+              onClick={handleExportOrders}
+              disabled={!hasApprovedOrders}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-colors ${
+                hasApprovedOrders
+                  ? 'bg-green-600 text-white hover:bg-green-700'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+              title={hasApprovedOrders ? 'Export approved orders to CSV files' : 'No approved orders to export'}
+            >
+              <Download className="w-4 h-4" />
+              <span>Export Orders</span>
+              {hasApprovedOrders && (
+                <span className="bg-green-700 text-white text-xs px-2 py-1 rounded-full">
+                  {approvedOrders?.length || 0}
+                </span>
+              )}
+            </button>
           </div>
         </div>
         <p className="text-gray-600">AI-powered ordering recommendations based on usage patterns and stock levels</p>
@@ -298,6 +308,12 @@ const SmartOrderDashboard = () => {
                 <p className="text-sm text-gray-500 mt-2">
                   Items will appear here when stock levels fall below recommended thresholds.
                 </p>
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-blue-700">
+                    💡 <strong>Tip:</strong> To test the system, lower some inventory counts in your Inventory Management, 
+                    then return here to see AI suggestions appear.
+                  </p>
+                </div>
               </div>
             ) : (
               filteredSuggestions.map((suggestion) => (
@@ -400,10 +416,15 @@ const SmartOrderDashboard = () => {
               <p className="text-sm text-gray-500 mt-2">
                 Switch to the "AI Suggestions" tab to approve items for ordering.
               </p>
+              <div className="mt-4 p-3 bg-green-50 rounded-lg">
+                <p className="text-sm text-green-700">
+                  💡 <strong>Tip:</strong> The Export button above is always visible but will be disabled until you have approved orders.
+                </p>
+              </div>
             </div>
           ) : (
             <>
-              {/* Export Button */}
+              {/* Export Button (Secondary) */}
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-semibold text-gray-900">Orders by Vendor</h2>
                 <button
