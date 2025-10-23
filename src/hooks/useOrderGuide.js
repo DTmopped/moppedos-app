@@ -1,25 +1,6 @@
-// ================================================================
-// COMPLETE useOrderGuide Hook with Approved Orders Functionality
-// This includes all the missing pieces for the Smart Order Guide system
-// ================================================================
-
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { supabase } from '../supabaseClient'; // Adjust path as needed
+import { supabase } from '../supabaseClient';
 import VendorExportService from '../lib/VendorExportService';
-
-
-/**
- * Enhanced useOrderGuide Hook with Multi-Operator Support
- * 
- * Features:
- * ✅ Works with your existing 113 items
- * ✅ Real-time inventory updates
- * ✅ Category organization
- * ✅ Status indicators (needs order, overstocked, good)
- * ✅ Search and filtering
- * ✅ Bulk operations
- * ✅ APPROVED ORDERS FUNCTIONALITY - COMPLETE
- */
 
 // Main hook for food items (your current 113 items)
 export const useFoodOrderGuide = ({ 
@@ -35,7 +16,6 @@ export const useFoodOrderGuide = ({
   const [lastUpdated, setLastUpdated] = useState(null);
   const [approvedOrders, setApprovedOrders] = useState([]);
 
-
   // Fetch order guide data
   const fetchOrderGuideData = useCallback(async () => {
     try {
@@ -49,7 +29,7 @@ export const useFoodOrderGuide = ({
         .from('v_order_guide_clean')
         .select('*')
         .eq('is_active', true)
-        .neq('item_type', 'beverage'); // Only food items for now
+        .neq('item_type', 'beverage');
 
       // Apply filters if provided
       if (operatorId) {
@@ -304,7 +284,7 @@ export const useFoodOrderGuide = ({
   // Initial data fetch
   useEffect(() => {
     fetchOrderGuideData();
-    fetchApprovedOrders(); // ← ADD THIS LINE TO LOAD APPROVED ORDERS ON MOUNT
+    fetchApprovedOrders();
   }, [fetchOrderGuideData, fetchApprovedOrders]);
 
   // Set up real-time subscription
@@ -329,7 +309,7 @@ export const useFoodOrderGuide = ({
         table: 'order_headers'
       }, (payload) => {
         console.log('📡 Order update received:', payload);
-        fetchApprovedOrders(); // ← REFRESH APPROVED ORDERS ON CHANGES
+        fetchApprovedOrders();
       })
       .subscribe();
 
@@ -345,12 +325,12 @@ export const useFoodOrderGuide = ({
     isLoading,
     error,
     summary,
-    approvedOrders,        // ← ADD THIS
-    hasApprovedOrders,     // ← ADD THIS
+    approvedOrders,
+    hasApprovedOrders,
     updateInventoryCount,
     bulkUpdateInventory,
     refresh: fetchOrderGuideData,
-    fetchApprovedOrders,   // ← ADD THIS
+    fetchApprovedOrders,
     lastUpdated
   };
 };
@@ -360,7 +340,7 @@ export const useBeverageOrderGuide = ({
   locationId = null, 
   operatorId = null,
   complexityLevel = 'simple',
-  enableRealtime = false // Disabled by default
+  enableRealtime = false
 }) => {
   const [itemsByCategory, setItemsByCategory] = useState({});
   const [allItems, setAllItems] = useState([]);
@@ -370,7 +350,6 @@ export const useBeverageOrderGuide = ({
   // Placeholder implementation - ready for future expansion
   const fetchBeverageData = useCallback(async () => {
     console.log('🍺 Beverage order guide ready for implementation');
-    // Future: Query beverage items from v_order_guide_clean where item_type = 'beverage'
   }, [locationId, operatorId]);
 
   return {
@@ -469,7 +448,7 @@ export const useAIOrderGuide = ({ locationId = null }) => {
             
             // Vendor optimization suggestion
             let vendorOptimization = null;
-            if (unitCost > 5) { // For higher-cost items
+            if (unitCost > 5) {
               vendorOptimization = `Consider bulk pricing or alternative vendors for cost savings on this ${unitCost.toFixed(2)} per unit item.`;
             }
 
@@ -547,7 +526,7 @@ export const useAIOrderGuide = ({ locationId = null }) => {
 
   useEffect(() => {
     fetchAISuggestions();
-    fetchApprovedOrders(); // ← LOAD APPROVED ORDERS ON MOUNT
+    fetchApprovedOrders();
   }, [fetchAISuggestions, fetchApprovedOrders]);
 
    // NEW APPROVE ORDER FUNCTION - Creates real orders in the new workflow system
@@ -577,7 +556,7 @@ export const useAIOrderGuide = ({ locationId = null }) => {
         .eq('status', 'draft')
         .single();
 
-      if (findError && findError.code !== 'PGRST116') { // PGRST116 = no rows found
+      if (findError && findError.code !== 'PGRST116') {
         console.error('❌ Error finding existing order:', findError);
         return { success: false, error: findError.message };
       }
@@ -698,7 +677,6 @@ export const useAIOrderGuide = ({ locationId = null }) => {
     }
   }, [locationId, aiSuggestions, fetchApprovedOrders]);
 
-
   // Calculate summary statistics
   const summary = useMemo(() => {
     if (!aiSuggestions || aiSuggestions.length === 0) {
@@ -755,7 +733,7 @@ export const useAIOrderGuide = ({ locationId = null }) => {
   return {
     // Smart Data
     aiSuggestions,
-    approvedOrders,        // ← ADD THIS
+    approvedOrders,
     isLoading,
     error,
     summary,
@@ -764,17 +742,20 @@ export const useAIOrderGuide = ({ locationId = null }) => {
     refresh: fetchAISuggestions,
     approveOrder,
     exportOrdersByVendor,
-    fetchApprovedOrders,   // ← ADD THIS
+    fetchApprovedOrders,
     
     // Status
     hasAISuggestions: aiSuggestions.length > 0,
-    hasApprovedOrders,     // ← ADD THIS
+    hasApprovedOrders,
     isEmpty: aiSuggestions.length === 0 && !isLoading && !error,
     
     // Metadata
     lastUpdated
   };
 };
+
+// BACKWARD COMPATIBILITY EXPORTS
+export const useOrderGuide = useFoodOrderGuide;
 
 // Default export for the main AI-powered order guide
 export default useAIOrderGuide;
