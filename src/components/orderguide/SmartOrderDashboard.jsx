@@ -67,15 +67,18 @@ const SmartOrderDashboard = () => {
   }, [aiSuggestions]);
 
   const handleApproveOrder = async (itemId) => {
+  try {
     const result = await approveOrder(itemId);
     if (result.success) {
+     // TEST COMMENT - update UI state
+
       setApprovedItems(prev => new Set([...prev, itemId]));
-      // Show success message
-      alert(`✅ ${result.message || 'Order approved successfully!'}`);
-    } else {
-      alert('❌ Error approving order: ' + result.error);
     }
-  };
+  } catch (err) {
+    console.error('Error approving order:', err);
+  }
+};
+
 
   const handleExportOrders = async () => {
     if (!exportOrdersByVendor) {
