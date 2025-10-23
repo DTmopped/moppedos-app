@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { useAIOrderGuide } from '../../hooks/useOrderGuide';
 
-const SmartOrderDashboard = () => {
+const AIOrderDashboard = () => {
   const locationId = 'a8e559f8-fdb4-435b-bd1f-ccba5d175f2b'; // Mopped Test Site
   const { 
     aiSuggestions, 
