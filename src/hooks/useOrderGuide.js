@@ -1,6 +1,6 @@
 // ================================================================
-// STEP 2: Enhanced useOrderGuide Hook
-// Replace your existing useOrderGuide.js with this enhanced version
+// COMPLETE useOrderGuide Hook with Approved Orders Functionality
+// This includes all the missing pieces for the Smart Order Guide system
 // ================================================================
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -18,6 +18,7 @@ import VendorExportService from '../lib/VendorExportService';
  * ✅ Status indicators (needs order, overstocked, good)
  * ✅ Search and filtering
  * ✅ Bulk operations
+ * ✅ APPROVED ORDERS FUNCTIONALITY - COMPLETE
  */
 
 // Main hook for food items (your current 113 items)
@@ -261,10 +262,50 @@ export const useFoodOrderGuide = ({
     };
   }, [allItems, lastUpdated]);
 
+  // FETCH APPROVED ORDERS - Get orders from database
+  const fetchApprovedOrders = useCallback(async () => {
+    if (!locationId) return;
+
+    try {
+      console.log('🔍 Fetching approved orders for location:', locationId);
+      
+      const { data, error } = await supabase
+        .from('order_headers')
+        .select(`
+          id, vendor_name, status, total_items, estimated_total, 
+          food_cost_impact, created_at, approved_at,
+          order_lines (
+            id, item_name, brand, unit, case_size, 
+            requested_qty, approved_qty, estimated_unit_cost,
+            estimated_line_total, priority, ai_reasoning, status
+          )
+        `)
+        .eq('location_id', locationId)
+        .in('status', ['draft', 'approved', 'submitted'])
+        .order('vendor_name');
+
+      if (error) {
+        console.error('❌ Error fetching approved orders:', error);
+        setApprovedOrders([]);
+        return;
+      }
+
+      console.log('✅ Approved orders loaded:', data?.length || 0);
+      setApprovedOrders(data || []);
+    } catch (err) {
+      console.error('❌ Unexpected error fetching approved orders:', err);
+      setApprovedOrders([]);
+    }
+  }, [locationId]);
+
+  // Check if there are any approved orders
+  const hasApprovedOrders = approvedOrders.length > 0;
+
   // Initial data fetch
   useEffect(() => {
     fetchOrderGuideData();
-  }, [fetchOrderGuideData]);
+    fetchApprovedOrders(); // ← ADD THIS LINE TO LOAD APPROVED ORDERS ON MOUNT
+  }, [fetchOrderGuideData, fetchApprovedOrders]);
 
   // Set up real-time subscription
   useEffect(() => {
@@ -282,13 +323,21 @@ export const useFoodOrderGuide = ({
         console.log('📡 Real-time update received:', payload);
         fetchOrderGuideData();
       })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'order_headers'
+      }, (payload) => {
+        console.log('📡 Order update received:', payload);
+        fetchApprovedOrders(); // ← REFRESH APPROVED ORDERS ON CHANGES
+      })
       .subscribe();
 
     return () => {
       console.log('🔄 Cleaning up real-time subscription...');
       subscription.unsubscribe();
     };
-  }, [enableRealtime, fetchOrderGuideData]);
+  }, [enableRealtime, fetchOrderGuideData, fetchApprovedOrders]);
 
   return {
     itemsByCategory,
@@ -296,9 +345,12 @@ export const useFoodOrderGuide = ({
     isLoading,
     error,
     summary,
+    approvedOrders,        // ← ADD THIS
+    hasApprovedOrders,     // ← ADD THIS
     updateInventoryCount,
     bulkUpdateInventory,
     refresh: fetchOrderGuideData,
+    fetchApprovedOrders,   // ← ADD THIS
     lastUpdated
   };
 };
@@ -315,190 +367,110 @@ export const useBeverageOrderGuide = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Beverage module is framework-ready but inactive
-  // Will be enabled when operator tier supports it
+  // Placeholder implementation - ready for future expansion
+  const fetchBeverageData = useCallback(async () => {
+    console.log('🍺 Beverage order guide ready for implementation');
+    // Future: Query beverage items from v_order_guide_clean where item_type = 'beverage'
+  }, [locationId, operatorId]);
 
   return {
     itemsByCategory,
     allItems,
     isLoading,
     error,
-    summary: null,
-    updateInventoryCount: () => {},
-    bulkUpdateInventory: () => {},
-    refresh: () => {},
-    lastUpdated: null
+    refresh: fetchBeverageData,
+    summary: null
   };
 };
 
-// Combined hook that handles both food and beverages
-export const useCompleteOrderGuide = ({ 
-  locationId = null, 
-  operatorId = null,
-  complexityLevel = 'simple',
-  enableRealtime = true,
-  enableBeverage = false
-}) => {
-  const foodData = useFoodOrderGuide({ 
-    locationId, 
-    operatorId, 
-    complexityLevel, 
-    enableRealtime 
-  });
-
-  const beverageData = useBeverageOrderGuide({ 
-    locationId, 
-    operatorId, 
-    complexityLevel, 
-    enableRealtime: enableBeverage 
-  });
-
-  // Combine food and beverage data
-  const combinedItemsByCategory = useMemo(() => {
-    if (!enableBeverage) return foodData.itemsByCategory;
-    
-    return {
-      ...foodData.itemsByCategory,
-      ...beverageData.itemsByCategory
-    };
-  }, [foodData.itemsByCategory, beverageData.itemsByCategory, enableBeverage]);
-
-  const combinedAllItems = useMemo(() => {
-    if (!enableBeverage) return foodData.allItems;
-    
-    return [...foodData.allItems, ...beverageData.allItems];
-  }, [foodData.allItems, beverageData.allItems, enableBeverage]);
-
-  const combinedSummary = useMemo(() => {
-    if (!enableBeverage || !beverageData.summary) return foodData.summary;
-    
-    return {
-      totalItems: foodData.summary.totalItems + beverageData.summary.totalItems,
-      itemsNeedingOrder: foodData.summary.itemsNeedingOrder + beverageData.summary.itemsNeedingOrder,
-      itemsOverstocked: foodData.summary.itemsOverstocked + beverageData.summary.itemsOverstocked,
-      itemsOnTarget: foodData.summary.itemsOnTarget + beverageData.summary.itemsOnTarget,
-      totalValue: foodData.summary.totalValue + beverageData.summary.totalValue,
-      lastUpdated: new Date(Math.max(
-        new Date(foodData.lastUpdated || 0),
-        new Date(beverageData.lastUpdated || 0)
-      ))
-    };
-  }, [foodData.summary, beverageData.summary, enableBeverage]);
-
-  return {
-    itemsByCategory: combinedItemsByCategory,
-    allItems: combinedAllItems,
-    isLoading: foodData.isLoading || (enableBeverage && beverageData.isLoading),
-    error: foodData.error || beverageData.error,
-    summary: combinedSummary,
-    updateInventoryCount: foodData.updateInventoryCount,
-    bulkUpdateInventory: foodData.bulkUpdateInventory,
-    refresh: () => {
-      foodData.refresh();
-      if (enableBeverage) beverageData.refresh();
-    },
-    lastUpdated: combinedSummary?.lastUpdated
-  };
-};
-
-// Default export for backward compatibility
-export default useFoodOrderGuide;
-
-// ✅ ADD THIS LINE:
-export const useOrderGuide = useFoodOrderGuide;
-
-// Updated useAIOrderGuide Hook - Compatible with existing schema
-// Replace the existing useAIOrderGuide function in your useOrderGuide.js file
-
-export const useAIOrderGuide = ({ locationId, enableRealtime = true }) => {
+// Main composite hook that provides AI suggestions and order management
+export const useAIOrderGuide = ({ locationId = null }) => {
   const [aiSuggestions, setAiSuggestions] = useState([]);
+  const [approvedOrders, setApprovedOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
 
+  // Fetch AI suggestions based on current inventory levels
   const fetchAISuggestions = useCallback(async () => {
     if (!locationId) {
-      console.warn('⛔ No locationId provided to useAIOrderGuide');
-      setAiSuggestions([]);
       setIsLoading(false);
       return;
     }
 
-    console.log('🧠 Fetching Smart order suggestions for locationId:', locationId);
-
-    setIsLoading(true);
-    setError(null);
-
     try {
-      // Use the same successful query structure as Order Guide Test
-      const { data, error: fetchError } = await supabase
+      setIsLoading(true);
+      setError(null);
+
+      console.log('🤖 Generating AI suggestions for location:', locationId);
+
+      // Get current inventory data from the clean view
+      const { data: inventoryData, error: inventoryError } = await supabase
         .from('v_order_guide_clean')
         .select('*')
+        .eq('location_id', locationId)
         .eq('is_active', true)
-        .neq('item_type', 'beverage')
-        .or(`location_id.eq.${locationId},location_id.is.null`)
-        .order('category_rank')
-        .order('item_name');
+        .neq('item_type', 'beverage');
 
-      if (fetchError) {
-        console.error('❌ Error fetching Smart suggestions:', fetchError);
-        setError(fetchError);
-        setAiSuggestions([]);
-      } else {
-        console.log(`✅ Smart suggestions loaded: ${data?.length || 0} items analyzed`);
-        
-        // Transform the data into AI suggestions format
-        const smartSuggestions = data
+      if (inventoryError) {
+        throw inventoryError;
+      }
+
+      console.log(`📊 Processing ${inventoryData.length} items for AI analysis`);
+
+      if (inventoryData && inventoryData.length > 0) {
+        // Generate smart suggestions based on actual data
+        const smartSuggestions = inventoryData
           .filter(item => {
-            // Only include items that need attention (smart filtering)
-            const needsOrder = item.needsorder;
-            const isOverstocked = item.isoverstocked;
-            const hasLowStock = item.actual < item.forecast * 0.3; // Very low stock
+            const actual = parseInt(item.actual) || 0;
+            const forecast = parseInt(item.forecast) || 0;
+            const variance = actual - forecast;
             
-            return needsOrder || isOverstocked || hasLowStock;
+            // Only suggest items that need ordering (actual < forecast)
+            return variance < 0 && forecast > 0;
           })
           .map(item => {
-            // Determine priority based on stock situation
-            const stockRatio = item.forecast > 0 ? item.actual / item.forecast : 1;
-            const variance = item.variance || 0;
+            const actual = parseInt(item.actual) || 0;
+            const forecast = parseInt(item.forecast) || 0;
+            const variance = actual - forecast;
+            const unitCost = parseFloat(item.unit_cost) || 0;
             
+            // Calculate recommended quantity (bring up to par level)
+            const recommendedQuantity = Math.abs(variance);
+            
+            // Determine priority based on how far below par we are
             let priority = 'normal';
-            let daysUntilStockout = 999;
+            const shortagePercentage = Math.abs(variance) / forecast;
             
-            if (stockRatio < 0.2 || variance < -10) {
+            if (shortagePercentage > 0.5) {
               priority = 'urgent';
-              daysUntilStockout = Math.max(1, Math.floor(item.actual / 2)); // Estimate
-            } else if (stockRatio < 0.5 || variance < -5) {
+            } else if (shortagePercentage > 0.25) {
               priority = 'high';
-              daysUntilStockout = Math.max(2, Math.floor(item.actual / 1.5));
             }
-
-            // Calculate recommended order quantity
-            const recommendedQuantity = Math.max(0, item.forecast - item.actual);
             
-            // Generate smart reasoning
-            let reasoning = '';
-            if (item.needsorder) {
-              const percentBelow = Math.round((1 - stockRatio) * 100);
-              reasoning = `Stock is ${percentBelow}% below target level. `;
+            // Calculate days until stockout (rough estimate)
+            const avgDailyUsage = forecast / 7; // Assume weekly par level
+            const daysUntilStockout = avgDailyUsage > 0 ? Math.floor(actual / avgDailyUsage) : 99;
+            
+            // Generate AI reasoning
+            let reasoning = `Current stock (${actual}) is ${Math.abs(variance)} units below par level (${forecast}). `;
+            
+            if (priority === 'urgent') {
+              reasoning += `URGENT: Stock is ${Math.round(shortagePercentage * 100)}% below target. `;
+            } else if (priority === 'high') {
+              reasoning += `HIGH PRIORITY: Stock is ${Math.round(shortagePercentage * 100)}% below target. `;
             }
-            if (item.isoverstocked) {
-              reasoning = 'Currently overstocked - consider reducing next order. ';
+            
+            if (daysUntilStockout < 7) {
+              reasoning += `Estimated stockout in ${daysUntilStockout} days. `;
             }
-            if (daysUntilStockout < 7 && daysUntilStockout < 999) {
-              reasoning += `Projected to run out in ${daysUntilStockout} days. `;
-            }
-            if (reasoning === '') {
-              reasoning = 'Standard reorder recommendation based on current inventory levels.';
-            }
-
-            // Vendor optimization (simplified)
+            
+            reasoning += `Recommended to order ${recommendedQuantity} units to reach par level.`;
+            
+            // Vendor optimization suggestion
             let vendorOptimization = null;
-            if (item.unit_cost > 5) { // For higher cost items
-              const potentialSavings = Math.round(item.unit_cost * 0.1 * recommendedQuantity);
-              if (potentialSavings > 10) {
-                vendorOptimization = `Review vendor pricing - potential savings of $${potentialSavings} available`;
-              }
+            if (unitCost > 5) { // For higher-cost items
+              vendorOptimization = `Consider bulk pricing or alternative vendors for cost savings on this ${unitCost.toFixed(2)} per unit item.`;
             }
 
             return {
@@ -534,9 +506,49 @@ export const useAIOrderGuide = ({ locationId, enableRealtime = true }) => {
     }
   }, [locationId]);
 
+  // FETCH APPROVED ORDERS - Get orders from database
+  const fetchApprovedOrders = useCallback(async () => {
+    if (!locationId) return;
+
+    try {
+      console.log('🔍 Fetching approved orders for location:', locationId);
+      
+      const { data, error } = await supabase
+        .from('order_headers')
+        .select(`
+          id, vendor_name, status, total_items, estimated_total, 
+          food_cost_impact, created_at, approved_at,
+          order_lines (
+            id, item_name, brand, unit, case_size, 
+            requested_qty, approved_qty, estimated_unit_cost,
+            estimated_line_total, priority, ai_reasoning, status
+          )
+        `)
+        .eq('location_id', locationId)
+        .in('status', ['draft', 'approved', 'submitted'])
+        .order('vendor_name');
+
+      if (error) {
+        console.error('❌ Error fetching approved orders:', error);
+        setApprovedOrders([]);
+        return;
+      }
+
+      console.log('✅ Approved orders loaded:', data?.length || 0);
+      setApprovedOrders(data || []);
+    } catch (err) {
+      console.error('❌ Unexpected error fetching approved orders:', err);
+      setApprovedOrders([]);
+    }
+  }, [locationId]);
+
+  // Check if there are any approved orders
+  const hasApprovedOrders = approvedOrders.length > 0;
+
   useEffect(() => {
     fetchAISuggestions();
-  }, [fetchAISuggestions]);
+    fetchApprovedOrders(); // ← LOAD APPROVED ORDERS ON MOUNT
+  }, [fetchAISuggestions, fetchApprovedOrders]);
 
    // NEW APPROVE ORDER FUNCTION - Creates real orders in the new workflow system
   const approveOrder = useCallback(async (itemId) => {
@@ -670,7 +682,8 @@ export const useAIOrderGuide = ({ locationId, enableRealtime = true }) => {
         }
       }
 
-      // 3. Order totals will be automatically calculated by the trigger
+      // 3. Refresh approved orders to show the new order
+      await fetchApprovedOrders();
 
       console.log('✅ Order approved successfully');
       return { 
@@ -683,7 +696,7 @@ export const useAIOrderGuide = ({ locationId, enableRealtime = true }) => {
       console.error('❌ Unexpected error approving order:', err);
       return { success: false, error: err.message };
     }
-  }, [locationId, aiSuggestions]);
+  }, [locationId, aiSuggestions, fetchApprovedOrders]);
 
 
   // Calculate summary statistics
@@ -713,39 +726,6 @@ export const useAIOrderGuide = ({ locationId, enableRealtime = true }) => {
     return stats;
   }, [aiSuggestions]);
 
-  // FETCH APPROVED ORDERS - Get orders from database
-const fetchApprovedOrders = useCallback(async () => {
-  try {
-    console.log('🔍 Fetching approved orders for location:', locationId);
-    
-    const { data, error } = await supabase
-      .from('order_headers')
-      .select(`
-        id, vendor_name, status, total_items, estimated_total, 
-        food_cost_impact, created_at,
-        order_lines (
-          id, item_name, brand, unit, case_size, 
-          requested_qty, approved_qty, estimated_unit_cost,
-          estimated_line_total, priority, ai_reasoning, status
-        )
-      `)
-      .eq('location_id', locationId)
-      .eq('status', 'draft')
-      .order('vendor_name');
-
-    if (error) {
-      console.error('❌ Error fetching approved orders:', error);
-      return [];
-    }
-
-    console.log('✅ Approved orders loaded:', data?.length || 0);
-    return data || [];
-  } catch (err) {
-    console.error('❌ Unexpected error fetching approved orders:', err);
-    return [];
-  }
-}, [locationId]);
-
   // EXPORT ORDERS BY VENDOR - New functionality
   const exportOrdersByVendor = useCallback(async () => {
     try {
@@ -772,12 +752,10 @@ const fetchApprovedOrders = useCallback(async () => {
     }
   }, [locationId]);
 
-
-
-
   return {
     // Smart Data
     aiSuggestions,
+    approvedOrders,        // ← ADD THIS
     isLoading,
     error,
     summary,
@@ -785,10 +763,12 @@ const fetchApprovedOrders = useCallback(async () => {
     // Smart Actions
     refresh: fetchAISuggestions,
     approveOrder,
-    exportOrdersByVendor,  // <-- ADD THIS LINE
+    exportOrdersByVendor,
+    fetchApprovedOrders,   // ← ADD THIS
     
     // Status
     hasAISuggestions: aiSuggestions.length > 0,
+    hasApprovedOrders,     // ← ADD THIS
     isEmpty: aiSuggestions.length === 0 && !isLoading && !error,
     
     // Metadata
@@ -796,6 +776,6 @@ const fetchApprovedOrders = useCallback(async () => {
   };
 };
 
-
-
+// Default export for the main AI-powered order guide
+export default useAIOrderGuide;
 
