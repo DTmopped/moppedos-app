@@ -234,13 +234,11 @@ const SmartOrderDashboard = () => {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
         <div className="border-b border-gray-200">
           <nav className="flex space-x-8 px-6">
-            {[
-              { key: 'all', label: 'All Suggestions', count: aiSuggestions?.length || 0 },
-              { key: 'urgent', label: 'Urgent', count: priorityCounts.urgent },
-              { key: 'high', label: 'High Priority', count: priorityCounts.high },
-              { key: 'normal', label: 'Normal', count: priorityCounts.normal }
-              { key: 'approved', label: 'Approved Orders', count: approvedItems.size }
-            ].map((tab) => (
+                    {{
+          { key: 'all', label: 'All Suggestions', count: aiSuggestions?.length || 0 },
+          { key: 'approved', label: 'Approved Orders', count: approvedItems.size }
+        }}.map((tab) => (
+
               <button
                 key={tab.key}
                 onClick={() => setSelectedPriority(tab.key)}
