@@ -32,6 +32,8 @@ export const useFoodOrderGuide = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [approvedOrders, setApprovedOrders] = useState([]);
+
 
   // Fetch order guide data
   const fetchOrderGuideData = useCallback(async () => {
@@ -710,6 +712,39 @@ export const useAIOrderGuide = ({ locationId, enableRealtime = true }) => {
 
     return stats;
   }, [aiSuggestions]);
+
+  // FETCH APPROVED ORDERS - Get orders from database
+const fetchApprovedOrders = useCallback(async () => {
+  try {
+    console.log('🔍 Fetching approved orders for location:', locationId);
+    
+    const { data, error } = await supabase
+      .from('order_headers')
+      .select(`
+        id, vendor_name, status, total_items, estimated_total, 
+        food_cost_impact, created_at,
+        order_lines (
+          id, item_name, brand, unit, case_size, 
+          requested_qty, approved_qty, estimated_unit_cost,
+          estimated_line_total, priority, ai_reasoning, status
+        )
+      `)
+      .eq('location_id', locationId)
+      .eq('status', 'draft')
+      .order('vendor_name');
+
+    if (error) {
+      console.error('❌ Error fetching approved orders:', error);
+      return [];
+    }
+
+    console.log('✅ Approved orders loaded:', data?.length || 0);
+    return data || [];
+  } catch (err) {
+    console.error('❌ Unexpected error fetching approved orders:', err);
+    return [];
+  }
+}, [locationId]);
 
   // EXPORT ORDERS BY VENDOR - New functionality
   const exportOrdersByVendor = useCallback(async () => {
