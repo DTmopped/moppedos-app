@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx';
 import { Button } from '@/components/ui/button.jsx';
-import { Badge } from '@/components/ui/badge.jsx';
 import { 
   Select, 
   SelectContent, 
@@ -19,7 +18,6 @@ import {
   DialogFooter,
   DialogClose
 } from '@/components/ui/dialog.jsx';
-import { Switch } from '@/components/ui/switch.jsx';
 import { 
   Printer, 
   Settings, 
@@ -32,8 +30,8 @@ import {
   Utensils,
   Download
 } from 'lucide-react';
-// import { useSmartPrepGuide } from '@/hooks/useSmartPrepGuide.js';
-// import { RESTAURANT_TEMPLATES } from '@/config/SmartPrepGuideConfig.js';
+import { useSmartPrepGuide } from '@/hooks/useSmartPrepGuide.js';
+import { RESTAURANT_TEMPLATES } from '@/config/SmartPrepGuideConfig.js';
 
 const DailyShiftPrepGuide = () => {
   const {
@@ -193,9 +191,11 @@ const DailyShiftPrepGuide = () => {
                             Adjust quantities based on shelf life
                           </p>
                         </div>
-                        <Switch 
+                        <input 
+                          type="checkbox"
                           checked={wasteOptimization} 
-                          onCheckedChange={setWasteOptimization} 
+                          onChange={(e) => setWasteOptimization(e.target.checked)}
+                          className="h-4 w-4"
                         />
                       </div>
                       
@@ -208,9 +208,11 @@ const DailyShiftPrepGuide = () => {
                             Suggest ingredient sharing opportunities
                           </p>
                         </div>
-                        <Switch 
+                        <input 
+                          type="checkbox"
                           checked={crossUtilization} 
-                          onCheckedChange={setCrossUtilization} 
+                          onChange={(e) => setCrossUtilization(e.target.checked)}
+                          className="h-4 w-4"
                         />
                       </div>
                     </div>
@@ -338,9 +340,9 @@ const DailyShiftPrepGuide = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {prepInsights.slice(0, 6).map((insight, index) => (
                     <div key={index} className="flex items-start gap-3 p-3 bg-slate-800/50 rounded-lg">
-                      <Badge variant="outline" className="text-xs">
+                      <span className="text-xs px-2 py-1 bg-blue-500/20 text-blue-400 rounded border border-blue-500/30">
                         {insight.type}
-                      </Badge>
+                      </span>
                       <p className="text-sm text-slate-300 flex-1">
                         {insight.message}
                       </p>
@@ -376,9 +378,9 @@ const DailyShiftPrepGuide = () => {
                         {dayData.totalGuests.toFixed(0)} guests • Factor: {dayData.smartFactor.factor.toFixed(2)}x
                       </p>
                     </div>
-                    <Badge variant="outline" className="text-blue-400 border-blue-400">
+                    <span className="text-xs px-2 py-1 bg-blue-500/20 text-blue-400 rounded border border-blue-500/30">
                       {currentTemplate.name}
-                    </Badge>
+                    </span>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -390,9 +392,9 @@ const DailyShiftPrepGuide = () => {
                             {shiftData.icon}
                             {shiftData.name}
                           </h4>
-                          <Badge variant="secondary" className="text-xs">
+                          <span className="text-xs px-2 py-1 bg-slate-700 text-slate-300 rounded">
                             {shiftData.totalItems} items
-                          </Badge>
+                          </span>
                         </div>
                         
                         {/* Group items by category */}
