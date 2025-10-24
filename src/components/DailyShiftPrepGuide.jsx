@@ -428,6 +428,6 @@ const DailyShiftPrepGuide = () => {
       </div>
     </div>
   );
-};
 
-export default DailyShiftPrepGuide;
+
+export default DailyShiftPrepGuide; // ← Line 433 (correct)
