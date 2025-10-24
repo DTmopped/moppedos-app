@@ -1,7 +1,8 @@
 import React from 'react';
 // ✅ Add Brain icon to the import (keep TestTube if you want to keep Order Guide Test)
 // ADD Package to the end:
-import { Home, FileText, Users, ShoppingBasket, BarChartBig, Calculator, ClipboardList, MailCheck, TestTube, Brain, Package } from 'lucide-react';
+import { Home, FileText, Users, ShoppingBasket, BarChartBig, Calculator, ClipboardList, MailCheck, Brain, ChefHat } from 'lucide-react';
+
 
 
 export const views = [
@@ -80,6 +81,15 @@ export const views = [
     icon: <ShoppingBasket size={20} strokeWidth={2.5} />,
     showInNav: false,
   },
+    {
+    id: 'MOPPEDOS_PREP_GUIDE',
+    path: '/moppedos-prep-guide',
+    label: 'Moppedos Prep Guide',
+    componentName: 'MoppedosSmartPrepGuide',
+    icon: <ChefHat size={20} strokeWidth={2.5} />,
+    showInNav: true,
+  },
+
 ];
 
 export const defaultViewId = views.find(v => v.isDefault)?.id || (views.length > 0 ? views[0].id : null);
