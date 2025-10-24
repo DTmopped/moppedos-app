@@ -1,9 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
+import React, { useState } from 'react';
 import { 
   ChefHat, 
   Clock, 
@@ -34,71 +29,45 @@ const MoppedosSmartPrepGuide = () => {
       sides: [
         { id: 6, item: 'collard greens', onHand: 5, parLevel: 15, prepAmount: 10, notes: '', assigned: '', completed: false },
         { id: 7, item: 'mac & cheese', onHand: 5, parLevel: 15, prepAmount: 10, notes: '', assigned: '', completed: false },
-        { id: 8, item: 'cole slaw', onHand: 5, parLevel: 15, prepAmount: 10, notes: '', assigned: '', completed: false },
-        { id: 9, item: 'baked beans', onHand: 5, parLevel: 15, prepAmount: 10, notes: '', assigned: '', completed: false },
-        { id: 10, item: 'corn casserole', onHand: 5, parLevel: 15, prepAmount: 10, notes: '', assigned: '', completed: false }
+        { id: 8, item: 'cole slaw', onHand: 5, parLevel: 15, prepAmount: 10, notes: '', assigned: '', completed: false }
       ],
       desserts: [
         { id: 11, item: 'banana pudding', onHand: 10, parLevel: 20, prepAmount: 10, notes: '', assigned: '', completed: false },
-        { id: 12, item: 'hummingbird cake', onHand: 10, parLevel: 20, prepAmount: 10, notes: '', assigned: '', completed: false },
-        { id: 13, item: 'key lime pie', onHand: 10, parLevel: 20, prepAmount: 10, notes: '', assigned: '', completed: false }
+        { id: 12, item: 'hummingbird cake', onHand: 10, parLevel: 20, prepAmount: 10, notes: '', assigned: '', completed: false }
       ],
       misc: [
         { id: 14, item: 'buns', onHand: 25, parLevel: 30, prepAmount: 5, notes: '', assigned: '', completed: false },
-        { id: 15, item: 'texas toast', onHand: 25, parLevel: 30, prepAmount: 5, notes: '', assigned: '', completed: false },
-        { id: 16, item: 'honey butter', onHand: 10, parLevel: 15, prepAmount: 5, notes: '', assigned: '', completed: false }
+        { id: 15, item: 'texas toast', onHand: 25, parLevel: 30, prepAmount: 5, notes: '', assigned: '', completed: false }
       ]
     },
     dinner: {
       proteins: [
         { id: 17, item: 'half chicken', onHand: 5, parLevel: 15, prepAmount: 10, notes: '', assigned: '', completed: false },
-        { id: 18, item: 'pork ribs', onHand: 5, parLevel: 15, prepAmount: 10, notes: '', assigned: '', completed: false },
-        { id: 19, item: 'beef short ribs', onHand: 5, parLevel: 15, prepAmount: 10, notes: '', assigned: '', completed: false },
-        { id: 20, item: 'pork shoulder', onHand: 5, parLevel: 15, prepAmount: 10, notes: '', assigned: '', completed: false },
-        { id: 21, item: 'brisket', onHand: 5, parLevel: 15, prepAmount: 10, notes: '', assigned: '', completed: false }
+        { id: 18, item: 'pork ribs', onHand: 5, parLevel: 15, prepAmount: 10, notes: '', assigned: '', completed: false }
       ],
       sides: [
         { id: 22, item: 'collard greens', onHand: 5, parLevel: 15, prepAmount: 10, notes: '', assigned: '', completed: false },
-        { id: 23, item: 'mac & cheese', onHand: 5, parLevel: 15, prepAmount: 10, notes: '', assigned: '', completed: false },
-        { id: 24, item: 'cole slaw', onHand: 5, parLevel: 15, prepAmount: 10, notes: '', assigned: '', completed: false },
-        { id: 25, item: 'baked beans', onHand: 5, parLevel: 15, prepAmount: 10, notes: '', assigned: '', completed: false },
-        { id: 26, item: 'corn casserole', onHand: 5, parLevel: 15, prepAmount: 10, notes: '', assigned: '', completed: false }
+        { id: 23, item: 'mac & cheese', onHand: 5, parLevel: 15, prepAmount: 10, notes: '', assigned: '', completed: false }
       ],
       desserts: [
-        { id: 27, item: 'banana pudding', onHand: 10, parLevel: 20, prepAmount: 10, notes: '', assigned: '', completed: false },
-        { id: 28, item: 'hummingbird cake', onHand: 10, parLevel: 20, prepAmount: 10, notes: '', assigned: '', completed: false },
-        { id: 29, item: 'key lime pie', onHand: 10, parLevel: 20, prepAmount: 10, notes: '', assigned: '', completed: false }
+        { id: 27, item: 'banana pudding', onHand: 10, parLevel: 20, prepAmount: 10, notes: '', assigned: '', completed: false }
       ],
       misc: [
-        { id: 30, item: 'buns', onHand: 25, parLevel: 30, prepAmount: 5, notes: '', assigned: '', completed: false },
-        { id: 31, item: 'texas toast', onHand: 25, parLevel: 30, prepAmount: 5, notes: '', assigned: '', completed: false },
-        { id: 32, item: 'honey butter', onHand: 10, parLevel: 15, prepAmount: 5, notes: '', assigned: '', completed: false }
+        { id: 30, item: 'buns', onHand: 25, parLevel: 30, prepAmount: 5, notes: '', assigned: '', completed: false }
       ]
     },
     bulk: {
       proteins: [
-        { id: 33, item: 'half chicken', onHand: 5, parLevel: 15, prepAmount: 10, notes: 'Cold smoke for tomorrow', assigned: '', completed: false },
-        { id: 34, item: 'pork ribs', onHand: 5, parLevel: 15, prepAmount: 10, notes: 'Cold smoke for tomorrow', assigned: '', completed: false },
-        { id: 35, item: 'beef short ribs', onHand: 5, parLevel: 15, prepAmount: 10, notes: 'Cold smoke for tomorrow', assigned: '', completed: false },
-        { id: 36, item: 'pork shoulder', onHand: 5, parLevel: 15, prepAmount: 10, notes: 'Cold smoke for tomorrow', assigned: '', completed: false },
-        { id: 37, item: 'brisket', onHand: 5, parLevel: 15, prepAmount: 10, notes: 'Cold smoke for tomorrow', assigned: '', completed: false }
+        { id: 33, item: 'half chicken', onHand: 5, parLevel: 15, prepAmount: 10, notes: 'Cold smoke for tomorrow', assigned: '', completed: false }
       ],
       sides: [
-        { id: 38, item: 'collard greens', onHand: 5, parLevel: 15, prepAmount: 10, notes: 'Prep for tomorrow', assigned: '', completed: false },
-        { id: 39, item: 'mac & cheese', onHand: 5, parLevel: 15, prepAmount: 10, notes: 'Prep for tomorrow', assigned: '', completed: false },
-        { id: 40, item: 'cole slaw', onHand: 5, parLevel: 15, prepAmount: 10, notes: 'Prep for tomorrow', assigned: '', completed: false },
-        { id: 41, item: 'baked beans', onHand: 5, parLevel: 15, prepAmount: 10, notes: 'Prep for tomorrow', assigned: '', completed: false },
-        { id: 42, item: 'corn casserole', onHand: 5, parLevel: 15, prepAmount: 10, notes: 'Prep for tomorrow', assigned: '', completed: false }
+        { id: 38, item: 'collard greens', onHand: 5, parLevel: 15, prepAmount: 10, notes: 'Prep for tomorrow', assigned: '', completed: false }
       ],
       desserts: [
-        { id: 43, item: 'banana pudding', onHand: 10, parLevel: 20, prepAmount: 10, notes: 'Prep for tomorrow', assigned: '', completed: false },
-        { id: 44, item: 'hummingbird cake', onHand: 10, parLevel: 20, prepAmount: 10, notes: 'Prep for tomorrow', assigned: '', completed: false },
-        { id: 45, item: 'key lime pie', onHand: 10, parLevel: 20, prepAmount: 10, notes: 'Prep for tomorrow', assigned: '', completed: false }
+        { id: 43, item: 'banana pudding', onHand: 10, parLevel: 20, prepAmount: 10, notes: 'Prep for tomorrow', assigned: '', completed: false }
       ],
       misc: [
-        { id: 46, item: 'buns', onHand: 25, parLevel: 30, prepAmount: 5, notes: 'Stock for tomorrow', assigned: '', completed: false },
-        { id: 47, item: 'texas toast', onHand: 25, parLevel: 30, prepAmount: 5, notes: 'Stock for tomorrow', assigned: '', completed: false },
-        { id: 48, item: 'honey butter', onHand: 10, parLevel: 15, prepAmount: 5, notes: 'Stock for tomorrow', assigned: '', completed: false }
+        { id: 46, item: 'buns', onHand: 25, parLevel: 30, prepAmount: 5, notes: 'Stock for tomorrow', assigned: '', completed: false }
       ]
     }
   });
@@ -140,7 +109,7 @@ const MoppedosSmartPrepGuide = () => {
     });
   };
 
-  const PrepItemRow = ({ item, category }) => {
+  const PrepItemRow = ({ item }) => {
     const getStatusColor = (item) => {
       if (item.completed) return 'bg-green-100 border-green-300';
       if (item.prepAmount > 0) return 'bg-yellow-50 border-yellow-300';
@@ -154,12 +123,13 @@ const MoppedosSmartPrepGuide = () => {
     };
 
     return (
-      <div className={`p-3 rounded-lg border ${getStatusColor(item)} transition-all duration-200`}>
+      <div className={`p-3 rounded-lg border ${getStatusColor(item)} transition-all duration-200 mb-2`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3 flex-1">
-            <Checkbox
+            <input
+              type="checkbox"
               checked={item.completed}
-              onCheckedChange={() => toggleItemCompletion(item.id)}
+              onChange={() => toggleItemCompletion(item.id)}
               className="h-4 w-4"
             />
             <div className="flex-1">
@@ -189,11 +159,12 @@ const MoppedosSmartPrepGuide = () => {
               </div>
             </div>
             <div className="min-w-[120px]">
-              <Input
+              <input
+                type="text"
                 placeholder="Assign to..."
                 value={item.assigned}
                 onChange={(e) => updateAssignment(item.id, e.target.value)}
-                className="h-8 text-xs"
+                className="h-8 text-xs border border-gray-300 rounded px-2 w-full"
               />
             </div>
           </div>
@@ -203,7 +174,7 @@ const MoppedosSmartPrepGuide = () => {
   };
 
   const PrepSection = ({ title, items, icon: Icon }) => (
-    <div className="space-y-3">
+    <div className="space-y-3 mb-6">
       <div className="flex items-center space-x-2 pb-2 border-b border-gray-200">
         <Icon className="h-5 w-5 text-gray-600" />
         <h3 className="font-semibold text-gray-900">{title}</h3>
@@ -213,7 +184,7 @@ const MoppedosSmartPrepGuide = () => {
       </div>
       <div className="space-y-2">
         {items.map(item => (
-          <PrepItemRow key={item.id} item={item} category={title.toLowerCase()} />
+          <PrepItemRow key={item.id} item={item} />
         ))}
       </div>
     </div>
@@ -223,32 +194,28 @@ const MoppedosSmartPrepGuide = () => {
     const progress = getStationProgress(prepData[stationKey]);
     
     return (
-      <Card 
-        className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
+      <div 
+        className={`p-4 bg-white rounded-lg shadow cursor-pointer transition-all duration-200 hover:shadow-md ${
           isActive ? 'ring-2 ring-blue-500 shadow-md' : ''
         }`}
         onClick={onClick}
       >
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Icon className="h-5 w-5" />
-              <CardTitle className="text-lg">{title}</CardTitle>
-            </div>
-            <span className={`text-sm px-2 py-1 rounded ${progress === 100 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
-              {progress}%
-            </span>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center space-x-2">
+            <Icon className="h-5 w-5" />
+            <h3 className="text-lg font-semibold">{title}</h3>
           </div>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </CardContent>
-      </Card>
+          <span className={`text-sm px-2 py-1 rounded ${progress === 100 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+            {progress}%
+          </span>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-2">
+          <div 
+            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
     );
   };
 
@@ -268,29 +235,29 @@ const MoppedosSmartPrepGuide = () => {
             <div className="flex items-center space-x-4">
               <div className="text-center">
                 <div className="text-sm text-gray-500">Date</div>
-                <Input
+                <input
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-40"
+                  className="w-40 border border-gray-300 rounded px-2 py-1"
                 />
               </div>
               <div className="text-center">
                 <div className="text-sm text-gray-500">Lunch Covers</div>
-                <Input
+                <input
                   type="number"
                   value={expectedVolume.lunch}
                   onChange={(e) => setExpectedVolume(prev => ({ ...prev, lunch: parseInt(e.target.value) }))}
-                  className="w-24 text-center font-bold"
+                  className="w-24 text-center font-bold border border-gray-300 rounded px-2 py-1"
                 />
               </div>
               <div className="text-center">
                 <div className="text-sm text-gray-500">Dinner Covers</div>
-                <Input
+                <input
                   type="number"
                   value={expectedVolume.dinner}
                   onChange={(e) => setExpectedVolume(prev => ({ ...prev, dinner: parseInt(e.target.value) }))}
-                  className="w-24 text-center font-bold"
+                  className="w-24 text-center font-bold border border-gray-300 rounded px-2 py-1"
                 />
               </div>
             </div>
@@ -323,12 +290,12 @@ const MoppedosSmartPrepGuide = () => {
         </div>
 
         {/* Active Station Details */}
-        <Card className="shadow-sm">
-          <CardHeader>
+        <div className="bg-white rounded-lg shadow-sm">
+          <div className="p-6 border-b border-gray-200">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-xl capitalize">
+              <h2 className="text-xl font-semibold capitalize">
                 {activeStation} Prep - {selectedDate}
-              </CardTitle>
+              </h2>
               <div className="flex items-center space-x-2">
                 <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
                   Expected Volume: {activeStation === 'lunch' ? expectedVolume.lunch : activeStation === 'dinner' ? expectedVolume.dinner : `${expectedVolume.lunch + expectedVolume.dinner}`}
@@ -338,40 +305,30 @@ const MoppedosSmartPrepGuide = () => {
                 </span>
               </div>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
+          </div>
+          <div className="p-6 space-y-6">
             <PrepSection 
               title="Proteins" 
               items={prepData[activeStation].proteins} 
               icon={ChefHat}
             />
-            
-            {/* Manual separator using border */}
-            <div className="border-t border-gray-200 my-6"></div>
-            
             <PrepSection 
               title="Sides" 
               items={prepData[activeStation].sides} 
               icon={BarChart3}
             />
-            
-            <div className="border-t border-gray-200 my-6"></div>
-            
             <PrepSection 
               title="Desserts" 
               items={prepData[activeStation].desserts} 
               icon={Calendar}
             />
-            
-            <div className="border-t border-gray-200 my-6"></div>
-            
             <PrepSection 
               title="Misc" 
               items={prepData[activeStation].misc} 
               icon={User}
             />
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
