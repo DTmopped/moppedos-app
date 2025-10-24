@@ -32,8 +32,8 @@ import {
   Utensils,
   Download
 } from 'lucide-react';
-import { useSmartPrepGuide } from '@/hooks/useSmartPrepGuide.js';
-import { RESTAURANT_TEMPLATES } from '@/config/SmartPrepGuideConfig.js';
+// import { useSmartPrepGuide } from '@/hooks/useSmartPrepGuide.js';
+// import { RESTAURANT_TEMPLATES } from '@/config/SmartPrepGuideConfig.js';
 
 const DailyShiftPrepGuide = () => {
   const {
