@@ -15,6 +15,7 @@ const componentImportMap = {
   FvaDashboard: lazy(() => import('./FvaDashboard.jsx')),
   WeeklyForecastParser: lazy(() => import('./WeeklyForecastParser.jsx')),
   DailyShiftPrepGuide: lazy(() => import('./DailyShiftPrepGuide.jsx')),
+    MoppedosSmartPrepGuide: lazy(() => import('./MoppedosSmartPrepGuide.jsx')),
   WeeklyLaborSchedule: lazy(() => import('./WeeklyLaborSchedule.jsx')),
   WeeklyOrderGuide: lazy(() => import('./WeeklyOrderGuide.jsx')),
   DailyBriefingBuilder: lazy(() => import('./DailyBriefingBuilder.jsx')),
