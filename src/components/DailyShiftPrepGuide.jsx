@@ -1,167 +1,438 @@
-import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { useDailyShiftPrepGuideLogic } from "@/hooks/useDailyShiftPrepGuideLogic.jsx";
-import { useToast } from "./ui/use-toast.jsx";
-import { triggerPrint } from "./prep/PrintUtils.jsx";
-import PrintableDailyShiftPrepGuide from "./prep/PrintableDailyShiftPrepGuide.jsx";
-import PrepGuideContent from "./prep/PrepGuideContent.jsx";
-import useMenuManager from "@/hooks/useMenuManager";
-import { Button } from "@/components/ui/button.jsx";
-import { Edit3 } from "lucide-react";
-import MenuEditorSection from "./prep/MenuEditorSection.jsx";
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx';
+import { Button } from '@/components/ui/button.jsx';
+import { Badge } from '@/components/ui/badge.jsx';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select.jsx';
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose
+} from '@/components/ui/dialog.jsx';
+import { Switch } from '@/components/ui/switch.jsx';
+import { 
+  Printer, 
+  Settings, 
+  Lightbulb, 
+  TrendingUp, 
+  Calendar,
+  Clock,
+  Package,
+  ChefHat,
+  Utensils,
+  Download
+} from 'lucide-react';
+import { useSmartPrepGuide } from '@/hooks/useSmartPrepGuide.js';
+import { RESTAURANT_TEMPLATES } from '@/config/SmartPrepGuideConfig.js';
 
 const DailyShiftPrepGuide = () => {
-  const { dailyShiftPrepData, handlePrepTaskChange } = useDailyShiftPrepGuideLogic();
-  const { toast } = useToast();
-  const [expandedDays, setExpandedDays] = useState({});
-  const [manageMenuOpen, setManageMenuOpen] = useState(false);
-  const { menu, setMenu } = useMenuManager("dailyPrepMenu");
+  const {
+    smartPrepData,
+    adjustmentFactor,
+    printDate,
+    prepInsights,
+    selectedTemplate,
+    setSelectedTemplate,
+    weatherCondition,
+    setWeatherCondition,
+    wasteOptimization,
+    setWasteOptimization,
+    crossUtilization,
+    setCrossUtilization,
+    setPrintDate,
+    handlePrepTaskChange,
+    exportPrepGuide,
+    availableTemplates,
+    currentTemplate
+  } = useSmartPrepGuide();
 
-  const [newItemForms, setNewItemForms] = useState({});
-  const [editingSection, setEditingSection] = useState(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [selectedDay, setSelectedDay] = useState(null);
 
-  const toggleEditor = (section) => {
-    setEditingSection((prev) => (prev === section ? null : section));
+  // Calculate summary statistics
+  const totalDays = smartPrepData.length;
+  const avgGuests = smartPrepData.reduce((sum, day) => sum + day.totalGuests, 0) / totalDays || 0;
+  const totalInsights = prepInsights.length;
+  const avgPrepTime = smartPrepData.reduce((sum, day) => {
+    const dayPrepTime = Object.values(day.shifts).reduce((shiftSum, shift) => 
+      shiftSum + shift.estimatedPrepTime, 0);
+    return sum + dayPrepTime;
+  }, 0) / totalDays || 0;
+
+  const handlePrint = () => {
+    window.print();
   };
 
-  const handleNewItemChange = (section, field, value) => {
-    setNewItemForms((prev) => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        [field]: value,
-      },
-    }));
-  };
-
-  const addMenuItem = (section) => {
-    const item = newItemForms[section];
-    if (!item?.name) return;
-
-    const newItem = {
-      name: item.name,
-      perGuestOz: item.unit === "oz" ? parseFloat(item.value || 0) : null,
-      each: item.unit === "each" ? parseFloat(item.value || 0) : null,
-      value: item.unit === "lb" ? parseFloat(item.value || 0) : null,
-      unit: item.unit,
-    };
-
-    const updatedSectionItems = [...(menu[section] || [])];
-    const index = updatedSectionItems.findIndex((i) => i.name === item.name);
-
-    if (index !== -1) {
-      updatedSectionItems[index] = newItem;
-    } else {
-      updatedSectionItems.push(newItem);
-    }
-
-    const updatedMenu = { ...menu, [section]: updatedSectionItems };
-    setMenu(updatedMenu);
-
-    setNewItemForms((prev) => ({
-      ...prev,
-      [section]: { name: "", value: "", unit: "oz" },
-    }));
-
-    toast({
-      title: "Item added or updated!",
-      description: `${newItem.name} in ${section}`,
-      variant: "success",
-    });
-  };
-
-  const removeMenuItem = (section, itemName) => {
-    const updatedMenu = {
-      ...menu,
-      [section]: (menu[section] || []).filter((i) => i.name !== itemName),
-    };
-    setMenu(updatedMenu);
-
-    toast({
-      title: "Item removed",
-      description: `${itemName} from ${section}`,
-      variant: "destructive",
-    });
-  };
-
-  const handleInitiatePrint = async () => {
-    try {
-      await triggerPrint(
-        () => (
-          <PrintableDailyShiftPrepGuide
-            dailyShiftPrepData={dailyShiftPrepData}
-            printDate={new Date()}
-          />
-        ),
-        {},
-        "Daily Shift Prep Guide – Print"
-      );
-      toast({ title: "Print processed", variant: "success" });
-    } catch (error) {
-      toast({
-        title: "Print failed",
-        description: error.message,
-        variant: "destructive",
-      });
+  const handleExport = (format) => {
+    const exportData = exportPrepGuide(format);
+    
+    if (format === 'text') {
+      const blob = new Blob([exportData], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `smart-prep-guide-${selectedTemplate}-${new Date().toISOString().split('T')[0]}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     }
   };
 
-  const allSections = Object.keys(menu);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="space-y-8"
-    >
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">
-  Daily Shift Prep Guide
-</h1>
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            className="text-indigo-400 border-indigo-600 hover:bg-indigo-700/30"
-            onClick={() => setManageMenuOpen(!manageMenuOpen)}
-          >
-            <Edit3 size={16} className="mr-2" />
-            {manageMenuOpen ? "Close Menu Editor" : "Manage Menu"}
-          </Button>
-          <Button
-            onClick={handleInitiatePrint}
-            className="bg-green-600 hover:bg-green-700 text-white"
-          >
-            Print / PDF
-          </Button>
+  // Show loading state if no data yet
+  if (!smartPrepData || smartPrepData.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <Card className="glassmorphic-card border-blue-500/20 p-8">
+              <CardContent className="text-center">
+                <ChefHat className="mx-auto h-12 w-12 text-blue-400 mb-4" />
+                <h3 className="text-xl font-semibold text-slate-200 mb-2">
+                  Loading Smart Prep Guide
+                </h3>
+                <p className="text-slate-400">
+                  Analyzing forecast data and generating intelligent prep recommendations...
+                </p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
+    );
+  }
 
-      {manageMenuOpen && (
-        <div className="border border-slate-700 rounded-lg shadow-lg p-4 bg-slate-800/60 space-y-6">
-          {allSections.map((section) => (
-            <MenuEditorSection
-              key={section}
-              section={section}
-              items={menu[section]}
-              editorOpen={editingSection === section}
-              toggleEditor={toggleEditor}
-              newItemForm={newItemForms[section] || { name: "", value: "", unit: "oz" }}
-              handleNewItemChange={handleNewItemChange}
-              addMenuItem={addMenuItem}
-              removeMenuItem={removeMenuItem}
-            />
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <div>
+              <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-500 flex items-center gap-3">
+                <ChefHat className="text-blue-400" size={40} />
+                Smart Prep Guide
+              </h1>
+              <p className="text-slate-300 mt-2">
+                Intelligent prep planning with {currentTemplate.name} template
+              </p>
+            </div>
+            
+            <div className="flex gap-3">
+              <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="border-blue-500 text-blue-400 hover:bg-blue-500/10">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[500px] glassmorphic-card">
+                  <DialogHeader>
+                    <DialogTitle className="text-blue-400">Smart Prep Guide Settings</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-6 py-4">
+                    {/* Restaurant Template */}
+                    <div>
+                      <label className="text-sm font-medium text-slate-200 mb-2 block">
+                        Restaurant Template
+                      </label>
+                      <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableTemplates.map(template => (
+                            <SelectItem key={template} value={template}>
+                              {RESTAURANT_TEMPLATES[template].name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Weather Condition */}
+                    <div>
+                      <label className="text-sm font-medium text-slate-200 mb-2 block">
+                        Weather Condition
+                      </label>
+                      <Select value={weatherCondition} onValueChange={setWeatherCondition}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="sunny">☀️ Sunny</SelectItem>
+                          <SelectItem value="cloudy">☁️ Cloudy</SelectItem>
+                          <SelectItem value="rainy">🌧️ Rainy</SelectItem>
+                          <SelectItem value="stormy">⛈️ Stormy</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Smart Features */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <label className="text-sm font-medium text-slate-200">
+                            Waste Optimization
+                          </label>
+                          <p className="text-xs text-slate-400">
+                            Adjust quantities based on shelf life
+                          </p>
+                        </div>
+                        <Switch 
+                          checked={wasteOptimization} 
+                          onCheckedChange={setWasteOptimization} 
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <label className="text-sm font-medium text-slate-200">
+                            Cross-Utilization
+                          </label>
+                          <p className="text-xs text-slate-400">
+                            Suggest ingredient sharing opportunities
+                          </p>
+                        </div>
+                        <Switch 
+                          checked={crossUtilization} 
+                          onCheckedChange={setCrossUtilization} 
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <DialogClose asChild>
+                      <Button>Apply Settings</Button>
+                    </DialogClose>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <Button 
+                onClick={() => handleExport('text')} 
+                variant="outline" 
+                className="border-green-500 text-green-400 hover:bg-green-500/10"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Export
+              </Button>
+
+              <Button 
+                onClick={handlePrint} 
+                className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
+              >
+                <Printer className="mr-2 h-4 w-4" />
+                Print / PDF
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Summary Cards */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+        >
+          <Card className="glassmorphic-card border-blue-500/20">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-slate-200">
+                Avg Daily Guests
+              </CardTitle>
+              <Utensils className="h-4 w-4 text-blue-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-400">
+                {avgGuests.toFixed(0)}
+              </div>
+              <p className="text-xs text-slate-400">
+                Smart factor: {adjustmentFactor.toFixed(2)}x
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="glassmorphic-card border-green-500/20">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-slate-200">
+                Planning Days
+              </CardTitle>
+              <Calendar className="h-4 w-4 text-green-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-400">
+                {totalDays}
+              </div>
+              <p className="text-xs text-slate-400">
+                Days scheduled
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="glassmorphic-card border-yellow-500/20">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-slate-200">
+                Smart Insights
+              </CardTitle>
+              <Lightbulb className="h-4 w-4 text-yellow-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-yellow-400">
+                {totalInsights}
+              </div>
+              <p className="text-xs text-slate-400">
+                Optimization tips
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="glassmorphic-card border-purple-500/20">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-slate-200">
+                Avg Prep Time
+              </CardTitle>
+              <Clock className="h-4 w-4 text-purple-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-purple-400">
+                {avgPrepTime.toFixed(1)}h
+              </div>
+              <p className="text-xs text-slate-400">
+                Per day estimate
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Smart Insights Panel */}
+        {prepInsights.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mb-8"
+          >
+            <Card className="glassmorphic-card border-yellow-500/20">
+              <CardHeader>
+                <CardTitle className="text-yellow-400 flex items-center gap-2">
+                  <Lightbulb className="h-5 w-5" />
+                  Smart Insights & Recommendations
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {prepInsights.slice(0, 6).map((insight, index) => (
+                    <div key={index} className="flex items-start gap-3 p-3 bg-slate-800/50 rounded-lg">
+                      <Badge variant="outline" className="text-xs">
+                        {insight.type}
+                      </Badge>
+                      <p className="text-sm text-slate-300 flex-1">
+                        {insight.message}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* Daily Prep Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {smartPrepData.map((dayData, index) => (
+            <motion.div
+              key={dayData.date}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 * index }}
+            >
+              <Card className="glassmorphic-card border-slate-600/50 h-full">
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="text-xl text-slate-100">
+                        {new Date(dayData.date).toLocaleDateString('en-US', { 
+                          weekday: 'long', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })}
+                      </CardTitle>
+                      <p className="text-sm text-slate-400">
+                        {dayData.totalGuests.toFixed(0)} guests • Factor: {dayData.smartFactor.factor.toFixed(2)}x
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="text-blue-400 border-blue-400">
+                      {currentTemplate.name}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {Object.entries(dayData.shifts).map(([shiftKey, shiftData]) => (
+                      <div key={shiftKey} className="border border-slate-600/50 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className={`font-medium ${shiftData.color} flex items-center gap-2`}>
+                            {shiftData.icon}
+                            {shiftData.name}
+                          </h4>
+                          <Badge variant="secondary" className="text-xs">
+                            {shiftData.totalItems} items
+                          </Badge>
+                        </div>
+                        
+                        {/* Group items by category */}
+                        {Object.entries(
+                          shiftData.prepItems.reduce((acc, item) => {
+                            if (!acc[item.category]) acc[item.category] = [];
+                            acc[item.category].push(item);
+                            return acc;
+                          }, {})
+                        ).map(([category, items]) => (
+                          <div key={category} className="mb-3">
+                            <h5 className="text-sm font-medium text-slate-300 mb-2 flex items-center gap-2">
+                              <span>{items[0]?.categoryIcon}</span>
+                              {category}
+                            </h5>
+                            <div className="grid grid-cols-1 gap-1 text-xs">
+                              {items.slice(0, 3).map(item => (
+                                <div key={item.id} className="flex justify-between text-slate-400">
+                                  <span>{item.name}</span>
+                                  <span>{item.quantity} {item.unit}</span>
+                                </div>
+                              ))}
+                              {items.length > 3 && (
+                                <div className="text-slate-500 text-center">
+                                  +{items.length - 3} more items
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
           ))}
         </div>
-      )}
-
-      <PrepGuideContent
-        dailyShiftPrepData={dailyShiftPrepData}
-        expandedDays={expandedDays}
-        setExpandedDays={setExpandedDays}
-        onPrepTaskChange={handlePrepTaskChange}
-      />
-    </motion.div>
+      </div>
+    </div>
   );
 };
 
