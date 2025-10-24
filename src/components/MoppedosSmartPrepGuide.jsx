@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { 
   ChefHat, 
@@ -209,9 +208,9 @@ const MoppedosSmartPrepGuide = () => {
       <div className="flex items-center space-x-2 pb-2 border-b border-gray-200">
         <Icon className="h-5 w-5 text-gray-600" />
         <h3 className="font-semibold text-gray-900">{title}</h3>
-        <Badge variant="outline" className="ml-auto">
+        <span className="ml-auto text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
           {items.filter(item => item.completed).length}/{items.length}
-        </Badge>
+        </span>
       </div>
       <div className="space-y-2">
         {items.map(item => (
@@ -237,9 +236,9 @@ const MoppedosSmartPrepGuide = () => {
               <Icon className="h-5 w-5" />
               <CardTitle className="text-lg">{title}</CardTitle>
             </div>
-            <Badge variant={progress === 100 ? "default" : "secondary"}>
+            <span className={`text-sm px-2 py-1 rounded ${progress === 100 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
               {progress}%
-            </Badge>
+            </span>
           </div>
         </CardHeader>
         <CardContent className="pt-0">
@@ -332,12 +331,12 @@ const MoppedosSmartPrepGuide = () => {
                 {activeStation} Prep - {selectedDate}
               </CardTitle>
               <div className="flex items-center space-x-2">
-                <Badge variant="outline">
+                <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
                   Expected Volume: {activeStation === 'lunch' ? expectedVolume.lunch : activeStation === 'dinner' ? expectedVolume.dinner : `${expectedVolume.lunch + expectedVolume.dinner}`}
-                </Badge>
-                <Badge>
+                </span>
+                <span className="text-sm bg-green-100 text-green-800 px-2 py-1 rounded">
                   {getStationProgress(prepData[activeStation])}% Complete
-                </Badge>
+                </span>
               </div>
             </div>
           </CardHeader>
