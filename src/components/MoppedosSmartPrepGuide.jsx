@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Separator } from '@/components/ui/separator';
 import { 
   ChefHat, 
   Clock, 
@@ -346,19 +345,26 @@ const MoppedosSmartPrepGuide = () => {
               items={prepData[activeStation].proteins} 
               icon={ChefHat}
             />
-            <Separator />
+            
+            {/* Manual separator using border */}
+            <div className="border-t border-gray-200 my-6"></div>
+            
             <PrepSection 
               title="Sides" 
               items={prepData[activeStation].sides} 
               icon={BarChart3}
             />
-            <Separator />
+            
+            <div className="border-t border-gray-200 my-6"></div>
+            
             <PrepSection 
               title="Desserts" 
               items={prepData[activeStation].desserts} 
               icon={Calendar}
             />
-            <Separator />
+            
+            <div className="border-t border-gray-200 my-6"></div>
+            
             <PrepSection 
               title="Misc" 
               items={prepData[activeStation].misc} 
