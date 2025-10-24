@@ -30,29 +30,21 @@ import {
   Utensils,
   Download
 } from 'lucide-react';
-import { useSmartPrepGuide } from '@/hooks/useSmartPrepGuide.js';
-import { RESTAURANT_TEMPLATES } from '@/config/SmartPrepGuideConfig.js';
+// import { useSmartPrepGuide } from '@/hooks/useSmartPrepGuide.js';
+// import { RESTAURANT_TEMPLATES } from '@/config/SmartPrepGuideConfig.js';
+
 
 const DailyShiftPrepGuide = () => {
-  const {
-    smartPrepData,
-    adjustmentFactor,
-    printDate,
-    prepInsights,
-    selectedTemplate,
-    setSelectedTemplate,
-    weatherCondition,
-    setWeatherCondition,
-    wasteOptimization,
-    setWasteOptimization,
-    crossUtilization,
-    setCrossUtilization,
-    setPrintDate,
-    handlePrepTaskChange,
-    exportPrepGuide,
-    availableTemplates,
-    currentTemplate
-  } = useSmartPrepGuide();
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-4xl font-bold text-blue-400 mb-4">Smart Prep Guide</h1>
+        <p className="text-slate-300">Smart prep guide is being configured...</p>
+      </div>
+    </div>
+  );
+};
+
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedDay, setSelectedDay] = useState(null);
