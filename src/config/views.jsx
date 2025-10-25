@@ -81,14 +81,7 @@ export const views = [
     icon: <ShoppingBasket size={20} strokeWidth={2.5} />,
     showInNav: false,
   },
-    {
-    id: 'MOPPEDOS_PREP_GUIDE',
-    path: '/moppedos-prep-guide',
-    label: 'Moppedos Prep Guide',
-    componentName: 'MoppedosSmartPrepGuide',
-    icon: <ChefHat size={20} strokeWidth={2.5} />,
-    showInNav: true,
-  },
+    
 
 ];
 
