@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@headlessui/react": "^1.7.18",
     "@radix-ui/react-alert-dialog": "^1.0.5",
     "@radix-ui/react-avatar": "^1.0.3",
     "@radix-ui/react-checkbox": "^1.0.4",
@@ -31,11 +32,11 @@
     "react": "^18.2.0",
     "react-beautiful-dnd": "^13.1.1",
     "react-dom": "^18.2.0",
-    "uuid": "^9.0.0",
     "react-router-dom": "^6.16.0",
+    "recharts": "^3.3.0",
     "tailwind-merge": "^1.14.0",
     "tailwindcss-animate": "^1.0.7",
-    "@headlessui/react": "^1.7.18"
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.8.3",
