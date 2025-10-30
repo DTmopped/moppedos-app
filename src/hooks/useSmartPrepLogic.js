@@ -1,10 +1,17 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/supabaseClient';
 
-export const useSmartPrepLogic = (selectedDate) => {
+export const useSmartPrepLogic = () => {
   const [tenantId, setTenantId] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(() => {
+    // Default to tomorrow (since test data is for 10/31/2025)
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
+  });
   const [prepSchedule, setPrepSchedule] = useState(null);
   const [prepTasks, setPrepTasks] = useState([]);
+  const [financialImpact, setFinancialImpact] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -57,18 +64,20 @@ export const useSmartPrepLogic = (selectedDate) => {
           .select('*')
           .eq('tenant_id', tenantId)
           .eq('date', selectedDate)
-          .single();
+          .maybeSingle(); // Use maybeSingle instead of single to avoid error when no rows
 
         if (scheduleError) {
-          if (scheduleError.code === 'PGRST116') {
-            // No schedule found for this date
-            console.log('No prep schedule found for this date');
-            setPrepSchedule(null);
-            setPrepTasks([]);
-            setLoading(false);
-            return;
-          }
+          console.error('Error fetching schedule:', scheduleError);
           throw scheduleError;
+        }
+
+        if (!schedule) {
+          console.log('No prep schedule found for this date');
+          setPrepSchedule(null);
+          setPrepTasks([]);
+          setFinancialImpact(null);
+          setLoading(false);
+          return;
         }
 
         console.log('Prep schedule found:', schedule);
@@ -92,10 +101,29 @@ export const useSmartPrepLogic = (selectedDate) => {
           `)
           .eq('schedule_id', schedule.id);
 
-        if (tasksError) throw tasksError;
+        if (tasksError) {
+          console.error('Error fetching tasks:', tasksError);
+          throw tasksError;
+        }
 
         console.log('Prep tasks found:', tasks);
         setPrepTasks(tasks || []);
+
+        // Fetch financial impact for this schedule
+        const { data: financial, error: financialError } = await supabase
+          .from('financial_tracking')
+          .select('*')
+          .eq('schedule_id', schedule.id)
+          .maybeSingle();
+
+        if (financialError) {
+          console.error('Error fetching financial data:', financialError);
+          // Don't throw - financial data is optional
+        }
+
+        console.log('Financial data found:', financial);
+        setFinancialImpact(financial);
+
         setLoading(false);
       } catch (err) {
         console.error('Error fetching prep schedule:', err);
@@ -107,19 +135,23 @@ export const useSmartPrepLogic = (selectedDate) => {
     fetchPrepSchedule();
   }, [tenantId, selectedDate]);
 
-  const refreshSchedule = () => {
+  const refreshData = () => {
     if (tenantId && selectedDate) {
-      // Trigger re-fetch by updating a dummy state
+      // Trigger re-fetch by updating loading state
       setLoading(true);
+      // The useEffect will automatically re-run
     }
   };
 
   return {
     tenantId,
+    selectedDate,
+    setSelectedDate,
     prepSchedule,
     prepTasks,
+    financialImpact,
     loading,
     error,
-    refreshSchedule
+    refreshData
   };
 };
