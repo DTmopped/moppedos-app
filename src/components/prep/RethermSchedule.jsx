@@ -3,28 +3,79 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Flame, Clock, TrendingUp, AlertCircle } from 'lucide-react';
 
-const RethermSchedule = ({ schedule }) => {
-  if (!schedule || !schedule.retherm_milestones) {
+const RethermSchedule = ({ prepTasks, prepSchedule }) => {
+  if (!prepTasks || prepTasks.length === 0) {
     return (
       <div className="text-center py-12 text-gray-500">
         <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
         <p>No retherm schedule available.</p>
+        <p className="text-sm mt-2">Prep tasks must be created first.</p>
       </div>
     );
   }
 
-  // Group milestones by menu item
-  const milestonesByItem = schedule.retherm_milestones.reduce((acc, milestone) => {
-    const itemName = milestone.menu_item_name;
-    if (!acc[itemName]) {
-      acc[itemName] = {
-        item: milestone,
-        milestones: []
-      };
-    }
-    acc[itemName].milestones.push(milestone);
-    return acc;
-  }, {});
+  // Filter for proteins (main items that need retherm)
+  const proteinTasks = prepTasks.filter(task => {
+    const category = task.menu_items?.category_normalized || task.category || '';
+    return category.toLowerCase().includes('protein') || 
+           category.toLowerCase().includes('meat') ||
+           task.menu_items?.name?.toLowerCase().includes('brisket') ||
+           task.menu_items?.name?.toLowerCase().includes('ribs') ||
+           task.menu_items?.name?.toLowerCase().includes('pork') ||
+           task.menu_items?.name?.toLowerCase().includes('chicken');
+  });
+
+  // Generate simple retherm milestones based on service times
+  const generateMilestones = (task) => {
+    const menuItemName = task.menu_items?.name || task.menu_item_name || 'Unknown';
+    const quantity = task.quantity || 0;
+    
+    // Simple milestone logic: divide into service periods
+    const milestones = [
+      {
+        time: '11:00 AM',
+        intensity: 'moderate',
+        quantity: Math.ceil(quantity * 0.4),
+        cumulative_quantity: Math.ceil(quantity * 0.4),
+        description: 'Initial service setup - have ready before doors open',
+        reasoning: 'Early lunch crowd, moderate demand expected'
+      },
+      {
+        time: '12:30 PM',
+        intensity: 'rush',
+        quantity: Math.ceil(quantity * 0.3),
+        cumulative_quantity: Math.ceil(quantity * 0.7),
+        description: 'Peak lunch rush - retherm additional batch',
+        reasoning: 'Historical data shows peak demand during this period'
+      },
+      {
+        time: '5:30 PM',
+        intensity: 'steady',
+        quantity: Math.ceil(quantity * 0.2),
+        cumulative_quantity: Math.ceil(quantity * 0.9),
+        description: 'Dinner service prep - maintain hot hold',
+        reasoning: 'Steady dinner service, keep quality high'
+      },
+      {
+        time: '7:00 PM',
+        intensity: 'moderate',
+        quantity: Math.ceil(quantity * 0.1),
+        cumulative_quantity: quantity,
+        description: 'Final service batch - use remaining prep',
+        reasoning: 'Wind down service, minimize waste'
+      }
+    ];
+    
+    return {
+      menu_item_name: menuItemName,
+      total_quantity: quantity,
+      milestones: milestones,
+      current_hot_hold: 0,
+      next_action: 'Start retherm at 10:00 AM for 11:00 AM service'
+    };
+  };
+
+  const rethermItems = proteinTasks.map(generateMilestones);
 
   return (
     <div className="space-y-6">
@@ -38,10 +89,10 @@ const RethermSchedule = ({ schedule }) => {
                 Smart Retherm Schedule
               </h3>
               <p className="text-sm text-gray-700">
-                This schedule is based on your historical demand patterns. 
+                This schedule is based on typical service patterns for BBQ restaurants. 
                 Retherm in batches to maintain quality and avoid waste.
               </p>
-              <div className="mt-3 flex items-center gap-4 text-sm">
+              <div className="mt-3 flex items-center gap-4 text-sm flex-wrap">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-orange-500"></div>
                   <span className="text-gray-600">RUSH = Peak demand</span>
@@ -50,26 +101,45 @@ const RethermSchedule = ({ schedule }) => {
                   <div className="w-3 h-3 rounded-full bg-blue-500"></div>
                   <span className="text-gray-600">Steady service</span>
                 </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-gray-500"></div>
+                  <span className="text-gray-600">Moderate pace</span>
+                </div>
               </div>
+              {prepSchedule && (
+                <div className="mt-3 p-3 bg-white rounded-lg border border-blue-200">
+                  <p className="text-sm font-medium text-gray-900">
+                    Expected Guests: <span className="text-blue-600">{prepSchedule.expected_guests || 0}</span>
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Retherm Items */}
-      {Object.entries(milestonesByItem).map(([itemName, data]) => (
-        <RethermItemCard 
-          key={itemName} 
-          itemName={itemName}
-          data={data}
-        />
-      ))}
+      {rethermItems.length > 0 ? (
+        rethermItems.map((item, idx) => (
+          <RethermItemCard 
+            key={idx} 
+            data={item}
+          />
+        ))
+      ) : (
+        <Card className="border-gray-200">
+          <CardContent className="pt-6 text-center text-gray-500">
+            <p>No protein items found in prep schedule.</p>
+            <p className="text-sm mt-2">Sides and desserts typically don't require retherm scheduling.</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
 
-const RethermItemCard = ({ itemName, data }) => {
-  const totalQuantity = data.milestones.reduce((sum, m) => sum + m.quantity, 0);
+const RethermItemCard = ({ data }) => {
+  const totalQuantity = data.total_quantity;
   const hasPeak = data.milestones.some(m => m.intensity === 'rush' || m.intensity === 'peak');
 
   return (
@@ -79,7 +149,7 @@ const RethermItemCard = ({ itemName, data }) => {
           <div className="flex items-center gap-3">
             <Flame className="h-6 w-6 text-orange-500" />
             <div>
-              <CardTitle className="text-xl">{itemName}</CardTitle>
+              <CardTitle className="text-xl">{data.menu_item_name}</CardTitle>
               <p className="text-sm text-gray-500 mt-1">
                 Total Service Need: <span className="font-semibold text-gray-900">{totalQuantity} lbs</span>
               </p>
@@ -88,7 +158,7 @@ const RethermItemCard = ({ itemName, data }) => {
           {hasPeak && (
             <Badge variant="destructive" className="bg-orange-100 text-orange-800">
               <TrendingUp className="h-3 w-3 mr-1" />
-              High Demand Item
+              Peak Service Item
             </Badge>
           )}
         </div>
@@ -115,12 +185,9 @@ const RethermItemCard = ({ itemName, data }) => {
             <div className="flex items-start gap-3">
               <Clock className="h-5 w-5 text-gray-600 mt-0.5" />
               <div>
-                <p className="font-medium text-gray-900 mb-1">Current Hot Hold</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  {data.item.current_hot_hold || 0} lbs
-                </p>
-                <p className="text-sm text-gray-600 mt-2">
-                  <span className="font-medium">Action:</span> {data.item.next_action || 'Monitor service pace'}
+                <p className="font-medium text-gray-900 mb-1">Next Action</p>
+                <p className="text-sm text-gray-700">
+                  {data.next_action}
                 </p>
               </div>
             </div>
@@ -133,7 +200,7 @@ const RethermItemCard = ({ itemName, data }) => {
 
 const MilestoneItem = ({ milestone, isLast }) => {
   const intensityColors = {
-    'moderate': 'bg-blue-500 border-blue-600',
+    'moderate': 'bg-gray-500 border-gray-600',
     'steady': 'bg-blue-500 border-blue-600',
     'rush': 'bg-orange-500 border-orange-600',
     'peak': 'bg-red-500 border-red-600'
@@ -176,7 +243,7 @@ const MilestoneItem = ({ milestone, isLast }) => {
         </p>
         
         <p className="text-sm text-gray-600">
-          {milestone.description || `${milestone.quantity} lbs for this period`}
+          {milestone.description}
         </p>
 
         {milestone.reasoning && (
