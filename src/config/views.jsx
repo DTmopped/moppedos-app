@@ -75,13 +75,14 @@ export const views = [
     showInNav: true,
   },
   {
-    id: 'SMART_PREP_GUIDE',
-    path: '/full-prep-guide',
-    label: 'Full Prep Guide',
-    componentName: 'SmartPrepGuide',
-    icon: <ShoppingBasket size={20} strokeWidth={2.5} />,
-    showInNav: false,
-  },
+  id: 'SMART_PREP_GUIDE',
+  path: '/smart-prep-guide',
+  label: 'Smart Prep Guide',
+  componentName: 'SmartPrepGuide',
+  icon: <ChefHat size={20} strokeWidth={2.5} />,
+  showInNav: true,
+}
+
     
 
 ];
