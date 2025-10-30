@@ -1,21 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   ChefHat, 
   DollarSign, 
   TrendingUp, 
   TrendingDown,
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  Flame,
   Package,
-  Calendar,
   Download,
-  RefreshCw
+  RefreshCw,
+  Flame
 } from 'lucide-react';
 import { useSmartPrepLogic } from '@/hooks/useSmartPrepLogic';
 import PrepStationView from './prep/PrepStationView';
@@ -25,6 +20,7 @@ import FinancialImpactDashboard from './prep/FinancialImpactDashboard';
 const SmartPrepGuide = () => {
   const {
     prepSchedule,
+    prepTasks,
     financialImpact,
     loading,
     refreshData,
@@ -143,7 +139,7 @@ const SmartPrepGuide = () => {
                 <div>
                   <p className="text-sm text-gray-600">Smart Factor</p>
                   <p className="text-3xl font-bold text-purple-600">
-                    {prepSchedule?.adjustment_factor?.toFixed(2) || 1.0}x
+                    {prepSchedule?.adjustment_factor?.toFixed(2) || '1.00'}x
                   </p>
                   <p className="text-xs text-gray-500">
                     {prepSchedule?.adjustment_factor > 1.1 ? 'High demand' : 
@@ -168,14 +164,17 @@ const SmartPrepGuide = () => {
 
           <TabsContent value="prep-guide">
             <PrepStationView 
-              schedule={prepSchedule}
+              prepTasks={prepTasks}
               selectedStation={selectedStation}
               setSelectedStation={setSelectedStation}
             />
           </TabsContent>
 
           <TabsContent value="retherm-schedule">
-            <RethermSchedule schedule={prepSchedule} />
+            <RethermSchedule 
+              prepTasks={prepTasks}
+              prepSchedule={prepSchedule}
+            />
           </TabsContent>
 
           <TabsContent value="financial">
