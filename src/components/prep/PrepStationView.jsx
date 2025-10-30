@@ -15,6 +15,10 @@ import {
 } from 'lucide-react';
 
 const STATION_ICONS = {
+  'Smoker': Beef,
+  'Hot Line': Beef,
+  'Cold Prep': Salad,
+  'Dessert': Cake,
   'Proteins': Beef,
   'Sides': Salad,
   'Desserts': Cake,
@@ -22,27 +26,31 @@ const STATION_ICONS = {
 };
 
 const STATION_COLORS = {
+  'Smoker': 'border-red-200 bg-red-50',
+  'Hot Line': 'border-orange-200 bg-orange-50',
+  'Cold Prep': 'border-green-200 bg-green-50',
+  'Dessert': 'border-pink-200 bg-pink-50',
   'Proteins': 'border-red-200 bg-red-50',
   'Sides': 'border-green-200 bg-green-50',
   'Desserts': 'border-pink-200 bg-pink-50',
   'Misc': 'border-gray-200 bg-gray-50'
 };
 
-const PrepStationView = ({ schedule, selectedStation, setSelectedStation }) => {
-  if (!schedule || !schedule.tasks) {
+const PrepStationView = ({ prepTasks, selectedStation, setSelectedStation }) => {
+  if (!prepTasks || prepTasks.length === 0) {
     return (
       <div className="text-center py-12 text-gray-500">
         <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-        <p>No prep schedule available for this date.</p>
+        <p>No prep tasks available for this date.</p>
       </div>
     );
   }
 
   // Group tasks by station
-  const tasksByStation = schedule.tasks.reduce((acc, task) => {
-    const station = task.station_name || 'Misc';
-    if (!acc[station]) acc[station] = [];
-    acc[station].push(task);
+  const tasksByStation = prepTasks.reduce((acc, task) => {
+    const stationName = task.prep_stations?.name || task.station_name || 'Misc';
+    if (!acc[stationName]) acc[stationName] = [];
+    acc[stationName].push(task);
     return acc;
   }, {});
 
@@ -54,7 +62,7 @@ const PrepStationView = ({ schedule, selectedStation, setSelectedStation }) => {
   return (
     <div className="space-y-6">
       {/* Station Filter */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <Button
           variant={selectedStation === 'all' ? 'default' : 'outline'}
           onClick={() => setSelectedStation('all')}
@@ -112,28 +120,35 @@ const PrepStationView = ({ schedule, selectedStation, setSelectedStation }) => {
 };
 
 const PrepTaskCard = ({ task }) => {
-  const needsAttention = task.prep_quantity > task.on_hand * 2;
-  const isComplete = task.completed;
+  // Extract menu item info
+  const menuItemName = task.menu_items?.name || task.menu_item_name || 'Unknown Item';
+  const category = task.menu_items?.category_normalized || task.category || '';
+  const unit = task.unit || task.menu_items?.base_unit || 'lbs';
+  
+  // Quantities
+  const quantity = task.quantity || task.prep_quantity || 0;
+  const cost = task.estimated_cost || 0;
+  
+  // Smart factor
+  const smartFactor = task.smart_factor || 1.0;
+  const confidence = task.confidence_level || 0;
+  
+  const isHighPriority = smartFactor > 1.2;
+  const isPopular = category === 'Proteins' || category === 'proteins';
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
-            <h4 className="font-semibold text-lg text-gray-900">{task.menu_item_name}</h4>
-            {needsAttention && (
+            <h4 className="font-semibold text-lg text-gray-900">{menuItemName}</h4>
+            {isHighPriority && (
               <Badge variant="destructive" className="text-xs">
                 <AlertCircle className="h-3 w-3 mr-1" />
-                High Priority
+                High Demand
               </Badge>
             )}
-            {isComplete && (
-              <Badge variant="success" className="text-xs bg-green-100 text-green-800">
-                <CheckCircle className="h-3 w-3 mr-1" />
-                Complete
-              </Badge>
-            )}
-            {task.popularity && task.popularity > 0.7 && (
+            {isPopular && (
               <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-800">
                 <TrendingUp className="h-3 w-3 mr-1" />
                 Popular Item
@@ -142,71 +157,51 @@ const PrepTaskCard = ({ task }) => {
           </div>
 
           {/* Prep Details Grid */}
-          <div className="grid grid-cols-4 gap-4 mt-3">
+          <div className="grid grid-cols-3 gap-4 mt-3">
             <div>
-              <p className="text-xs text-gray-500 mb-1">Prep Inventory</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {task.on_hand} {task.unit}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 mb-1">Target Par</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {task.par_level} {task.unit}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 mb-1">Need to Prep</p>
+              <p className="text-xs text-gray-500 mb-1">Quantity to Prep</p>
               <p className="text-lg font-semibold text-blue-600">
-                {task.prep_quantity} {task.unit}
+                {quantity} {unit}
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 mb-1">Prep Cost</p>
+              <p className="text-xs text-gray-500 mb-1">Smart Factor</p>
+              <p className="text-lg font-semibold text-purple-600">
+                {smartFactor.toFixed(2)}x
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">Estimated Cost</p>
               <p className="text-lg font-semibold text-green-600">
-                ${task.estimated_cost?.toFixed(2)}
+                ${cost.toFixed(2)}
               </p>
             </div>
           </div>
 
           {/* Smart Insights */}
-          {task.smart_insights && (
+          {confidence > 0 && (
             <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex items-start gap-2">
                 <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5" />
                 <div className="text-sm text-blue-900">
-                  <p className="font-medium mb-1">Smart Recommendation</p>
-                  <p className="text-blue-700">{task.smart_insights}</p>
-                  {task.confidence && (
-                    <p className="text-xs text-blue-600 mt-1">
-                      📊 {(task.confidence * 100).toFixed(0)}% confidence based on {task.data_points} days of data
-                    </p>
-                  )}
+                  <p className="font-medium mb-1">Smart Calculation</p>
+                  <p className="text-blue-700">
+                    Quantity adjusted by {smartFactor.toFixed(2)}x based on historical patterns
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    📊 {(confidence * 100).toFixed(0)}% confidence
+                  </p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Prep Instructions (if Mopped template) */}
-          {task.prep_instructions && (
+          {/* Category Badge */}
+          {category && (
             <div className="mt-3">
-              <p className="text-xs text-gray-500 mb-2">Prep Steps:</p>
-              <div className="text-sm text-gray-700 space-y-1">
-                {task.prep_instructions.map((step, idx) => (
-                  <div key={idx} className="flex items-start gap-2">
-                    <span className="text-gray-400">{idx + 1}.</span>
-                    <span>{step}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Estimated Time */}
-          {task.estimated_time && (
-            <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
-              <Clock className="h-4 w-4" />
-              <span>Estimated time: {task.estimated_time} minutes</span>
+              <Badge variant="outline" className="text-xs">
+                {category}
+              </Badge>
             </div>
           )}
         </div>
@@ -214,11 +209,11 @@ const PrepTaskCard = ({ task }) => {
         {/* Action Button */}
         <div className="ml-4">
           <Button
-            variant={isComplete ? 'outline' : 'default'}
+            variant="outline"
             size="sm"
             className="whitespace-nowrap"
           >
-            {isComplete ? 'Edit' : 'Mark Complete'}
+            View Details
           </Button>
         </div>
       </div>
