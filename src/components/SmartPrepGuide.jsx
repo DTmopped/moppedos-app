@@ -2,6 +2,12 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { 
   ChefHat, 
   DollarSign, 
@@ -10,12 +16,15 @@ import {
   Package,
   Download,
   RefreshCw,
-  Flame
+  Flame,
+  FileText,
+  Printer
 } from 'lucide-react';
 import { useSmartPrepLogic } from '@/hooks/useSmartPrepLogic';
 import PrepStationView from './prep/PrepStationView';
 import RethermSchedule from './prep/RethermSchedule';
 import FinancialImpactDashboard from './prep/FinancialImpactDashboard';
+import { exportPrepListToCSV, exportPrepListToPrint } from '@/utils/exportPrepList';
 
 const SmartPrepGuide = () => {
   const {
@@ -30,6 +39,14 @@ const SmartPrepGuide = () => {
 
   const [activeTab, setActiveTab] = useState('prep-guide');
   const [selectedStation, setSelectedStation] = useState('all');
+
+  const handleExportCSV = () => {
+    exportPrepListToCSV(prepTasks, prepSchedule);
+  };
+
+  const handleExportPrint = () => {
+    exportPrepListToPrint(prepTasks, prepSchedule);
+  };
 
   if (loading) {
     return (
@@ -74,13 +91,29 @@ const SmartPrepGuide = () => {
               Refresh
             </Button>
 
-            <Button
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <Download className="h-4 w-4" />
-              Export
-            </Button>
+            {/* Export Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="flex items-center gap-2"
+                  disabled={!prepTasks || prepTasks.length === 0}
+                >
+                  <Download className="h-4 w-4" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleExportPrint}>
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print Prep List
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportCSV}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Download CSV
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
