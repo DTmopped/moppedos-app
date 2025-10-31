@@ -1,242 +1,202 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { 
-  Beef, 
-  Salad, 
-  Cake,
-  Package,
-  AlertCircle,
-  TrendingUp
-} from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import PrepItemDetailModal from './PrepItemDetailModal';
+import { supabase } from '../../lib/supabaseClient';
 
-const STATION_ICONS = {
-  'Smoker': Beef,
-  'Hot Sides': Package,
-  'Cold Prep': Salad,
-  'Dessert': Cake,
-  'Proteins': Beef,
-  'Sides': Salad,
-  'Desserts': Cake,
-  'Misc': Package
-};
-
-const STATION_COLORS = {
-  'Smoker': 'border-red-200 bg-red-50',
-  'Hot Sides': 'border-orange-200 bg-orange-50',
-  'Cold Prep': 'border-green-200 bg-green-50',
-  'Dessert': 'border-pink-200 bg-pink-50',
-  'Proteins': 'border-red-200 bg-red-50',
-  'Sides': 'border-green-200 bg-green-50',
-  'Desserts': 'border-pink-200 bg-pink-50',
-  'Misc': 'border-gray-200 bg-gray-50'
-};
-
-const PrepStationView = ({ prepTasks, selectedStation, setSelectedStation }) => {
+const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
   const [selectedTask, setSelectedTask] = useState(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-
-  const handleViewDetails = (task) => {
-    setSelectedTask(task);
-    setIsDetailModalOpen(true);
-  };
+  const [removing, setRemoving] = useState(null);
 
   if (!prepTasks || prepTasks.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-500">
-        <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-        <p>No prep tasks available for this date.</p>
+      <div className="text-center py-12">
+        <p className="text-gray-600 text-lg">No prep schedule available for this date</p>
       </div>
     );
   }
 
   // Group tasks by station
   const tasksByStation = prepTasks.reduce((acc, task) => {
-    const stationName = task.prep_stations?.name || task.station_name || 'Misc';
-    if (!acc[stationName]) acc[stationName] = [];
+    const stationName = task.prep_stations?.name || task.station_name || 'Unknown Station';
+    if (!acc[stationName]) {
+      acc[stationName] = [];
+    }
     acc[stationName].push(task);
     return acc;
   }, {});
 
-  const stations = Object.keys(tasksByStation);
-  const filteredStations = selectedStation === 'all' 
-    ? stations 
-    : stations.filter(s => s === selectedStation);
+  // Station colors
+  const stationColors = {
+    'Smoker': 'bg-red-50 border-red-200',
+    'Hot Sides': 'bg-orange-50 border-orange-200',
+    'Cold Prep': 'bg-green-50 border-green-200',
+    'Dessert': 'bg-pink-50 border-pink-200',
+  };
+
+  // Handle remove item
+  const handleRemoveItem = async (taskId, itemName) => {
+    if (!confirm(`Are you sure you want to remove "${itemName}" from the prep list?`)) {
+      return;
+    }
+
+    setRemoving(taskId);
+
+    try {
+      const { error } = await supabase
+        .from('prep_tasks')
+        .delete()
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      // Notify parent to refresh
+      if (onItemRemoved) {
+        onItemRemoved();
+      }
+
+      alert(`Removed ${itemName} from prep list`);
+    } catch (error) {
+      console.error('Error removing item:', error);
+      alert('Failed to remove item');
+    } finally {
+      setRemoving(null);
+    }
+  };
+
+  // Calculate station total cost
+  const getStationTotal = (tasks) => {
+    return tasks.reduce((sum, task) => sum + (task.estimated_cost || 0), 0);
+  };
 
   return (
-    <>
-      <div className="space-y-6">
-        {/* Station Filter */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button
-            variant={selectedStation === 'all' ? 'default' : 'outline'}
-            onClick={() => setSelectedStation('all')}
-            size="sm"
+    <div className="space-y-6">
+      {/* Station Filter Buttons */}
+      <div className="flex gap-2 flex-wrap">
+        <button className="px-4 py-2 bg-gray-900 text-white rounded-lg font-semibold">
+          All Stations
+        </button>
+        {Object.keys(tasksByStation).map(station => (
+          <button
+            key={station}
+            className="px-4 py-2 bg-white border-2 border-gray-200 rounded-lg hover:border-gray-400 transition-colors font-semibold"
           >
-            All Stations
-          </Button>
-          {stations.map(station => (
-            <Button
-              key={station}
-              variant={selectedStation === station ? 'default' : 'outline'}
-              onClick={() => setSelectedStation(station)}
-              size="sm"
-            >
-              {station}
-            </Button>
-          ))}
-        </div>
-
-        {/* Station Cards */}
-        {filteredStations.map(stationName => {
-          const tasks = tasksByStation[stationName];
-          const StationIcon = STATION_ICONS[stationName] || Package;
-          const stationColor = STATION_COLORS[stationName] || 'border-gray-200 bg-gray-50';
-
-          return (
-            <Card key={stationName} className={`${stationColor} border-2`}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <StationIcon className="h-6 w-6" />
-                    <CardTitle className="text-xl">{stationName}</CardTitle>
-                    <Badge variant="secondary">{tasks.length} items</Badge>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-600">Station Total</p>
-                    <p className="text-xl font-bold">
-                      ${tasks.reduce((sum, t) => sum + (t.estimated_cost || 0), 0).toFixed(0)}
-                    </p>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {tasks.map(task => (
-                    <PrepTaskCard 
-                      key={task.id} 
-                      task={task}
-                      onViewDetails={() => handleViewDetails(task)}
-                    />
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+            {station}
+          </button>
+        ))}
       </div>
 
-      {/* Detail Modal */}
-      <PrepItemDetailModal
-        task={selectedTask}
-        isOpen={isDetailModalOpen}
-        onClose={() => setIsDetailModalOpen(false)}
-      />
-    </>
-  );
-};
-
-const PrepTaskCard = ({ task, onViewDetails }) => {
-  // Extract menu item info
-  const menuItemName = task.menu_items?.name || task.menu_item_name || 'Unknown Item';
-  const category = task.menu_items?.category_normalized || task.category || '';
-  const unit = task.unit || task.menu_items?.base_unit || 'lbs';
-  
-  // Quantities
-  const quantity = task.quantity || task.prep_quantity || 0;
-  const cost = task.estimated_cost || 0;
-  
-  // Smart factor
-  const smartFactor = task.smart_factor || 1.0;
-  const confidence = task.confidence_level || 0;
-  
-  const isHighPriority = smartFactor > 1.2;
-  const isPopular = category === 'Proteins' || category === 'proteins' || category === 'protein';
-
-  return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <h4 className="font-semibold text-lg text-gray-900">{menuItemName}</h4>
-            {isHighPriority && (
-              <Badge variant="destructive" className="text-xs">
-                <AlertCircle className="h-3 w-3 mr-1" />
-                High Demand
-              </Badge>
-            )}
-            {isPopular && (
-              <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-800">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                Popular Item
-              </Badge>
-            )}
-          </div>
-
-          {/* Prep Details Grid */}
-          <div className="grid grid-cols-3 gap-4 mt-3">
-            <div>
-              <p className="text-xs text-gray-500 mb-1">Quantity to Prep</p>
-              <p className="text-lg font-semibold text-blue-600">
-                {quantity} {unit}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 mb-1">Smart Factor</p>
-              <p className="text-lg font-semibold text-purple-600">
-                {smartFactor.toFixed(2)}x
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 mb-1">Estimated Cost</p>
-              <p className="text-lg font-semibold text-green-600">
-                ${cost.toFixed(2)}
-              </p>
-            </div>
-          </div>
-
-          {/* Smart Insights */}
-          {confidence > 0 && (
-            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-start gap-2">
-                <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5" />
-                <div className="text-sm text-blue-900">
-                  <p className="font-medium mb-1">Smart Calculation</p>
-                  <p className="text-blue-700">
-                    Quantity adjusted by {smartFactor.toFixed(2)}x based on historical patterns
-                  </p>
-                  <p className="text-xs text-blue-600 mt-1">
-                    📊 {(confidence * 100).toFixed(0)}% confidence
-                  </p>
-                </div>
+      {/* Stations */}
+      {Object.entries(tasksByStation).map(([stationName, tasks]) => (
+        <div
+          key={stationName}
+          className={`border-2 rounded-lg overflow-hidden ${stationColors[stationName] || 'bg-gray-50 border-gray-200'}`}
+        >
+          {/* Station Header */}
+          <div className="flex items-center justify-between p-4 bg-white bg-opacity-50 border-b-2 border-inherit">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">
+                {stationName === 'Smoker' && '🔥'}
+                {stationName === 'Hot Sides' && '🍲'}
+                {stationName === 'Cold Prep' && '🥗'}
+                {stationName === 'Dessert' && '🍰'}
+              </span>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">{stationName}</h3>
+                <p className="text-sm text-gray-600">{tasks.length} items</p>
               </div>
             </div>
-          )}
-
-          {/* Category Badge */}
-          {category && (
-            <div className="mt-3">
-              <Badge variant="outline" className="text-xs">
-                {category}
-              </Badge>
+            <div className="text-right">
+              <p className="text-sm font-medium text-gray-600">Station Total</p>
+              <p className="text-2xl font-bold text-gray-900">
+                ${getStationTotal(tasks).toFixed(0)}
+              </p>
             </div>
-          )}
-        </div>
+          </div>
 
-        {/* Action Button */}
-        <div className="ml-4">
-          <Button
-            variant="outline"
-            size="sm"
-            className="whitespace-nowrap"
-            onClick={onViewDetails}
-          >
-            View Details
-          </Button>
+          {/* Station Items */}
+          <div className="p-4 space-y-3">
+            {tasks.map(task => {
+              const itemName = task.menu_items?.name || task.menu_item_name || 'Unknown Item';
+              const category = task.menu_items?.category_normalized || task.category || '';
+              const quantity = task.prep_quantity || task.quantity || task.adjusted_quantity || 0;
+              const unit = task.prep_unit || task.unit || task.menu_items?.base_unit || 'lbs';
+              const smartFactor = (task.smart_factor || task.multiplier || 1.0).toFixed(2);
+              const estimatedCost = task.estimated_cost || 0;
+
+              return (
+                <div
+                  key={task.id}
+                  className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h4 className="text-lg font-bold text-gray-900">{itemName}</h4>
+                        {task.is_popular && (
+                          <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs font-bold rounded">
+                            🔥 Popular Item
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-4 mt-3">
+                        <div>
+                          <p className="text-xs font-medium text-gray-500 uppercase">Quantity to Prep</p>
+                          <p className="text-2xl font-bold text-blue-600 mt-1">
+                            {quantity} {unit}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-gray-500 uppercase">Smart Factor</p>
+                          <p className="text-2xl font-bold text-purple-600 mt-1">{smartFactor}x</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-gray-500 uppercase">Estimated Cost</p>
+                          <p className="text-2xl font-bold text-green-600 mt-1">
+                            ${estimatedCost.toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-3">
+                        <span className="inline-block px-3 py-1 bg-gray-100 text-gray-700 text-sm font-semibold rounded">
+                          {category}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2 ml-4">
+                      <button
+                        onClick={() => setSelectedTask(task)}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-sm whitespace-nowrap"
+                      >
+                        View Details
+                      </button>
+                      <button
+                        onClick={() => handleRemoveItem(task.id, itemName)}
+                        disabled={removing === task.id}
+                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold text-sm whitespace-nowrap flex items-center gap-2 justify-center disabled:opacity-50"
+                      >
+                        <Trash2 size={16} />
+                        {removing === task.id ? 'Removing...' : 'Remove'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      ))}
+
+      {/* Detail Modal */}
+      {selectedTask && (
+        <PrepItemDetailModal
+          task={selectedTask}
+          prepSchedule={prepSchedule}
+          onClose={() => setSelectedTask(null)}
+        />
+      )}
     </div>
   );
 };
