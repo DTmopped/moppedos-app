@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,15 +8,13 @@ import {
   Cake,
   Package,
   AlertCircle,
-  CheckCircle,
-  Clock,
-  DollarSign,
   TrendingUp
 } from 'lucide-react';
+import PrepItemDetailModal from './PrepItemDetailModal';
 
 const STATION_ICONS = {
   'Smoker': Beef,
-  'Hot Line': Beef,
+  'Hot Sides': Package,
   'Cold Prep': Salad,
   'Dessert': Cake,
   'Proteins': Beef,
@@ -27,7 +25,7 @@ const STATION_ICONS = {
 
 const STATION_COLORS = {
   'Smoker': 'border-red-200 bg-red-50',
-  'Hot Line': 'border-orange-200 bg-orange-50',
+  'Hot Sides': 'border-orange-200 bg-orange-50',
   'Cold Prep': 'border-green-200 bg-green-50',
   'Dessert': 'border-pink-200 bg-pink-50',
   'Proteins': 'border-red-200 bg-red-50',
@@ -37,6 +35,14 @@ const STATION_COLORS = {
 };
 
 const PrepStationView = ({ prepTasks, selectedStation, setSelectedStation }) => {
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
+  const handleViewDetails = (task) => {
+    setSelectedTask(task);
+    setIsDetailModalOpen(true);
+  };
+
   if (!prepTasks || prepTasks.length === 0) {
     return (
       <div className="text-center py-12 text-gray-500">
@@ -60,66 +66,79 @@ const PrepStationView = ({ prepTasks, selectedStation, setSelectedStation }) => 
     : stations.filter(s => s === selectedStation);
 
   return (
-    <div className="space-y-6">
-      {/* Station Filter */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <Button
-          variant={selectedStation === 'all' ? 'default' : 'outline'}
-          onClick={() => setSelectedStation('all')}
-          size="sm"
-        >
-          All Stations
-        </Button>
-        {stations.map(station => (
+    <>
+      <div className="space-y-6">
+        {/* Station Filter */}
+        <div className="flex items-center gap-2 flex-wrap">
           <Button
-            key={station}
-            variant={selectedStation === station ? 'default' : 'outline'}
-            onClick={() => setSelectedStation(station)}
+            variant={selectedStation === 'all' ? 'default' : 'outline'}
+            onClick={() => setSelectedStation('all')}
             size="sm"
           >
-            {station}
+            All Stations
           </Button>
-        ))}
+          {stations.map(station => (
+            <Button
+              key={station}
+              variant={selectedStation === station ? 'default' : 'outline'}
+              onClick={() => setSelectedStation(station)}
+              size="sm"
+            >
+              {station}
+            </Button>
+          ))}
+        </div>
+
+        {/* Station Cards */}
+        {filteredStations.map(stationName => {
+          const tasks = tasksByStation[stationName];
+          const StationIcon = STATION_ICONS[stationName] || Package;
+          const stationColor = STATION_COLORS[stationName] || 'border-gray-200 bg-gray-50';
+
+          return (
+            <Card key={stationName} className={`${stationColor} border-2`}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <StationIcon className="h-6 w-6" />
+                    <CardTitle className="text-xl">{stationName}</CardTitle>
+                    <Badge variant="secondary">{tasks.length} items</Badge>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-600">Station Total</p>
+                    <p className="text-xl font-bold">
+                      ${tasks.reduce((sum, t) => sum + (t.estimated_cost || 0), 0).toFixed(0)}
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {tasks.map(task => (
+                    <PrepTaskCard 
+                      key={task.id} 
+                      task={task}
+                      onViewDetails={() => handleViewDetails(task)}
+                    />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
-      {/* Station Cards */}
-      {filteredStations.map(stationName => {
-        const tasks = tasksByStation[stationName];
-        const StationIcon = STATION_ICONS[stationName] || Package;
-        const stationColor = STATION_COLORS[stationName] || 'border-gray-200 bg-gray-50';
-
-        return (
-          <Card key={stationName} className={`${stationColor} border-2`}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <StationIcon className="h-6 w-6" />
-                  <CardTitle className="text-xl">{stationName}</CardTitle>
-                  <Badge variant="secondary">{tasks.length} items</Badge>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-600">Station Total</p>
-                  <p className="text-xl font-bold">
-                    ${tasks.reduce((sum, t) => sum + (t.estimated_cost || 0), 0).toFixed(0)}
-                  </p>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {tasks.map(task => (
-                  <PrepTaskCard key={task.id} task={task} />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
-    </div>
+      {/* Detail Modal */}
+      <PrepItemDetailModal
+        task={selectedTask}
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+      />
+    </>
   );
 };
 
-const PrepTaskCard = ({ task }) => {
+const PrepTaskCard = ({ task, onViewDetails }) => {
   // Extract menu item info
   const menuItemName = task.menu_items?.name || task.menu_item_name || 'Unknown Item';
   const category = task.menu_items?.category_normalized || task.category || '';
@@ -134,7 +153,7 @@ const PrepTaskCard = ({ task }) => {
   const confidence = task.confidence_level || 0;
   
   const isHighPriority = smartFactor > 1.2;
-  const isPopular = category === 'Proteins' || category === 'proteins';
+  const isPopular = category === 'Proteins' || category === 'proteins' || category === 'protein';
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
@@ -212,6 +231,7 @@ const PrepTaskCard = ({ task }) => {
             variant="outline"
             size="sm"
             className="whitespace-nowrap"
+            onClick={onViewDetails}
           >
             View Details
           </Button>
