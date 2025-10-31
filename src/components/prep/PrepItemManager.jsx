@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from '@/supabaseClient';
 
 const PrepItemManager = ({ prepSchedule, prepTasks, onItemsUpdated }) => {
   const [showAddModal, setShowAddModal] = useState(false);
