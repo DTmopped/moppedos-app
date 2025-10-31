@@ -84,20 +84,28 @@ const SmartPrepGuide = () => {
                 </button>
 
                 {showExportMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
-                    <button
-                      onClick={handleExportPrint}
-                      className="w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors flex items-center gap-2"
-                    >
-                      🖨️ Print Prep List
-                    </button>
-                    <button
-                      onClick={handleExportCSV}
-                      className="w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors flex items-center gap-2"
-                    >
-                      📊 Download CSV
-                    </button>
-                  </div>
+                  <>
+                    {/* Backdrop */}
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setShowExportMenu(false)}
+                    />
+                    {/* Dropdown Menu */}
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                      <button
+                        onClick={handleExportPrint}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors flex items-center gap-2"
+                      >
+                        🖨️ Print Prep List
+                      </button>
+                      <button
+                        onClick={handleExportCSV}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors flex items-center gap-2"
+                      >
+                        📊 Download CSV
+                      </button>
+                    </div>
+                  </>
                 )}
               </div>
 
@@ -243,14 +251,6 @@ const SmartPrepGuide = () => {
           </>
         )}
       </div>
-
-      {/* Click outside to close export menu */}
-      {showExportMenu && (
-        <div
-          className="fixed inset-0 z-10"
-          onClick={() => setShowExportMenu(false)}
-        />
-      )}
     </div>
   );
 };
