@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Calendar, RefreshCw, Download, ChevronDown } from 'lucide-react';
-import useSmartPrepLogic from '../hooks/useSmartPrepLogic';
+import { useSmartPrepLogic } from '../hooks/useSmartPrepLogic';
 import PrepStationView from './prep/PrepStationView';
 import RethermSchedule from './prep/RethermSchedule';
 import FinancialImpactDashboard from './prep/FinancialImpactDashboard';
