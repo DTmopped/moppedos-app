@@ -1,46 +1,31 @@
 import React, { useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Edit2, Check, X } from 'lucide-react';
 import PrepItemDetailModal from './PrepItemDetailModal';
 import { supabase } from '@/supabaseClient';
 
 const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [removing, setRemoving] = useState(null);
-
-  if (!prepTasks || prepTasks.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-gray-600 text-lg">No prep schedule available for this date</p>
-      </div>
-    );
-  }
+  const [selectedStation, setSelectedStation] = useState('all');
+  const [editingTask, setEditingTask] = useState(null);
+  const [editedQuantity, setEditedQuantity] = useState('');
 
   // Group tasks by station
-  const tasksByStation = prepTasks.reduce((acc, task) => {
-    const stationName = task.prep_stations?.name || task.station_name || 'Unknown Station';
+  const groupedTasks = prepTasks?.reduce((acc, task) => {
+    const stationName = task.prep_stations?.name || 'Other';
     if (!acc[stationName]) {
       acc[stationName] = [];
     }
     acc[stationName].push(task);
     return acc;
-  }, {});
+  }, {}) || {};
 
-  // Station colors
-  const stationColors = {
-    'Smoker': 'bg-red-50 border-red-200',
-    'Hot Sides': 'bg-orange-50 border-orange-200',
-    'Cold Prep': 'bg-green-50 border-green-200',
-    'Dessert': 'bg-pink-50 border-pink-200',
-  };
-
-  // Handle remove item
-  const handleRemoveItem = async (taskId, itemName) => {
-    if (!confirm(`Are you sure you want to remove "${itemName}" from the prep list?`)) {
+  const handleRemove = async (taskId) => {
+    if (!window.confirm('Are you sure you want to remove this item from the prep list?')) {
       return;
     }
 
     setRemoving(taskId);
-
     try {
       const { error } = await supabase
         .from('prep_tasks')
@@ -49,145 +34,200 @@ const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
 
       if (error) throw error;
 
-      // Notify parent to refresh
       if (onItemRemoved) {
         onItemRemoved();
       }
-
-      alert(`Removed ${itemName} from prep list`);
     } catch (error) {
-      console.error('Error removing item:', error);
-      alert('Failed to remove item');
+      console.error('Error removing prep task:', error);
+      alert('Failed to remove item. Please try again.');
     } finally {
       setRemoving(null);
     }
   };
 
-  // Calculate station total cost
-  const getStationTotal = (tasks) => {
-    return tasks.reduce((sum, task) => sum + (task.estimated_cost || 0), 0);
+  const startEditing = (task) => {
+    setEditingTask(task.id);
+    setEditedQuantity(task.quantity.toString());
   };
+
+  const cancelEditing = () => {
+    setEditingTask(null);
+    setEditedQuantity('');
+  };
+
+  const saveQuantity = async (taskId) => {
+    const newQuantity = parseFloat(editedQuantity);
+    
+    if (isNaN(newQuantity) || newQuantity <= 0) {
+      alert('Please enter a valid quantity greater than 0');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('prep_tasks')
+        .update({ quantity: newQuantity })
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      setEditingTask(null);
+      setEditedQuantity('');
+      
+      if (onItemRemoved) {
+        onItemRemoved(); // Refresh data
+      }
+    } catch (error) {
+      console.error('Error updating quantity:', error);
+      alert('Failed to update quantity. Please try again.');
+    }
+  };
+
+  // Filter tasks by selected station
+  const filteredGroupedTasks = selectedStation === 'all' 
+    ? groupedTasks 
+    : { [selectedStation]: groupedTasks[selectedStation] || [] };
+
+  const stations = ['all', ...Object.keys(groupedTasks).sort()];
+
+  if (!prepTasks || prepTasks.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-500 text-lg">No prep tasks scheduled for this date</p>
+        <p className="text-gray-400 mt-2">Add items to get started</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Station Filter Buttons */}
-      <div className="flex gap-2 flex-wrap">
-        <button className="px-4 py-2 bg-gray-900 text-white rounded-lg font-semibold">
-          All Stations
-        </button>
-        {Object.keys(tasksByStation).map(station => (
+      <div className="flex flex-wrap gap-2 mb-6">
+        {stations.map((station) => (
           <button
             key={station}
-            className="px-4 py-2 bg-white border-2 border-gray-200 rounded-lg hover:border-gray-400 transition-colors font-semibold"
+            onClick={() => setSelectedStation(station)}
+            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+              selectedStation === station
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+            }`}
           >
-            {station}
+            {station === 'all' ? 'All Stations' : station}
           </button>
         ))}
       </div>
 
-      {/* Stations */}
-      {Object.entries(tasksByStation).map(([stationName, tasks]) => (
-        <div
-          key={stationName}
-          className={`border-2 rounded-lg overflow-hidden ${stationColors[stationName] || 'bg-gray-50 border-gray-200'}`}
-        >
-          {/* Station Header */}
-          <div className="flex items-center justify-between p-4 bg-white bg-opacity-50 border-b-2 border-inherit">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">
-                {stationName === 'Smoker' && '🔥'}
-                {stationName === 'Hot Sides' && '🍲'}
-                {stationName === 'Cold Prep' && '🥗'}
-                {stationName === 'Dessert' && '🍰'}
-              </span>
-              <div>
-                <h3 className="text-xl font-bold text-gray-900">{stationName}</h3>
-                <p className="text-sm text-gray-600">{tasks.length} items</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-sm font-medium text-gray-600">Station Total</p>
-              <p className="text-2xl font-bold text-gray-900">
-                ${getStationTotal(tasks).toFixed(0)}
-              </p>
-            </div>
-          </div>
+      {/* Prep Tasks by Station */}
+      {Object.entries(filteredGroupedTasks).map(([stationName, tasks]) => {
+        if (!tasks || tasks.length === 0) return null;
 
-          {/* Station Items */}
-          <div className="p-4 space-y-3">
-            {tasks.map(task => {
-              const itemName = task.menu_items?.name || task.menu_item_name || 'Unknown Item';
-              const category = task.menu_items?.category_normalized || task.category || '';
-              const quantity = task.prep_quantity || task.quantity || task.adjusted_quantity || 0;
-              const unit = task.prep_unit || task.unit || task.menu_items?.base_unit || 'lbs';
-              const smartFactor = (task.smart_factor || task.multiplier || 1.0).toFixed(2);
-              const estimatedCost = task.estimated_cost || 0;
+        return (
+          <div key={stationName} className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-bold text-gray-900">{stationName}</h3>
+              <p className="text-sm text-gray-500">{tasks.length} items</p>
+            </div>
 
-              return (
+            <div className="divide-y divide-gray-200">
+              {tasks.map((task) => (
                 <div
                   key={task.id}
-                  className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
+                  className="px-6 py-4 hover:bg-gray-50 transition-colors"
                 >
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h4 className="text-lg font-bold text-gray-900">{itemName}</h4>
-                        {task.is_popular && (
-                          <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs font-bold rounded">
-                            🔥 Popular Item
+                      <div className="flex items-center gap-3">
+                        <h4 className="text-base font-semibold text-gray-900">
+                          {task.menu_items?.name || 'Unknown Item'}
+                        </h4>
+                        {task.menu_items?.category_normalized && (
+                          <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded">
+                            {task.menu_items.category_normalized}
                           </span>
                         )}
                       </div>
 
-                      <div className="grid grid-cols-3 gap-4 mt-3">
-                        <div>
-                          <p className="text-xs font-medium text-gray-500 uppercase">Quantity to Prep</p>
-                          <p className="text-2xl font-bold text-blue-600 mt-1">
-                            {quantity} {unit}
-                          </p>
+                      <div className="mt-2 flex items-center gap-4">
+                        {/* Editable Quantity */}
+                        <div className="flex items-center gap-2">
+                          {editingTask === task.id ? (
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="number"
+                                value={editedQuantity}
+                                onChange={(e) => setEditedQuantity(e.target.value)}
+                                className="w-24 px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                autoFocus
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') saveQuantity(task.id);
+                                  if (e.key === 'Escape') cancelEditing();
+                                }}
+                              />
+                              <span className="text-sm text-gray-600">{task.unit}</span>
+                              <button
+                                onClick={() => saveQuantity(task.id)}
+                                className="p-1 text-green-600 hover:bg-green-50 rounded"
+                                title="Save"
+                              >
+                                <Check size={16} />
+                              </button>
+                              <button
+                                onClick={cancelEditing}
+                                className="p-1 text-red-600 hover:bg-red-50 rounded"
+                                title="Cancel"
+                              >
+                                <X size={16} />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <span className="text-2xl font-bold text-blue-600">
+                                {task.quantity}
+                              </span>
+                              <span className="text-sm text-gray-600">{task.unit}</span>
+                              <button
+                                onClick={() => startEditing(task)}
+                                className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                                title="Edit quantity"
+                              >
+                                <Edit2 size={14} />
+                              </button>
+                            </div>
+                          )}
                         </div>
-                        <div>
-                          <p className="text-xs font-medium text-gray-500 uppercase">Smart Factor</p>
-                          <p className="text-2xl font-bold text-purple-600 mt-1">{smartFactor}x</p>
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium text-gray-500 uppercase">Estimated Cost</p>
-                          <p className="text-2xl font-bold text-green-600 mt-1">
-                            ${estimatedCost.toFixed(2)}
-                          </p>
-                        </div>
-                      </div>
 
-                      <div className="mt-3">
-                        <span className="inline-block px-3 py-1 bg-gray-100 text-gray-700 text-sm font-semibold rounded">
-                          {category}
-                        </span>
+                        {task.notes && (
+                          <div className="text-sm text-gray-600">
+                            <span className="font-medium">Notes:</span> {task.notes}
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-2 ml-4">
+                    <div className="flex items-center gap-2 ml-4">
                       <button
                         onClick={() => setSelectedTask(task)}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-sm whitespace-nowrap"
+                        className="px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                       >
                         View Details
                       </button>
                       <button
-                        onClick={() => handleRemoveItem(task.id, itemName)}
+                        onClick={() => handleRemove(task.id)}
                         disabled={removing === task.id}
-                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold text-sm whitespace-nowrap flex items-center gap-2 justify-center disabled:opacity-50"
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                        title="Remove item"
                       >
-                        <Trash2 size={16} />
-                        {removing === task.id ? 'Removing...' : 'Remove'}
+                        <Trash2 size={18} />
                       </button>
                     </div>
                   </div>
                 </div>
-              );
-            })}
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
 
       {/* Detail Modal */}
       {selectedTask && (
