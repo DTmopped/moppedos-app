@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import PrepItemDetailModal from './PrepItemDetailModal';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from '@/supabaseClient';
 
 const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
   const [selectedTask, setSelectedTask] = useState(null);
