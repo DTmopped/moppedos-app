@@ -1,5 +1,5 @@
-// Export prep list functionality - FIXED VERSION
-// Correctly accesses quantity fields and improved print layout
+// Export prep list functionality - FINAL VERSION
+// CSV export with station grouping to match print layout
 
 export const exportPrepListToCSV = (prepTasks, prepSchedule) => {
   if (!prepTasks || prepTasks.length === 0) {
@@ -7,38 +7,40 @@ export const exportPrepListToCSV = (prepTasks, prepSchedule) => {
     return;
   }
 
-  // Prepare CSV content
-  const headers = [
-    'Station',
-    'Item Name',
-    'Category',
-    'Quantity',
-    'Unit',
-    'Smart Factor',
-    'Notes'
-  ];
-
-  const rows = prepTasks.map(task => {
+  // Group by station (same as print)
+  const tasksByStation = prepTasks.reduce((acc, task) => {
     const stationName = task.prep_stations?.name || task.station_name || 'Unknown';
-    const itemName = task.menu_items?.name || task.menu_item_name || 'Unknown';
-    const category = task.menu_items?.category_normalized || task.category || '';
-    
-    // FIX: Access quantity correctly - try multiple possible field names
-    const quantity = task.prep_quantity || task.quantity || task.adjusted_quantity || 0;
-    const unit = task.prep_unit || task.unit || task.menu_items?.base_unit || 'lbs';
-    const smartFactor = (task.smart_factor || task.multiplier || 1.0).toFixed(2);
+    if (!acc[stationName]) acc[stationName] = [];
+    acc[stationName].push(task);
+    return acc;
+  }, {});
 
-    return [stationName, itemName, category, quantity, unit, smartFactor + 'x', ''];
-  });
-
-  // Create CSV content
-  const csvContent = [
+  // Build CSV content with station grouping
+  const csvLines = [
     `Prep List for ${prepSchedule?.date || 'Unknown Date'}`,
     `Expected Guests: ${prepSchedule?.expected_guests || 0}`,
-    '',
-    headers.join(','),
-    ...rows.map(row => row.join(','))
-  ].join('\n');
+    ''
+  ];
+
+  // Add each station as a section
+  Object.entries(tasksByStation).forEach(([stationName, tasks]) => {
+    csvLines.push(`Station,${stationName}`);
+    csvLines.push('Item Name,Category,Quantity,Unit,Smart Factor,Notes');
+    
+    tasks.forEach(task => {
+      const itemName = task.menu_items?.name || task.menu_item_name || 'Unknown';
+      const category = task.menu_items?.category_normalized || task.category || '';
+      const quantity = task.prep_quantity || task.quantity || task.adjusted_quantity || 0;
+      const unit = task.prep_unit || task.unit || task.menu_items?.base_unit || 'lb';
+      const smartFactor = (task.smart_factor || task.multiplier || 1.0).toFixed(2);
+      
+      csvLines.push(`"${itemName}","${category}",${quantity},${unit},${smartFactor}x,`);
+    });
+    
+    csvLines.push(''); // Empty line between stations
+  });
+
+  const csvContent = csvLines.join('\n');
 
   // Create download link
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -67,6 +69,15 @@ export const exportPrepListToPrint = (prepTasks, prepSchedule) => {
     acc[stationName].push(task);
     return acc;
   }, {});
+
+  // Station color mapping
+  const stationColors = {
+    'Smoker': { gradient: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)', text: 'white' },
+    'Hot Sides': { gradient: 'linear-gradient(135deg, #ea580c 0%, #f97316 100%)', text: 'white' },
+    'Cold Prep': { gradient: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', text: 'white' },
+    'Dessert': { gradient: 'linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%)', text: 'white' },
+    'Other': { gradient: 'linear-gradient(135deg, #6b7280 0%, #9ca3af 100%)', text: 'white' }
+  };
 
   // Create printable HTML with improved layout
   const printWindow = window.open('', '_blank');
@@ -129,7 +140,6 @@ export const exportPrepListToPrint = (prepTasks, prepSchedule) => {
         }
         
         .station-header {
-          background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
           color: white;
           padding: 18px 25px;
           margin-bottom: 0;
@@ -267,9 +277,11 @@ export const exportPrepListToPrint = (prepTasks, prepSchedule) => {
         </div>
       </div>
 
-      ${Object.entries(tasksByStation).map(([stationName, tasks]) => `
+      ${Object.entries(tasksByStation).map(([stationName, tasks]) => {
+        const colors = stationColors[stationName] || stationColors['Other'];
+        return `
         <div class="station">
-          <div class="station-header">
+          <div class="station-header" style="background: ${colors.gradient}; color: ${colors.text};">
             <span>${stationName}</span>
             <span>${tasks.length} items</span>
           </div>
@@ -288,10 +300,8 @@ export const exportPrepListToPrint = (prepTasks, prepSchedule) => {
               ${tasks.map(task => {
                 const itemName = task.menu_items?.name || task.menu_item_name || 'Unknown';
                 const category = task.menu_items?.category_normalized || task.category || '';
-                
-                // FIX: Access quantity correctly - try multiple possible field names
                 const quantity = task.prep_quantity || task.quantity || task.adjusted_quantity || 0;
-                const unit = task.prep_unit || task.unit || task.menu_items?.base_unit || 'lbs';
+                const unit = task.prep_unit || task.unit || task.menu_items?.base_unit || 'lb';
                 const smartFactor = (task.smart_factor || task.multiplier || 1.0).toFixed(2);
 
                 return `
@@ -311,7 +321,8 @@ export const exportPrepListToPrint = (prepTasks, prepSchedule) => {
             </tbody>
           </table>
         </div>
-      `).join('')}
+      `;
+      }).join('')}
 
       <div class="footer">
         <p>Prepared by Mopped OS • Smart Prep Guide</p>
