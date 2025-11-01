@@ -112,7 +112,9 @@ const AddNewMenuItemWizard = ({ tenantId, onItemCreated }) => {
     <>
       <button
         onClick={() => setShowWizard(true)}
-        className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold shadow-md"
+        disabled={!tenantId}
+        className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+        title={!tenantId ? 'Loading tenant information...' : 'Add new menu item'}
       >
         <Plus size={20} />
         Add New Menu Item
