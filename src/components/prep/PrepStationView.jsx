@@ -56,7 +56,7 @@ const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
 
   const startEditingQuantity = (task) => {
     setEditingQuantity(task.id);
-    setEditedQuantity(task.quantity?.toString() || '0');
+    setEditedQuantity(task.prep_quantity?.toString() || '0');
   };
 
   const cancelEditingQuantity = () => {
@@ -75,7 +75,7 @@ const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
     try {
       const { error } = await supabase
         .from('prep_tasks')
-        .update({ quantity: newQuantity })
+        .update({ prep_quantity: newQuantity })
         .eq('id', taskId);
 
       if (error) throw error;
@@ -84,7 +84,7 @@ const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
       setEditedQuantity('');
       
       if (onItemRemoved) {
-        onItemRemoved(); // Refresh data
+        onItemRemoved();
       }
     } catch (error) {
       console.error('Error updating quantity:', error);
@@ -115,7 +115,7 @@ const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
       setEditedNotes('');
       
       if (onItemRemoved) {
-        onItemRemoved(); // Refresh data
+        onItemRemoved();
       }
     } catch (error) {
       console.error('Error updating notes:', error);
@@ -212,7 +212,7 @@ const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
                                   if (e.key === 'Escape') cancelEditingQuantity();
                                 }}
                               />
-                              <span className="text-sm font-medium text-gray-600">{task.unit || 'units'}</span>
+                              <span className="text-sm font-medium text-gray-600">{task.prep_unit || task.menu_items?.base_unit || 'units'}</span>
                               <button
                                 onClick={() => saveQuantity(task.id)}
                                 className="p-1.5 text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
@@ -231,9 +231,9 @@ const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
                           ) : (
                             <div className="flex items-center gap-2">
                               <span className={`text-2xl font-bold ${colors.text}`}>
-                                {task.quantity || 0}
+                                {task.prep_quantity || 0}
                               </span>
-                              <span className="text-base font-medium text-gray-600">{task.unit || 'units'}</span>
+                              <span className="text-base font-medium text-gray-600">{task.prep_unit || task.menu_items?.base_unit || 'units'}</span>
                               <button
                                 onClick={() => startEditingQuantity(task)}
                                 className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -245,12 +245,22 @@ const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
                           )}
                         </div>
 
-                        {/* Portion Size */}
-                        {task.menu_items?.portion_size && (
+                        {/* Par Level if available */}
+                        {task.par_level && (
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-gray-600">Portion:</span>
+                            <span className="text-sm font-medium text-gray-600">Par Level:</span>
                             <span className="text-sm font-semibold text-gray-800">
-                              {task.menu_items.portion_size} {task.menu_items.portion_unit || 'per guest'}
+                              {task.par_level} {task.prep_unit || task.menu_items?.base_unit || 'units'}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* On Hand if available */}
+                        {task.on_hand !== null && task.on_hand !== undefined && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-gray-600">On Hand:</span>
+                            <span className="text-sm font-semibold text-gray-800">
+                              {task.on_hand} {task.prep_unit || task.menu_items?.base_unit || 'units'}
                             </span>
                           </div>
                         )}
