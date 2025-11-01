@@ -83,7 +83,7 @@ export const useSmartPrepLogic = () => {
         console.log('Prep schedule found:', schedule);
         setPrepSchedule(schedule);
 
-        // Fetch prep tasks for this schedule
+        // Fetch prep tasks for this schedule with complete menu_items data
         const { data: tasks, error: tasksError } = await supabase
           .from('prep_tasks')
           .select(`
@@ -92,7 +92,10 @@ export const useSmartPrepLogic = () => {
               id,
               name,
               category_normalized,
-              base_unit
+              base_unit,
+              portion_size,
+              portion_unit,
+              cost_per_unit
             ),
             prep_stations (
               id,
