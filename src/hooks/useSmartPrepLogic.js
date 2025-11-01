@@ -64,7 +64,7 @@ export const useSmartPrepLogic = () => {
           .select('*')
           .eq('tenant_id', tenantId)
           .eq('date', selectedDate)
-          .maybeSingle(); // Use maybeSingle instead of single to avoid error when no rows
+          .maybeSingle();
 
         if (scheduleError) {
           console.error('Error fetching schedule:', scheduleError);
@@ -83,7 +83,7 @@ export const useSmartPrepLogic = () => {
         console.log('Prep schedule found:', schedule);
         setPrepSchedule(schedule);
 
-        // Fetch prep tasks for this schedule with complete menu_items data
+        // Fetch prep tasks with only existing fields
         const { data: tasks, error: tasksError } = await supabase
           .from('prep_tasks')
           .select(`
@@ -92,10 +92,7 @@ export const useSmartPrepLogic = () => {
               id,
               name,
               category_normalized,
-              base_unit,
-              portion_size,
-              portion_unit,
-              cost_per_unit
+              base_unit
             ),
             prep_stations (
               id,
@@ -121,7 +118,6 @@ export const useSmartPrepLogic = () => {
 
         if (financialError) {
           console.error('Error fetching financial data:', financialError);
-          // Don't throw - financial data is optional
         }
 
         console.log('Financial data found:', financial);
@@ -140,9 +136,7 @@ export const useSmartPrepLogic = () => {
 
   const refreshData = () => {
     if (tenantId && selectedDate) {
-      // Trigger re-fetch by updating loading state
       setLoading(true);
-      // The useEffect will automatically re-run
     }
   };
 
