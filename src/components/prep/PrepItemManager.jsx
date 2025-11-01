@@ -60,10 +60,9 @@ const PrepItemManager = ({ prepSchedule, prepTasks, onItemsUpdated }) => {
         schedule_id: prepSchedule.id,
         menu_item_id: menuItem.id,
         station_id: stations?.id,
-        quantity: quantity,
-        unit: menuItem.base_unit,
-        notes: notes || null,
-        is_completed: false
+        prep_quantity: quantity,
+        prep_unit: menuItem.base_unit,
+        notes: notes || null
       };
 
       const { error } = await supabase
