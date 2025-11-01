@@ -1,22 +1,22 @@
 import React, { useState } from 'react';
-import { Trash2, Edit2, Check, X } from 'lucide-react';
-import PrepItemDetailModal from './PrepItemDetailModal';
+import { Trash2, Edit2, Check, X, FileText } from 'lucide-react';
 import { supabase } from '@/supabaseClient';
 
 const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
-  const [selectedTask, setSelectedTask] = useState(null);
   const [removing, setRemoving] = useState(null);
   const [selectedStation, setSelectedStation] = useState('all');
-  const [editingTask, setEditingTask] = useState(null);
+  const [editingQuantity, setEditingQuantity] = useState(null);
+  const [editingNotes, setEditingNotes] = useState(null);
   const [editedQuantity, setEditedQuantity] = useState('');
+  const [editedNotes, setEditedNotes] = useState('');
 
   // Station color mapping
   const stationColors = {
-    'Smoker': { bg: 'bg-blue-600', hover: 'hover:bg-blue-700', border: 'border-blue-200' },
-    'Hot Sides': { bg: 'bg-orange-600', hover: 'hover:bg-orange-700', border: 'border-orange-200' },
-    'Cold Prep': { bg: 'bg-green-600', hover: 'hover:bg-green-700', border: 'border-green-200' },
-    'Dessert': { bg: 'bg-purple-600', hover: 'hover:bg-purple-700', border: 'border-purple-200' },
-    'Other': { bg: 'bg-gray-600', hover: 'hover:bg-gray-700', border: 'border-gray-200' }
+    'Smoker': { bg: 'bg-blue-600', hover: 'hover:bg-blue-700', border: 'border-blue-200', text: 'text-blue-600' },
+    'Hot Sides': { bg: 'bg-orange-600', hover: 'hover:bg-orange-700', border: 'border-orange-200', text: 'text-orange-600' },
+    'Cold Prep': { bg: 'bg-green-600', hover: 'hover:bg-green-700', border: 'border-green-200', text: 'text-green-600' },
+    'Dessert': { bg: 'bg-purple-600', hover: 'hover:bg-purple-700', border: 'border-purple-200', text: 'text-purple-600' },
+    'Other': { bg: 'bg-gray-600', hover: 'hover:bg-gray-700', border: 'border-gray-200', text: 'text-gray-600' }
   };
 
   // Group tasks by station
@@ -54,13 +54,13 @@ const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
     }
   };
 
-  const startEditing = (task) => {
-    setEditingTask(task.id);
-    setEditedQuantity(task.quantity.toString());
+  const startEditingQuantity = (task) => {
+    setEditingQuantity(task.id);
+    setEditedQuantity(task.quantity?.toString() || '0');
   };
 
-  const cancelEditing = () => {
-    setEditingTask(null);
+  const cancelEditingQuantity = () => {
+    setEditingQuantity(null);
     setEditedQuantity('');
   };
 
@@ -80,7 +80,7 @@ const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
 
       if (error) throw error;
 
-      setEditingTask(null);
+      setEditingQuantity(null);
       setEditedQuantity('');
       
       if (onItemRemoved) {
@@ -89,6 +89,37 @@ const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
     } catch (error) {
       console.error('Error updating quantity:', error);
       alert('Failed to update quantity. Please try again.');
+    }
+  };
+
+  const startEditingNotes = (task) => {
+    setEditingNotes(task.id);
+    setEditedNotes(task.notes || '');
+  };
+
+  const cancelEditingNotes = () => {
+    setEditingNotes(null);
+    setEditedNotes('');
+  };
+
+  const saveNotes = async (taskId) => {
+    try {
+      const { error } = await supabase
+        .from('prep_tasks')
+        .update({ notes: editedNotes })
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      setEditingNotes(null);
+      setEditedNotes('');
+      
+      if (onItemRemoved) {
+        onItemRemoved(); // Refresh data
+      }
+    } catch (error) {
+      console.error('Error updating notes:', error);
+      alert('Failed to update notes. Please try again.');
     }
   };
 
@@ -145,48 +176,53 @@ const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
               {tasks.map((task) => (
                 <div
                   key={task.id}
-                  className="px-6 py-4 hover:bg-gray-50 transition-colors"
+                  className="px-6 py-5 hover:bg-gray-50 transition-colors"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
+                  <div className="flex items-start justify-between gap-4">
+                    {/* Left Side - Item Details */}
+                    <div className="flex-1 space-y-3">
+                      {/* Item Name & Category */}
                       <div className="flex items-center gap-3">
-                        <h4 className="text-base font-semibold text-gray-900">
+                        <h4 className="text-lg font-bold text-gray-900">
                           {task.menu_items?.name || 'Unknown Item'}
                         </h4>
                         {task.menu_items?.category_normalized && (
-                          <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded">
+                          <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded uppercase">
                             {task.menu_items.category_normalized}
                           </span>
                         )}
                       </div>
 
-                      <div className="mt-2 flex items-center gap-4">
+                      {/* Quantity Row */}
+                      <div className="flex items-center gap-6">
                         {/* Editable Quantity */}
                         <div className="flex items-center gap-2">
-                          {editingTask === task.id ? (
+                          <span className="text-sm font-medium text-gray-600 w-20">Quantity:</span>
+                          {editingQuantity === task.id ? (
                             <div className="flex items-center gap-2">
                               <input
                                 type="number"
+                                step="0.1"
                                 value={editedQuantity}
                                 onChange={(e) => setEditedQuantity(e.target.value)}
-                                className="w-24 px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-24 px-3 py-1 border-2 border-blue-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-bold text-lg"
                                 autoFocus
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') saveQuantity(task.id);
-                                  if (e.key === 'Escape') cancelEditing();
+                                  if (e.key === 'Escape') cancelEditingQuantity();
                                 }}
                               />
-                              <span className="text-sm text-gray-600">{task.unit}</span>
+                              <span className="text-sm font-medium text-gray-600">{task.unit || 'units'}</span>
                               <button
                                 onClick={() => saveQuantity(task.id)}
-                                className="p-1 text-green-600 hover:bg-green-50 rounded"
+                                className="p-1.5 text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
                                 title="Save"
                               >
                                 <Check size={16} />
                               </button>
                               <button
-                                onClick={cancelEditing}
-                                className="p-1 text-red-600 hover:bg-red-50 rounded"
+                                onClick={cancelEditingQuantity}
+                                className="p-1.5 text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
                                 title="Cancel"
                               >
                                 <X size={16} />
@@ -194,43 +230,90 @@ const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
                             </div>
                           ) : (
                             <div className="flex items-center gap-2">
-                              <span className="text-2xl font-bold text-blue-600">
-                                {task.quantity}
+                              <span className={`text-2xl font-bold ${colors.text}`}>
+                                {task.quantity || 0}
                               </span>
-                              <span className="text-sm text-gray-600">{task.unit}</span>
+                              <span className="text-base font-medium text-gray-600">{task.unit || 'units'}</span>
                               <button
-                                onClick={() => startEditing(task)}
-                                className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                                onClick={() => startEditingQuantity(task)}
+                                className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                 title="Edit quantity"
                               >
-                                <Edit2 size={14} />
+                                <Edit2 size={16} />
                               </button>
                             </div>
                           )}
                         </div>
 
-                        {task.notes && (
-                          <div className="text-sm text-gray-600">
-                            <span className="font-medium">Notes:</span> {task.notes}
+                        {/* Portion Size */}
+                        {task.menu_items?.portion_size && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-gray-600">Portion:</span>
+                            <span className="text-sm font-semibold text-gray-800">
+                              {task.menu_items.portion_size} {task.menu_items.portion_unit || 'per guest'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Notes Row */}
+                      <div className="flex items-start gap-2">
+                        <FileText size={16} className="text-gray-400 mt-1 flex-shrink-0" />
+                        {editingNotes === task.id ? (
+                          <div className="flex-1 flex items-start gap-2">
+                            <textarea
+                              value={editedNotes}
+                              onChange={(e) => setEditedNotes(e.target.value)}
+                              placeholder="Add notes or special instructions..."
+                              className="flex-1 px-3 py-2 border-2 border-blue-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[60px] text-sm"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === 'Escape') cancelEditingNotes();
+                              }}
+                            />
+                            <div className="flex flex-col gap-1">
+                              <button
+                                onClick={() => saveNotes(task.id)}
+                                className="p-1.5 text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
+                                title="Save notes"
+                              >
+                                <Check size={16} />
+                              </button>
+                              <button
+                                onClick={cancelEditingNotes}
+                                className="p-1.5 text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                                title="Cancel"
+                              >
+                                <X size={16} />
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div 
+                            onClick={() => startEditingNotes(task)}
+                            className="flex-1 cursor-pointer hover:bg-gray-100 rounded-lg px-3 py-2 transition-colors group"
+                          >
+                            {task.notes ? (
+                              <p className="text-sm text-gray-700 whitespace-pre-wrap">{task.notes}</p>
+                            ) : (
+                              <p className="text-sm text-gray-400 italic group-hover:text-gray-600">
+                                Click to add notes or special instructions...
+                              </p>
+                            )}
                           </div>
                         )}
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 ml-4">
-                      <button
-                        onClick={() => setSelectedTask(task)}
-                        className="px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      >
-                        View Details
-                      </button>
+                    {/* Right Side - Remove Button */}
+                    <div className="flex-shrink-0">
                       <button
                         onClick={() => handleRemove(task.id)}
                         disabled={removing === task.id}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
                         title="Remove item"
                       >
-                        <Trash2 size={18} />
+                        <Trash2 size={20} />
                       </button>
                     </div>
                   </div>
@@ -240,15 +323,6 @@ const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
           </div>
         );
       })}
-
-      {/* Detail Modal */}
-      {selectedTask && (
-        <PrepItemDetailModal
-          task={selectedTask}
-          prepSchedule={prepSchedule}
-          onClose={() => setSelectedTask(null)}
-        />
-      )}
     </div>
   );
 };
