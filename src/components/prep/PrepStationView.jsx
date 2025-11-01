@@ -10,6 +10,15 @@ const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
   const [editingTask, setEditingTask] = useState(null);
   const [editedQuantity, setEditedQuantity] = useState('');
 
+  // Station color mapping
+  const stationColors = {
+    'Smoker': { bg: 'bg-blue-600', hover: 'hover:bg-blue-700', border: 'border-blue-200' },
+    'Hot Sides': { bg: 'bg-orange-600', hover: 'hover:bg-orange-700', border: 'border-orange-200' },
+    'Cold Prep': { bg: 'bg-green-600', hover: 'hover:bg-green-700', border: 'border-green-200' },
+    'Dessert': { bg: 'bg-purple-600', hover: 'hover:bg-purple-700', border: 'border-purple-200' },
+    'Other': { bg: 'bg-gray-600', hover: 'hover:bg-gray-700', border: 'border-gray-200' }
+  };
+
   // Group tasks by station
   const groupedTasks = prepTasks?.reduce((acc, task) => {
     const stationName = task.prep_stations?.name || 'Other';
@@ -122,11 +131,14 @@ const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
       {Object.entries(filteredGroupedTasks).map(([stationName, tasks]) => {
         if (!tasks || tasks.length === 0) return null;
 
+        const colors = stationColors[stationName] || stationColors['Other'];
+
         return (
-          <div key={stationName} className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-bold text-gray-900">{stationName}</h3>
-              <p className="text-sm text-gray-500">{tasks.length} items</p>
+          <div key={stationName} className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+            {/* Color-coded Station Header */}
+            <div className={`${colors.bg} px-6 py-4 flex items-center justify-between`}>
+              <h3 className="text-xl font-bold text-white">{stationName}</h3>
+              <span className="text-white font-semibold">{tasks.length} items</span>
             </div>
 
             <div className="divide-y divide-gray-200">
