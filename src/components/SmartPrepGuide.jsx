@@ -5,6 +5,7 @@ import PrepStationView from './prep/PrepStationView';
 import RethermSchedule from './prep/RethermSchedule';
 import FinancialImpactDashboard from './prep/FinancialImpactDashboard';
 import PrepItemManager from './prep/PrepItemManager';
+import AddNewMenuItemWizard from './prep/AddNewMenuItemWizard';
 import { exportPrepListToCSV, exportPrepListToPrint } from '../utils/exportPrepList';
 
 const SmartPrepGuide = () => {
@@ -15,7 +16,8 @@ const SmartPrepGuide = () => {
     loading,
     selectedDate,
     setSelectedDate,
-    refreshData
+    refreshData,
+    tenantId
   } = useSmartPrepLogic();
 
   const [activeTab, setActiveTab] = useState('prep');
@@ -109,12 +111,20 @@ const SmartPrepGuide = () => {
                 )}
               </div>
 
-              {/* Add Item Button */}
+              {/* Add Item to Prep List Button */}
               {prepSchedule && (
                 <PrepItemManager
                   prepSchedule={prepSchedule}
                   prepTasks={prepTasks || []}
                   onItemsUpdated={handleItemsUpdated}
+                />
+              )}
+
+              {/* Add New Menu Item Wizard */}
+              {tenantId && (
+                <AddNewMenuItemWizard
+                  tenantId={tenantId}
+                  onItemCreated={handleItemsUpdated}
                 />
               )}
             </div>
