@@ -54,9 +54,7 @@ const AddNewMenuItemWizard = ({ tenantId, onItemCreated }) => {
           tenant_id: tenantId,
           name: itemName,
           category_normalized: category,
-          portion_size: parseFloat(portionSize),
-          base_unit: baseUnit,
-          cost_per_unit: costPerUnit ? parseFloat(costPerUnit) : null
+          base_unit: baseUnit
         }])
         .select()
         .single();
@@ -71,7 +69,7 @@ const AddNewMenuItemWizard = ({ tenantId, onItemCreated }) => {
             tenant_id: tenantId,
             menu_item_id: menuItem.id,
             base_quantity: parseFloat(initialPar),
-            unit: baseUnit,
+            base_unit: baseUnit,
             rule_type: 'fixed'
           }]);
 
