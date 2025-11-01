@@ -47,7 +47,7 @@ const SmartPrepGuide = () => {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Smart Prep Guide</h1>
               <p className="mt-1 text-sm text-gray-500">
-                AI-powered prep planning based on historical data and forecasts
+                Smart logic-based prep planning using historical data and forecasts
               </p>
             </div>
 
