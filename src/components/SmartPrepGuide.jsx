@@ -112,11 +112,13 @@ const SmartPrepGuide = () => {
               </div>
 
               {/* Add Item to Prep List Button */}
-              {prepSchedule && (
+              {tenantId && (
                 <PrepItemManager
                   prepSchedule={prepSchedule}
                   prepTasks={prepTasks || []}
                   onItemsUpdated={handleItemsUpdated}
+                  selectedDate={selectedDate}
+                  tenantId={tenantId}
                 />
               )}
 
