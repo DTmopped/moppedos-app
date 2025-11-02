@@ -124,7 +124,7 @@ const AddNewMenuItemWizard = ({ tenantId, onItemCreated, prepSchedule, selectedD
             (parseFloat(quantity) * parseFloat(costPerUnit)).toFixed(2) : 
             null;
 
-          // Add to prep_tasks
+          // Add to prep_tasks (let database handle defaults for completed, etc.)
           const { error: taskError } = await supabase
             .from('prep_tasks')
             .insert([{
@@ -134,7 +134,7 @@ const AddNewMenuItemWizard = ({ tenantId, onItemCreated, prepSchedule, selectedD
               prep_quantity: parseFloat(quantity),
               prep_unit: baseUnit,
               estimated_cost: estimatedCost,
-              completed: false
+              par_level: parseFloat(quantity) // Required field
             }]);
 
           if (taskError) {
