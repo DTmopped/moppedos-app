@@ -119,10 +119,10 @@ const AddNewMenuItemWizard = ({ tenantId, onItemCreated, prepSchedule, selectedD
             (schedule.expected_guests * parseFloat(portionSize)).toFixed(2) : 
             (initialPar || 10); // Default to par level or 10
 
-          // Calculate estimated cost if cost per unit provided
+          // Calculate estimated cost if cost per unit provided (default to 0 if not provided)
           const estimatedCost = costPerUnit ? 
-            (parseFloat(quantity) * parseFloat(costPerUnit)).toFixed(2) : 
-            null;
+            parseFloat((parseFloat(quantity) * parseFloat(costPerUnit)).toFixed(2)) : 
+            0;
 
           // Add to prep_tasks (let database handle defaults for completed, etc.)
           const { error: taskError } = await supabase
