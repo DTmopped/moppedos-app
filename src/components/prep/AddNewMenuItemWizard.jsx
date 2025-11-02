@@ -15,7 +15,7 @@ const AddNewMenuItemWizard = ({ tenantId, onItemCreated, prepSchedule, selectedD
   const [baseUnit, setBaseUnit] = useState('lb');
   const [initialPar, setInitialPar] = useState('');
   const [costPerUnit, setCostPerUnit] = useState('');
-  const [addToPrepList, setAddToPrepList] = useState(true); // NEW: checkbox to add to prep list
+  const [addToPrepList, setAddToPrepList] = useState(true);
 
   const resetForm = () => {
     setItemName('');
@@ -49,16 +49,14 @@ const AddNewMenuItemWizard = ({ tenantId, onItemCreated, prepSchedule, selectedD
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      // Create new menu item
+      // Create new menu item - ONLY insert fields that exist in schema
       const { data: menuItem, error: menuError } = await supabase
         .from('menu_items')
         .insert([{
           tenant_id: tenantId,
           name: itemName,
           category_normalized: category,
-          portion_size: parseFloat(portionSize),
-          base_unit: baseUnit,
-          cost_per_unit: costPerUnit ? parseFloat(costPerUnit) : null
+          base_unit: baseUnit
         }])
         .select()
         .single();
@@ -116,8 +114,15 @@ const AddNewMenuItemWizard = ({ tenantId, onItemCreated, prepSchedule, selectedD
             .eq('name', station)
             .single();
 
-          // Calculate quantity
-          const quantity = (schedule.expected_guests * parseFloat(portionSize)).toFixed(2);
+          // Calculate quantity based on portion size and expected guests
+          const quantity = portionSize ? 
+            (schedule.expected_guests * parseFloat(portionSize)).toFixed(2) : 
+            (initialPar || 10); // Default to par level or 10
+
+          // Calculate estimated cost if cost per unit provided
+          const estimatedCost = costPerUnit ? 
+            (parseFloat(quantity) * parseFloat(costPerUnit)).toFixed(2) : 
+            null;
 
           // Add to prep_tasks
           const { error: taskError } = await supabase
@@ -128,10 +133,14 @@ const AddNewMenuItemWizard = ({ tenantId, onItemCreated, prepSchedule, selectedD
               station_id: stationData?.id,
               prep_quantity: parseFloat(quantity),
               prep_unit: baseUnit,
+              estimated_cost: estimatedCost,
               status: 'pending'
             }]);
 
-          if (taskError) console.error('Error adding to prep list:', taskError);
+          if (taskError) {
+            console.error('Error adding to prep list:', taskError);
+            throw taskError;
+          }
         }
       }
 
@@ -144,7 +153,7 @@ const AddNewMenuItemWizard = ({ tenantId, onItemCreated, prepSchedule, selectedD
       }
     } catch (error) {
       console.error('Error creating menu item:', error);
-      alert('Failed to create menu item. Please try again.');
+      alert(`Failed to create menu item: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -176,10 +185,10 @@ const AddNewMenuItemWizard = ({ tenantId, onItemCreated, prepSchedule, selectedD
       </button>
 
       {showWizard && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full mx-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
             {/* Header */}
-            <div className="bg-purple-600 text-white px-6 py-4 flex items-center justify-between rounded-t-lg">
+            <div className="bg-purple-600 text-white px-6 py-4 flex items-center justify-between rounded-t-lg flex-shrink-0">
               <div>
                 <h2 className="text-2xl font-bold">Add New Menu Item</h2>
                 <p className="text-purple-100 text-sm mt-1">Step {currentStep} of 4</p>
@@ -193,15 +202,15 @@ const AddNewMenuItemWizard = ({ tenantId, onItemCreated, prepSchedule, selectedD
             </div>
 
             {/* Progress Bar */}
-            <div className="bg-gray-100 h-2">
+            <div className="bg-gray-100 h-2 flex-shrink-0">
               <div
                 className="bg-purple-600 h-2 transition-all duration-300"
                 style={{ width: `${(currentStep / 4) * 100}%` }}
               />
             </div>
 
-            {/* Content */}
-            <div className="p-8 min-h-[400px]">
+            {/* Content - FIXED: Added max-height and overflow */}
+            <div className="p-8 overflow-y-auto flex-1">
               {/* Step 1: Item Name */}
               {currentStep === 1 && (
                 <div className="space-y-6">
@@ -407,7 +416,7 @@ const AddNewMenuItemWizard = ({ tenantId, onItemCreated, prepSchedule, selectedD
             </div>
 
             {/* Footer Navigation */}
-            <div className="border-t border-gray-200 px-8 py-4 flex items-center justify-between bg-gray-50 rounded-b-lg">
+            <div className="border-t border-gray-200 px-8 py-4 flex items-center justify-between bg-gray-50 rounded-b-lg flex-shrink-0">
               <button
                 onClick={handleBack}
                 disabled={currentStep === 1}
