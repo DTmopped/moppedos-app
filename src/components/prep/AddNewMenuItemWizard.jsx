@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Plus, X, ArrowRight, ArrowLeft, Check } from 'lucide-react';
 import { supabase } from '@/supabaseClient';
 
-const AddNewMenuItemWizard = ({ tenantId, onItemCreated }) => {
+const AddNewMenuItemWizard = ({ tenantId, onItemCreated, prepSchedule, selectedDate }) => {
   const [showWizard, setShowWizard] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -15,6 +15,7 @@ const AddNewMenuItemWizard = ({ tenantId, onItemCreated }) => {
   const [baseUnit, setBaseUnit] = useState('lb');
   const [initialPar, setInitialPar] = useState('');
   const [costPerUnit, setCostPerUnit] = useState('');
+  const [addToPrepList, setAddToPrepList] = useState(true); // NEW: checkbox to add to prep list
 
   const resetForm = () => {
     setItemName('');
@@ -24,6 +25,7 @@ const AddNewMenuItemWizard = ({ tenantId, onItemCreated }) => {
     setBaseUnit('lb');
     setInitialPar('');
     setCostPerUnit('');
+    setAddToPrepList(true);
     setCurrentStep(1);
   };
 
@@ -54,7 +56,9 @@ const AddNewMenuItemWizard = ({ tenantId, onItemCreated }) => {
           tenant_id: tenantId,
           name: itemName,
           category_normalized: category,
-          base_unit: baseUnit
+          portion_size: parseFloat(portionSize),
+          base_unit: baseUnit,
+          cost_per_unit: costPerUnit ? parseFloat(costPerUnit) : null
         }])
         .select()
         .single();
@@ -76,8 +80,63 @@ const AddNewMenuItemWizard = ({ tenantId, onItemCreated }) => {
         if (ruleError) console.error('Error creating prep rule:', ruleError);
       }
 
+      // Add to prep list if checkbox is checked
+      if (addToPrepList && menuItem && selectedDate) {
+        // Check if prep_schedule exists for this date
+        let { data: schedule, error: scheduleError } = await supabase
+          .from('prep_schedules')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .eq('date', selectedDate)
+          .single();
+
+        // Create schedule if it doesn't exist
+        if (scheduleError && scheduleError.code === 'PGRST116') {
+          const { data: newSchedule, error: createError } = await supabase
+            .from('prep_schedules')
+            .insert([{
+              tenant_id: tenantId,
+              date: selectedDate,
+              expected_guests: prepSchedule?.expected_guests || 200,
+              status: 'draft'
+            }])
+            .select()
+            .single();
+
+          if (createError) throw createError;
+          schedule = newSchedule;
+        }
+
+        if (schedule) {
+          // Get station ID
+          const { data: stationData } = await supabase
+            .from('prep_stations')
+            .select('id')
+            .eq('tenant_id', tenantId)
+            .eq('name', station)
+            .single();
+
+          // Calculate quantity
+          const quantity = (schedule.expected_guests * parseFloat(portionSize)).toFixed(2);
+
+          // Add to prep_tasks
+          const { error: taskError } = await supabase
+            .from('prep_tasks')
+            .insert([{
+              schedule_id: schedule.id,
+              menu_item_id: menuItem.id,
+              station_id: stationData?.id,
+              prep_quantity: parseFloat(quantity),
+              prep_unit: baseUnit,
+              status: 'pending'
+            }]);
+
+          if (taskError) console.error('Error adding to prep list:', taskError);
+        }
+      }
+
       // Success!
-      alert(`✅ Successfully created "${itemName}"!`);
+      alert(`✅ Successfully created "${itemName}"!${addToPrepList ? ' Added to prep list.' : ''}`);
       closeWizard();
       
       if (onItemCreated) {
@@ -110,9 +169,7 @@ const AddNewMenuItemWizard = ({ tenantId, onItemCreated }) => {
     <>
       <button
         onClick={() => setShowWizard(true)}
-        disabled={!tenantId}
-        className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-        title={!tenantId ? 'Loading tenant information...' : 'Add new menu item'}
+        className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold shadow-md"
       >
         <Plus size={20} />
         Add New Menu Item
@@ -316,6 +373,22 @@ const AddNewMenuItemWizard = ({ tenantId, onItemCreated }) => {
                         className="w-full pl-8 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                       />
                     </div>
+                  </div>
+
+                  {/* Add to Prep List Checkbox */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={addToPrepList}
+                        onChange={(e) => setAddToPrepList(e.target.checked)}
+                        className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      />
+                      <div>
+                        <span className="font-semibold text-blue-900">Add to today's prep list</span>
+                        <p className="text-xs text-blue-700 mt-1">Automatically add this item to the prep schedule for {selectedDate}</p>
+                      </div>
+                    </label>
                   </div>
 
                   <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
