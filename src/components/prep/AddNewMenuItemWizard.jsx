@@ -134,7 +134,7 @@ const AddNewMenuItemWizard = ({ tenantId, onItemCreated, prepSchedule, selectedD
               prep_quantity: parseFloat(quantity),
               prep_unit: baseUnit,
               estimated_cost: estimatedCost,
-              status: 'pending'
+              completed: false
             }]);
 
           if (taskError) {
