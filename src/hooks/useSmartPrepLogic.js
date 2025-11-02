@@ -14,6 +14,7 @@ export const useSmartPrepLogic = () => {
   const [financialImpact, setFinancialImpact] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Fetch tenant ID for current user
   useEffect(() => {
@@ -133,13 +134,12 @@ export const useSmartPrepLogic = () => {
     };
 
     fetchPrepSchedule();
-  }, [tenantId, selectedDate]);
+  }, [tenantId, selectedDate, refreshTrigger]);
 
   const refreshData = () => {
     if (tenantId && selectedDate) {
-      // Trigger re-fetch by updating loading state
-      setLoading(true);
-      // The useEffect will automatically re-run
+      // Trigger re-fetch by incrementing refresh counter
+      setRefreshTrigger(prev => prev + 1);
     }
   };
 
@@ -155,5 +155,6 @@ export const useSmartPrepLogic = () => {
     refreshData
   };
 };
+
 
 export default useSmartPrepLogic;
