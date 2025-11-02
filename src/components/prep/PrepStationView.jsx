@@ -9,6 +9,7 @@ const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
   const [selectedStation, setSelectedStation] = useState('all');
   const [editingTask, setEditingTask] = useState(null);
   const [editedQuantity, setEditedQuantity] = useState('');
+  const [editedNotes, setEditedNotes] = useState('');
 
   // Station color mapping
   const stationColors = {
@@ -57,11 +58,13 @@ const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
   const startEditing = (task) => {
     setEditingTask(task.id);
     setEditedQuantity(task.prep_quantity?.toString() || '');
+    setEditedNotes(task.notes || '');
   };
 
   const cancelEditing = () => {
     setEditingTask(null);
     setEditedQuantity('');
+    setEditedNotes('');
   };
 
   const saveQuantity = async (taskId) => {
@@ -75,7 +78,10 @@ const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
     try {
       const { error } = await supabase
         .from('prep_tasks')
-        .update({ prep_quantity: newQuantity })
+        .update({ 
+          prep_quantity: newQuantity,
+          notes: editedNotes.trim() || null
+        })
         .eq('id', taskId);
 
       if (error) throw error;
@@ -83,10 +89,11 @@ const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
       // Clear editing state
       setEditingTask(null);
       setEditedQuantity('');
+      setEditedNotes('');
       
       // Force refresh to show updated quantity
-      if (onItemRemoved) {
-        onItemRemoved();
+      if (onItemsUpdated) {
+        onItemsUpdated();
       }
     } catch (error) {
       console.error('Error updating quantity:', error);
@@ -211,10 +218,27 @@ const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
                           )}
                         </div>
 
-                        {task.notes && (
-                          <div className="text-sm text-gray-600">
-                            <span className="font-medium">Notes:</span> {task.notes}
+                        {/* Notes Section - Always show when editing, show existing notes when not editing */}
+                        {editingTask === task.id ? (
+                          <div className="flex-1">
+                            <input
+                              type="text"
+                              value={editedNotes}
+                              onChange={(e) => setEditedNotes(e.target.value)}
+                              placeholder="Add notes (optional)..."
+                              className="w-full px-3 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') saveQuantity(task.id);
+                                if (e.key === 'Escape') cancelEditing();
+                              }}
+                            />
                           </div>
+                        ) : (
+                          task.notes && (
+                            <div className="text-sm text-gray-600">
+                              <span className="font-medium">Notes:</span> {task.notes}
+                            </div>
+                          )
                         )}
                       </div>
                     </div>
