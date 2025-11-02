@@ -92,8 +92,8 @@ const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
       setEditedNotes('');
       
       // Force refresh to show updated quantity
-      if (onItemsUpdated) {
-        onItemsUpdated();
+      if (onItemRemoved) {
+        onItemRemoved();
       }
     } catch (error) {
       console.error('Error updating quantity:', error);
