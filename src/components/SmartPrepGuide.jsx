@@ -47,7 +47,7 @@ const SmartPrepGuide = () => {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Smart Prep Guide</h1>
               <p className="mt-1 text-sm text-gray-500">
-                Smart logic-based prep planning using historical data and forecasts
+                AI-powered prep planning based on historical data and forecasts
               </p>
             </div>
 
@@ -112,13 +112,11 @@ const SmartPrepGuide = () => {
               </div>
 
               {/* Add Item to Prep List Button */}
-              {tenantId && (
+              {prepSchedule && (
                 <PrepItemManager
                   prepSchedule={prepSchedule}
                   prepTasks={prepTasks || []}
                   onItemsUpdated={handleItemsUpdated}
-                  selectedDate={selectedDate}
-                  tenantId={tenantId}
                 />
               )}
 
@@ -127,6 +125,8 @@ const SmartPrepGuide = () => {
                 <AddNewMenuItemWizard
                   tenantId={tenantId}
                   onItemCreated={handleItemsUpdated}
+                  prepSchedule={prepSchedule}
+                  selectedDate={selectedDate}
                 />
               )}
             </div>
