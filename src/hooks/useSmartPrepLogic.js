@@ -155,3 +155,5 @@ export const useSmartPrepLogic = () => {
     refreshData
   };
 };
+
+export default useSmartPrepLogic;
