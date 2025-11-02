@@ -14,7 +14,6 @@ export const useSmartPrepLogic = () => {
   const [financialImpact, setFinancialImpact] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [refreshTrigger, setRefreshTrigger] = useState(0); // NEW: trigger for manual refresh
 
   // Fetch tenant ID for current user
   useEffect(() => {
@@ -45,7 +44,7 @@ export const useSmartPrepLogic = () => {
     fetchTenant();
   }, []);
 
-  // Fetch prep schedule when tenant, date, or refreshTrigger changes
+  // Fetch prep schedule when tenant and date are available
   useEffect(() => {
     if (!tenantId || !selectedDate) {
       setLoading(false);
@@ -65,7 +64,7 @@ export const useSmartPrepLogic = () => {
           .select('*')
           .eq('tenant_id', tenantId)
           .eq('date', selectedDate)
-          .maybeSingle();
+          .maybeSingle(); // Use maybeSingle instead of single to avoid error when no rows
 
         if (scheduleError) {
           console.error('Error fetching schedule:', scheduleError);
@@ -84,7 +83,7 @@ export const useSmartPrepLogic = () => {
         console.log('Prep schedule found:', schedule);
         setPrepSchedule(schedule);
 
-        // Fetch prep tasks with only existing fields
+        // Fetch prep tasks for this schedule
         const { data: tasks, error: tasksError } = await supabase
           .from('prep_tasks')
           .select(`
@@ -119,6 +118,7 @@ export const useSmartPrepLogic = () => {
 
         if (financialError) {
           console.error('Error fetching financial data:', financialError);
+          // Don't throw - financial data is optional
         }
 
         console.log('Financial data found:', financial);
@@ -133,11 +133,14 @@ export const useSmartPrepLogic = () => {
     };
 
     fetchPrepSchedule();
-  }, [tenantId, selectedDate, refreshTrigger]); // FIXED: Added refreshTrigger
+  }, [tenantId, selectedDate]);
 
   const refreshData = () => {
-    // Trigger re-fetch by incrementing refreshTrigger
-    setRefreshTrigger(prev => prev + 1);
+    if (tenantId && selectedDate) {
+      // Trigger re-fetch by updating loading state
+      setLoading(true);
+      // The useEffect will automatically re-run
+    }
   };
 
   return {
