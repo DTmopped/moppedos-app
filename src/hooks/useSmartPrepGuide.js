@@ -1,205 +1,157 @@
-import { useState, useEffect, useMemo } from 'react';
-import { 
-  RESTAURANT_TEMPLATES, 
-  WEEKDAY_MULTIPLIERS, 
-  SEASONAL_MULTIPLIERS,
-  WEATHER_MULTIPLIERS,
-  HOLIDAY_MULTIPLIERS,
-  SHIFTS_CONFIG 
-} from '@/config/SmartPrepGuideConfig.js';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/supabaseClient';
 
-export const useSmartPrepGuide = () => {
-  // State
-  const [selectedTemplate, setSelectedTemplate] = useState('bbq');
-  const [weatherCondition, setWeatherCondition] = useState('sunny');
-  const [wasteOptimization, setWasteOptimization] = useState(true);
-  const [crossUtilization, setCrossUtilization] = useState(true);
-  const [forecastData, setForecastData] = useState([]);
-  const [printDate, setPrintDate] = useState(new Date().toISOString().split('T')[0]);
+export const useSmartPrepLogic = () => {
+  const [tenantId, setTenantId] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(() => {
+    // Default to tomorrow (since test data is for 10/31/2025)
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
+  });
+  const [prepSchedule, setPrepSchedule] = useState(null);
+  const [prepTasks, setPrepTasks] = useState([]);
+  const [financialImpact, setFinancialImpact] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Get current template
-  const currentTemplate = RESTAURANT_TEMPLATES[selectedTemplate];
-  const availableTemplates = Object.keys(RESTAURANT_TEMPLATES);
+  // Fetch tenant ID for current user
+  useEffect(() => {
+    const fetchTenant = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setError('No user logged in');
+          return;
+        }
 
-  // Calculate smart adjustment factor
-  const calculateSmartFactor = (date) => {
-    const dateObj = new Date(date);
-    const weekday = dateObj.getDay();
-    const month = dateObj.getMonth();
-    const dateString = date;
+        const { data: userTenant, error: tenantError } = await supabase
+          .from('user_tenants')
+          .select('tenant_id')
+          .eq('user_id', user.id)
+          .single();
 
-    // Base multipliers
-    let factor = 1.0;
-    
-    // Weekday adjustment
-    factor *= WEEKDAY_MULTIPLIERS[weekday] || 1.0;
-    
-    // Seasonal adjustment
-    const season = month >= 5 && month <= 7 ? 'summer' : 
-                   month >= 8 && month <= 10 ? 'fall' :
-                   month >= 11 || month <= 1 ? 'winter' : 'spring';
-    factor *= SEASONAL_MULTIPLIERS[season] || 1.0;
-    
-    // Weather adjustment
-    factor *= WEATHER_MULTIPLIERS[weatherCondition] || 1.0;
-    
-    // Holiday adjustment
-    factor *= HOLIDAY_MULTIPLIERS[dateString] || 1.0;
-
-    return {
-      factor: factor,
-      reasons: [
-        `${Object.keys(WEEKDAY_MULTIPLIERS)[weekday]} factor: ${WEEKDAY_MULTIPLIERS[weekday]}x`,
-        `${season} season: ${SEASONAL_MULTIPLIERS[season]}x`,
-        `${weatherCondition} weather: ${WEATHER_MULTIPLIERS[weatherCondition]}x`
-      ]
+        if (tenantError) throw tenantError;
+        
+        console.log('Fetched tenant_id:', userTenant.tenant_id);
+        setTenantId(userTenant.tenant_id);
+      } catch (err) {
+        console.error('Error fetching tenant:', err);
+        setError(err.message);
+      }
     };
-  };
 
-  // Generate prep data for next 7 days
-  const smartPrepData = useMemo(() => {
-    const days = [];
-    const baseGuests = 150; // Default base guest count
-    
-    for (let i = 0; i < 7; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() + i);
-      const dateString = date.toISOString().split('T')[0];
-      
-      const smartFactor = calculateSmartFactor(dateString);
-      const totalGuests = Math.round(baseGuests * smartFactor.factor);
-      
-      // Generate shift data
-      const shifts = {};
-      Object.entries(SHIFTS_CONFIG).forEach(([shiftKey, shiftConfig]) => {
-        const shiftGuests = Math.round(totalGuests * shiftConfig.percentage);
-        const prepItems = [];
-        
-        // Generate prep items for each category
-        Object.entries(currentTemplate.categories).forEach(([categoryName, category]) => {
-          category.items.forEach(item => {
-            const adjustedQuantity = Math.round(item.baseQuantity * smartFactor.factor * shiftConfig.percentage);
-            if (adjustedQuantity > 0) {
-              prepItems.push({
-                id: `${item.name}-${shiftKey}`,
-                name: item.name,
-                category: categoryName,
-                categoryIcon: category.icon,
-                quantity: adjustedQuantity,
-                unit: item.unit,
-                prepTime: item.prepTime * shiftConfig.percentage,
-                priority: adjustedQuantity > item.baseQuantity ? 'high' : 'normal'
-              });
-            }
-          });
-        });
-        
-        shifts[shiftKey] = {
-          ...shiftConfig,
-          guests: shiftGuests,
-          prepItems: prepItems,
-          totalItems: prepItems.length,
-          estimatedPrepTime: prepItems.reduce((sum, item) => sum + item.prepTime, 0)
-        };
-      });
-      
-      days.push({
-        date: dateString,
-        dayName: date.toLocaleDateString('en-US', { weekday: 'long' }),
-        totalGuests: totalGuests,
-        smartFactor: smartFactor,
-        shifts: shifts
-      });
-    }
-    
-    return days;
-  }, [selectedTemplate, weatherCondition, currentTemplate]);
+    fetchTenant();
+  }, []);
 
-  // Calculate insights
-  const prepInsights = useMemo(() => {
-    const insights = [];
-    
-    // High volume days
-    const highVolumeDays = smartPrepData.filter(day => day.smartFactor.factor > 1.2);
-    if (highVolumeDays.length > 0) {
-      insights.push({
-        type: 'High Volume',
-        message: `${highVolumeDays.length} high-volume days detected. Consider extra prep staff.`
-      });
-    }
-    
-    // Weather impact
-    if (weatherCondition === 'rainy' || weatherCondition === 'stormy') {
-      insights.push({
-        type: 'Weather',
-        message: 'Bad weather expected - increase comfort food prep by 20%.'
-      });
-    }
-    
-    // Weekend prep
-    const weekendDays = smartPrepData.filter(day => {
-      const dayOfWeek = new Date(day.date).getDay();
-      return dayOfWeek === 5 || dayOfWeek === 6; // Friday or Saturday
-    });
-    if (weekendDays.length > 0) {
-      insights.push({
-        type: 'Weekend',
-        message: 'Weekend prep requires 30% more popular items.'
-      });
+  // Fetch prep schedule when tenant and date are available
+  useEffect(() => {
+    if (!tenantId || !selectedDate) {
+      setLoading(false);
+      return;
     }
 
-    return insights;
-  }, [smartPrepData, weatherCondition]);
+    const fetchPrepSchedule = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-  // Export functionality
-  const exportPrepGuide = (format = 'text') => {
-    if (format === 'text') {
-      let output = `Smart Prep Guide - ${currentTemplate.name}\n`;
-      output += `Generated: ${new Date().toLocaleDateString()}\n`;
-      output += `Weather: ${weatherCondition}\n\n`;
-      
-      smartPrepData.forEach(day => {
-        output += `\n=== ${day.dayName} (${day.date}) ===\n`;
-        output += `Guests: ${day.totalGuests} | Factor: ${day.smartFactor.factor.toFixed(2)}x\n\n`;
-        
-        Object.entries(day.shifts).forEach(([shiftKey, shift]) => {
-          output += `${shift.name} (${shift.hours}):\n`;
-          shift.prepItems.forEach(item => {
-            output += `  - ${item.name}: ${item.quantity} ${item.unit}\n`;
-          });
-          output += `\n`;
-        });
-      });
-      
-      return output;
+        console.log('Fetching prep schedule for:', { tenantId, selectedDate });
+
+        // Fetch prep schedule for the selected date
+        const { data: schedule, error: scheduleError } = await supabase
+          .from('prep_schedules')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .eq('date', selectedDate)
+          .maybeSingle(); // Use maybeSingle instead of single to avoid error when no rows
+
+        if (scheduleError) {
+          console.error('Error fetching schedule:', scheduleError);
+          throw scheduleError;
+        }
+
+        if (!schedule) {
+          console.log('No prep schedule found for this date');
+          setPrepSchedule(null);
+          setPrepTasks([]);
+          setFinancialImpact(null);
+          setLoading(false);
+          return;
+        }
+
+        console.log('Prep schedule found:', schedule);
+        setPrepSchedule(schedule);
+
+        // Fetch prep tasks for this schedule
+        const { data: tasks, error: tasksError } = await supabase
+          .from('prep_tasks')
+          .select(`
+            *,
+            menu_items (
+              id,
+              name,
+              category_normalized,
+              base_unit
+            ),
+            prep_stations (
+              id,
+              name
+            )
+          `)
+          .eq('schedule_id', schedule.id);
+
+        if (tasksError) {
+          console.error('Error fetching tasks:', tasksError);
+          throw tasksError;
+        }
+
+        console.log('Prep tasks found:', tasks);
+        setPrepTasks(tasks || []);
+
+        // Fetch financial impact for this schedule
+        const { data: financial, error: financialError } = await supabase
+          .from('financial_tracking')
+          .select('*')
+          .eq('schedule_id', schedule.id)
+          .maybeSingle();
+
+        if (financialError) {
+          console.error('Error fetching financial data:', financialError);
+          // Don't throw - financial data is optional
+        }
+
+        console.log('Financial data found:', financial);
+        setFinancialImpact(financial);
+
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching prep schedule:', err);
+        setError(err.message);
+        setLoading(false);
+      }
+    };
+
+    fetchPrepSchedule();
+  }, [tenantId, selectedDate]);
+
+  const refreshData = () => {
+    if (tenantId && selectedDate) {
+      // Trigger re-fetch by updating loading state
+      setLoading(true);
+      // The useEffect will automatically re-run
     }
   };
 
   return {
-    // State
-    selectedTemplate,
-    setSelectedTemplate,
-    weatherCondition,
-    setWeatherCondition,
-    wasteOptimization,
-    setWasteOptimization,
-    crossUtilization,
-    setCrossUtilization,
-    printDate,
-    setPrintDate,
-    
-    // Data
-    smartPrepData,
-    prepInsights,
-    currentTemplate,
-    availableTemplates,
-    
-    // Calculated values
-    adjustmentFactor: smartPrepData.length > 0 ? 
-      smartPrepData.reduce((sum, day) => sum + day.smartFactor.factor, 0) / smartPrepData.length : 1.0,
-    
-    // Functions
-    exportPrepGuide,
-    handlePrepTaskChange: () => {} // Placeholder for future functionality
+    tenantId,
+    selectedDate,
+    setSelectedDate,
+    prepSchedule,
+    prepTasks,
+    financialImpact,
+    loading,
+    error,
+    refreshData
   };
 };
