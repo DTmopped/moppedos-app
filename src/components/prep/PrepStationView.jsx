@@ -80,11 +80,13 @@ const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
 
       if (error) throw error;
 
+      // Clear editing state
       setEditingTask(null);
       setEditedQuantity('');
       
+      // Force refresh to show updated quantity
       if (onItemRemoved) {
-        onItemRemoved(); // Refresh data
+        onItemRemoved();
       }
     } catch (error) {
       console.error('Error updating quantity:', error);
