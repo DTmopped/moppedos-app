@@ -33,8 +33,9 @@ export const exportPrepListToCSV = (prepTasks, prepSchedule) => {
       const quantity = task.prep_quantity || task.quantity || task.adjusted_quantity || 0;
       const unit = task.prep_unit || task.unit || task.menu_items?.base_unit || 'lb';
       const smartFactor = (task.smart_factor || task.multiplier || 1.0).toFixed(2);
+      const notes = task.notes || '';
       
-      csvLines.push(`"${itemName}","${category}",${quantity},${unit},${smartFactor}x,`);
+      csvLines.push(`"${itemName}","${category}",${quantity},${unit},${smartFactor}x,"${notes}"`);
     });
     
     csvLines.push(''); // Empty line between stations
@@ -303,6 +304,7 @@ export const exportPrepListToPrint = (prepTasks, prepSchedule) => {
                 const quantity = task.prep_quantity || task.quantity || task.adjusted_quantity || 0;
                 const unit = task.prep_unit || task.unit || task.menu_items?.base_unit || 'lb';
                 const smartFactor = (task.smart_factor || task.multiplier || 1.0).toFixed(2);
+                const notes = task.notes || '';
 
                 return `
                   <tr>
@@ -312,8 +314,7 @@ export const exportPrepListToPrint = (prepTasks, prepSchedule) => {
                     <td class="quantity">${quantity} ${unit}</td>
                     <td class="smart-factor">${smartFactor}x</td>
                     <td class="notes-cell">
-                      <div class="notes-line"></div>
-                      <div class="notes-line"></div>
+                      ${notes ? `<div style="font-weight: 600; color: #374151;">${notes}</div>` : `<div class="notes-line"></div><div class="notes-line"></div>`}
                     </td>
                   </tr>
                 `;
