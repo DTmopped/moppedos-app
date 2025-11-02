@@ -1,98 +1,71 @@
 import React from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { 
-  Package, 
-  DollarSign, 
-  TrendingUp, 
-  Clock,
-  AlertCircle,
-  ChefHat
-} from 'lucide-react';
 
-const PrepItemDetailModal = ({ task, isOpen, onClose }) => {
+const PrepItemDetailModal = ({ task, prepSchedule, onClose }) => {
   if (!task) return null;
 
-  // Extract data
-  const itemName = task.menu_items?.name || task.menu_item_name || 'Unknown Item';
-  const category = task.menu_items?.category_normalized || task.category || '';
-  const stationName = task.prep_stations?.name || task.station_name || 'Unknown';
-  const quantity = task.quantity || 0;
-  const unit = task.unit || task.menu_items?.base_unit || 'lbs';
-  const smartFactor = task.smart_factor || 1.0;
-  const confidence = task.confidence_level || 0;
+  // Extract data using CORRECT field names
+  const itemName = task.menu_items?.name || 'Unknown Item';
+  const category = task.menu_items?.category_normalized || '';
+  const stationName = task.prep_stations?.name || 'Unknown';
+  const quantity = task.prep_quantity || 0;
+  const unit = task.prep_unit || task.menu_items?.base_unit || 'lb';
+  const smartFactor = prepSchedule?.adjustment_factor || 1.0;
   const cost = task.estimated_cost || 0;
+  const notes = task.notes || '';
 
   // Calculate base quantity (before smart factor)
   const baseQuantity = smartFactor > 0 ? (quantity / smartFactor).toFixed(1) : quantity;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-2xl flex items-center gap-2">
-            <ChefHat className="h-6 w-6 text-blue-600" />
-            {itemName}
-          </DialogTitle>
-        </DialogHeader>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto m-4" onClick={(e) => e.stopPropagation()}>
+        <div className="p-6">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">{itemName}</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+            >
+              ×
+            </button>
+          </div>
 
-        <div className="space-y-6">
           {/* Quick Stats */}
-          <div className="grid grid-cols-3 gap-4">
-            <Card className="border-blue-100 bg-blue-50">
-              <CardContent className="pt-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <Package className="h-4 w-4 text-blue-600" />
-                  <p className="text-xs text-gray-600">Quantity</p>
-                </div>
-                <p className="text-2xl font-bold text-blue-600">
-                  {quantity} {unit}
-                </p>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-xs text-gray-600 mb-1">Quantity</p>
+              <p className="text-2xl font-bold text-blue-600">
+                {quantity} {unit}
+              </p>
+            </div>
 
-            <Card className="border-purple-100 bg-purple-50">
-              <CardContent className="pt-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <TrendingUp className="h-4 w-4 text-purple-600" />
-                  <p className="text-xs text-gray-600">Smart Factor</p>
-                </div>
-                <p className="text-2xl font-bold text-purple-600">
-                  {smartFactor.toFixed(2)}x
-                </p>
-              </CardContent>
-            </Card>
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+              <p className="text-xs text-gray-600 mb-1">Smart Factor</p>
+              <p className="text-2xl font-bold text-purple-600">
+                {smartFactor.toFixed(2)}x
+              </p>
+            </div>
 
-            <Card className="border-green-100 bg-green-50">
-              <CardContent className="pt-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <DollarSign className="h-4 w-4 text-green-600" />
-                  <p className="text-xs text-gray-600">Est. Cost</p>
-                </div>
-                <p className="text-2xl font-bold text-green-600">
-                  ${cost.toFixed(2)}
-                </p>
-              </CardContent>
-            </Card>
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <p className="text-xs text-gray-600 mb-1">Est. Cost</p>
+              <p className="text-2xl font-bold text-green-600">
+                ${cost.toFixed(2)}
+              </p>
+            </div>
           </div>
 
           {/* Item Details */}
-          <div className="space-y-3">
+          <div className="space-y-4 mb-6">
             <h3 className="font-semibold text-lg">Item Details</h3>
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-gray-500">Category</p>
-                <Badge variant="outline">{category || 'Not specified'}</Badge>
+                <p className="font-semibold">{category || 'Not specified'}</p>
               </div>
               <div>
                 <p className="text-gray-500">Prep Station</p>
-                <Badge variant="outline">{stationName}</Badge>
+                <p className="font-semibold">{stationName}</p>
               </div>
               <div>
                 <p className="text-gray-500">Base Quantity</p>
@@ -105,43 +78,42 @@ const PrepItemDetailModal = ({ task, isOpen, onClose }) => {
             </div>
           </div>
 
-          {/* Smart Factor Explanation */}
-          {smartFactor !== 1.0 && (
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
-                <div>
-                  <h4 className="font-semibold text-blue-900 mb-2">
-                    Smart Calculation Applied
-                  </h4>
-                  <p className="text-sm text-blue-800 mb-2">
-                    The base quantity of <strong>{baseQuantity} {unit}</strong> has been adjusted by{' '}
-                    <strong>{smartFactor.toFixed(2)}x</strong> to <strong>{quantity} {unit}</strong> based on:
-                  </p>
-                  <ul className="text-sm text-blue-700 space-y-1 ml-4">
-                    <li>• Historical demand patterns for this day of week</li>
-                    <li>• Expected guest count ({task.expected_guests || 'N/A'})</li>
-                    <li>• Item popularity and service trends</li>
-                    {confidence > 0 && (
-                      <li>• Confidence level: {(confidence * 100).toFixed(0)}%</li>
-                    )}
-                  </ul>
-                </div>
+          {/* Notes */}
+          {notes && (
+            <div className="mb-6">
+              <h3 className="font-semibold text-lg mb-2">Notes</h3>
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-gray-700">{notes}</p>
               </div>
             </div>
           )}
 
-          {/* Prep Instructions (if available) */}
-          <div className="space-y-3">
-            <h3 className="font-semibold text-lg flex items-center gap-2">
-              <ChefHat className="h-5 w-5" />
-              Prep Instructions
-            </h3>
+          {/* Smart Factor Explanation */}
+          {smartFactor !== 1.0 && (
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mb-6">
+              <h4 className="font-semibold text-blue-900 mb-2">
+                Smart Calculation Applied
+              </h4>
+              <p className="text-sm text-blue-800 mb-2">
+                The base quantity of <strong>{baseQuantity} {unit}</strong> has been adjusted by{' '}
+                <strong>{smartFactor.toFixed(2)}x</strong> to <strong>{quantity} {unit}</strong> based on:
+              </p>
+              <ul className="text-sm text-blue-700 space-y-1 ml-4">
+                <li>• Historical demand patterns for this day of week</li>
+                <li>• Expected guest count ({prepSchedule?.expected_guests || 'N/A'})</li>
+                <li>• Item popularity and service trends</li>
+              </ul>
+            </div>
+          )}
+
+          {/* Prep Instructions */}
+          <div className="space-y-3 mb-6">
+            <h3 className="font-semibold text-lg">Prep Instructions</h3>
             <div className="p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 mb-3">
                 Standard prep procedures for <strong>{itemName}</strong>:
               </p>
-              <ol className="mt-3 space-y-2 text-sm text-gray-700">
+              <ol className="space-y-2 text-sm text-gray-700">
                 {category.toLowerCase().includes('protein') ? (
                   <>
                     <li>1. Remove from refrigeration 30 minutes before prep</li>
@@ -173,7 +145,7 @@ const PrepItemDetailModal = ({ task, isOpen, onClose }) => {
 
           {/* Cost Breakdown */}
           {cost > 0 && (
-            <div className="space-y-3">
+            <div className="space-y-3 mb-6">
               <h3 className="font-semibold text-lg">Cost Breakdown</h3>
               <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                 <div className="space-y-2 text-sm">
@@ -203,15 +175,10 @@ const PrepItemDetailModal = ({ task, isOpen, onClose }) => {
             >
               Close
             </button>
-            <button
-              className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-            >
-              Mark as Complete
-            </button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 };
 
