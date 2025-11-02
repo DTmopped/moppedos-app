@@ -56,7 +56,7 @@ const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
 
   const startEditing = (task) => {
     setEditingTask(task.id);
-    setEditedQuantity(task.quantity.toString());
+    setEditedQuantity(task.prep_quantity?.toString() || '');
   };
 
   const cancelEditing = () => {
@@ -75,7 +75,7 @@ const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
     try {
       const { error } = await supabase
         .from('prep_tasks')
-        .update({ quantity: newQuantity })
+        .update({ prep_quantity: newQuantity })
         .eq('id', taskId);
 
       if (error) throw error;
@@ -176,7 +176,7 @@ const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
                                   if (e.key === 'Escape') cancelEditing();
                                 }}
                               />
-                              <span className="text-sm text-gray-600">{task.unit}</span>
+                              <span className="text-sm text-gray-600">{task.prep_unit || task.menu_items?.base_unit}</span>
                               <button
                                 onClick={() => saveQuantity(task.id)}
                                 className="p-1 text-green-600 hover:bg-green-50 rounded"
@@ -195,9 +195,9 @@ const PrepStationView = ({ prepTasks, prepSchedule, onItemRemoved }) => {
                           ) : (
                             <div className="flex items-center gap-2">
                               <span className="text-2xl font-bold text-blue-600">
-                                {task.quantity}
+                                {task.prep_quantity}
                               </span>
-                              <span className="text-sm text-gray-600">{task.unit}</span>
+                              <span className="text-sm text-gray-600">{task.prep_unit || task.menu_items?.base_unit}</span>
                               <button
                                 onClick={() => startEditing(task)}
                                 className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
