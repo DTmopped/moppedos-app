@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, X } from 'lucide-react';
 import { supabase } from '@/supabaseClient';
 
-const PrepItemManager = ({ prepSchedule, prepTasks, onItemsUpdated, selectedDate, tenantId }) => {
+const PrepItemManager = ({ prepSchedule, prepTasks, onItemsUpdated }) => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [menuItems, setMenuItems] = useState([]);
@@ -17,13 +17,11 @@ const PrepItemManager = ({ prepSchedule, prepTasks, onItemsUpdated, selectedDate
   }, [showAddModal]);
 
   const fetchMenuItems = async () => {
-    if (!tenantId) return;
-    
     try {
       const { data, error } = await supabase
         .from('menu_items')
         .select('*')
-        .eq('tenant_id', tenantId)
+        .eq('tenant_id', prepSchedule.tenant_id)
         .order('name');
 
       if (error) throw error;
@@ -45,50 +43,27 @@ const PrepItemManager = ({ prepSchedule, prepTasks, onItemsUpdated, selectedDate
     setLoading(true);
 
     try {
-      // Auto-create prep_schedule if it doesn't exist
-      let schedule = prepSchedule;
-      if (!schedule && selectedDate && tenantId) {
-        const { data: newSchedule, error: scheduleError } = await supabase
-          .from('prep_schedules')
-          .insert([{
-            tenant_id: tenantId,
-            date: selectedDate,
-            expected_guests: 200, // Default guest count
-            status: 'draft'
-          }])
-          .select()
-          .single();
-
-        if (scheduleError) throw scheduleError;
-        schedule = newSchedule;
-      }
-
-      if (!schedule) {
-        alert('Unable to create prep schedule. Please try again.');
-        setLoading(false);
-        return;
-      }
-
       // Calculate quantity based on expected guests if not custom
       const quantity = customQuantity 
         ? parseFloat(customQuantity)
-        : (schedule.expected_guests * (menuItem.portion_size || 0.25));
+        : (prepSchedule.expected_guests * menuItem.portion_size);
 
       // Get station for this menu item
       const { data: stations } = await supabase
         .from('prep_stations')
         .select('id')
-        .eq('tenant_id', schedule.tenant_id)
+        .eq('tenant_id', prepSchedule.tenant_id)
         .eq('name', getStationForCategory(menuItem.category_normalized))
         .single();
 
       const newTask = {
-        schedule_id: schedule.id,
+        schedule_id: prepSchedule.id,
         menu_item_id: menuItem.id,
         station_id: stations?.id,
-        prep_quantity: quantity,
-        prep_unit: menuItem.base_unit,
-        notes: notes || null
+        quantity: quantity,
+        unit: menuItem.base_unit,
+        notes: notes || null,
+        is_completed: false
       };
 
       const { error } = await supabase
@@ -143,8 +118,8 @@ const PrepItemManager = ({ prepSchedule, prepTasks, onItemsUpdated, selectedDate
   };
 
   const selectedMenuItem = menuItems.find(item => item.id === selectedItem);
-  const calculatedQuantity = selectedMenuItem
-    ? ((prepSchedule?.expected_guests || 200) * (selectedMenuItem.portion_size || 0.25)).toFixed(2)
+  const calculatedQuantity = selectedMenuItem && prepSchedule
+    ? (prepSchedule.expected_guests * selectedMenuItem.portion_size).toFixed(2)
     : 0;
 
   return (
