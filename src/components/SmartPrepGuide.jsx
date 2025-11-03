@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, RefreshCw, Download, ChevronDown } from 'lucide-react';
+import { Calendar, RefreshCw, Download, ChevronDown, Sparkles } from 'lucide-react';
 import { useSmartPrepLogic } from '../hooks/useSmartPrepLogic';
 import PrepStationView from './prep/PrepStationView';
 import RethermSchedule from './prep/RethermSchedule';
@@ -12,15 +12,21 @@ const SmartPrepGuide = () => {
     prepSchedule,
     prepTasks,
     financialImpact,
+    forecastData,
     loading,
+    generating,
     selectedDate,
     setSelectedDate,
     refreshData,
+    generatePrepSchedule,
+    getSuggestedGuestCount,
     tenantId
   } = useSmartPrepLogic();
 
   const [activeTab, setActiveTab] = useState('prep');
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [guestCountInput, setGuestCountInput] = useState('');
 
   const handleExportCSV = () => {
     exportPrepListToCSV(prepTasks, prepSchedule);
@@ -33,8 +39,30 @@ const SmartPrepGuide = () => {
   };
 
   const handleItemsUpdated = () => {
-    // Refresh the prep schedule data after adding/removing items
     refreshData();
+  };
+
+  const handleGenerateClick = () => {
+    const suggestedGuests = getSuggestedGuestCount();
+    setGuestCountInput(suggestedGuests.toString());
+    setShowGenerateModal(true);
+  };
+
+  const handleGenerateConfirm = async () => {
+    const guestCount = parseInt(guestCountInput);
+    if (isNaN(guestCount) || guestCount <= 0) {
+      alert('Please enter a valid guest count');
+      return;
+    }
+
+    const result = await generatePrepSchedule(guestCount);
+    
+    if (result.success) {
+      setShowGenerateModal(false);
+      // Success feedback could be added here
+    } else {
+      alert(`Error generating schedule: ${result.error}`);
+    }
   };
 
   return (
@@ -62,6 +90,16 @@ const SmartPrepGuide = () => {
                 />
               </div>
 
+              {/* Generate Schedule Button */}
+              <button
+                onClick={handleGenerateClick}
+                disabled={loading || generating}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 font-semibold"
+              >
+                <Sparkles size={20} className={generating ? 'animate-pulse' : ''} />
+                {prepSchedule ? 'Regenerate' : 'Generate Schedule'}
+              </button>
+
               {/* Refresh Button */}
               <button
                 onClick={refreshData}
@@ -86,12 +124,10 @@ const SmartPrepGuide = () => {
 
                 {showExportMenu && (
                   <>
-                    {/* Backdrop */}
                     <div
                       className="fixed inset-0 z-40"
                       onClick={() => setShowExportMenu(false)}
                     />
-                    {/* Dropdown Menu */}
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
                       <button
                         onClick={handleExportPrint}
@@ -124,6 +160,73 @@ const SmartPrepGuide = () => {
         </div>
       </div>
 
+      {/* Generate Schedule Modal */}
+      {showGenerateModal && (
+        <>
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-40"
+            onClick={() => setShowGenerateModal(false)}
+          />
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                {prepSchedule ? 'Regenerate Prep Schedule' : 'Generate Prep Schedule'}
+              </h2>
+              
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Expected Guest Count
+                </label>
+                <input
+                  type="number"
+                  value={guestCountInput}
+                  onChange={(e) => setGuestCountInput(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Enter guest count"
+                  min="1"
+                />
+                
+                {forecastData && (
+                  <p className="mt-2 text-sm text-gray-600">
+                    📊 Forecast suggests: <strong>{getSuggestedGuestCount()} guests</strong>
+                    {forecastData.am_guests && forecastData.pm_guests && (
+                      <span className="text-gray-500">
+                        {' '}(AM: {forecastData.am_guests}, PM: {forecastData.pm_guests})
+                      </span>
+                    )}
+                  </p>
+                )}
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <h3 className="font-semibold text-blue-900 mb-2">🧠 Smart Calculation</h3>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>✓ Uses prep rules and day-of-week multipliers</li>
+                  <li>✓ Applies batch sizing and min/max constraints</li>
+                  <li>✓ Assigns tasks to prep stations automatically</li>
+                </ul>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowGenerateModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleGenerateConfirm}
+                  disabled={generating}
+                  className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 font-semibold"
+                >
+                  {generating ? 'Generating...' : 'Generate'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {loading && !prepSchedule ? (
@@ -135,8 +238,16 @@ const SmartPrepGuide = () => {
           </div>
         ) : !prepSchedule ? (
           <div className="bg-white rounded-lg shadow p-8 text-center">
-            <p className="text-gray-600 text-lg">No prep schedule available for this date</p>
-            <p className="text-gray-500 mt-2">Select a different date or create a new schedule</p>
+            <div className="text-6xl mb-4">📋</div>
+            <p className="text-gray-900 text-xl font-semibold mb-2">No prep schedule for this date</p>
+            <p className="text-gray-600 mb-6">Click "Generate Schedule" to create a smart prep plan</p>
+            <button
+              onClick={handleGenerateClick}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold"
+            >
+              <Sparkles size={20} />
+              Generate Schedule
+            </button>
           </div>
         ) : (
           <>
