@@ -38,7 +38,7 @@ export const views = [
     label: 'Shift Prep Guide',
     componentName: 'DailyShiftPrepGuide',
     icon: <ShoppingBasket size={20} strokeWidth={2.5} />,
-    showInNav: true,
+    showInNav: false,  // ← Change this to false
   },
   {
     id: 'WEEKLY_LABOR_SCHEDULE',
