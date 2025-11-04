@@ -89,7 +89,7 @@ export const LaborDataProvider = ({ children }) => {
 
   // Location state - NOW USING UUID SYSTEM
   const [locationId, setLocationId] = useState(null); // This will be the bigint ID
-  const [locationUuid, setLocationUuid] = useState(null); // This will be the UUID for queries
+  const [locationUuid, setLocationUuid] = useState(null); // This will be the UUID for database queries
   const [locationName, setLocationName] = useState(null);
   const [loadingLocation, setLoadingLocation] = useState(true);
   const [locationError, setLocationError] = useState(null);
@@ -286,7 +286,7 @@ export const LaborDataProvider = ({ children }) => {
         .from('employee_availability')
         .select(`
           *,
-          employees!inner(id, name, role)
+          employees!inner(id, name)
         `)
         .eq('location_id', locationUuid); // Use UUID here
 
@@ -299,29 +299,10 @@ export const LaborDataProvider = ({ children }) => {
         console.log('Loaded employee availability:', enhancedAvailability.length);
       }
 
-      // Load existing schedules - USE ACTUAL TABLE NAME AND UUID
-      const { data: existingSchedules, error: schedulesError } = await supabase
-        .from('schedules') // Use actual table name
-        .select('*')
-        .eq('location_id', locationUuid) // Use UUID here
-        .order('week_start_date', { ascending: false });
-
-      if (!schedulesError && existingSchedules) {
-        const schedulesMap = {};
-        existingSchedules.forEach(schedule => {
-          const weekKey = schedule.week_start_date;
-          schedulesMap[weekKey] = {
-            ...schedule,
-            schedule_data: schedule.schedule_data || {}
-          };
-        });
-        setSchedules(schedulesMap);
-        console.log('Loaded schedules:', existingSchedules.length);
-      }
-
+      setIsConnected(true);
     } catch (err) {
       console.error('Error loading labor data:', err);
-      setError('Database connection failed - check your internet connection');
+      setError(err.message);
       setIsConnected(false);
     } finally {
       setLoading(false);
@@ -337,12 +318,167 @@ export const LaborDataProvider = ({ children }) => {
     return diffDays;
   };
 
-  // Load data when location UUID is available
+  // Load data on mount and when location changes
   useEffect(() => {
-    if (locationUuid && !loadingLocation) {
+    if (locationUuid) {
       loadLaborData();
     }
-  }, [locationUuid, loadingLocation]);
+  }, [locationUuid]);
+
+  // Helper function to calculate shift hours
+  const calculateShiftHours = (startTime, endTime) => {
+    if (!startTime || !endTime) return 0;
+    
+    // Convert to military time if needed
+    const start = startTime.includes('AM') || startTime.includes('PM') 
+      ? convertTimeToMilitary(startTime) 
+      : startTime;
+    const end = endTime.includes('AM') || endTime.includes('PM') 
+      ? convertTimeToMilitary(endTime) 
+      : endTime;
+    
+    const [startHour, startMin] = start.split(':').map(Number);
+    const [endHour, endMin] = end.split(':').map(Number);
+    
+    let hours = endHour - startHour;
+    let minutes = endMin - startMin;
+    
+    if (minutes < 0) {
+      hours -= 1;
+      minutes += 60;
+    }
+    
+    // Handle overnight shifts
+    if (hours < 0) {
+      hours += 24;
+    }
+    
+    return hours + (minutes / 60);
+  };
+
+  // Smart Forecasting Functions
+  const getSmartForecast = async (date, mealPeriod) => {
+    try {
+      const locationUuid = await getCurrentLocationUuid();
+      
+      // Get historical sales data for the same day of week
+      const targetDate = new Date(date);
+      const dayOfWeek = targetDate.getDay();
+      
+      // Get last 4 weeks of data for this day
+      const historicalData = [];
+      for (let i = 1; i <= 4; i++) {
+        const historicalDate = getDateWeeksAgo(date, i);
+        
+        const { data, error } = await supabase
+          .from('sales_data')
+          .select('total_sales, customer_count')
+          .eq('location_id', locationUuid)
+          .eq('date', historicalDate)
+          .eq('meal_period', mealPeriod)
+          .single();
+        
+        if (!error && data) {
+          historicalData.push(data);
+        }
+      }
+      
+      if (historicalData.length === 0) {
+        return {
+          predictedSales: 0,
+          predictedCustomers: 0,
+          confidence: 'low',
+          reasoning: 'No historical data available'
+        };
+      }
+      
+      // Calculate average
+      const avgSales = historicalData.reduce((sum, d) => sum + d.total_sales, 0) / historicalData.length;
+      const avgCustomers = historicalData.reduce((sum, d) => sum + d.customer_count, 0) / historicalData.length;
+      
+      // Apply holiday multiplier
+      const holidayMultiplier = getHolidayMultiplier(date);
+      
+      return {
+        predictedSales: Math.round(avgSales * holidayMultiplier),
+        predictedCustomers: Math.round(avgCustomers * holidayMultiplier),
+        confidence: historicalData.length >= 3 ? 'high' : 'medium',
+        reasoning: `Based on ${historicalData.length} weeks of historical data${holidayMultiplier !== 1.0 ? ' with holiday adjustment' : ''}`
+      };
+      
+    } catch (err) {
+      console.error('Error getting smart forecast:', err);
+      return {
+        predictedSales: 0,
+        predictedCustomers: 0,
+        confidence: 'low',
+        reasoning: 'Error calculating forecast'
+      };
+    }
+  };
+
+  const getWeatherImpact = async (date) => {
+    // Placeholder for weather API integration
+    return {
+      condition: 'clear',
+      impact: 1.0,
+      reasoning: 'Weather data not available'
+    };
+  };
+
+  const getLaborAnalytics = async (weekKey) => {
+    try {
+      const locationUuid = await getCurrentLocationUuid();
+      
+      const { data, error } = await supabase
+        .from('schedules')
+        .select('schedule_data')
+        .eq('week_start_date', weekKey)
+        .eq('location_id', locationUuid)
+        .single();
+      
+      if (error || !data) {
+        return {
+          totalHours: 0,
+          totalCost: 0,
+          laborPercentage: 0,
+          efficiency: 0
+        };
+      }
+      
+      // Calculate total hours from schedule_data
+      let totalHours = 0;
+      const scheduleData = data.schedule_data;
+      
+      Object.values(scheduleData).forEach(slot => {
+        if (slot.employees) {
+          slot.employees.forEach(emp => {
+            totalHours += calculateShiftHours(emp.start, emp.end);
+          });
+        }
+      });
+      
+      // Estimate cost (would need actual wage data)
+      const avgWage = 15; // placeholder
+      const totalCost = totalHours * avgWage;
+      
+      return {
+        totalHours: Math.round(totalHours * 10) / 10,
+        totalCost: Math.round(totalCost),
+        laborPercentage: 0, // Would need sales data
+        efficiency: 85 // placeholder
+      };
+      
+    } catch (err) {
+      console.error('Error getting labor analytics:', err);
+      return {
+        totalHours: 0,
+        totalCost: 0,
+        laborPercentage: 0,
+        efficiency: 0
+      };
+    }
+  };
 
   // Employee Management Functions - UPDATED TO USE UUID
   const addEmployee = async (employeeData) => {
@@ -353,12 +489,8 @@ export const LaborDataProvider = ({ children }) => {
       const newEmployee = {
         ...employeeData,
         location_id: locationUuid, // Use UUID
-        hire_date: employeeData.hire_date || new Date().toISOString().split('T')[0],
-        hourly_rate: employeeData.hourly_rate || 15,
-        performance_rating: employeeData.performance_rating || 4.0,
         is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        created_at: new Date().toISOString()
       };
 
       const { data, error } = await supabase
@@ -369,272 +501,24 @@ export const LaborDataProvider = ({ children }) => {
 
       if (error) throw error;
 
-      // Add to local state with enhanced data
       const enhancedEmployee = {
         ...data,
+        hire_date: data.hire_date || new Date().toISOString().split('T')[0],
+        performance_rating: data.performance_rating || 4.0,
+        hourly_rate: data.hourly_rate || 15.00,
         status: 'active',
         department: DEPARTMENT_MAPPING[data.department] || data.department || 'Front of House'
       };
 
       setEmployees(prev => [...prev, enhancedEmployee]);
-      setIsConnected(true);
       return { success: true, data: enhancedEmployee };
 
     } catch (err) {
       console.error('Error adding employee:', err);
-      setError('Failed to add employee to database');
-      setIsConnected(false);
       return { success: false, error: err.message };
     } finally {
       setLoading(false);
     }
-  };
-
-  // Enhanced Smart Forecasting System - UPDATED TO USE UUID
-  const getSmartForecast = async (date, parameters = {}) => {
-    try {
-      const locationUuid = await getCurrentLocationUuid();
-      
-      // Get historical data for the same day of week over past 8 weeks
-      const targetDate = new Date(date);
-      const dayOfWeek = targetDate.getDay();
-      
-      let totalGuests = 0;
-      let totalRevenue = 0;
-      let validWeeks = 0;
-      let baseLaborHours = 140;
-
-      // Collect 8 weeks of historical data - USE UUID
-      for (let week = 1; week <= 8; week++) {
-        const historicalDate = getDateWeeksAgo(date, week);
-        
-        const { data: salesData } = await supabase
-          .from('forecast_data') // Use actual table name
-          .select('forecast_total, actual_total, labor_cost')
-          .eq('location_id', locationUuid) // Use UUID
-          .eq('date', historicalDate)
-          .single();
-
-        if (salesData && salesData.actual_total > 0) {
-          totalGuests += Math.round(salesData.actual_total / MOPPED_RESTAURANT_TEMPLATE.spend_per_guest);
-          totalRevenue += salesData.actual_total;
-          
-          if (salesData.labor_cost) {
-            baseLaborHours = Math.round(salesData.labor_cost / 18);
-          }
-          validWeeks++;
-        }
-      }
-
-      // Calculate base forecast
-      const avgGuests = validWeeks > 0 ? Math.round(totalGuests / validWeeks) : 85;
-      const avgRevenue = validWeeks > 0 ? Math.round(totalRevenue / validWeeks) : (avgGuests * MOPPED_RESTAURANT_TEMPLATE.spend_per_guest);
-
-      // Apply multipliers
-      const holidayMultiplier = getHolidayMultiplier(date);
-      const weatherMultiplier = parameters.weatherMultiplier || 1.0;
-      const seasonalMultiplier = parameters.seasonalMultiplier || 1.0;
-      const eventMultiplier = parameters.eventMultiplier || 1.0;
-
-      const totalMultiplier = holidayMultiplier * weatherMultiplier * seasonalMultiplier * eventMultiplier;
-
-      // Calculate final forecast
-      const forecastGuestCount = Math.round(avgGuests * totalMultiplier);
-      const forecastRevenue = Math.round(avgRevenue * totalMultiplier);
-      const forecastLaborHours = Math.round(baseLaborHours * totalMultiplier);
-
-      const efficiency = forecastLaborHours > 0 ? 
-        Math.round((forecastGuestCount / forecastLaborHours) * 100) / 100 : 1.0;
-
-      return {
-        success: true,
-        forecast: {
-          date: date,
-          guestCount: forecastGuestCount,
-          revenue: forecastRevenue,
-          laborHours: forecastLaborHours,
-          efficiency: efficiency,
-          confidence: Math.min(validWeeks * 12.5, 100),
-          multipliers: {
-            holiday: holidayMultiplier,
-            weather: weatherMultiplier,
-            seasonal: seasonalMultiplier,
-            event: eventMultiplier,
-            total: totalMultiplier
-          },
-          historicalWeeks: validWeeks
-        }
-      };
-
-    } catch (err) {
-      console.error('Error generating smart forecast:', err);
-      
-      // Fallback forecast
-      const fallbackGuests = 85;
-      return {
-        success: false,
-        forecast: {
-          date: date,
-          guestCount: fallbackGuests,
-          revenue: fallbackGuests * MOPPED_RESTAURANT_TEMPLATE.spend_per_guest,
-          laborHours: Math.round(fallbackGuests * 0.8),
-          efficiency: 1.0,
-          confidence: 25,
-          multipliers: { total: 1.0 },
-          historicalWeeks: 0
-        },
-        error: err.message
-      };
-    }
-  };
-
-  // Weather Impact Analysis
-  const getWeatherImpact = (weatherData) => {
-    if (!weatherData) return { multiplier: 1.0, recommendations: [] };
-
-    const { temperature, condition, precipitation } = weatherData;
-    let multiplier = 1.0;
-    const recommendations = [];
-
-    // Temperature impact
-    if (temperature < 32) {
-      multiplier *= 0.7;
-      recommendations.push({
-        type: 'weather',
-        title: 'Cold Weather Impact',
-        description: 'Freezing temperatures typically reduce foot traffic by 30%. Consider hot beverage promotions.',
-        impact: 'Reduced foot traffic expected',
-        action: 'Promote hot drinks and comfort food'
-      });
-    } else if (temperature > 85) {
-      multiplier *= 1.2;
-      recommendations.push({
-        type: 'weather',
-        title: 'Hot Weather Boost',
-        description: 'Hot weather increases demand for cold beverages and lighter meals.',
-        impact: 'Improved service quality, avoid wait times',
-        action: 'Stock extra cold beverages and prep lighter menu items'
-      });
-    }
-
-    // Precipitation impact
-    if (precipitation > 0.5) {
-      multiplier *= 0.6;
-      recommendations.push({
-        type: 'weather',
-        title: 'Heavy Rain/Snow Impact',
-        description: 'Significant precipitation reduces walk-in traffic. Focus on delivery and takeout.',
-        impact: 'Reduced walk-in customers',
-        action: 'Boost delivery marketing and prep for takeout orders'
-      });
-    }
-
-    return { multiplier, recommendations };
-  };
-
-  // Enhanced Labor Analytics - UPDATED TO USE UUID AND ACTUAL TABLES
-  const getLaborAnalytics = async (startDate, endDate) => {
-    try {
-      const locationUuid = await getCurrentLocationUuid();
-      
-      // Get actual scheduled hours and costs from shifts table - USE UUID
-      const { data: shiftsData, error } = await supabase
-        .from('shifts')
-        .select(`
-          *,
-          employees(name, hourly_rate, department, role)
-        `)
-        .eq('location_id', locationUuid) // Use UUID
-        .gte('day', startDate)
-        .lte('day', endDate);
-
-      if (error) throw error;
-
-      let totalCost = 0;
-      let totalHours = 0;
-      
-      const departmentBreakdown = {
-        'FOH': { cost: 0, hours: 0, efficiency: 0 },
-        'BOH': { cost: 0, hours: 0, efficiency: 0 },
-        'Bar': { cost: 0, hours: 0, efficiency: 0 },
-        'Management': { cost: 0, hours: 0, efficiency: 0 }
-      };
-
-      shiftsData?.forEach(shift => {
-        if (shift.hours && shift.rate) {
-          const hours = shift.hours;
-          const cost = hours * shift.rate;
-          
-          totalCost += cost;
-          totalHours += hours;
-          
-          const dept = REVERSE_DEPARTMENT_MAPPING[shift.department] || 'FOH';
-          if (departmentBreakdown[dept]) {
-            departmentBreakdown[dept].cost += cost;
-            departmentBreakdown[dept].hours += hours;
-          }
-        }
-      });
-
-      // Calculate efficiency for each department
-      Object.keys(departmentBreakdown).forEach(dept => {
-        const deptData = departmentBreakdown[dept];
-        deptData.efficiency = deptData.hours > 0 ? Math.round((deptData.cost / deptData.hours) * 100) / 100 : 0;
-      });
-
-      return {
-        success: true,
-        analytics: {
-          totalCost: totalCost,
-          totalHours: totalHours,
-          averageHourlyRate: totalHours > 0 ? Math.round((totalCost / totalHours) * 100) / 100 : 0,
-          efficiency: totalHours > 0 ? Math.round((totalCost / totalHours) * 100) / 100 : 0,
-          departmentBreakdown: departmentBreakdown,
-          period: { startDate, endDate }
-        }
-      };
-
-    } catch (err) {
-      console.error('Error getting labor analytics:', err);
-      return {
-        success: false,
-        analytics: {
-          totalCost: 0,
-          totalHours: 0,
-          averageHourlyRate: 0,
-          efficiency: 0,
-          departmentBreakdown: {
-            'FOH': { cost: 0, hours: 0, efficiency: 0 },
-            'BOH': { cost: 0, hours: 0, efficiency: 0 },
-            'Bar': { cost: 0, hours: 0, efficiency: 0 },
-            'Management': { cost: 0, hours: 0, efficiency: 0 }
-          }
-        },
-        error: err.message
-      };
-    }
-  };
-
-  // Helper function to calculate shift hours with standard time format support
-  const calculateShiftHours = (startTime, endTime) => {
-    if (!startTime || !endTime) return 0;
-    
-    // Convert to military time if needed
-    const militaryStart = startTime.includes('AM') || startTime.includes('PM') ? 
-      convertTimeToMilitary(startTime) : startTime;
-    const militaryEnd = endTime.includes('AM') || endTime.includes('PM') ? 
-      convertTimeToMilitary(endTime) : endTime;
-    
-    const start = new Date(`2000-01-01 ${militaryStart}`);
-    const end = new Date(`2000-01-01 ${militaryEnd}`);
-    
-    // Handle overnight shifts
-    if (end < start) {
-      end.setDate(end.getDate() + 1);
-    }
-    
-    const diffMs = end - start;
-    return Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100; // Hours with 2 decimal places
   };
 
   // Enhanced PTO Management Functions - UPDATED TO USE UUID
@@ -710,6 +594,56 @@ export const LaborDataProvider = ({ children }) => {
     }
   };
 
+  // Approve PTO request using Supabase RPC function
+  const approvePTORequest = async (requestId, options = {}) => {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .rpc('approve_pto_request_self', {
+          p_request_id: requestId,
+          p_notes: options.notes || null
+        });
+      
+      if (error) throw error;
+      
+      // Refresh PTO requests to get updated data
+      await loadLaborData();
+      
+      return { success: true, data };
+    } catch (err) {
+      console.error('Error approving PTO request:', err);
+      return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Deny PTO request using Supabase RPC function
+  const denyPTORequest = async (requestId, options = {}) => {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .rpc('deny_pto_request_self', {
+          p_request_id: requestId,
+          p_denial_reason: options.reason || 'Denied by manager'
+        });
+      
+      if (error) throw error;
+      
+      // Refresh PTO requests to get updated data
+      await loadLaborData();
+      
+      return { success: true, data };
+    } catch (err) {
+      console.error('Error denying PTO request:', err);
+      return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Schedule Management Functions - UPDATED TO USE ACTUAL TABLE AND UUID
   const saveSchedule = async (weekKey, scheduleData) => {
     try {
@@ -748,29 +682,13 @@ export const LaborDataProvider = ({ children }) => {
       
       if (error) throw error;
       
-      // Convert times back to standard format for display
-      const displayScheduleData = JSON.parse(JSON.stringify(data.schedule_data));
-      Object.keys(displayScheduleData).forEach(key => {
-        const slot = displayScheduleData[key];
-        if (slot.employees) {
-          slot.employees = slot.employees.map(emp => ({
-            ...emp,
-            start: emp.start ? convertTimeToStandard(emp.start) : emp.start,
-            end: emp.end ? convertTimeToStandard(emp.end) : emp.end
-          }));
-        }
-      });
-      
       setSchedules(prev => ({
         ...prev,
-        [weekKey]: {
-          ...data,
-          schedule_data: displayScheduleData
-        }
+        [weekKey]: processedScheduleData
       }));
-      
-      return { success: true, data: { ...data, schedule_data: displayScheduleData } };
-      
+
+      return { success: true, data };
+
     } catch (err) {
       console.error('Error saving schedule:', err);
       return { success: false, error: err.message };
@@ -779,128 +697,34 @@ export const LaborDataProvider = ({ children }) => {
     }
   };
 
-  // System Stats Function - UPDATED TO USE UUID
+  // System Stats Function
   const getSystemStats = async () => {
     try {
-      const currentLocationUuid = await getCurrentLocationUuid();
+      const locationUuid = await getCurrentLocationUuid();
       
-      // Get current date for calculations
-      const today = new Date().toISOString().split('T')[0];
-      const startOfWeek = new Date();
-      startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
-      const weekStart = startOfWeek.toISOString().split('T')[0];
+      // Get current user
+      const { data: { session } } = await supabase.auth.getSession();
       
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      const monthStart = startOfMonth.toISOString().split('T')[0];
-
-      // Initialize stats object
-      const stats = {
-        // Employee Statistics
-        totalEmployees: employees.length,
-        activeEmployees: employees.filter(emp => emp.status === 'active').length,
-        
-        // Department Breakdown
-        departmentBreakdown: {
-          'Front of House': employees.filter(emp => emp.department === 'Front of House').length,
-          'Back of House': employees.filter(emp => emp.department === 'Back of House').length,
-          'Bar & Beverage': employees.filter(emp => emp.department === 'Bar & Beverage').length,
-          'Management': employees.filter(emp => emp.department === 'Management').length
-        },
-        
-        // PTO Statistics
-        pendingPTORequests: ptoRequests.filter(pto => pto.status === 'pending').length,
-        approvedPTORequests: ptoRequests.filter(pto => pto.status === 'approved').length,
-        
-        // Schedule Statistics
-        totalSchedules: Object.keys(schedules).length,
-        
-        // System Health
-        databaseConnected: isConnected,
-        lastDataLoad: new Date().toISOString(),
-        
-        // Location Info
-        locationId: locationId,
-        locationUuid: currentLocationUuid,
-        locationName: locationName || 'Unknown Location'
-      };
-
-      // Get today's schedule stats if available
-      const todayScheduleKey = Object.keys(schedules).find(key => 
-        schedules[key]?.week_start_date && 
-        new Date(schedules[key].week_start_date) <= new Date(today)
-      );
+      // Get location details
+      const { data: location } = await supabase
+        .from('locations')
+        .select('name')
+        .eq('uuid', locationUuid)
+        .single();
       
-      if (todayScheduleKey && schedules[todayScheduleKey]) {
-        const todaySchedule = schedules[todayScheduleKey].schedule_data || {};
-        let scheduledEmployeesToday = 0;
-        let totalShiftsToday = 0;
-        
-        Object.values(todaySchedule).forEach(slot => {
-          if (slot.employees && Array.isArray(slot.employees)) {
-            scheduledEmployeesToday += slot.employees.length;
-            totalShiftsToday += slot.employees.length;
-          }
-        });
-        
-        stats.todayStats = {
-          scheduledEmployees: scheduledEmployeesToday,
-          totalShifts: totalShiftsToday
-        };
-      } else {
-        stats.todayStats = {
-          scheduledEmployees: 0,
-          totalShifts: 0
-        };
-      }
-
-      // Try to get sales data for additional metrics - USE UUID
-      try {
-        const { data: salesData } = await supabase
-          .from('forecast_data')
-          .select('actual_total, labor_cost')
-          .eq('location_id', currentLocationUuid) // Use UUID
-          .eq('date', today)
-          .single();
-
-        if (salesData) {
-          stats.todayStats.revenue = salesData.actual_total || 0;
-          stats.todayStats.laborCost = salesData.labor_cost || 0;
-        }
-      } catch (salesError) {
-        // Sales data not available, continue without it
-        console.log('Sales data not available for today');
-      }
-
-      // Calculate average hourly rate
-      const totalHourlyRates = employees.reduce((sum, emp) => sum + (emp.hourly_rate || 0), 0);
-      stats.averageHourlyRate = employees.length > 0 ? 
-        Math.round((totalHourlyRates / employees.length) * 100) / 100 : 0;
-
-      // Performance metrics
-      stats.performance = {
-        dataLoadTime: loading ? 'Loading...' : 'Ready',
-        errorCount: error ? 1 : 0,
-        lastError: error || null
-      };
-
       return {
-        success: true,
-        stats: stats,
-        timestamp: new Date().toISOString()
+        databaseConnected: isConnected,
+        locationName: location?.name || locationName || 'Unknown Location',
+        employeeCount: employees.length,
+        activeSchedules: Object.keys(schedules).length,
+        pendingPTORequests: ptoRequests.filter(r => r.status === 'pending').length,
+        userEmail: session?.user?.email || 'Not logged in'
       };
-
     } catch (err) {
       console.error('Error getting system stats:', err);
       return {
-        success: false,
-        error: err.message,
-        stats: {
-          totalEmployees: employees.length || 0,
-          activeEmployees: 0,
-          databaseConnected: false,
-          locationName: 'Error Loading'
-        }
+        databaseConnected: false,
+        locationName: 'Error Loading'
       };
     }
   };
@@ -939,6 +763,8 @@ export const LaborDataProvider = ({ children }) => {
     // PTO functions
     addPTORequest,
     updatePTOStatus,
+    approvePTORequest,
+    denyPTORequest,
 
     // System functions
     getSystemStats,
