@@ -41,14 +41,6 @@ export const views = [
     showInNav: true,
   },
   {
-    id: 'WEEKLY_LABOR_SCHEDULE',
-    path: '/labor-schedule',
-    label: 'Labor Schedule',
-    componentName: 'LaborManagement',
-    icon: <Users size={20} strokeWidth={2.5} />,
-    showInNav: true,
-  },
-  {
     id: 'DAILY_BRIEFING_BUILDER',
     path: '/daily-briefing',
     label: 'Daily Briefing',
