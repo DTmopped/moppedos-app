@@ -227,9 +227,9 @@ export const LaborDataProvider = ({ children }) => {
           employee:employees(*)
         `)
         .eq('location_id', locationUuid)
-        .gte('date', weekStartDate)
-        .lte('date', endDate.toISOString().split('T')[0])
-        .order('date', { ascending: true })
+        .gte('day', weekStart.toISOString().split('T')[0])
+        .lte('day', weekEnd.toISOString().split('T')[0])
+        .order('day', { ascending: true })
         .order('start_time', { ascending: true });
       
       if (error) {
