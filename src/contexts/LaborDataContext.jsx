@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useContext } from 'react';
 import { supabase } from '@/supabaseClient';
 import { 
   MOPPED_RESTAURANT_TEMPLATE, 
@@ -204,6 +204,48 @@ export const LaborDataProvider = ({ children }) => {
     return location?.uuid;
   };
 
+  // ✅ NEW FUNCTION: Fetch schedule for a specific week
+  const fetchWeekSchedule = async (weekStartDate) => {
+    if (!locationUuid) {
+      console.error('❌ No location UUID available');
+      return null;
+    }
+    
+    try {
+      console.log(`📅 Fetching schedule for week starting ${weekStartDate}...`);
+      
+      // Calculate week end date
+      const startDate = new Date(weekStartDate);
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 6);
+      
+      // Fetch shifts for this week
+      const { data: shifts, error } = await supabase
+        .from('shifts')
+        .select(`
+          *,
+          employee:employees(*)
+        `)
+        .eq('location_id', locationUuid)
+        .gte('date', weekStartDate)
+        .lte('date', endDate.toISOString().split('T')[0])
+        .order('date', { ascending: true })
+        .order('start_time', { ascending: true });
+      
+      if (error) {
+        console.error('❌ Error fetching shifts:', error);
+        return null;
+      }
+      
+      console.log(`✅ Fetched ${shifts?.length || 0} shifts for week ${weekStartDate}`);
+      return shifts || [];
+      
+    } catch (err) {
+      console.error('❌ Exception in fetchWeekSchedule:', err);
+      return null;
+    }
+  };
+
   // Load all labor data - UPDATED TO USE UUID
   const loadLaborData = async () => {
     try {
@@ -249,93 +291,78 @@ export const LaborDataProvider = ({ children }) => {
           employees!inner(id, name, email, role)
         `)
         .eq('location_id', locationUuid) // Use UUID here
-        .order('created_at', { ascending: false });
+        .order('start_date', { ascending: false });
 
-      if (!ptoError && ptoData) {
-        const enhancedPTO = ptoData.map(pto => ({
-          ...pto,
-          employee_name: pto.employees?.name || 'Unknown Employee',
-          employee_role: pto.employees?.role || 'Employee',
-          days_requested: pto.days_requested || calculateDays(pto.start_date, pto.end_date)
-        }));
-        setPtoRequests(enhancedPTO);
-        console.log('Loaded PTO requests:', enhancedPTO.length);
-      }
-
-      // Load schedule requests - USE UUID
-      const { data: scheduleData, error: scheduleError } = await supabase
-        .from('schedule_requests')
-        .select(`
-          *,
-          employees!inner(id, name, role)
-        `)
-        .eq('location_id', locationUuid) // Use UUID here
-        .order('created_at', { ascending: false });
-
-      if (!scheduleError && scheduleData) {
-        const enhancedScheduleData = scheduleData.map(req => ({
-          ...req,
-          employee_name: req.employees?.name || 'Unknown Employee'
-        }));
-        setScheduleRequests(enhancedScheduleData);
-        console.log('Loaded schedule requests:', enhancedScheduleData.length);
+      if (ptoError) {
+        console.error('Error loading PTO requests:', ptoError);
+      } else {
+        setPtoRequests(ptoData || []);
+        console.log('Loaded PTO requests:', ptoData?.length || 0);
       }
 
       // Load employee availability - USE UUID
-      const { data: availabilityData, error: availError } = await supabase
+      const { data: availData, error: availError } = await supabase
         .from('employee_availability')
-        .select(`
-          *,
-          employees!inner(id, name)
-        `)
+        .select('*')
         .eq('location_id', locationUuid); // Use UUID here
 
-      if (!availError && availabilityData) {
-        const enhancedAvailability = availabilityData.map(avail => ({
-          ...avail,
-          employee_name: avail.employees?.name || 'Unknown Employee'
-        }));
-        setEmployeeAvailability(enhancedAvailability);
-        console.log('Loaded employee availability:', enhancedAvailability.length);
+      if (availError) {
+        console.error('Error loading availability:', availError);
+      } else {
+        setEmployeeAvailability(availData || []);
+        console.log('Loaded availability records:', availData?.length || 0);
       }
 
-      setIsConnected(true);
+      setLoading(false);
     } catch (err) {
-      console.error('Error loading labor data:', err);
-      setError(err.message);
+      console.error('Error in loadLaborData:', err);
+      setError('Failed to load labor data');
       setIsConnected(false);
-    } finally {
       setLoading(false);
     }
   };
 
-  // Helper function to calculate days between dates
-  const calculateDays = (startDate, endDate) => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const diffTime = Math.abs(end - start);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-    return diffDays;
-  };
-
-  // Load data on mount and when location changes
+  // Load data when location is ready
   useEffect(() => {
     if (locationUuid) {
       loadLaborData();
     }
   }, [locationUuid]);
 
-  // Helper function to calculate shift hours
+  // Add employee function - UPDATED TO USE UUID
+  const addEmployee = async (employeeData) => {
+    try {
+      const locationUuid = await getCurrentLocationUuid();
+      
+      const newEmployee = {
+        ...employeeData,
+        location_id: locationUuid, // Use UUID
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from('employees')
+        .insert([newEmployee])
+        .select();
+
+      if (error) throw error;
+
+      setEmployees(prev => [...prev, data[0]]);
+      return { success: true, data: data[0] };
+    } catch (err) {
+      console.error('Error adding employee:', err);
+      return { success: false, error: err.message };
+    }
+  };
+
+  // Calculate shift hours
   const calculateShiftHours = (startTime, endTime) => {
     if (!startTime || !endTime) return 0;
     
-    // Convert to military time if needed
-    const start = startTime.includes('AM') || startTime.includes('PM') 
-      ? convertTimeToMilitary(startTime) 
-      : startTime;
-    const end = endTime.includes('AM') || endTime.includes('PM') 
-      ? convertTimeToMilitary(endTime) 
-      : endTime;
+    const start = convertTimeToMilitary(startTime);
+    const end = convertTimeToMilitary(endTime);
     
     const [startHour, startMin] = start.split(':').map(Number);
     const [endHour, endMin] = end.split(':').map(Number);
@@ -348,7 +375,6 @@ export const LaborDataProvider = ({ children }) => {
       minutes += 60;
     }
     
-    // Handle overnight shifts
     if (hours < 0) {
       hours += 24;
     }
@@ -356,178 +382,44 @@ export const LaborDataProvider = ({ children }) => {
     return hours + (minutes / 60);
   };
 
-  // Smart Forecasting Functions
-  const getSmartForecast = async (date, mealPeriod) => {
+  // Save schedule function - UPDATED TO USE UUID
+  const saveSchedule = async (weekStartDate, scheduleData) => {
     try {
       const locationUuid = await getCurrentLocationUuid();
       
-      // Get historical sales data for the same day of week
-      const targetDate = new Date(date);
-      const dayOfWeek = targetDate.getDay();
-      
-      // Get last 4 weeks of data for this day
-      const historicalData = [];
-      for (let i = 1; i <= 4; i++) {
-        const historicalDate = getDateWeeksAgo(date, i);
-        
-        const { data, error } = await supabase
-          .from('sales_data')
-          .select('total_sales, customer_count')
-          .eq('location_id', locationUuid)
-          .eq('date', historicalDate)
-          .eq('meal_period', mealPeriod)
-          .single();
-        
-        if (!error && data) {
-          historicalData.push(data);
-        }
-      }
-      
-      if (historicalData.length === 0) {
-        return {
-          predictedSales: 0,
-          predictedCustomers: 0,
-          confidence: 'low',
-          reasoning: 'No historical data available'
-        };
-      }
-      
-      // Calculate average
-      const avgSales = historicalData.reduce((sum, d) => sum + d.total_sales, 0) / historicalData.length;
-      const avgCustomers = historicalData.reduce((sum, d) => sum + d.customer_count, 0) / historicalData.length;
-      
-      // Apply holiday multiplier
-      const holidayMultiplier = getHolidayMultiplier(date);
-      
-      return {
-        predictedSales: Math.round(avgSales * holidayMultiplier),
-        predictedCustomers: Math.round(avgCustomers * holidayMultiplier),
-        confidence: historicalData.length >= 3 ? 'high' : 'medium',
-        reasoning: `Based on ${historicalData.length} weeks of historical data${holidayMultiplier !== 1.0 ? ' with holiday adjustment' : ''}`
+      const scheduleRecord = {
+        location_id: locationUuid, // Use UUID
+        week_start_date: weekStartDate,
+        schedule_data: scheduleData,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
-      
-    } catch (err) {
-      console.error('Error getting smart forecast:', err);
-      return {
-        predictedSales: 0,
-        predictedCustomers: 0,
-        confidence: 'low',
-        reasoning: 'Error calculating forecast'
-      };
-    }
-  };
 
-  const getWeatherImpact = async (date) => {
-    // Placeholder for weather API integration
-    return {
-      condition: 'clear',
-      impact: 1.0,
-      reasoning: 'Weather data not available'
-    };
-  };
-
-  const getLaborAnalytics = async (weekKey) => {
-    try {
-      const locationUuid = await getCurrentLocationUuid();
-      
       const { data, error } = await supabase
         .from('schedules')
-        .select('schedule_data')
-        .eq('week_start_date', weekKey)
-        .eq('location_id', locationUuid)
-        .single();
-      
-      if (error || !data) {
-        return {
-          totalHours: 0,
-          totalCost: 0,
-          laborPercentage: 0,
-          efficiency: 0
-        };
-      }
-      
-      // Calculate total hours from schedule_data
-      let totalHours = 0;
-      const scheduleData = data.schedule_data;
-      
-      Object.values(scheduleData).forEach(slot => {
-        if (slot.employees) {
-          slot.employees.forEach(emp => {
-            totalHours += calculateShiftHours(emp.start, emp.end);
-          });
-        }
-      });
-      
-      // Estimate cost (would need actual wage data)
-      const avgWage = 15; // placeholder
-      const totalCost = totalHours * avgWage;
-      
-      return {
-        totalHours: Math.round(totalHours * 10) / 10,
-        totalCost: Math.round(totalCost),
-        laborPercentage: 0, // Would need sales data
-        efficiency: 85 // placeholder
-      };
-      
-    } catch (err) {
-      console.error('Error getting labor analytics:', err);
-      return {
-        totalHours: 0,
-        totalCost: 0,
-        laborPercentage: 0,
-        efficiency: 0
-      };
-    }
-  };
-
-  // Employee Management Functions - UPDATED TO USE UUID
-  const addEmployee = async (employeeData) => {
-    try {
-      setLoading(true);
-      const locationUuid = await getCurrentLocationUuid();
-      
-      const newEmployee = {
-        ...employeeData,
-        location_id: locationUuid, // Use UUID
-        is_active: true,
-        created_at: new Date().toISOString()
-      };
-
-      const { data, error } = await supabase
-        .from('employees')
-        .insert([newEmployee])
-        .select()
-        .single();
+        .upsert([scheduleRecord], { onConflict: ['location_id', 'week_start_date'] })
+        .select();
 
       if (error) throw error;
 
-      const enhancedEmployee = {
-        ...data,
-        hire_date: data.hire_date || new Date().toISOString().split('T')[0],
-        performance_rating: data.performance_rating || 4.0,
-        hourly_rate: data.hourly_rate || 15.00,
-        status: 'active',
-        department: DEPARTMENT_MAPPING[data.department] || data.department || 'Front of House'
-      };
+      setSchedules(prev => ({
+        ...prev,
+        [weekStartDate]: scheduleData
+      }));
 
-      setEmployees(prev => [...prev, enhancedEmployee]);
-      return { success: true, data: enhancedEmployee };
-
+      return { success: true, data: data[0] };
     } catch (err) {
-      console.error('Error adding employee:', err);
+      console.error('Error saving schedule:', err);
       return { success: false, error: err.message };
-    } finally {
-      setLoading(false);
     }
   };
 
-  // Enhanced PTO Management Functions - UPDATED TO USE UUID
+  // PTO functions - UPDATED TO USE UUID
   const addPTORequest = async (ptoData) => {
     try {
-      setLoading(true);
       const locationUuid = await getCurrentLocationUuid();
       
-      const newPTO = {
+      const newRequest = {
         ...ptoData,
         location_id: locationUuid, // Use UUID
         status: 'pending',
@@ -536,168 +428,166 @@ export const LaborDataProvider = ({ children }) => {
 
       const { data, error } = await supabase
         .from('pto_requests')
-        .insert([newPTO])
-        .select(`*, employees(name, email)`)
-        .single();
+        .insert([newRequest])
+        .select(`
+          *,
+          employees!inner(id, name, email, role)
+        `);
 
       if (error) throw error;
 
-      const enhancedPTO = {
-        ...data,
-        employee_name: data.employees?.name || 'Unknown Employee'
-      };
-
-      setPtoRequests(prev => [enhancedPTO, ...prev]);
-      return { success: true, data: enhancedPTO };
-
+      setPtoRequests(prev => [data[0], ...prev]);
+      return { success: true, data: data[0] };
     } catch (err) {
       console.error('Error adding PTO request:', err);
       return { success: false, error: err.message };
-    } finally {
-      setLoading(false);
     }
   };
 
-  const updatePTOStatus = async (ptoId, status, notes = '') => {
+  const updatePTOStatus = async (requestId, status, reviewedBy) => {
     try {
-      setLoading(true);
-      
       const { data, error } = await supabase
         .from('pto_requests')
-        .update({ 
-          status, 
-          admin_notes: notes,
-          updated_at: new Date().toISOString()
+        .update({
+          status,
+          reviewed_by: reviewedBy,
+          reviewed_at: new Date().toISOString()
         })
-        .eq('id', ptoId)
-        .select(`*, employees(name, email)`)
-        .single();
+        .eq('id', requestId)
+        .select(`
+          *,
+          employees!inner(id, name, email, role)
+        `);
 
       if (error) throw error;
 
-      const enhancedPTO = {
-        ...data,
-        employee_name: data.employees?.name || 'Unknown Employee'
-      };
-
-      setPtoRequests(prev => 
-        prev.map(pto => pto.id === ptoId ? enhancedPTO : pto)
+      setPtoRequests(prev =>
+        prev.map(req => (req.id === requestId ? data[0] : req))
       );
 
-      return { success: true, data: enhancedPTO };
-
+      return { success: true, data: data[0] };
     } catch (err) {
       console.error('Error updating PTO status:', err);
       return { success: false, error: err.message };
-    } finally {
-      setLoading(false);
     }
   };
 
-  // Approve PTO request using Supabase RPC function
-  const approvePTORequest = async (requestId, options = {}) => {
+  const approvePTORequest = async (requestId, reviewedBy) => {
+    return updatePTOStatus(requestId, 'approved', reviewedBy);
+  };
+
+  const denyPTORequest = async (requestId, reviewedBy) => {
+    return updatePTOStatus(requestId, 'denied', reviewedBy);
+  };
+
+  // Smart forecast function with holiday detection
+  const getSmartForecast = async (date) => {
     try {
-      setLoading(true);
+      const locationUuid = await getCurrentLocationUuid();
+      const targetDate = new Date(date);
+      const dayOfWeek = targetDate.getDay();
       
-      const { data, error } = await supabase
-        .rpc('approve_pto_request_self', {
-          p_request_id: requestId,
-          p_notes: options.notes || null
-        });
+      // Get historical data for same day of week
+      const historicalData = [];
+      for (let weeksBack = 1; weeksBack <= 4; weeksBack++) {
+        const historicalDate = getDateWeeksAgo(date, weeksBack);
+        
+        const { data, error } = await supabase
+          .from('fva_daily_history')
+          .select('actual_sales, forecast_sales')
+          .eq('location_uuid', locationUuid) // Use UUID
+          .eq('date', historicalDate)
+          .single();
+        
+        if (!error && data) {
+          historicalData.push(data.actual_sales || data.forecast_sales || 0);
+        }
+      }
       
-      if (error) throw error;
+      // Calculate base forecast
+      let baseForecast = 0;
+      if (historicalData.length > 0) {
+        baseForecast = historicalData.reduce((sum, val) => sum + val, 0) / historicalData.length;
+      } else {
+        // Fallback to typical day patterns
+        const typicalSales = {
+          0: 8000,  // Sunday
+          1: 5000,  // Monday
+          2: 5500,  // Tuesday
+          3: 6000,  // Wednesday
+          4: 7000,  // Thursday
+          5: 12000, // Friday
+          6: 13000  // Saturday
+        };
+        baseForecast = typicalSales[dayOfWeek];
+      }
       
-      // Refresh PTO requests to get updated data
-      await loadLaborData();
+      // Apply holiday multiplier
+      const holidayMultiplier = getHolidayMultiplier(date);
+      const adjustedForecast = Math.round(baseForecast * holidayMultiplier);
       
-      return { success: true, data };
+      return {
+        forecast: adjustedForecast,
+        confidence: historicalData.length >= 3 ? 'high' : 'medium',
+        historicalAverage: Math.round(baseForecast),
+        holidayMultiplier,
+        isHoliday: holidayMultiplier !== 1.0
+      };
     } catch (err) {
-      console.error('Error approving PTO request:', err);
-      return { success: false, error: err.message };
-    } finally {
-      setLoading(false);
+      console.error('Error generating smart forecast:', err);
+      return {
+        forecast: 8000,
+        confidence: 'low',
+        error: err.message
+      };
     }
   };
 
-  // Deny PTO request using Supabase RPC function
-  const denyPTORequest = async (requestId, options = {}) => {
-    try {
-      setLoading(true);
-      
-      const { data, error } = await supabase
-        .rpc('deny_pto_request_self', {
-          p_request_id: requestId,
-          p_denial_reason: options.reason || 'Denied by manager'
-        });
-      
-      if (error) throw error;
-      
-      // Refresh PTO requests to get updated data
-      await loadLaborData();
-      
-      return { success: true, data };
-    } catch (err) {
-      console.error('Error denying PTO request:', err);
-      return { success: false, error: err.message };
-    } finally {
-      setLoading(false);
-    }
+  // Weather impact placeholder
+  const getWeatherImpact = async (date) => {
+    return {
+      temperature: 72,
+      conditions: 'Clear',
+      impact: 'neutral',
+      adjustment: 1.0
+    };
   };
 
-  // Schedule Management Functions - UPDATED TO USE ACTUAL TABLE AND UUID
-  const saveSchedule = async (weekKey, scheduleData) => {
+  // Labor analytics placeholder
+  const getLaborAnalytics = async (startDate, endDate) => {
     try {
-      setLoading(true);
       const locationUuid = await getCurrentLocationUuid();
       
-      // Convert any standard time formats to military time for database storage
-      const processedScheduleData = JSON.parse(JSON.stringify(scheduleData));
-      
-      // Process each schedule entry to ensure times are in military format
-      Object.keys(processedScheduleData).forEach(key => {
-        const slot = processedScheduleData[key];
-        if (slot.employees) {
-          slot.employees = slot.employees.map(emp => ({
-            ...emp,
-            start: emp.start && (emp.start.includes('AM') || emp.start.includes('PM')) ? 
-              convertTimeToMilitary(emp.start) : emp.start,
-            end: emp.end && (emp.end.includes('AM') || emp.end.includes('PM')) ? 
-              convertTimeToMilitary(emp.end) : emp.end
-          }));
-        }
-      });
-      
-      const scheduleEntry = {
-        week_start_date: weekKey, // Use actual column name
-        schedule_data: processedScheduleData,
-        location_id: locationUuid, // Use UUID
-        updated_at: new Date().toISOString()
-      };
-
       const { data, error } = await supabase
-        .from('schedules') // Use actual table name
-        .upsert(scheduleEntry, { onConflict: ['week_start_date', 'location_id'] })
-        .select()
-        .single();
+        .from('fva_daily_history')
+        .select('*')
+        .eq('location_uuid', locationUuid) // Use UUID
+        .gte('date', startDate)
+        .lte('date', endDate)
+        .order('date', { ascending: true });
       
       if (error) throw error;
       
-      setSchedules(prev => ({
-        ...prev,
-        [weekKey]: processedScheduleData
-      }));
-
-      return { success: true, data };
-
+      return {
+        totalSales: data.reduce((sum, day) => sum + (day.actual_sales || 0), 0),
+        totalLaborCost: data.reduce((sum, day) => sum + (day.actual_labor_cost || 0), 0),
+        avgLaborPercent: data.length > 0
+          ? (data.reduce((sum, day) => sum + ((day.actual_labor_cost || 0) / (day.actual_sales || 1) * 100), 0) / data.length)
+          : 0,
+        days: data.length
+      };
     } catch (err) {
-      console.error('Error saving schedule:', err);
-      return { success: false, error: err.message };
-    } finally {
-      setLoading(false);
+      console.error('Error getting labor analytics:', err);
+      return {
+        totalSales: 0,
+        totalLaborCost: 0,
+        avgLaborPercent: 0,
+        days: 0
+      };
     }
   };
 
-  // System Stats Function
+  // System stats
   const getSystemStats = async () => {
     try {
       const locationUuid = await getCurrentLocationUuid();
@@ -759,6 +649,7 @@ export const LaborDataProvider = ({ children }) => {
 
     // Schedule functions
     saveSchedule,
+    fetchWeekSchedule, // ✅ NEW FUNCTION ADDED
 
     // PTO functions
     addPTORequest,
@@ -785,3 +676,5 @@ export const LaborDataProvider = ({ children }) => {
     </LaborDataContext.Provider>
   );
 };
+
+export default LaborDataContext;
