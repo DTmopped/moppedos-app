@@ -692,11 +692,12 @@ const getDepartmentStats = (department) => {
   };
 
   const getAssignedEmployees = (roleIndex, shiftIndex, dayIndex) => {
-    const actualRole = filteredRoles[roleIndex];
-    const actualRoleIndex = ROLES.findIndex(role => role.name === actualRole.name);
-    const scheduleKey = `${actualRoleIndex}-${shiftIndex}-${dayIndex}`;
-    return scheduleData[scheduleKey]?.employees || [];
-  };
+  const actualRole = filteredRoles[roleIndex];
+  const dateStr = weekDays[dayIndex].toISOString().split('T')[0];
+  const dayEmployees = scheduleData[dateStr]?.employees || [];
+  return dayEmployees.filter(emp => emp.role === actualRole.name);
+};
+
 
   const getTotalAssignments = () => {
     return Object.values(scheduleData).reduce((total, day) => {
