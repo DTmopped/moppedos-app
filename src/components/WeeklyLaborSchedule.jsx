@@ -490,7 +490,7 @@ useEffect(() => {
           start_time: convertTimeToStandard(shift.start_time),
           end_time: convertTimeToStandard(shift.end_time),
           hours: shift.hours,
-          hourly_rate: shift.employee?.hourly_rate || shift.hourly_rate || 15,
+          hourly_rate: shift.employee?.hourly_rate || 15,
           has_break: shift.has_break || false,
           break_start: shift.break_start ? convertTimeToStandard(shift.break_start) : null,
           break_duration: shift.break_duration || 0
