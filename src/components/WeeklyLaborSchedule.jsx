@@ -473,7 +473,8 @@ useEffect(() => {
       const newScheduleData = {};
       
       shifts.forEach(shift => {
-        const dayKey = shift.date;
+        const dayKey = shift.day;
+
         
         // Initialize day if it doesn't exist
         if (!newScheduleData[dayKey]) {
@@ -483,7 +484,7 @@ useEffect(() => {
         // Add employee shift to the day
         newScheduleData[dayKey].employees.push({
           id: shift.employee_id,
-          name: shift.employee?.name || 'Unknown Employee',
+          name: shift.employee_name || 'Unknown Employee',
           role: shift.role,
           department: shift.department,
           start_time: convertTimeToStandard(shift.start_time),
