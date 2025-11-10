@@ -238,7 +238,15 @@ export const LaborDataProvider = ({ children }) => {
       }
       
       console.log(`✅ Fetched ${shifts?.length || 0} shifts for week ${weekStartDate}`);
-      return shifts || [];
+      // Format shifts to include employee_name
+const formattedShifts = shifts?.map(shift => ({
+  ...shift,
+  employee_name: shift.employee?.name || null
+})) || [];
+
+console.log('✅ Formatted shifts with employee names:', formattedShifts.slice(0, 3));
+return formattedShifts;
+
       
     } catch (err) {
       console.error('❌ Exception in fetchWeekSchedule:', err);
