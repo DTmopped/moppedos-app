@@ -4,10 +4,12 @@ import { Button } from '@/components/ui/button';
 import { 
   Calendar, Clock, Users, DollarSign, TrendingUp, TrendingDown,
   ChevronLeft, ChevronRight, Copy, Edit, BarChart3, Target,
-  AlertCircle, CheckCircle, XCircle, Plus, Settings, RefreshCw
+  AlertCircle, CheckCircle, XCircle, Plus, Settings, RefreshCw, Loader2
 } from 'lucide-react';
 import { format, addWeeks, startOfWeek, endOfWeek, addDays } from 'date-fns';
 import { useLaborData } from '@/contexts/LaborDataContext';
+import { supabase } from '@/supabaseClient';
+import { getCurrentLocationId } from '@/supabaseClient';
 
 // Enhanced Badge Component
 const Badge = ({ children, variant = "default", className = "" }) => {
@@ -181,7 +183,7 @@ const WeekCard = ({ week, isCurrentWeek, onCopyPrevious, onEditWeek }) => {
 };
 
 // Quick Actions Toolbar
-const QuickActions = ({ onAutoPopulate, onOptimizeAll, onGenerateReport }) => {
+const QuickActions = ({ onAutoPopulate, onOptimizeAll, onGenerateReport, isGenerating }) => {
   return (
     <Card className="border-slate-200 bg-white">
       <CardContent className="p-4">
@@ -195,7 +197,8 @@ const QuickActions = ({ onAutoPopulate, onOptimizeAll, onGenerateReport }) => {
               size="sm"
               variant="outline"
               onClick={onGenerateReport}
-              className="border-slate-300 text-slate-700 hover:bg-slate-50"
+              disabled={isGenerating}
+              className="border-slate-300 text-slate-700 hover:bg-slate-50 disabled:opacity-50"
             >
               <BarChart3 className="h-4 w-4 mr-1" />
               Generate Report
@@ -204,7 +207,8 @@ const QuickActions = ({ onAutoPopulate, onOptimizeAll, onGenerateReport }) => {
               size="sm"
               variant="outline"
               onClick={onOptimizeAll}
-              className="border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+              disabled={isGenerating}
+              className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
             >
               <Target className="h-4 w-4 mr-1" />
               Optimize All
@@ -212,10 +216,20 @@ const QuickActions = ({ onAutoPopulate, onOptimizeAll, onGenerateReport }) => {
             <Button
               size="sm"
               onClick={onAutoPopulate}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              disabled={isGenerating}
+              className="bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
             >
-              <Plus className="h-4 w-4 mr-1" />
-              Auto-Populate All Weeks
+              {isGenerating ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-1" />
+                  Auto-Populate All Weeks
+                </>
+              )}
             </Button>
           </div>
         </div>
@@ -287,6 +301,7 @@ const DepartmentBreakdown = ({ weeks }) => {
 // Main Multi-Week Scheduler Component
 const MultiWeekScheduler = () => {
   const [currentPeriodStart, setCurrentPeriodStart] = useState(() => startOfWeek(new Date()));
+  const [isGenerating, setIsGenerating] = useState(false);
   const { getWeekSchedule, employees } = useLaborData();
 
   // Generate 5 weeks of data starting from current period
@@ -346,9 +361,67 @@ const MultiWeekScheduler = () => {
     // Navigate to weekly schedule view for specific week
   };
 
-  const handleAutoPopulate = () => {
-    console.log('Auto-populate all weeks');
-    // Implement auto-population logic
+  const handleAutoPopulate = async () => {
+    console.log('🚀 Auto-populate all weeks starting...');
+    
+    try {
+      // Get current location UUID
+      const locationUuid = getCurrentLocationId();
+      
+      if (!locationUuid) {
+        alert('❌ Error: No location ID found. Please ensure you are logged in.');
+        return;
+      }
+      
+      // Show loading state
+      setIsGenerating(true);
+      
+      const results = [];
+      
+      // Generate schedule for each week
+      for (const week of weeks) {
+        const weekStartDate = week.startDate.toISOString().split('T')[0];
+        
+        console.log(`📅 Generating schedule for week starting ${weekStartDate}...`);
+        
+        try {
+          // Call the Supabase RPC function
+          const { data, error } = await supabase.rpc('generate_schedule_with_breaks', {
+            p_location_id: locationUuid,
+            p_week_start_date: weekStartDate
+          });
+          
+          if (error) {
+            console.error(`❌ Error generating schedule for ${weekStartDate}:`, error);
+            results.push({ week: weekStartDate, status: 'error', error: error.message });
+          } else {
+            console.log(`✅ Schedule generated for ${weekStartDate}:`, data);
+            results.push({ week: weekStartDate, status: 'success', data });
+          }
+        } catch (err) {
+          console.error(`❌ Exception generating schedule for ${weekStartDate}:`, err);
+          results.push({ week: weekStartDate, status: 'error', error: err.message });
+        }
+      }
+      
+      // Show success message
+      const successCount = results.filter(r => r.status === 'success').length;
+      const errorCount = results.filter(r => r.status === 'error').length;
+      
+      alert(`✅ Schedule Generation Complete!\n\n` +
+            `✅ ${successCount} weeks generated successfully\n` +
+            `❌ ${errorCount} weeks failed\n\n` +
+            `Refresh the page to see the new schedules.`);
+      
+      // Reload the page to show new schedules
+      window.location.reload();
+      
+    } catch (error) {
+      console.error('❌ Fatal error in handleAutoPopulate:', error);
+      alert(`❌ Error: ${error.message}`);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleOptimizeAll = () => {
@@ -404,6 +477,7 @@ const MultiWeekScheduler = () => {
         onAutoPopulate={handleAutoPopulate}
         onOptimizeAll={handleOptimizeAll}
         onGenerateReport={handleGenerateReport}
+        isGenerating={isGenerating}
       />
 
       {/* Week Cards Grid */}
