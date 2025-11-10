@@ -1044,7 +1044,7 @@ const getDepartmentStats = (department) => {
                                       {assignedEmployees.length > 0 ? (
                                         <div className="space-y-2 h-full overflow-y-auto">
                                           {assignedEmployees.map((emp, empIndex) => {
-                                            const timeValidation = validateTimeRange(emp.start, emp.end);
+                                            const timeValidation = validateTimeRange(emp.start_time, emp.end_time);
                                             return (
                                               <div key={empIndex} className={`p-2 rounded-md border ${getDepartmentColor(emp.department)} group hover:shadow-sm transition-all duration-200 relative print-employee ${!timeValidation.valid ? 'border-red-300 bg-red-50' : ''}`}>
                                                 {/* Excel-Style Employee Cell: WIDER FOR TIME */}
@@ -1071,12 +1071,12 @@ const getDepartmentStats = (department) => {
                                                   {/* Time Range - WIDER SPACE & WRAPPING */}
                                                   <div className="flex flex-wrap items-center gap-1 text-xs">
                                                     <TimeSelector
-                                                      value={emp.start}
+                                                     value={emp.start_time}
                                                       onChange={(value) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, emp.id, 'start', value)}
                                                     />
                                                     <span className="font-bold text-slate-700">-</span>
                                                     <TimeSelector
-                                                      value={emp.end}
+                                                     value={emp.end_time}
                                                       onChange={(value) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, emp.id, 'end', value)}
                                                     />
                                                     <span className={`font-bold whitespace-nowrap ${timeValidation.valid ? 'text-slate-900' : 'text-red-600'}`}>
