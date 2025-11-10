@@ -423,11 +423,12 @@ const WeeklyLaborSchedule = () => {
   const [editingCell, setEditingCell] = useState(null);
 
   const contextData = useLaborData();
-  const employees = contextData?.employees || [];
-  const loading = contextData?.loading || false;
-  const error = contextData?.error || null;
-  const saveSchedule = contextData?.saveSchedule;
-  const convertTimeToStandard = contextData?.convertTimeToStandard;
+const employees = contextData?.employees || [];
+const loading = contextData?.loading || false;
+const error = contextData?.error || null;
+const saveSchedule = contextData?.saveSchedule;
+const fetchWeekSchedule = contextData?.fetchWeekSchedule; // ✅ ADD THIS LINE
+const convertTimeToStandard = contextData?.convertTimeToStandard;
 
   const weekStart = getStartOfWeek(currentWeek);
   const weekDays = Array.from({ length: 7 }, (_, i) => {
@@ -451,8 +452,63 @@ const WeeklyLaborSchedule = () => {
 
   const filteredEmployees = getFilteredEmployees();
 
-  // Calculate department stats (excluding Management from totals)
-  const getDepartmentStats = (department) => {
+// ✅ ADD THIS ENTIRE useEffect BLOCK HERE:
+// Load schedule data from database when week changes
+useEffect(() => {
+  const loadScheduleData = async () => {
+    if (!fetchWeekSchedule) {
+      console.log('⚠️ fetchWeekSchedule not available yet');
+      return;
+    }
+    
+    const weekStartDate = weekStart.toISOString().split('T')[0];
+    console.log(`📅 Loading schedule for week starting ${weekStartDate}...`);
+    
+    const shifts = await fetchWeekSchedule(weekStartDate);
+    
+    if (shifts && shifts.length > 0) {
+      console.log(`✅ Loaded ${shifts.length} shifts from database`);
+      
+      // Convert shifts array to scheduleData format
+      const newScheduleData = {};
+      
+      shifts.forEach(shift => {
+        const dayKey = shift.date;
+        
+        // Initialize day if it doesn't exist
+        if (!newScheduleData[dayKey]) {
+          newScheduleData[dayKey] = { employees: [] };
+        }
+        
+        // Add employee shift to the day
+        newScheduleData[dayKey].employees.push({
+          id: shift.employee_id,
+          name: shift.employee?.name || 'Unknown Employee',
+          role: shift.role,
+          department: shift.department,
+          start_time: convertTimeToStandard(shift.start_time),
+          end_time: convertTimeToStandard(shift.end_time),
+          hours: shift.hours,
+          hourly_rate: shift.employee?.hourly_rate || 15,
+          has_break: shift.has_break || false,
+          break_start: shift.break_start ? convertTimeToStandard(shift.break_start) : null,
+          break_duration: shift.break_duration || 0
+        });
+      });
+      
+      setScheduleData(newScheduleData);
+      console.log('✅ Schedule data loaded and formatted:', newScheduleData);
+    } else {
+      console.log('ℹ️ No shifts found for this week');
+      // Keep existing scheduleData (empty or previous data)
+    }
+  };
+  
+  loadScheduleData();
+}, [currentWeek, fetchWeekSchedule]); // Re-run when week changes or fetchWeekSchedule becomes available
+
+// Calculate department stats (excluding Management from totals)
+const getDepartmentStats = (department) => {
     const assignments = Object.values(scheduleData).reduce((acc, day) => {
       const deptEmployees = (day.employees || []).filter(emp => 
         department === 'ALL' ? emp.department !== 'Management' : emp.department === department
