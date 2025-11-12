@@ -697,18 +697,11 @@ const getDepartmentStats = (department) => {
   const shiftType = typeof actualRole.shifts[shiftIndex] === 'string' 
   ? actualRole.shifts[shiftIndex].toLowerCase() 
   : actualRole.shifts[shiftIndex]?.type;
-  console.log('🔍 actualRole:', actualRole, 'shiftIndex:', shiftIndex, 'shifts:', actualRole.shifts);
   const dateStr = weekDays[dayIndex].toISOString().split('T')[0];
   const dayEmployees = scheduleData[dateStr]?.employees || [];
   const filtered = dayEmployees.filter(emp => 
-    emp.role === actualRole.name && emp.shift_type === shiftType
-  );
-  console.log('🔍 getAssignedEmployees:', { 
-    roleIndex, shiftIndex, dayIndex, 
-    roleName: actualRole.name, shiftType, dateStr,
-    dayEmployeesCount: dayEmployees.length,
-    filteredCount: filtered.length,
-    sample: filtered[0]
+  emp.role === actualRole.name && emp.shift_type?.toLowerCase() === shiftType
+);
   });
   return filtered;
 };
