@@ -1,34 +1,25 @@
-import React from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '@/supabaseClient';
+import { 
+  MOPPED_RESTAURANT_TEMPLATE, 
+  DEPARTMENT_MAPPING, 
+  REVERSE_DEPARTMENT_MAPPING,
+  formatTimeToStandard, 
+  formatTimeToMilitary 
+} from '@/config/laborScheduleConfig';
 
-// Enhanced Mopped Restaurant Configuration
-export const SPEND_PER_GUEST = 45; // Updated from 15 to 45 for Mopped Restaurant
+const LaborDataContext = createContext();
 
-export const SHIFT_SPLIT = { AM: 0.5, PM: 0.4, SWING: 0.1 };
-
-// Updated to use standard 12-hour time format instead of military time
-export const SHIFT_TIMES = {
-  AM: { start: "8:30 AM", end: "4:30 PM", militaryStart: "08:30", militaryEnd: "16:30" },
-  PM: { start: "3:00 PM", end: "11:00 PM", militaryStart: "15:00", militaryEnd: "23:00" },
-  SWING: { start: "10:00 AM", end: "6:00 PM", militaryStart: "10:00", militaryEnd: "18:00" }
-};
-
-// Department mappings for standardization between config and database
-export const DEPARTMENT_MAPPING = {
-  'FOH': 'Front of House',
-  'BOH': 'Back of House', 
-  'Bar': 'Bar & Beverage',
-  'Management': 'Management'
-};
-
-export const REVERSE_DEPARTMENT_MAPPING = {
-  'Front of House': 'FOH',
-  'Back of House': 'BOH',
-  'Bar & Beverage': 'Bar',
-  'Management': 'Management'
+export const useLaborData = () => {
+  const context = useContext(LaborDataContext);
+  if (!context) {
+    throw new Error('useLaborData must be used within a LaborDataProvider');
+  }
+  return context;
 };
 
 // Helper function to convert military time to standard 12-hour format
-export const formatTimeToStandard = (militaryTime) => {
+const convertTimeToStandard = (militaryTime) => {
   if (!militaryTime) return '';
   
   const [hours, minutes] = militaryTime.split(':');
@@ -39,7 +30,7 @@ export const formatTimeToStandard = (militaryTime) => {
 };
 
 // Helper function to convert standard time to military format for database storage
-export const formatTimeToMilitary = (standardTime) => {
+const convertTimeToMilitary = (standardTime) => {
   if (!standardTime) return '';
   
   const [time, period] = standardTime.split(' ');
@@ -55,76 +46,742 @@ export const formatTimeToMilitary = (standardTime) => {
   return `${hour.toString().padStart(2, '0')}:${minutes}`;
 };
 
-// Complete 13-role structure including Dishwasher
-export const ROLES = [
-  // Back of House (BOH) - 5 roles
-  { name: "Meat Portioner", abbreviation: "MP", ratio: 35, shifts: ["AM", "PM"], minCount: 1, department: "BOH", hourly_rate: 18.00, colorClass: "bg-red-200 text-red-800 dark:bg-red-700 dark:text-red-100 print:bg-red-100" },
-  { name: "Side Portioner", abbreviation: "SP", ratio: 40, shifts: ["AM", "PM"], minCount: 1, department: "BOH", hourly_rate: 17.00, colorClass: "bg-orange-200 text-orange-800 dark:bg-orange-700 dark:text-orange-100 print:bg-orange-100" },
-  { name: "Food Gopher", abbreviation: "FG", ratio: 50, shifts: ["AM", "PM"], minCount: 1, department: "BOH", hourly_rate: 16.00, colorClass: "bg-yellow-200 text-yellow-800 dark:bg-yellow-700 dark:text-yellow-100 print:bg-yellow-100" },
-  { name: "Dishwasher", abbreviation: "DW", ratio: 50, shifts: ["AM", "PM"], minCount: 1, department: "BOH", hourly_rate: 15.50, colorClass: "bg-emerald-200 text-emerald-800 dark:bg-emerald-700 dark:text-emerald-100 print:bg-emerald-100" },
-  { name: "Kitchen Swing", abbreviation: "KS", ratio: 45, shifts: ["SWING"], minCount: 1, department: "BOH", hourly_rate: 17.50, colorClass: "bg-lime-200 text-lime-800 dark:bg-lime-700 dark:text-lime-100 print:bg-lime-100" },
+// Helper function to get date weeks ago
+const getDateWeeksAgo = (date, weeks) => {
+  const targetDate = new Date(date);
+  targetDate.setDate(targetDate.getDate() - (weeks * 7));
+  return targetDate.toISOString().split('T')[0];
+};
+
+// Comprehensive holiday detection system
+const getHolidayMultiplier = (date) => {
+  const targetDate = new Date(date);
+  const year = targetDate.getFullYear();
   
-  // Front of House (FOH) - 5 roles
-  { name: "Cashier", abbreviation: "CSH", ratio: 25, shifts: ["AM", "PM"], minCount: 1, department: "FOH", hourly_rate: 16.50, colorClass: "bg-green-200 text-green-800 dark:bg-green-700 dark:text-green-100 print:bg-green-100" },
-  { name: "Server", abbreviation: "SRV", ratio: 20, shifts: ["AM", "PM"], minCount: 1, department: "FOH", hourly_rate: 15.00, colorClass: "bg-cyan-200 text-cyan-800 dark:bg-cyan-700 dark:text-cyan-100 print:bg-cyan-100" },
-  { name: "Server Assistant", abbreviation: "SA", ratio: 35, shifts: ["AM", "PM"], minCount: 1, department: "FOH", hourly_rate: 15.50, colorClass: "bg-sky-200 text-sky-800 dark:bg-sky-700 dark:text-sky-100 print:bg-sky-100" },
-  { name: "Busser", abbreviation: "BUS", ratio: 40, shifts: ["AM", "PM"], minCount: 1, department: "FOH", hourly_rate: 15.00, colorClass: "bg-teal-200 text-teal-800 dark:bg-teal-700 dark:text-teal-100 print:bg-teal-100" },
-  { name: "Cashier Swing", abbreviation: "CSS", ratio: 30, shifts: ["SWING"], minCount: 1, department: "FOH", hourly_rate: 16.50, colorClass: "bg-blue-200 text-blue-800 dark:bg-blue-700 dark:text-blue-100 print:bg-blue-100" },
-  
-  // Bar - 1 role
-  { name: "Bartender", abbreviation: "BAR", ratio: 60, shifts: ["AM", "PM"], minCount: 1, department: "Bar", hourly_rate: 18.50, colorClass: "bg-indigo-200 text-indigo-800 dark:bg-indigo-700 dark:text-indigo-100 print:bg-indigo-100" },
-  
-  // Management - 2 roles
-  { name: "Shift Lead", abbreviation: "SL", ratio: 80, shifts: ["SWING"], minCount: 1, department: "Management", hourly_rate: 22.00, colorClass: "bg-purple-200 text-purple-800 dark:bg-purple-700 dark:text-purple-100 print:bg-purple-100" },
-  { name: "Manager", abbreviation: "MGR", ratio: 150, shifts: ["AM", "PM"], minCount: 1, department: "Management", hourly_rate: 28.00, colorClass: "bg-pink-200 text-pink-800 dark:bg-pink-700 dark:text-pink-100 print:bg-pink-100" }
-];
-
-export const SHIFT_BG_CLASSES = {
-  AM: "bg-amber-100 text-amber-800 dark:bg-amber-800 dark:text-amber-100 print:bg-amber-100",
-  PM: "bg-sky-100 text-sky-800 dark:bg-sky-800 dark:text-sky-100 print:bg-blue-100", 
-  SWING: "bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-100 print:bg-purple-100",
-};
-
-// Department configurations
-export const DEPARTMENTS = {
-  "FOH": { name: "Front of House", color: "blue", bgColor: "bg-blue-50", textColor: "text-blue-700" },
-  "BOH": { name: "Back of House", color: "emerald", bgColor: "bg-emerald-50", textColor: "text-emerald-700" },
-  "Bar": { name: "Bar & Beverage", color: "purple", bgColor: "bg-purple-50", textColor: "text-purple-700" },
-  "Management": { name: "Management", color: "slate", bgColor: "bg-slate-50", textColor: "text-slate-700" }
-};
-
-// Mopped Restaurant Template
-export const MOPPED_RESTAURANT_TEMPLATE = {
-  name: 'Mopped Restaurant',
-  description: 'Hybrid casual sit-down model with customizable beverage service - optimized for 14% labor efficiency and $45 average spend.',
-  industry_type: 'mopped_hybrid',
-  spend_per_guest: 45.00,
-  labor_percentage_target: 14.00,
-  default_roles: ROLES,
-  default_departments: ["FOH", "BOH", "Bar", "Management"]
-};
-
-export const LOCAL_STORAGE_KEY = 'editableWeeklyLaborSchedule';
-
-// Helper functions
-export const getRolesByDepartment = (department) => {
-  return ROLES.filter(role => role.department === department);
-};
-
-export const getDepartmentColor = (department) => {
-  return DEPARTMENTS[department] || DEPARTMENTS["FOH"];
-};
-
-// Get shift display name with standard time format
-export const getShiftDisplayName = (shiftKey) => {
-  const shift = SHIFT_TIMES[shiftKey];
-  if (!shift) return shiftKey;
-  
-  const shiftNames = {
-    AM: 'Morning Shift',
-    PM: 'Evening Shift', 
-    SWING: 'Swing Shift'
+  // Fixed date holidays
+  const fixedHolidays = {
+    [`${year}-01-01`]: 0.3, // New Year's Day
+    [`${year}-12-31`]: 1.8, // New Year's Eve
+    [`${year}-02-14`]: 2.2, // Valentine's Day
+    [`${year}-02-13`]: 1.4, // Day before Valentine's
+    [`${year}-03-17`]: 1.6, // St. Patrick's Day
+    [`${year}-07-04`]: 1.3, // July 4th
+    [`${year}-07-03`]: 1.2, // Day before July 4th
+    [`${year}-10-31`]: 1.4, // Halloween
+    [`${year}-12-24`]: 0.6, // Christmas Eve
+    [`${year}-12-25`]: 0.2, // Christmas Day
   };
-  
-  return `${shiftNames[shiftKey] || shiftKey} (${shift.start} - ${shift.end})`;
+
+  const dateString = targetDate.toISOString().split('T')[0];
+  return fixedHolidays[dateString] || 1.0;
+};
+
+export const LaborDataProvider = ({ children }) => {
+  // Core state
+  const [employees, setEmployees] = useState([]);
+  const [schedules, setSchedules] = useState({});
+  const [ptoRequests, setPtoRequests] = useState([]);
+  const [scheduleRequests, setScheduleRequests] = useState([]);
+  const [employeeAvailability, setEmployeeAvailability] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isConnected, setIsConnected] = useState(false);
+
+  // Location state - NOW USING UUID SYSTEM
+  const [locationId, setLocationId] = useState(null); // This will be the bigint ID
+  const [locationUuid, setLocationUuid] = useState(null); // This will be the UUID for database queries
+  const [locationName, setLocationName] = useState(null);
+  const [loadingLocation, setLoadingLocation] = useState(true);
+  const [locationError, setLocationError] = useState(null);
+
+  useEffect(() => {
+    const fetchUserLocation = async () => {
+      setLoadingLocation(true);
+      setLocationError(null);
+      
+      try {
+        // First, get the current user session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+        if (sessionError) {
+          console.error("Error getting user session:", sessionError);
+          setLocationError("Failed to get user session");
+          setLoadingLocation(false);
+          return;
+        }
+
+        if (session?.user) {
+          console.log("🔍 Fetching location data for user:", session.user.id);
+          
+          // Step 1: Get user's location_id from profiles table
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('location_id')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profileError) {
+            console.error("❌ Error fetching user profile:", profileError);
+            setLocationError("Failed to fetch user profile");
+            setLoadingLocation(false);
+            return;
+          }
+
+          if (!profile?.location_id) {
+            console.error("❌ No location_id found in user profile");
+            setLocationError("No location assigned to user");
+            setLoadingLocation(false);
+            return;
+          }
+
+          console.log("✅ Found location_id in profile:", profile.location_id);
+
+          // Step 2: Get location details from locations table
+          const { data: location, error: locationError } = await supabase
+            .from('locations')
+            .select('id, uuid, name, timezone, organization_id')
+            .eq('id', profile.location_id)
+            .single();
+
+          if (locationError) {
+            console.error("❌ Error fetching location details:", locationError);
+            setLocationError("Failed to fetch location details");
+            setLoadingLocation(false);
+            return;
+          }
+
+          console.log("✅ Location details fetched:", location);
+
+          // Set all location state - CRITICAL: Use UUID for database queries
+          setLocationId(location.id); // Keep the bigint ID for reference
+          setLocationUuid(location.uuid); // Use UUID for all database queries
+          setLocationName(location.name);
+          setLocationError(null);
+          
+          console.log("🎯 Location state updated:", {
+            id: location.id,
+            uuid: location.uuid,
+            name: location.name
+          });
+
+        } else {
+          console.log("❌ No user session found");
+          setLocationError("User not authenticated");
+        }
+      } catch (err) {
+        console.error("❌ Unexpected error in fetchUserLocation:", err);
+        setLocationError("Unexpected error occurred");
+      } finally {
+        setLoadingLocation(false);
+      }
+    };
+
+    fetchUserLocation();
+  }, []);
+
+  // Helper function to get current location UUID (NOT integer ID)
+  const getCurrentLocationUuid = async () => {
+    if (locationUuid) return locationUuid;
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) throw new Error('User not authenticated');
+    
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('location_id')
+      .eq('id', session.user.id)
+      .single();
+    
+    if (!profile?.location_id) throw new Error('No location assigned to user');
+    
+    // Get the UUID from locations table
+    const { data: location } = await supabase
+      .from('locations')
+      .select('uuid')
+      .eq('id', profile.location_id)
+      .single();
+    
+    return location?.uuid;
+  };
+
+  // Load all labor data - UPDATED TO USE UUID
+  const loadLaborData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const locationUuid = await getCurrentLocationUuid();
+      console.log('Loading labor data for location UUID:', locationUuid);
+
+      // Load employees with enhanced data - USE UUID
+      const { data: employeesData, error: empError } = await supabase
+        .from('employees')
+        .select('*')
+        .eq('location_id', locationUuid) // Use UUID here
+        .eq('is_active', true);
+
+      if (empError) {
+        console.error('Error loading employees:', empError);
+        setError('Failed to load employees from database');
+        setIsConnected(false);
+      } else {
+        // Enhance employee data with missing fields and standardize departments
+        const enhancedEmployees = (employeesData || []).map(emp => ({
+          ...emp,
+          hire_date: emp.hire_date || new Date().toISOString().split('T')[0],
+          performance_rating: emp.performance_rating || 4.0,
+          hourly_rate: emp.hourly_rate || 15.00,
+          status: emp.is_active ? 'active' : 'inactive',
+          // Standardize department names using existing department or mapping
+          department: DEPARTMENT_MAPPING[emp.department] || emp.department || 'Front of House'
+        }));
+        
+        setEmployees(enhancedEmployees);
+        setIsConnected(true);
+        console.log('Loaded employees:', enhancedEmployees.length);
+      }
+
+      // Load PTO requests - USE UUID
+      const { data: ptoData, error: ptoError } = await supabase
+        .from('pto_requests')
+        .select(`
+          *,
+          employees!inner(id, name, email, role)
+        `)
+        .eq('location_id', locationUuid) // Use UUID here
+        .order('created_at', { ascending: false });
+
+      if (!ptoError && ptoData) {
+        const enhancedPTO = ptoData.map(pto => ({
+          ...pto,
+          employee_name: pto.employees?.name || 'Unknown Employee',
+          employee_role: pto.employees?.role || 'Employee',
+          days_requested: pto.days_requested || calculateDays(pto.start_date, pto.end_date)
+        }));
+        setPtoRequests(enhancedPTO);
+        console.log('Loaded PTO requests:', enhancedPTO.length);
+      }
+
+      // Load schedule requests - USE UUID
+      const { data: scheduleData, error: scheduleError } = await supabase
+        .from('schedule_requests')
+        .select(`
+          *,
+          employees!inner(id, name, role)
+        `)
+        .eq('location_id', locationUuid) // Use UUID here
+        .order('created_at', { ascending: false });
+
+      if (!scheduleError && scheduleData) {
+        const enhancedScheduleData = scheduleData.map(req => ({
+          ...req,
+          employee_name: req.employees?.name || 'Unknown Employee'
+        }));
+        setScheduleRequests(enhancedScheduleData);
+        console.log('Loaded schedule requests:', enhancedScheduleData.length);
+      }
+
+      // Load employee availability - USE UUID
+      const { data: availabilityData, error: availError } = await supabase
+        .from('employee_availability')
+        .select(`
+          *,
+          employees!inner(id, name)
+        `)
+        .eq('location_id', locationUuid); // Use UUID here
+
+      if (!availError && availabilityData) {
+        const enhancedAvailability = availabilityData.map(avail => ({
+          ...avail,
+          employee_name: avail.employees?.name || 'Unknown Employee'
+        }));
+        setEmployeeAvailability(enhancedAvailability);
+        console.log('Loaded employee availability:', enhancedAvailability.length);
+      }
+
+      setIsConnected(true);
+    } catch (err) {
+      console.error('Error loading labor data:', err);
+      setError(err.message);
+      setIsConnected(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Helper function to calculate days between dates
+  const calculateDays = (startDate, endDate) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    return diffDays;
+  };
+
+  // Load data on mount and when location changes
+  useEffect(() => {
+    if (locationUuid) {
+      loadLaborData();
+    }
+  }, [locationUuid]);
+
+  // Helper function to calculate shift hours
+  const calculateShiftHours = (startTime, endTime) => {
+    if (!startTime || !endTime) return 0;
+    
+    // Convert to military time if needed
+    const start = startTime.includes('AM') || startTime.includes('PM') 
+      ? convertTimeToMilitary(startTime) 
+      : startTime;
+    const end = endTime.includes('AM') || endTime.includes('PM') 
+      ? convertTimeToMilitary(endTime) 
+      : endTime;
+    
+    const [startHour, startMin] = start.split(':').map(Number);
+    const [endHour, endMin] = end.split(':').map(Number);
+    
+    let hours = endHour - startHour;
+    let minutes = endMin - startMin;
+    
+    if (minutes < 0) {
+      hours -= 1;
+      minutes += 60;
+    }
+    
+    // Handle overnight shifts
+    if (hours < 0) {
+      hours += 24;
+    }
+    
+    return hours + (minutes / 60);
+  };
+
+  // Smart Forecasting Functions
+  const getSmartForecast = async (date, mealPeriod) => {
+    try {
+      const locationUuid = await getCurrentLocationUuid();
+      
+      // Get historical sales data for the same day of week
+      const targetDate = new Date(date);
+      const dayOfWeek = targetDate.getDay();
+      
+      // Get last 4 weeks of data for this day
+      const historicalData = [];
+      for (let i = 1; i <= 4; i++) {
+        const historicalDate = getDateWeeksAgo(date, i);
+        
+        const { data, error } = await supabase
+          .from('sales_data')
+          .select('total_sales, customer_count')
+          .eq('location_id', locationUuid)
+          .eq('date', historicalDate)
+          .eq('meal_period', mealPeriod)
+          .single();
+        
+        if (!error && data) {
+          historicalData.push(data);
+        }
+      }
+      
+      if (historicalData.length === 0) {
+        return {
+          predictedSales: 0,
+          predictedCustomers: 0,
+          confidence: 'low',
+          reasoning: 'No historical data available'
+        };
+      }
+      
+      // Calculate average
+      const avgSales = historicalData.reduce((sum, d) => sum + d.total_sales, 0) / historicalData.length;
+      const avgCustomers = historicalData.reduce((sum, d) => sum + d.customer_count, 0) / historicalData.length;
+      
+      // Apply holiday multiplier
+      const holidayMultiplier = getHolidayMultiplier(date);
+      
+      return {
+        predictedSales: Math.round(avgSales * holidayMultiplier),
+        predictedCustomers: Math.round(avgCustomers * holidayMultiplier),
+        confidence: historicalData.length >= 3 ? 'high' : 'medium',
+        reasoning: `Based on ${historicalData.length} weeks of historical data${holidayMultiplier !== 1.0 ? ' with holiday adjustment' : ''}`
+      };
+      
+    } catch (err) {
+      console.error('Error getting smart forecast:', err);
+      return {
+        predictedSales: 0,
+        predictedCustomers: 0,
+        confidence: 'low',
+        reasoning: 'Error calculating forecast'
+      };
+    }
+  };
+
+  const getWeatherImpact = async (date) => {
+    // Placeholder for weather API integration
+    return {
+      condition: 'clear',
+      impact: 1.0,
+      reasoning: 'Weather data not available'
+    };
+  };
+
+  const getLaborAnalytics = async (weekKey) => {
+    try {
+      const locationUuid = await getCurrentLocationUuid();
+      
+      const { data, error } = await supabase
+        .from('schedules')
+        .select('schedule_data')
+        .eq('week_start_date', weekKey)
+        .eq('location_id', locationUuid)
+        .single();
+      
+      if (error || !data) {
+        return {
+          totalHours: 0,
+          totalCost: 0,
+          laborPercentage: 0,
+          efficiency: 0
+        };
+      }
+      
+      // Calculate total hours from schedule_data
+      let totalHours = 0;
+      const scheduleData = data.schedule_data;
+      
+      Object.values(scheduleData).forEach(slot => {
+        if (slot.employees) {
+          slot.employees.forEach(emp => {
+            totalHours += calculateShiftHours(emp.start, emp.end);
+          });
+        }
+      });
+      
+      // Estimate cost (would need actual wage data)
+      const avgWage = 15; // placeholder
+      const totalCost = totalHours * avgWage;
+      
+      return {
+        totalHours: Math.round(totalHours * 10) / 10,
+        totalCost: Math.round(totalCost),
+        laborPercentage: 0, // Would need sales data
+        efficiency: 85 // placeholder
+      };
+      
+    } catch (err) {
+      console.error('Error getting labor analytics:', err);
+      return {
+        totalHours: 0,
+        totalCost: 0,
+        laborPercentage: 0,
+        efficiency: 0
+      };
+    }
+  };
+
+  // Employee Management Functions - UPDATED TO USE UUID
+  const addEmployee = async (employeeData) => {
+    try {
+      setLoading(true);
+      const locationUuid = await getCurrentLocationUuid();
+      
+      const newEmployee = {
+        ...employeeData,
+        location_id: locationUuid, // Use UUID
+        is_active: true,
+        created_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from('employees')
+        .insert([newEmployee])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const enhancedEmployee = {
+        ...data,
+        hire_date: data.hire_date || new Date().toISOString().split('T')[0],
+        performance_rating: data.performance_rating || 4.0,
+        hourly_rate: data.hourly_rate || 15.00,
+        status: 'active',
+        department: DEPARTMENT_MAPPING[data.department] || data.department || 'Front of House'
+      };
+
+      setEmployees(prev => [...prev, enhancedEmployee]);
+      return { success: true, data: enhancedEmployee };
+
+    } catch (err) {
+      console.error('Error adding employee:', err);
+      return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Enhanced PTO Management Functions - UPDATED TO USE UUID
+  const addPTORequest = async (ptoData) => {
+    try {
+      setLoading(true);
+      const locationUuid = await getCurrentLocationUuid();
+      
+      const newPTO = {
+        ...ptoData,
+        location_id: locationUuid, // Use UUID
+        status: 'pending',
+        created_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from('pto_requests')
+        .insert([newPTO])
+        .select(`*, employees(name, email)`)
+        .single();
+
+      if (error) throw error;
+
+      const enhancedPTO = {
+        ...data,
+        employee_name: data.employees?.name || 'Unknown Employee'
+      };
+
+      setPtoRequests(prev => [enhancedPTO, ...prev]);
+      return { success: true, data: enhancedPTO };
+
+    } catch (err) {
+      console.error('Error adding PTO request:', err);
+      return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updatePTOStatus = async (ptoId, status, notes = '') => {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .from('pto_requests')
+        .update({ 
+          status, 
+          admin_notes: notes,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', ptoId)
+        .select(`*, employees(name, email)`)
+        .single();
+
+      if (error) throw error;
+
+      const enhancedPTO = {
+        ...data,
+        employee_name: data.employees?.name || 'Unknown Employee'
+      };
+
+      setPtoRequests(prev => 
+        prev.map(pto => pto.id === ptoId ? enhancedPTO : pto)
+      );
+
+      return { success: true, data: enhancedPTO };
+
+    } catch (err) {
+      console.error('Error updating PTO status:', err);
+      return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Approve PTO request using Supabase RPC function
+  const approvePTORequest = async (requestId, options = {}) => {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .rpc('approve_pto_request_self', {
+          p_request_id: requestId,
+          p_notes: options.notes || null
+        });
+      
+      if (error) throw error;
+      
+      // Refresh PTO requests to get updated data
+      await loadLaborData();
+      
+      return { success: true, data };
+    } catch (err) {
+      console.error('Error approving PTO request:', err);
+      return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Deny PTO request using Supabase RPC function
+  const denyPTORequest = async (requestId, options = {}) => {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .rpc('deny_pto_request_self', {
+          p_request_id: requestId,
+          p_denial_reason: options.reason || 'Denied by manager'
+        });
+      
+      if (error) throw error;
+      
+      // Refresh PTO requests to get updated data
+      await loadLaborData();
+      
+      return { success: true, data };
+    } catch (err) {
+      console.error('Error denying PTO request:', err);
+      return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Schedule Management Functions - UPDATED TO USE ACTUAL TABLE AND UUID
+  const saveSchedule = async (weekKey, scheduleData) => {
+    try {
+      setLoading(true);
+      const locationUuid = await getCurrentLocationUuid();
+      
+      // Convert any standard time formats to military time for database storage
+      const processedScheduleData = JSON.parse(JSON.stringify(scheduleData));
+      
+      // Process each schedule entry to ensure times are in military format
+      Object.keys(processedScheduleData).forEach(key => {
+        const slot = processedScheduleData[key];
+        if (slot.employees) {
+          slot.employees = slot.employees.map(emp => ({
+            ...emp,
+            start: emp.start && (emp.start.includes('AM') || emp.start.includes('PM')) ? 
+              convertTimeToMilitary(emp.start) : emp.start,
+            end: emp.end && (emp.end.includes('AM') || emp.end.includes('PM')) ? 
+              convertTimeToMilitary(emp.end) : emp.end
+          }));
+        }
+      });
+      
+      const scheduleEntry = {
+        week_start_date: weekKey, // Use actual column name
+        schedule_data: processedScheduleData,
+        location_id: locationUuid, // Use UUID
+        updated_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from('schedules') // Use actual table name
+        .upsert(scheduleEntry, { onConflict: ['week_start_date', 'location_id'] })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      setSchedules(prev => ({
+        ...prev,
+        [weekKey]: processedScheduleData
+      }));
+
+      return { success: true, data };
+
+    } catch (err) {
+      console.error('Error saving schedule:', err);
+      return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // System Stats Function
+  const getSystemStats = async () => {
+    try {
+      const locationUuid = await getCurrentLocationUuid();
+      
+      // Get current user
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      // Get location details
+      const { data: location } = await supabase
+        .from('locations')
+        .select('name')
+        .eq('uuid', locationUuid)
+        .single();
+      
+      return {
+        databaseConnected: isConnected,
+        locationName: location?.name || locationName || 'Unknown Location',
+        employeeCount: employees.length,
+        activeSchedules: Object.keys(schedules).length,
+        pendingPTORequests: ptoRequests.filter(r => r.status === 'pending').length,
+        userEmail: session?.user?.email || 'Not logged in'
+      };
+    } catch (err) {
+      console.error('Error getting system stats:', err);
+      return {
+        databaseConnected: false,
+        locationName: 'Error Loading'
+      };
+    }
+  };
+
+  // Context value with all functions and state
+  const value = {
+    // Core state
+    employees,
+    schedules,
+    ptoRequests,
+    scheduleRequests,
+    employeeAvailability,
+    loading,
+    error,
+    isConnected,
+
+    // Location state - NOW INCLUDES BOTH ID AND UUID
+    locationId, // bigint ID for reference
+    locationUuid, // UUID for database queries
+    locationName,
+    loadingLocation,
+    locationError,
+
+    // Core functions
+    loadLaborData,
+    addEmployee,
+
+    // Analytics and forecasting
+    getSmartForecast,
+    getWeatherImpact,
+    getLaborAnalytics,
+
+    // Schedule functions
+    saveSchedule,
+
+    // PTO functions
+    addPTORequest,
+    updatePTOStatus,
+    approvePTORequest,
+    denyPTORequest,
+
+    // System functions
+    getSystemStats,
+
+    // Helper functions
+    calculateShiftHours,
+    convertTimeToStandard,
+    convertTimeToMilitary,
+
+    // Mappings
+    DEPARTMENT_MAPPING,
+    REVERSE_DEPARTMENT_MAPPING
+  };
+
+  return (
+    <LaborDataContext.Provider value={value}>
+      {children}
+    </LaborDataContext.Provider>
+  );
 };
