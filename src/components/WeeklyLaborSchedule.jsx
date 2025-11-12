@@ -694,13 +694,22 @@ const getDepartmentStats = (department) => {
 
   const getAssignedEmployees = (roleIndex, shiftIndex, dayIndex) => {
   const actualRole = filteredRoles[roleIndex];
-  const shiftType = actualRole.shifts[shiftIndex]?.type; // Get 'am' or 'pm'
+  const shiftType = actualRole.shifts[shiftIndex]?.type;
   const dateStr = weekDays[dayIndex].toISOString().split('T')[0];
   const dayEmployees = scheduleData[dateStr]?.employees || [];
-  return dayEmployees.filter(emp => 
+  const filtered = dayEmployees.filter(emp => 
     emp.role === actualRole.name && emp.shift_type === shiftType
   );
+  console.log('🔍 getAssignedEmployees:', { 
+    roleIndex, shiftIndex, dayIndex, 
+    roleName: actualRole.name, shiftType, dateStr,
+    dayEmployeesCount: dayEmployees.length,
+    filteredCount: filtered.length,
+    sample: filtered[0]
+  });
+  return filtered;
 };
+
 
 
 
