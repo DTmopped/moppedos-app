@@ -493,7 +493,8 @@ useEffect(() => {
           hourly_rate: shift.employee?.hourly_rate || 15,
           has_break: shift.has_break || false,
           break_start: shift.break_start ? convertTimeToStandard(shift.break_start) : null,
-          break_duration: shift.break_duration || 0
+         break_duration: shift.break_duration || 0,
+         shift_type: shift.shift_type || null
         });
       });
       
@@ -693,10 +694,14 @@ const getDepartmentStats = (department) => {
 
   const getAssignedEmployees = (roleIndex, shiftIndex, dayIndex) => {
   const actualRole = filteredRoles[roleIndex];
+  const shiftType = actualRole.shifts[shiftIndex]?.type; // Get 'am' or 'pm'
   const dateStr = weekDays[dayIndex].toISOString().split('T')[0];
   const dayEmployees = scheduleData[dateStr]?.employees || [];
-  return dayEmployees.filter(emp => emp.role === actualRole.name);
+  return dayEmployees.filter(emp => 
+    emp.role === actualRole.name && emp.shift_type === shiftType
+  );
 };
+
 
 
   const getTotalAssignments = () => {
