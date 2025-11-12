@@ -702,7 +702,6 @@ const getDepartmentStats = (department) => {
   const filtered = dayEmployees.filter(emp => 
   emp.role === actualRole.name && emp.shift_type?.toLowerCase() === shiftType
 );
-  });
   return filtered;
 };
 
