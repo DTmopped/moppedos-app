@@ -700,8 +700,9 @@ const getDepartmentStats = (department) => {
   const dateStr = weekDays[dayIndex].toISOString().split('T')[0];
   const dayEmployees = scheduleData[dateStr]?.employees || [];
   const filtered = dayEmployees.filter(emp => {
-  const normalizedShiftType = (emp.shift_type === 'mid' || emp.shift_type === 'scheduled') ? 'am' : emp.shift_type;
-  return emp.role === actualRole.name && normalizedShiftType?.toLowerCase() === shiftType;
+ const normalizedShiftType = emp.shift_type === 'scheduled' ? 'am' : emp.shift_type;
+return emp.role === actualRole.name && normalizedShiftType?.toLowerCase() === shiftType;
+
 });
 
   return filtered;
