@@ -695,6 +695,7 @@ const getDepartmentStats = (department) => {
   const getAssignedEmployees = (roleIndex, shiftIndex, dayIndex) => {
   const actualRole = filteredRoles[roleIndex];
   const shiftType = actualRole.shifts[shiftIndex]?.type;
+  console.log('🔍 actualRole:', actualRole, 'shiftIndex:', shiftIndex, 'shifts:', actualRole.shifts);
   const dateStr = weekDays[dayIndex].toISOString().split('T')[0];
   const dayEmployees = scheduleData[dateStr]?.employees || [];
   const filtered = dayEmployees.filter(emp => 
