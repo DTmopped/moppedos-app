@@ -697,6 +697,121 @@ export const LaborDataProvider = ({ children }) => {
     }
   };
 
+  // Fetch Week Schedule Function - Fetches shifts from database
+  const fetchWeekSchedule = async (weekStartDate) => {
+    if (!locationUuid) {
+      console.warn('⚠️ fetchWeekSchedule: No location UUID available yet');
+      return [];
+    }
+
+    try {
+      // Calculate week end date (6 days after start)
+      const weekEnd = new Date(weekStartDate);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+      
+      const weekEndDate = weekEnd.toISOString().split('T')[0];
+      const weekStartFormatted = new Date(weekStartDate).toISOString().split('T')[0];
+
+      console.log('📅 Fetching shifts from database:', {
+        weekStart: weekStartFormatted,
+        weekEnd: weekEndDate,
+        locationUuid
+      });
+
+      // Fetch shifts from database with employee details
+      const { data: shiftsData, error } = await supabase
+        .from('shifts')
+        .select(`
+          *,
+          employees (
+            id,
+            first_name,
+            last_name,
+            role,
+            department,
+            hourly_rate
+          )
+        `)
+        .gte('day', weekStartFormatted)
+        .lte('day', weekEndDate)
+        .eq('location_id', locationUuid)
+        .order('day', { ascending: true })
+        .order('start_time', { ascending: true });
+
+      if (error) {
+        console.error('❌ Error fetching week schedule from database:', error);
+        throw error;
+      }
+
+      console.log(`📊 Raw shifts from database: ${shiftsData?.length || 0} shifts`);
+
+      // Format and normalize shifts
+      const formattedShifts = (shiftsData || []).map(shift => {
+        // Normalize shift_type to uppercase to match config
+        let normalizedShiftType = (shift.shift_type || '').toUpperCase();
+        
+        // Map 'SCHEDULED' shifts to appropriate time slot based on start_time
+        if (normalizedShiftType === 'SCHEDULED') {
+          const hour = parseInt(shift.start_time?.split(':')[0] || '0');
+          if (hour < 11) {
+            normalizedShiftType = 'AM';
+            console.log(`🔄 Mapped SCHEDULED shift to AM (${shift.start_time})`);
+          } else if (hour < 15) {
+            normalizedShiftType = 'MID';
+            console.log(`🔄 Mapped SCHEDULED shift to MID (${shift.start_time})`);
+          } else {
+            normalizedShiftType = 'PM';
+            console.log(`🔄 Mapped SCHEDULED shift to PM (${shift.start_time})`);
+          }
+        }
+
+        // Calculate shift hours
+        const shiftHours = calculateShiftHours(shift.start_time, shift.end_time);
+
+        // Format employee name
+        const employeeName = shift.employees 
+          ? `${shift.employees.first_name || ''} ${shift.employees.last_name || ''}`.trim()
+          : 'Unknown Employee';
+
+        // Convert times to standard format for display
+        const startTimeStandard = convertTimeToStandard(shift.start_time);
+        const endTimeStandard = convertTimeToStandard(shift.end_time);
+
+        return {
+          ...shift,
+          shift_type: normalizedShiftType, // Normalized to uppercase (AM/MID/PM)
+          employee_name: employeeName,
+          employee_role: shift.employees?.role || shift.role,
+          employee_department: shift.employees?.department,
+          hourly_rate: shift.employees?.hourly_rate || 15.00,
+          shift_hours: shiftHours,
+          start_time_display: startTimeStandard,
+          end_time_display: endTimeStandard,
+          estimated_cost: shiftHours * (shift.employees?.hourly_rate || 15.00)
+        };
+      });
+
+      // Log shift type distribution for debugging
+      const shiftTypes = [...new Set(formattedShifts.map(s => s.shift_type))];
+      const typeCounts = {};
+      shiftTypes.forEach(type => {
+        typeCounts[type] = formattedShifts.filter(s => s.shift_type === type).length;
+      });
+
+      console.log('✅ Shifts formatted successfully:', {
+        total: formattedShifts.length,
+        shiftTypes: shiftTypes,
+        distribution: typeCounts
+      });
+
+      return formattedShifts;
+
+    } catch (error) {
+      console.error('❌ Failed to fetch week schedule:', error);
+      return [];
+    }
+  };
+
   // System Stats Function
   const getSystemStats = async () => {
     try {
@@ -759,6 +874,7 @@ export const LaborDataProvider = ({ children }) => {
 
     // Schedule functions
     saveSchedule,
+    fetchWeekSchedule,
 
     // PTO functions
     addPTORequest,
