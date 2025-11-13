@@ -695,15 +695,51 @@ const getDepartmentStats = (department) => {
   const getAssignedEmployees = (roleIndex, shiftIndex, dayIndex) => {
   const actualRole = filteredRoles[roleIndex];
   const shiftType = typeof actualRole.shifts[shiftIndex] === 'string' 
-  ? actualRole.shifts[shiftIndex].toLowerCase() 
-  : actualRole.shifts[shiftIndex]?.type;
+    ? actualRole.shifts[shiftIndex].toLowerCase() 
+    : actualRole.shifts[shiftIndex]?.type;
   const dateStr = weekDays[dayIndex].toISOString().split('T')[0];
   const dayEmployees = scheduleData[dateStr]?.employees || [];
+  
+  // 🔍 DIAGNOSTIC LOGGING - Remove after debugging
+  if (dayEmployees.length > 0 && roleIndex === 0 && shiftIndex === 0 && dayIndex === 0) {
+    console.log('🔍 DIAGNOSTIC - First cell check:', {
+      dateStr,
+      totalEmployeesThisDay: dayEmployees.length,
+      lookingForRole: actualRole.name,
+      lookingForShiftType: shiftType,
+      sampleEmployee: dayEmployees[0] ? {
+        name: dayEmployees[0].employee_name,
+        role: dayEmployees[0].role,
+        shift_type: dayEmployees[0].shift_type,
+        department: dayEmployees[0].department
+      } : null,
+      allRolesInDay: [...new Set(dayEmployees.map(e => e.role))],
+      allShiftTypesInDay: [...new Set(dayEmployees.map(e => e.shift_type))]
+    });
+  }
+  
   const filtered = dayEmployees.filter(emp => {
- const normalizedShiftType = emp.shift_type === 'scheduled' ? 'am' : emp.shift_type;
-return emp.role === actualRole.name && normalizedShiftType?.toLowerCase() === shiftType;
-
-});
+    const normalizedShiftType = emp.shift_type === 'scheduled' ? 'am' : emp.shift_type?.toLowerCase();
+    const roleMatches = emp.role === actualRole.name;
+    const shiftMatches = normalizedShiftType === shiftType?.toLowerCase();
+    
+    // 🔍 Log first few matches/mismatches
+    if (!roleMatches || !shiftMatches) {
+      if (dayEmployees.indexOf(emp) < 2) {
+        console.log('❌ Filter mismatch:', {
+          employee: emp.employee_name,
+          empRole: emp.role,
+          expectedRole: actualRole.name,
+          roleMatches,
+          empShiftType: normalizedShiftType,
+          expectedShiftType: shiftType?.toLowerCase(),
+          shiftMatches
+        });
+      }
+    }
+    
+    return roleMatches && shiftMatches;
+  });
 
   return filtered;
 };
