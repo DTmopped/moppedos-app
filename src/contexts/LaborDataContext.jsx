@@ -725,8 +725,7 @@ export const LaborDataProvider = ({ children }) => {
           *,
           employees (
             id,
-            first_name,
-            last_name,
+            name,
             role,
             department,
             hourly_rate
@@ -769,9 +768,7 @@ export const LaborDataProvider = ({ children }) => {
         const shiftHours = calculateShiftHours(shift.start_time, shift.end_time);
 
         // Format employee name
-        const employeeName = shift.employees 
-          ? `${shift.employees.first_name || ''} ${shift.employees.last_name || ''}`.trim()
-          : 'Unknown Employee';
+        const employeeName = shift.employees?.name || 'Unknown Employee';
 
         // Convert times to standard format for display
         const startTimeStandard = convertTimeToStandard(shift.start_time);
