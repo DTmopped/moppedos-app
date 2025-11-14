@@ -272,3 +272,22 @@ export const MOPPED_RESTAURANT_TEMPLATE = {
   roles: ROLES.length,
   departments: ['BOH', 'FOH', 'Bar', 'Management']
 };
+
+
+
+// ============================================================================
+// ADDITIONAL EXPORTS (for compatibility with existing components)
+// ============================================================================
+
+export const DEPARTMENTS = [
+  { id: 'FOH', label: 'Front of House', emoji: '🍽️' },
+  { id: 'BOH', label: 'Back of House', emoji: '👨‍🍳' },
+  { id: 'Bar', label: 'Bar & Beverage', emoji: '🍸' },
+  { id: 'Management', label: 'Management', emoji: '👔' }
+];
+
+// Legacy SHIFTS export (for backward compatibility)
+export const SHIFTS = {
+  DINNER: { start: "15:00", end: "23:00" },
+  LUNCH: { start: "11:00", end: "15:00" } // Not used but kept for compatibility
+};
