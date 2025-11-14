@@ -421,14 +421,20 @@ const WeeklyLaborSchedule = () => {
   const [showManagerView, setShowManagerView] = useState(true);
   const [budgetCollapsed, setBudgetCollapsed] = useState(false);
   const [editingCell, setEditingCell] = useState(null);
+  const [laborData, setLaborData] = useState(null);
+  const [laborLoading, setLaborLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
-  const contextData = useLaborData();
+const contextData = useLaborData();
 const employees = contextData?.employees || [];
 const loading = contextData?.loading || false;
 const error = contextData?.error || null;
 const saveSchedule = contextData?.saveSchedule;
 const fetchWeekSchedule = contextData?.fetchWeekSchedule; // ✅ ADD THIS LINE
 const convertTimeToStandard = contextData?.convertTimeToStandard;
+const getWeeklyLaborData = contextData?.getWeeklyLaborData;
+const generateWeeklySchedule = contextData?.generateWeeklySchedule;
+const locationUuid = contextData?.locationUuid;
 
   const weekStart = getStartOfWeek(currentWeek);
   const weekDays = Array.from({ length: 7 }, (_, i) => {
@@ -451,6 +457,102 @@ const convertTimeToStandard = contextData?.convertTimeToStandard;
   };
 
   const filteredEmployees = getFilteredEmployees();
+
+    // NEW: Fetch labor analytics data when week changes
+  useEffect(() => {
+    const fetchLaborData = async () => {
+      if (!locationUuid || !weekStart || !getWeeklyLaborData) {
+        console.log('⚠️ Waiting for location or getWeeklyLaborData...');
+        return;
+      }
+      
+      setLaborLoading(true);
+      try {
+        const weekStartDate = weekStart.toISOString().split('T')[0];
+        console.log('📊 Fetching labor data for week:', weekStartDate);
+        
+        const data = await getWeeklyLaborData(weekStartDate);
+        setLaborData(data);
+        
+        console.log('✅ Labor data loaded:', {
+          shifts: data?.shifts?.length || 0,
+          totalCost: data?.metrics?.totalCostWithBurden || 0,
+          laborPercent: data?.metrics?.laborPercentWithBurden || 0
+        });
+      } catch (error) {
+        console.error('❌ Error fetching labor data:', error);
+      } finally {
+        setLaborLoading(false);
+      }
+    };
+    
+    fetchLaborData();
+  }, [weekStart, locationUuid, getWeeklyLaborData]);
+
+    // NEW: Generate schedule button handler
+  const handleGenerateSchedule = async () => {
+    if (!weekStart || !locationUuid || !generateWeeklySchedule) {
+      alert('Please wait for location to load');
+      return;
+    }
+    
+    const confirmed = window.confirm(
+      'This will regenerate the entire schedule for this week. ' +
+      'Any existing shifts will be replaced. Continue?'
+    );
+    
+    if (!confirmed) return;
+    
+    setGenerating(true);
+    try {
+      const weekStartDate = weekStart.toISOString().split('T')[0];
+      console.log('🔄 Generating schedule for week:', weekStartDate);
+      
+      const result = await generateWeeklySchedule(weekStartDate);
+      
+      if (result.success) {
+        console.log('✅ Schedule generated successfully');
+        
+        // Refresh labor data
+        const data = await getWeeklyLaborData(weekStartDate);
+        setLaborData(data);
+        
+        // Refresh schedule display
+        if (fetchWeekSchedule) {
+          const shifts = await fetchWeekSchedule(weekStartDate);
+          if (shifts && shifts.length > 0) {
+            const newScheduleData = {};
+            shifts.forEach(shift => {
+              const dayKey = shift.day;
+              if (!newScheduleData[dayKey]) {
+                newScheduleData[dayKey] = { employees: [] };
+              }
+              newScheduleData[dayKey].employees.push({
+                id: shift.employee_id,
+                name: shift.employee_name || 'Unknown Employee',
+                role: shift.role,
+                department: shift.department,
+                start_time: convertTimeToStandard(shift.start_time),
+                end_time: convertTimeToStandard(shift.end_time),
+                hours: shift.hours,
+                hourly_rate: shift.hourly_rate || 15,
+              });
+            });
+            setScheduleData(newScheduleData);
+          }
+        }
+        
+        alert('✅ Schedule generated successfully!');
+      } else {
+        alert(`❌ Error: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('❌ Error generating schedule:', error);
+      alert(`❌ Error: ${error.message}`);
+    } finally {
+      setGenerating(false);
+    }
+  };
 
 // ✅ ADD THIS ENTIRE useEffect BLOCK HERE:
 // Load schedule data from database when week changes
@@ -784,6 +886,25 @@ const getDepartmentStats = (department) => {
   const bohStats = getDepartmentStats('BOH');
   const barStats = getDepartmentStats('Bar');
   const totalStats = getDepartmentStats('ALL');
+    // NEW: Calculate real labor metrics from backend
+  const metrics = laborData?.metrics || laborData?.summary;
+  const weeklyRevenue = 76923; // TODO: Get from location settings
+  const targetLaborPercent = 32.0;
+  const targetLaborCost = (weeklyRevenue * targetLaborPercent) / 100;
+  
+  const totalLaborCost = metrics?.totalCostWithBurden || totalStats.scheduled;
+  const totalHours = metrics?.totalHours || totalStats.hours;
+  const laborPercent = metrics?.laborPercentWithBurden || 0;
+  const budgetStatus = targetLaborCost > 0 
+    ? Math.round((totalLaborCost / targetLaborCost) * 100) 
+    : 0;
+  
+  const departments = metrics?.departments || {
+    foh: { costWithBurden: fohStats.scheduled },
+    boh: { costWithBurden: bohStats.scheduled },
+    bar: { costWithBurden: barStats.scheduled },
+    management: { costWithBurden: 0 }
+  };
 
   return (
     <>
@@ -828,24 +949,42 @@ const getDepartmentStats = (department) => {
             </div>
           </div>
 
+                        <Button
+                onClick={handleGenerateSchedule}
+                disabled={generating || laborLoading}
+                className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:shadow-md"
+              >
+                {generating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Activity className="h-4 w-4 mr-2" />
+                    Generate Schedule
+                  </>
+                )}
+              </Button>
+
           {/* Enhanced Quick Stats (Manager View Only) */}
           {showManagerView && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 no-print">
-              <QuickStatsCard 
+             <QuickStatsCard 
                 title="Total Labor Cost" 
-                value={`$${totalStats.scheduled.toLocaleString()}`}
-                subtitle={`Target: $${totalStats.target.toLocaleString()}`}
+                value={`$${totalLaborCost.toLocaleString()}`}
+                subtitle={`Target: $${targetLaborCost.toLocaleString()}`}
                 emoji="💰"
                 color="blue"
-                trend="+5.2% vs last week"
+                trend={`${laborPercent.toFixed(1)}% vs ${targetLaborPercent}% target`}
               />
-              <QuickStatsCard 
+            <QuickStatsCard 
                 title="Total Hours" 
-                value={totalStats.hours}
+                value={totalHours}
                 subtitle="Scheduled this week"
                 emoji="⏰"
                 color="emerald"
-                trend="Within target range"
+                trend={laborPercent <= targetLaborPercent ? "Within target range" : "Over target"}
               />
               <QuickStatsCard 
                 title="Staff Assigned" 
@@ -855,13 +994,13 @@ const getDepartmentStats = (department) => {
                 color="purple"
                 trend="Optimal coverage"
               />
-              <QuickStatsCard 
+               <QuickStatsCard 
                 title="Budget Status" 
-                value={`${((totalStats.scheduled / totalStats.budget) * 100).toFixed(0)}%`}
+                value={`${budgetStatus}%`}
                 subtitle="of weekly budget"
-                emoji={totalStats.scheduled <= totalStats.target ? "✅" : "⚠️"}
-                color="amber"
-                trend={totalStats.scheduled <= totalStats.target ? "Under budget" : "Over budget"}
+                emoji={budgetStatus <= 100 ? "✅" : "⚠️"}
+                color={budgetStatus <= 100 ? "emerald" : "amber"}
+                trend={budgetStatus <= 100 ? "Under budget" : "Over budget"}
               />
             </div>
           )}
@@ -888,35 +1027,42 @@ const getDepartmentStats = (department) => {
                 
                 {!budgetCollapsed && (
                   <div className="space-y-3">
-                    <BudgetRow 
-                      title="FOH" 
-                      scheduled={fohStats.scheduled} 
-                      budget={fohStats.budget} 
-                      color="blue" 
-                      emoji="🍽️"
+                    <BudgetRow
+                     title="FOH"
+                     scheduled={departments.foh.costWithBurden}
+                     budget={weeklyRevenue * 0.13}
+                     color="blue"
+                     emoji="🍽️"
+                   />
+                    <BudgetRow
+                     title="BOH"
+                     scheduled={departments.boh.costWithBurden}
+                     budget={weeklyRevenue * 0.12}
+                    color="emerald"
+                    emoji="👨‍🍳"
+                   />
+                    <BudgetRow
+                     title="Bar"
+                     scheduled={departments.bar.costWithBurden}
+                     budget={weeklyRevenue * 0.03}
+                     color="purple"
+                     emoji="🍸"
                     />
-                    <BudgetRow 
-                      title="BOH" 
-                      scheduled={bohStats.scheduled} 
-                      budget={bohStats.budget} 
-                      color="emerald" 
-                      emoji="👨‍🍳"
-                    />
-                    <BudgetRow 
-                      title="Bar" 
-                      scheduled={barStats.scheduled} 
-                      budget={barStats.budget} 
-                      color="purple" 
-                      emoji="🍸"
-                    />
+                  <BudgetRow
+                    title="Management"
+                    scheduled={departments.management.costWithBurden}
+                    budget={weeklyRevenue * 0.07}
+                    color="amber"
+                    emoji="👔"
+                   />
                     <div className="border-t-2 border-slate-200 pt-3 mt-4">
-                      <BudgetRow 
-                        title="Total" 
-                        scheduled={totalStats.scheduled} 
-                        budget={totalStats.budget} 
-                        color="slate" 
-                        emoji="📈"
-                      />
+                  <BudgetRow
+                   title="Total"
+                   scheduled={totalLaborCost}
+                  budget={targetLaborCost}
+                  color="slate"
+                  emoji="📊"
+                 />
                     </div>
                   </div>
                 )}
