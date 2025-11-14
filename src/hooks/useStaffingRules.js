@@ -4,6 +4,7 @@ import { supabase } from '../supabaseClient';
 export const useStaffingRules = (locationId) => {
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!locationId) {
@@ -15,18 +16,28 @@ export const useStaffingRules = (locationId) => {
       try {
         console.log('📊 Fetching staffing rules for:', locationId);
         
-        const { data, error } = await supabase
+        const { data, error: fetchError } = await supabase
           .from('staffing_rules')
           .select('*')
           .eq('location_id', locationId)
           .order('department', { ascending: true });
 
-        if (error) throw error;
+        if (fetchError) {
+          // Check for specific error codes
+          if (fetchError.code === '42P01' || fetchError.code === '42703') {
+            console.warn('⚠️ Staffing rules table/column not found, using empty rules');
+            setRoles([]);
+            setError(null);
+            setLoading(false);
+            return;
+          }
+          throw fetchError;
+        }
 
         console.log('✅ Fetched staffing rules:', data?.length || 0, 'roles');
         
         // Transform to frontend format
-        const transformed = data.map((rule, index) => ({
+        const transformed = (data || []).map((rule) => ({
           name: rule.role,
           abbreviation: rule.role.substring(0, 3).toUpperCase(),
           ratio: rule.covers_per_staff || 30,
@@ -43,8 +54,10 @@ export const useStaffingRules = (locationId) => {
         }));
 
         setRoles(transformed);
-      } catch (error) {
-        console.error('❌ Error fetching staffing rules:', error);
+        setError(null);
+      } catch (err) {
+        console.error('❌ Error fetching staffing rules:', err);
+        setError(err);
         setRoles([]);
       } finally {
         setLoading(false);
@@ -54,10 +67,14 @@ export const useStaffingRules = (locationId) => {
     fetchRoles();
   }, [locationId]);
 
-  return { roles, loading };
+  return { roles, loading, error };
 };
 
 export const getRolesByDepartment = (roles, department) => {
+  if (!Array.isArray(roles)) {
+    console.warn('⚠️ getRolesByDepartment: roles is not an array', roles);
+    return [];
+  }
   if (department === 'ALL') return roles;
   return roles.filter(role => role.department === department);
 };
