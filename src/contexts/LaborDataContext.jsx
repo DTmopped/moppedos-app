@@ -809,7 +809,8 @@ export const LaborDataProvider = ({ children }) => {
     }
   };
 
-  NEW: LABOR ANALYTICS & SCHEDULE GENERATION FUNCTIONS
+   // NEW: LABOR ANALYTICS & SCHEDULE GENERATION FUNCTIONS
+
   // ============================================================================
 
   /**
