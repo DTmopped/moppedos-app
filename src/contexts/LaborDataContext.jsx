@@ -1073,20 +1073,17 @@ const fetchLaborAnalytics = async (limit = 12) => {
       endDate.setDate(endDate.getDate() + 6);
       const weekEndDate = endDate.toISOString().split('T')[0];
       
-      // Fetch all data in parallel
-      const [summary, shifts, analytics] = await Promise.all([
-        fetchWeeklyLaborSummary(weekStartDate),
-        fetchWeeklyShifts(weekStartDate, weekEndDate),
-        fetchLaborAnalytics(12)
-      ]);
+     // Only fetch shifts (other functions are commented out)
+      const shifts = await fetchWeeklyShifts(weekStartDate, weekEndDate);
+
       
       // Calculate real-time metrics from shifts
       const metrics = calculateLaborMetrics(shifts);
       
       return {
-        summary: summary || metrics, // Use summary if available, otherwise calculated metrics
+        summary: metrics, // Use calculated metrics
         shifts,
-        analytics,
+        analytics: [], // Empty (table doesn't exist yet)
         metrics
       };
       
