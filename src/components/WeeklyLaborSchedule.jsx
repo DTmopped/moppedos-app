@@ -7,7 +7,8 @@ import {
   Loader2, BarChart3, PieChart, Activity, Edit3
 } from 'lucide-react';
 import { useLaborData } from '@/contexts/LaborDataContext';
-import { ROLES, getRolesByDepartment, SHIFT_TIMES } from '@/config/laborScheduleConfig';
+import { useStaffingRules, getRolesByDepartment } from '@/hooks/useStaffingRules';
+
 
 // Optimized Print CSS for Single Page Landscape - FIXED
 const printStyles = `
@@ -435,6 +436,8 @@ const convertTimeToStandard = contextData?.convertTimeToStandard;
 const getWeeklyLaborData = contextData?.getWeeklyLaborData;
 const generateWeeklySchedule = contextData?.generateWeeklySchedule;
 const locationUuid = contextData?.locationUuid;
+// Load roles dynamically from staffing_rules
+const { roles: ROLES, departments, loading: rolesLoading } = useStaffingRules(locationUuid);
 
   const weekStart = getStartOfWeek(currentWeek);
   const weekDays = Array.from({ length: 7 }, (_, i) => {
@@ -860,7 +863,7 @@ const getDepartmentStats = (department) => {
     window.print();
   };
 
-  if (loading) {
+ if (loading || rolesLoading) {  // ← CHANGED
     return (
       <div className="flex items-center justify-center h-screen bg-slate-50">
         <div className="text-center">
@@ -871,6 +874,17 @@ const getDepartmentStats = (department) => {
     );
   }
 
+  // ✅ ADD THIS BLOCK HERE:
+  if (!ROLES || ROLES.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-slate-50">
+        <div className="text-center">
+          <p className="text-slate-600 text-lg">No staffing rules configured for this location.</p>
+         </div>
+       </div>
+   );
+   }
+  
   if (error) {
     return (
       <div className="flex items-center justify-center h-screen bg-slate-50">
