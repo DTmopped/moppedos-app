@@ -7,7 +7,7 @@ import {
   Loader2, BarChart3, PieChart, Activity, Edit3
 } from 'lucide-react';
 import { useLaborData } from '@/contexts/LaborDataContext';
-import { useStaffingRules, getRolesByDepartment } from '@/hooks/useStaffingRules';
+import { ROLES, getRolesByDepartment, SHIFT_TIMES } from '@/config/laborScheduleConfig';
 
 
 // Optimized Print CSS for Single Page Landscape - FIXED
@@ -437,7 +437,7 @@ const getWeeklyLaborData = contextData?.getWeeklyLaborData;
 const generateWeeklySchedule = contextData?.generateWeeklySchedule;
 const locationUuid = contextData?.locationUuid;
 // Load roles dynamically from staffing_rules
-const { roles: ROLES, departments: staffingDepartments, loading: rolesLoading } = useStaffingRules(locationUuid);
+
 
   const weekStart = getStartOfWeek(currentWeek);
   const weekDays = Array.from({ length: 7 }, (_, i) => {
