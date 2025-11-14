@@ -809,6 +809,290 @@ export const LaborDataProvider = ({ children }) => {
     }
   };
 
+  NEW: LABOR ANALYTICS & SCHEDULE GENERATION FUNCTIONS
+  // ============================================================================
+
+  /**
+   * Fetch weekly labor summary from v_weekly_labor_summary view
+   * This provides real-time labor cost, hours, and percentage data
+   */
+  const fetchWeeklyLaborSummary = async (weekStartDate) => {
+    try {
+      const locationUuid = await getCurrentLocationUuid();
+      
+      console.log('Fetching labor summary for:', { locationUuid, weekStartDate });
+      
+      const { data, error } = await supabase
+        .from('v_weekly_labor_summary')
+        .select('*')
+        .eq('location_id', locationUuid)
+        .eq('week_start_date', weekStartDate)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching labor summary:', error);
+        return null;
+      }
+      
+      console.log('Labor summary fetched:', data);
+      return data;
+      
+    } catch (err) {
+      console.error('Error in fetchWeeklyLaborSummary:', err);
+      return null;
+    }
+  };
+
+  /**
+   * Fetch labor analytics history from labor_analytics table
+   * This provides historical trends for comparison
+   */
+  const fetchLaborAnalytics = async (limit = 12) => {
+    try {
+      const locationUuid = await getCurrentLocationUuid();
+      
+      const { data, error } = await supabase
+        .from('labor_analytics')
+        .select('*')
+        .eq('location_id', locationUuid)
+        .order('week_start_date', { ascending: false })
+        .limit(limit);
+      
+      if (error) {
+        console.error('Error fetching labor analytics:', error);
+        return [];
+      }
+      
+      console.log(`Fetched ${data?.length || 0} weeks of labor analytics`);
+      return data || [];
+      
+    } catch (err) {
+      console.error('Error in fetchLaborAnalytics:', err);
+      return [];
+    }
+  };
+
+  /**
+   * Fetch shifts for a specific week with employee details
+   * This provides the individual shift data for the schedule grid
+   */
+  const fetchWeeklyShifts = async (weekStartDate, weekEndDate) => {
+    try {
+      const locationUuid = await getCurrentLocationUuid();
+      
+      const { data, error } = await supabase
+        .from('shifts')
+        .select(`
+          *,
+          employees (
+            id,
+            name,
+            role,
+            department,
+            hourly_rate
+          )
+        `)
+        .eq('location_id', locationUuid)
+        .gte('day', weekStartDate)
+        .lte('day', weekEndDate)
+        .order('day', { ascending: true })
+        .order('start_time', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching shifts:', error);
+        return [];
+      }
+      
+      console.log(`Fetched ${data?.length || 0} shifts for week`);
+      return data || [];
+      
+    } catch (err) {
+      console.error('Error in fetchWeeklyShifts:', err);
+      return [];
+    }
+  };
+
+  /**
+   * Generate schedule for a specific week using the backend generator
+   * Calls regenerate_weekly_schedule() function
+   */
+  const generateWeeklySchedule = async (weekStartDate) => {
+    try {
+      const locationUuid = await getCurrentLocationUuid();
+      
+      console.log('Generating schedule for:', { locationUuid, weekStartDate });
+      
+      // Call the regenerate_weekly_schedule function
+      const { data, error } = await supabase.rpc(
+        'regenerate_weekly_schedule',
+        {
+          p_location_id: locationUuid,
+          p_week_start_date: weekStartDate
+        }
+      );
+      
+      if (error) {
+        console.error('Error generating schedule:', error);
+        return { success: false, error: error.message };
+      }
+      
+      console.log('Schedule generated successfully:', data);
+      
+      // Snapshot the labor analytics
+      await snapshotWeeklyLabor(weekStartDate);
+      
+      return { success: true, data };
+      
+    } catch (err) {
+      console.error('Error in generateWeeklySchedule:', err);
+      return { success: false, error: err.message };
+    }
+  };
+
+  /**
+   * Snapshot weekly labor data into labor_analytics table
+   * This captures the current week's metrics for historical tracking
+   */
+  const snapshotWeeklyLabor = async (weekStartDate) => {
+    try {
+      const locationUuid = await getCurrentLocationUuid();
+      
+      const { data, error } = await supabase.rpc(
+        'snapshot_weekly_labor',
+        {
+          p_location_id: locationUuid,
+          p_week_start_date: weekStartDate
+        }
+      );
+      
+      if (error) {
+        console.error('Error snapshotting labor:', error);
+        return { success: false, error: error.message };
+      }
+      
+      console.log('Labor snapshot created:', data);
+      return { success: true, data };
+      
+    } catch (err) {
+      console.error('Error in snapshotWeeklyLabor:', err);
+      return { success: false, error: err.message };
+    }
+  };
+
+  /**
+   * Calculate labor metrics for the current schedule state
+   * This provides real-time calculations from the shifts data
+   */
+  const calculateLaborMetrics = (shifts, weeklyRevenue = 76923) => {
+    if (!shifts || shifts.length === 0) {
+      return {
+        totalShifts: 0,
+        totalHours: 0,
+        totalCost: 0,
+        totalCostWithBurden: 0,
+        laborPercent: 0,
+        laborPercentWithBurden: 0,
+        departments: {
+          foh: { shifts: 0, hours: 0, cost: 0, costWithBurden: 0 },
+          boh: { shifts: 0, hours: 0, cost: 0, costWithBurden: 0 },
+          bar: { shifts: 0, hours: 0, cost: 0, costWithBurden: 0 },
+          management: { shifts: 0, hours: 0, cost: 0, costWithBurden: 0 }
+        }
+      };
+    }
+    
+    const burden = 1.20; // 20% burden
+    const departments = {
+      foh: { shifts: 0, hours: 0, cost: 0 },
+      boh: { shifts: 0, hours: 0, cost: 0 },
+      bar: { shifts: 0, hours: 0, cost: 0 },
+      management: { shifts: 0, hours: 0, cost: 0 }
+    };
+    
+    let totalShifts = 0;
+    let totalHours = 0;
+    let totalCost = 0;
+    
+    shifts.forEach(shift => {
+      const hours = shift.hours || 0;
+      const rate = shift.hourly_rate || shift.employees?.hourly_rate || 15;
+      const cost = hours * rate;
+      const dept = (shift.department || 'foh').toLowerCase().replace(/\s+/g, '_');
+      
+      totalShifts++;
+      totalHours += hours;
+      totalCost += cost;
+      
+      // Map department names
+      let deptKey = 'foh';
+      if (dept.includes('boh') || dept.includes('back')) deptKey = 'boh';
+      else if (dept.includes('bar')) deptKey = 'bar';
+      else if (dept.includes('mgmt') || dept.includes('management')) deptKey = 'management';
+      
+      departments[deptKey].shifts++;
+      departments[deptKey].hours += hours;
+      departments[deptKey].cost += cost;
+    });
+    
+    // Apply burden to all departments
+    Object.keys(departments).forEach(dept => {
+      departments[dept].costWithBurden = departments[dept].cost * burden;
+    });
+    
+    const totalCostWithBurden = totalCost * burden;
+    const laborPercent = (totalCost / weeklyRevenue) * 100;
+    const laborPercentWithBurden = (totalCostWithBurden / weeklyRevenue) * 100;
+    
+    return {
+      totalShifts,
+      totalHours: Math.round(totalHours * 10) / 10,
+      totalCost: Math.round(totalCost),
+      totalCostWithBurden: Math.round(totalCostWithBurden),
+      laborPercent: Math.round(laborPercent * 10) / 10,
+      laborPercentWithBurden: Math.round(laborPercentWithBurden * 10) / 10,
+      departments
+    };
+  };
+
+  /**
+   * Get weekly labor data (summary + shifts + metrics)
+   * This is the main function to call from components
+   */
+  const getWeeklyLaborData = async (weekStartDate) => {
+    try {
+      // Calculate week end date (6 days after start)
+      const startDate = new Date(weekStartDate);
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 6);
+      const weekEndDate = endDate.toISOString().split('T')[0];
+      
+      // Fetch all data in parallel
+      const [summary, shifts, analytics] = await Promise.all([
+        fetchWeeklyLaborSummary(weekStartDate),
+        fetchWeeklyShifts(weekStartDate, weekEndDate),
+        fetchLaborAnalytics(12)
+      ]);
+      
+      // Calculate real-time metrics from shifts
+      const metrics = calculateLaborMetrics(shifts);
+      
+      return {
+        summary: summary || metrics, // Use summary if available, otherwise calculated metrics
+        shifts,
+        analytics,
+        metrics
+      };
+      
+    } catch (err) {
+      console.error('Error in getWeeklyLaborData:', err);
+      return {
+        summary: null,
+        shifts: [],
+        analytics: [],
+        metrics: null
+      };
+    }
+  };
   // System Stats Function
   const getSystemStats = async () => {
     try {
@@ -881,6 +1165,15 @@ export const LaborDataProvider = ({ children }) => {
 
     // System functions
     getSystemStats,
+
+    // NEW: Labor Analytics & Schedule Generation
+    fetchWeeklyLaborSummary,
+    fetchLaborAnalytics,
+    fetchWeeklyShifts,
+    generateWeeklySchedule,
+    snapshotWeeklyLabor,
+    calculateLaborMetrics,
+    getWeeklyLaborData,
 
     // Helper functions
     calculateShiftHours,
