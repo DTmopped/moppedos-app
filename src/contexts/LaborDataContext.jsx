@@ -817,61 +817,67 @@ export const LaborDataProvider = ({ children }) => {
    * Fetch weekly labor summary from v_weekly_labor_summary view
    * This provides real-time labor cost, hours, and percentage data
    */
-  const fetchWeeklyLaborSummary = async (weekStartDate) => {
-    try {
-      const locationUuid = await getCurrentLocationUuid();
-      
-      console.log('Fetching labor summary for:', { locationUuid, weekStartDate });
-      
-      const { data, error } = await supabase
-        .from('v_weekly_labor_summary')
-        .select('*')
-        .eq('location_id', locationUuid)
-        .eq('week_start_date', weekStartDate)
-        .single();
-      
-      if (error) {
-        console.error('Error fetching labor summary:', error);
-        return null;
-      }
-      
-      console.log('Labor summary fetched:', data);
-      return data;
-      
-    } catch (err) {
-      console.error('Error in fetchWeeklyLaborSummary:', err);
+  /*
+const fetchWeeklyLaborSummary = async (weekStartDate) => {
+  try {
+    const locationUuid = await getCurrentLocationUuid();
+    
+    console.log('Fetching labor summary for:', { locationUuid, weekStartDate });
+    
+    const { data, error } = await supabase
+      .from('v_weekly_labor_summary')
+      .select('*')
+      .eq('location_id', locationUuid)
+      .eq('week_start_date', weekStartDate)
+      .single();
+    
+    if (error) {
+      console.error('Error fetching labor summary:', error);
       return null;
     }
-  };
+    
+    console.log('Labor summary fetched:', data);
+    return data;
+    
+  } catch (err) {
+    console.error('Error in fetchWeeklyLaborSummary:', err);
+    return null;
+  }
+};
+*/
+
 
   /**
    * Fetch labor analytics history from labor_analytics table
    * This provides historical trends for comparison
    */
-  const fetchLaborAnalytics = async (limit = 12) => {
-    try {
-      const locationUuid = await getCurrentLocationUuid();
-      
-      const { data, error } = await supabase
-        .from('labor_analytics')
-        .select('*')
-        .eq('location_id', locationUuid)
-        .order('week_start_date', { ascending: false })
-        .limit(limit);
-      
-      if (error) {
-        console.error('Error fetching labor analytics:', error);
-        return [];
-      }
-      
-      console.log(`Fetched ${data?.length || 0} weeks of labor analytics`);
-      return data || [];
-      
-    } catch (err) {
-      console.error('Error in fetchLaborAnalytics:', err);
+  /*
+const fetchLaborAnalytics = async (limit = 12) => {
+  try {
+    const locationUuid = await getCurrentLocationUuid();
+    
+    const { data, error } = await supabase
+      .from('labor_analytics')
+      .select('*')
+      .eq('location_id', locationUuid)
+      .order('week_start_date', { ascending: false })
+      .limit(limit);
+    
+    if (error) {
+      console.error('Error fetching labor analytics:', error);
       return [];
     }
-  };
+    
+    console.log(`Fetched ${data?.length || 0} weeks of labor analytics`);
+    return data || [];
+    
+  } catch (err) {
+    console.error('Error in fetchLaborAnalytics:', err);
+    return [];
+  }
+};
+*/
+
 
   /**
    * Fetch shifts for a specific week with employee details
