@@ -437,7 +437,7 @@ const getWeeklyLaborData = contextData?.getWeeklyLaborData;
 const generateWeeklySchedule = contextData?.generateWeeklySchedule;
 const locationUuid = contextData?.locationUuid;
 // Load roles dynamically from staffing_rules
-const { roles: ROLES, departments, loading: rolesLoading } = useStaffingRules(locationUuid);
+const { roles: ROLES, departments: staffingDepartments, loading: rolesLoading } = useStaffingRules(locationUuid);
 
   const weekStart = getStartOfWeek(currentWeek);
   const weekDays = Array.from({ length: 7 }, (_, i) => {
