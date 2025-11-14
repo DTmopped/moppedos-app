@@ -1171,13 +1171,9 @@ const fetchLaborAnalytics = async (limit = 12) => {
     getSystemStats,
 
     // NEW: Labor Analytics & Schedule Generation
-    fetchWeeklyLaborSummary,
-    fetchLaborAnalytics,
-    fetchWeeklyShifts,
-    generateWeeklySchedule,
-    snapshotWeeklyLabor,
-    calculateLaborMetrics,
-    getWeeklyLaborData,
+   generateWeeklySchedule,
+   calculateLaborMetrics,
+   getWeeklyLaborData,
 
     // Helper functions
     calculateShiftHours,
