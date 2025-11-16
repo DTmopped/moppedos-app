@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import {
   Save, FileText, ChevronLeft, ChevronRight, Filter, Clock, AlertCircle, Plus, X, User, 
   Calendar, DollarSign, Target, Eye, EyeOff, TrendingUp, Users, ChevronDown, ChevronUp,
-  Loader2, BarChart3, PieChart, Activity, Edit3
+  Loader2, BarChart3, PieChart, Activity, Edit3, Copy
 } from 'lucide-react';
 import { useLaborData } from '@/contexts/LaborDataContext';
 import { ROLES, getRolesByDepartment, SHIFT_TIMES } from '@/config/laborScheduleConfig';
@@ -411,6 +411,79 @@ const validateTimeRange = (startTime, endTime) => {
   return { valid: true, hours };
 };
 
+// Copy Day Selector Component
+const CopyDaySelector = ({ currentDayIndex, weekDays, onCopy, onCancel }) => {
+  const [selectedDays, setSelectedDays] = useState([]);
+
+  const toggleDay = (dayIndex) => {
+    if (selectedDays.includes(dayIndex)) {
+      setSelectedDays(selectedDays.filter(d => d !== dayIndex));
+    } else {
+      setSelectedDays([...selectedDays, dayIndex]);
+    }
+  };
+
+  const handleCopy = () => {
+    if (selectedDays.length > 0) {
+      onCopy(selectedDays);
+    }
+  };
+
+  return (
+    <div>
+      <div className="text-sm font-medium text-slate-700 mb-3">Select days to copy to:</div>
+      <div className="grid grid-cols-2 gap-2 mb-4">
+        {weekDays.map((day, index) => {
+          const isCurrentDay = index === currentDayIndex;
+          const isSelected = selectedDays.includes(index);
+          const dayName = day.toLocaleDateString('en-US', { weekday: 'short' });
+          const dayDate = day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+          return (
+            <button
+              key={index}
+              disabled={isCurrentDay}
+              onClick={() => toggleDay(index)}
+              className={`p-3 rounded-md border-2 transition-all duration-200 ${
+                isCurrentDay
+                  ? 'bg-slate-100 border-slate-300 text-slate-400 cursor-not-allowed'
+                  : isSelected
+                  ? 'bg-blue-500 border-blue-600 text-white shadow-md'
+                  : 'bg-white border-slate-300 text-slate-700 hover:border-blue-400 hover:bg-blue-50'
+              }`}
+            >
+              <div className="font-bold text-sm">{dayName}</div>
+              <div className="text-xs mt-1">{dayDate}</div>
+              {isCurrentDay && <div className="text-xs mt-1">(Current)</div>}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex gap-2">
+        <Button
+          onClick={onCancel}
+          variant="outline"
+          className="flex-1"
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={handleCopy}
+          disabled={selectedDays.length === 0}
+          className={`flex-1 ${
+            selectedDays.length > 0
+              ? 'bg-blue-600 hover:bg-blue-700 text-white'
+              : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+          }`}
+        >
+          Copy to {selectedDays.length} {selectedDays.length === 1 ? 'Day' : 'Days'}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 const WeeklyLaborSchedule = () => {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [selectedDepartment, setSelectedDepartment] = useState('ALL');
@@ -421,6 +494,8 @@ const WeeklyLaborSchedule = () => {
   const [showManagerView, setShowManagerView] = useState(true);
   const [budgetCollapsed, setBudgetCollapsed] = useState(false);
   const [editingCell, setEditingCell] = useState(null);
+  const [copyModalOpen, setCopyModalOpen] = useState(false);
+  const [shiftToCopy, setShiftToCopy] = useState(null);
 
   const contextData = useLaborData();
   const employees = contextData?.employees || [];
@@ -626,6 +701,52 @@ const WeeklyLaborSchedule = () => {
       console.error('Error saving schedule:', error);
       alert('❌ Error saving schedule. Please try again.');
     }
+  };
+
+  const handleCopyShift = (roleIndex, shiftIndex, dayIndex, employee) => {
+    setShiftToCopy({
+      roleIndex,
+      shiftIndex,
+      dayIndex,
+      employee
+    });
+    setCopyModalOpen(true);
+  };
+
+  const handlePasteShift = (targetDays) => {
+    if (!shiftToCopy) return;
+
+    const { roleIndex, shiftIndex, employee } = shiftToCopy;
+    const actualRole = filteredRoles[roleIndex];
+    const actualRoleIndex = ROLES.findIndex(role => role.name === actualRole.name);
+
+    targetDays.forEach(targetDayIndex => {
+      const scheduleKey = `${actualRoleIndex}-${shiftIndex}-${targetDayIndex}`;
+      const currentAssignments = scheduleData[scheduleKey]?.employees || [];
+
+      // Check if employee is already assigned to this slot
+      if (currentAssignments.find(emp => emp.id === employee.id)) {
+        return; // Skip if already assigned
+      }
+
+      // Copy the employee with same times
+      const newEmployee = {
+        ...employee,
+        id: employee.id
+      };
+
+      setScheduleData(prev => ({
+        ...prev,
+        [scheduleKey]: {
+          ...prev[scheduleKey],
+          employees: [...currentAssignments, newEmployee]
+        }
+      }));
+    });
+
+    setHasUnsavedChanges(true);
+    setCopyModalOpen(false);
+    setShiftToCopy(null);
   };
 
   const navigateWeek = (direction) => {
@@ -1000,14 +1121,25 @@ const WeeklyLaborSchedule = () => {
                                                       className="font-bold text-sm bg-transparent border-none outline-none w-full text-slate-900 pr-2"
                                                       placeholder="Employee Name"
                                                     />
-                                                    <Button
-                                                      size="sm"
-                                                      variant="ghost"
-                                                      onClick={() => handleRemoveEmployee(roleIndex, shiftIndex, dayIndex, emp.id)}
-                                                      className="h-4 w-4 p-0 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all duration-200 no-print flex-shrink-0"
-                                                    >
-                                                      <X className="h-3 w-3" />
-                                                    </Button>
+                                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 no-print">
+                                                      <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        onClick={() => handleCopyShift(roleIndex, shiftIndex, dayIndex, emp)}
+                                                        className="h-4 w-4 p-0 text-slate-400 hover:text-blue-500 transition-all duration-200 flex-shrink-0"
+                                                        title="Copy to other days"
+                                                      >
+                                                        <Copy className="h-3 w-3" />
+                                                      </Button>
+                                                      <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        onClick={() => handleRemoveEmployee(roleIndex, shiftIndex, dayIndex, emp.id)}
+                                                        className="h-4 w-4 p-0 text-slate-400 hover:text-red-500 transition-all duration-200 flex-shrink-0"
+                                                      >
+                                                        <X className="h-3 w-3" />
+                                                      </Button>
+                                                    </div>
                                                   </div>
                                                   
                                                   {/* Time Range - WIDER SPACE & WRAPPING */}
@@ -1131,6 +1263,46 @@ const WeeklyLaborSchedule = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Copy Shift Modal */}
+          {copyModalOpen && shiftToCopy && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+              <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-slate-900">📋 Copy Shift to Other Days</h3>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setCopyModalOpen(false);
+                      setShiftToCopy(null);
+                    }}
+                    className="h-8 w-8 p-0"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                  <div className="text-sm font-medium text-blue-900">Copying:</div>
+                  <div className="text-sm text-blue-800 mt-1">
+                    <div className="font-bold">{shiftToCopy.employee.name}</div>
+                    <div>{shiftToCopy.employee.start} - {shiftToCopy.employee.end} ({shiftToCopy.employee.hours}h)</div>
+                  </div>
+                </div>
+
+                <CopyDaySelector
+                  currentDayIndex={shiftToCopy.dayIndex}
+                  weekDays={weekDays}
+                  onCopy={handlePasteShift}
+                  onCancel={() => {
+                    setCopyModalOpen(false);
+                    setShiftToCopy(null);
+                  }}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Click outside to close dropdown */}
           {showDropdown && (
