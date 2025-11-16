@@ -1182,10 +1182,16 @@ const WeeklyLaborSchedule = () => {
                                               <span>Add Employee</span>
                                             </Button>
                                             
-                                            {showDropdown === dropdownKey && (
+                                            {showDropdown === dropdownKey && (() => {
+                                              // Filter employees by THIS role's department
+                                              const roleEmployees = employees.filter(emp => 
+                                                emp.is_active !== false && 
+                                                emp.department === role.department
+                                              );
+                                              return (
                                               <div className="absolute top-full left-0 mt-2 w-80 bg-white border border-slate-300 rounded-lg shadow-xl z-20 max-h-60 overflow-y-auto">
-                                                {filteredEmployees.length > 0 ? (
-                                                  filteredEmployees.map(employee => (
+                                                {roleEmployees.length > 0 ? (
+                                                  roleEmployees.map(employee => (
                                                     <button
                                                       key={employee.id}
                                                       onClick={() => handleAddEmployee(roleIndex, shiftIndex, dayIndex, employee.id)}
@@ -1210,7 +1216,8 @@ const WeeklyLaborSchedule = () => {
                                                   </div>
                                                 )}
                                               </div>
-                                            )}
+                                              );
+                                            })()}
                                           </div>
                                         </div>
                                       )}
