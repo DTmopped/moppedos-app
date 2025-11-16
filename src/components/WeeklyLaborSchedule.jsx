@@ -7,7 +7,7 @@ import {
   Loader2, BarChart3, PieChart, Activity, Edit3, Copy
 } from 'lucide-react';
 import { useLaborData } from '@/contexts/LaborDataContext';
-import { ROLES, getRolesByDepartment, SHIFT_TIMES } from '@/config/laborScheduleConfig';
+import { ROLES, getRolesByDepartment, SHIFT_TIMES, DEPARTMENT_MAPPING } from '@/config/laborScheduleConfig';
 
 // Optimized Print CSS for Single Page Landscape - FIXED
 const printStyles = `
@@ -1184,16 +1184,12 @@ const WeeklyLaborSchedule = () => {
                                             
                                             {showDropdown === dropdownKey && (() => {
                                               // Filter employees by THIS role's department
+                                              // Convert role department abbreviation (e.g., 'BOH') to full name (e.g., 'Back of House')
+                                              const roleDepartmentFullName = DEPARTMENT_MAPPING[role.department] || role.department;
                                               const roleEmployees = employees.filter(emp => 
                                                 emp.is_active !== false && 
-                                                emp.department === role.department
+                                                emp.department === roleDepartmentFullName
                                               );
-                                          
-console.log('Role:', role.name, 'Department:', role.department);
-console.log('Total employees:', employees.length);
-console.log('Filtered roleEmployees:', roleEmployees.length);
-console.log('First 3 employees:', employees.slice(0, 3).map(e => ({name: e.name, dept: e.department})));
-
                                               return (
                                               <div className="absolute top-full left-0 mt-2 w-80 bg-white border border-slate-300 rounded-lg shadow-xl z-20 max-h-60 overflow-y-auto">
                                                 {roleEmployees.length > 0 ? (
