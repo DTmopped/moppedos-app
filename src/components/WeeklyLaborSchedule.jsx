@@ -1188,12 +1188,11 @@ const WeeklyLaborSchedule = () => {
                                                 emp.is_active !== false && 
                                                 emp.department === role.department
                                               );
-                                          );
+                                          
 console.log('Role:', role.name, 'Department:', role.department);
 console.log('Total employees:', employees.length);
 console.log('Filtered roleEmployees:', roleEmployees.length);
 console.log('First 3 employees:', employees.slice(0, 3).map(e => ({name: e.name, dept: e.department})));
-return (
 
                                               return (
                                               <div className="absolute top-full left-0 mt-2 w-80 bg-white border border-slate-300 rounded-lg shadow-xl z-20 max-h-60 overflow-y-auto">
