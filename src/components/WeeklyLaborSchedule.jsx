@@ -1247,160 +1247,165 @@ const getMaxRowsForRole = (roleIndex, shiftIndex) => {
                     {/* ============================================================================ */}
                     {/* 🔥 UPDATED: SINGLE SHIFT PER ROLE (DINNER ONLY) */}
                     {/* ============================================================================ */}
+                                        {/* ============================================================================ */}
+                    {/* 🔥 MULTI-ROW SUPPORT: DINNER ONLY */}
+                    {/* ============================================================================ */}
                     <div className="mt-6 space-y-4">
                       {filteredRoles.map((role, roleIndex) => {
                         const shiftIndex = 0; // ✅ SINGLE DINNER SHIFT
                         const shift = 'DINNER'; // ✅ NO AM/PM
                         
-                        return (
-                          <div key={`${roleIndex}-${shiftIndex}`} className="flex">
-                            <div className="w-48 flex-shrink-0 sticky left-0 bg-white z-10 pr-3">
-                              <div className={`p-3 rounded-lg border-2 ${getDepartmentColor(role.department)} h-28 flex flex-col justify-center shadow-sm hover:shadow-md transition-shadow duration-200`}>
-                                <div className="text-center space-y-1">
-                                  <div className="text-xl">{getDepartmentEmoji(role.department)}</div>
-                                  <div className="font-bold text-slate-900 text-sm">{role.name}</div>
-                                  <div className="text-slate-800 text-xs font-bold flex items-center justify-center space-x-1">
-                                    <span>🌙</span>
-                                    <span>DINNER</span>
+                        // ✅ NEW: Calculate max rows needed for this role
+                        const actualRole = filteredRoles[roleIndex];
+                        const actualRoleIndex = ROLES.findIndex(r => r.name === actualRole.name);
+                        const maxRows = getMaxRowsForRole(actualRoleIndex, shiftIndex);
+                        const rowCount = maxRows > 0 ? maxRows : 1; // At least 1 row to show empty cells
+                        
+                        // ✅ NEW: Create array of row indices to map over
+                        return Array.from({ length: rowCount }, (_, rowIndex) => {
+                          return (
+                            <div key={`${roleIndex}-${shiftIndex}-${rowIndex}`} className="flex">
+                              {/* Role Column - Only show on first row */}
+                              <div className="w-48 flex-shrink-0 sticky left-0 bg-white z-10 pr-3">
+                                {rowIndex === 0 ? (
+                                  <div className={`p-3 rounded-lg border-2 ${getDepartmentColor(role.department)} h-28 flex flex-col justify-center shadow-sm hover:shadow-md transition-shadow duration-200`}>
+                                    <div className="text-center space-y-1">
+                                      <div className="text-xl">{getDepartmentEmoji(role.department)}</div>
+                                      <div className="font-bold text-slate-900 text-sm">{role.name}</div>
+                                      <div className="text-slate-800 text-xs font-bold flex items-center justify-center space-x-1">
+                                        <span>🌙</span>
+                                        <span>DINNER</span>
+                                      </div>
+                                      <Badge variant={role.department.toLowerCase()} size="sm" emoji={getDepartmentEmoji(role.department)}>
+                                        <span className="font-bold text-xs">{role.department}</span>
+                                      </Badge>
+                                    </div>
                                   </div>
-                                  <Badge variant={role.department.toLowerCase()} size="sm" emoji={getDepartmentEmoji(role.department)}>
-                                    <span className="font-bold text-xs">{role.department}</span>
-                                  </Badge>
-                                </div>
+                                ) : (
+                                  <div className="h-28"></div>
+                                )}
                               </div>
-                            </div>
 
-                            <div className="flex-1 grid grid-cols-7 gap-3">
-                              {weekDays.map((day, dayIndex) => {
-                                const assignedEmployees = getAssignedEmployees(roleIndex, shiftIndex, dayIndex);
-                                const dropdownKey = `${roleIndex}-${shiftIndex}-${dayIndex}`;
-                                const isToday = day.toDateString() === new Date().toDateString();
-                                
-                                return (
-                                  <div key={dayIndex} className={`border-2 rounded-lg h-28 p-3 min-w-[220px] ${isToday ? 'bg-blue-50 border-blue-300' : 'bg-white border-slate-300'} hover:shadow-md transition-all duration-200`}>
-                                    {assignedEmployees.length > 0 ? (
-                                      <div className="space-y-2 h-full overflow-y-auto">
-                                        {assignedEmployees.map((emp, empIndex) => {
-                                          const timeValidation = validateTimeRange(emp.start, emp.end);
-                                          return (
-                                            <div key={empIndex} className={`p-2 rounded-md border ${getDepartmentColor(emp.department)} group hover:shadow-sm transition-all duration-200 relative ${!timeValidation.valid ? 'border-red-300 bg-red-50' : ''}`}>
-                                              <div className="space-y-1">
-                                                <div className="flex items-center justify-between">
-                                                  <input
-                                                    type="text"
-                                                    value={emp.name}
-                                                    onChange={(e) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, emp.id, 'name', e.target.value)}
-                                                    className="font-bold text-sm bg-transparent border-none outline-none w-full text-slate-900 pr-2"
-                                                    placeholder="Employee Name"
-                                                  />
-                                                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 no-print">
-                                                    <Button
-                                                      size="sm"
-                                                      variant="ghost"
-                                                      onClick={() => handleCopyShift(roleIndex, shiftIndex, dayIndex, emp)}
-                                                      className="h-4 w-4 p-0 text-slate-400 hover:text-blue-500 transition-all duration-200 flex-shrink-0"
-                                                      title="Copy to other days"
-                                                    >
-                                                      <Copy className="h-3 w-3" />
-                                                    </Button>
-                                                    <Button
-                                                      size="sm"
-                                                      variant="ghost"
-                                                      onClick={() => handleRemoveEmployee(roleIndex, shiftIndex, dayIndex, emp.id)}
-                                                      className="h-4 w-4 p-0 text-slate-400 hover:text-red-500 transition-all duration-200 flex-shrink-0"
-                                                    >
-                                                      <X className="h-3 w-3" />
-                                                    </Button>
-                                                  </div>
-                                                </div>
-                                                
-                                                <div className="flex flex-wrap items-center gap-1 text-xs">
-                                                  <TimeSelector
-                                                    value={emp.start}
-                                                    onChange={(value) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, emp.id, 'start', value)}
-                                                  />
-                                                  <span className="font-bold text-slate-700">-</span>
-                                                  <TimeSelector
-                                                    value={emp.end}
-                                                    onChange={(value) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, emp.id, 'end', value)}
-                                                  />
-                                                  <span className={`font-bold whitespace-nowrap ${timeValidation.valid ? 'text-slate-900' : 'text-red-600'}`}>
-                                                    ({emp.hours}h)
-                                                  </span>
-                                                </div>
-                                                
-                                                {!timeValidation.valid && (
-                                                  <div className="text-xs text-red-600 font-medium">
-                                                    ⚠️ {timeValidation.error}
-                                                  </div>
-                                                )}
+                              {/* Day Cells - One employee per cell */}
+                              <div className="flex-1 grid grid-cols-7 gap-3">
+                                {weekDays.map((day, dayIndex) => {
+                                  const isToday = day.toDateString() === new Date().toDateString();
+                                  const employee = getEmployeeForCell(actualRoleIndex, shiftIndex, dayIndex, rowIndex);
+                                  const dropdownKey = `${roleIndex}-${shiftIndex}-${dayIndex}-${rowIndex}`;
+                                  
+                                  return (
+                                    <div key={dayIndex} className={`border-2 rounded-lg h-28 p-3 min-w-[220px] ${isToday ? 'bg-blue-50 border-blue-300' : 'bg-white border-slate-300'} hover:shadow-md transition-all duration-200`}>
+                                      {employee ? (
+                                        <div className={`p-2 rounded-md border ${getDepartmentColor(employee.department)} group hover:shadow-sm transition-all duration-200 relative h-full`}>
+                                          <div className="space-y-1">
+                                            {/* Employee Name */}
+                                            <div className="flex items-center justify-between">
+                                              <input
+                                                type="text"
+                                                value={employee.name}
+                                                onChange={(e) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, employee.id, 'name', e.target.value)}
+                                                className="font-bold text-sm bg-transparent border-none outline-none w-full text-slate-900 pr-2"
+                                                placeholder="Employee Name"
+                                              />
+                                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 no-print">
+                                                <Button
+                                                  size="sm"
+                                                  variant="ghost"
+                                                  onClick={() => handleCopyShift(roleIndex, shiftIndex, dayIndex, employee)}
+                                                  className="h-4 w-4 p-0 text-slate-400 hover:text-blue-500 transition-all duration-200 flex-shrink-0"
+                                                  title="Copy to other days"
+                                                >
+                                                  <Copy className="h-3 w-3" />
+                                                </Button>
+                                                <Button
+                                                  size="sm"
+                                                  variant="ghost"
+                                                  onClick={() => handleRemoveEmployee(roleIndex, shiftIndex, dayIndex, employee.id)}
+                                                  className="h-4 w-4 p-0 text-slate-400 hover:text-red-500 transition-all duration-200 flex-shrink-0"
+                                                >
+                                                  <X className="h-3 w-3" />
+                                                </Button>
                                               </div>
                                             </div>
-                                          );
-                                        })}
-                                      </div>
-                                    ) : (
-                                      <div className="h-full flex items-center justify-center no-print">
-                                        <div className="relative">
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => setShowDropdown(showDropdown === dropdownKey ? null : dropdownKey)}
-                                            className="text-slate-700 hover:bg-slate-50 border-dashed border-slate-400 text-xs px-3 py-2 flex items-center space-x-2 font-medium"
-                                          >
-                                            <Plus className="h-3 w-3" />
-                                            <span>Add Employee</span>
-                                          </Button>
-                                          
-                                          {showDropdown === dropdownKey && (() => {
-                                            const roleDepartmentFullName = DEPARTMENT_MAPPING[role.department] || role.department;
-                                            const roleEmployees = employees.filter(emp => 
-                                              emp.is_active !== false && 
-                                              emp.department === roleDepartmentFullName
-                                            );
-                                            return (
-                                              <div className="absolute top-full left-0 mt-2 w-80 bg-white border border-slate-300 rounded-lg shadow-xl z-20 max-h-60 overflow-y-auto">
-                                                {roleEmployees.length > 0 ? (
-                                                  roleEmployees.map(employee => (
-                                                    <button
-                                                      key={employee.id}
-                                                      onClick={() => handleAddEmployee(roleIndex, shiftIndex, dayIndex, employee.id)}
-                                                      className="w-full text-left px-4 py-3 text-sm text-slate-800 hover:bg-slate-50 border-b border-slate-100 last:border-b-0 transition-colors duration-150"
-                                                    >
-                                                      <div className="flex items-center space-x-3">
-                                                        <span className="text-lg">👤</span>
-                                                        <div className="flex-1">
-                                                          <div className="font-bold text-sm text-slate-900">{employee.name}</div>
-                                                          <div className="text-xs text-slate-600 flex items-center space-x-3 mt-1 font-medium">
-                                                            <span>💼 {employee.role}</span>
-                                                            <span>•</span>
-                                                            <span>🏢 {employee.department}</span>
+                                            
+                                            {/* Time Range */}
+                                            <div className="flex flex-wrap items-center gap-1 text-xs">
+                                              <TimeSelector
+                                                value={employee.start}
+                                                onChange={(value) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, employee.id, 'start', value)}
+                                              />
+                                              <span className="font-bold text-slate-700">-</span>
+                                              <TimeSelector
+                                                value={employee.end}
+                                                onChange={(value) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, employee.id, 'end', value)}
+                                              />
+                                              <span className="font-bold whitespace-nowrap text-slate-900">
+                                                ({employee.hours}h)
+                                              </span>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <div className="h-full flex items-center justify-center no-print">
+                                          <div className="relative">
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              onClick={() => setShowDropdown(showDropdown === dropdownKey ? null : dropdownKey)}
+                                              className="text-slate-700 hover:bg-slate-50 border-dashed border-slate-400 text-xs px-3 py-2 flex items-center space-x-2 font-medium"
+                                            >
+                                              <Plus className="h-3 w-3" />
+                                              <span>Add Employee</span>
+                                            </Button>
+                                            
+                                            {showDropdown === dropdownKey && (() => {
+                                              const roleDepartmentFullName = DEPARTMENT_MAPPING[role.department] || role.department;
+                                              const roleEmployees = employees.filter(emp => 
+                                                emp.is_active !== false && 
+                                                emp.department === roleDepartmentFullName
+                                              );
+                                              return (
+                                                <div className="absolute top-full left-0 mt-2 w-80 bg-white border border-slate-300 rounded-lg shadow-xl z-20 max-h-60 overflow-y-auto">
+                                                  {roleEmployees.length > 0 ? (
+                                                    roleEmployees.map(emp => (
+                                                      <button
+                                                        key={emp.id}
+                                                        onClick={() => handleAddEmployee(roleIndex, shiftIndex, dayIndex, emp.id)}
+                                                        className="w-full text-left px-4 py-3 text-sm text-slate-800 hover:bg-slate-50 border-b border-slate-100 last:border-b-0 transition-colors duration-150"
+                                                      >
+                                                        <div className="flex items-center space-x-3">
+                                                          <span className="text-lg">👤</span>
+                                                          <div className="flex-1">
+                                                            <div className="font-bold text-sm text-slate-900">{emp.name}</div>
+                                                            <div className="text-xs text-slate-600 flex items-center space-x-3 mt-1 font-medium">
+                                                              <span>💼 {emp.role}</span>
+                                                              <span>•</span>
+                                                              <span>🏢 {emp.department}</span>
+                                                            </div>
                                                           </div>
                                                         </div>
-                                                      </div>
-                                                    </button>
-                                                  ))
-                                                ) : (
-                                                  <div className="px-4 py-3 text-sm text-slate-600 text-center font-medium">
-                                                    <span>😔 No employees available</span>
-                                                  </div>
-                                                )}
-                                              </div>
-                                            );
-                                          })()}
+                                                      </button>
+                                                    ))
+                                                  ) : (
+                                                    <div className="px-4 py-3 text-sm text-slate-600 text-center font-medium">
+                                                      <span>😔 No employees available</span>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              );
+                                            })()}
+                                          </div>
                                         </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })}
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             </div>
-                          </div>
-                        );
+                          );
+                        });
                       })}
                     </div>
-                  </div>
-                </div>
               </div>
             </CardContent>
           </Card>
