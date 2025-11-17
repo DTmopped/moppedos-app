@@ -718,38 +718,55 @@ const getMaxRowsForRole = (roleIndex, shiftIndex) => {
   const filteredEmployees = getFilteredEmployees();
 
   // Calculate department stats (excluding Management from totals)
-  const getDepartmentStats = (department) => {
-        // ✅ NEW: Collect all employees from all cells (single employee per cell now)
-    const assignments = Object.values(scheduleData).reduce((acc, cell) => {
-      if (cell.employee) {  // Single employee per cell now
-        const emp = cell.employee;
-        if (department === 'ALL' ? emp.department !== 'Management' : emp.department === department) {
-          acc.push(emp);
+ const getDepartmentStats = (department) => {
+  // ✅ NEW: Only count shifts for the CURRENT WEEK being displayed
+  const assignments = [];
+  
+  // Loop through only the 7 days being displayed (0-6)
+  for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+    // Loop through all roles
+    ROLES.forEach((role, roleIndex) => {
+      const shiftIndex = 0; // DINNER only
+      
+      // Check all possible rows for this role/shift/day
+      for (let rowIndex = 0; rowIndex < 20; rowIndex++) {
+        const scheduleKey = `${roleIndex}-${shiftIndex}-${dayIndex}-${rowIndex}`;
+        const cell = scheduleData[scheduleKey];
+        
+        if (cell?.employee) {
+          const emp = cell.employee;
+          // Filter by department
+          const isMatch = department === 'ALL' 
+            ? emp.department !== 'Management' 
+            : emp.department === department;
+          
+          if (isMatch) {
+            assignments.push(emp);
+          }
         }
       }
-      return acc;
-    }, []);
+    });
+  }
 
+  const totalCost = assignments.reduce((sum, emp) => sum + (emp.hourly_rate * emp.hours), 0);
+  const totalHours = assignments.reduce((sum, emp) => sum + emp.hours, 0);
 
-    const totalCost = assignments.reduce((sum, emp) => sum + (emp.hourly_rate * emp.hours), 0);
-    const totalHours = assignments.reduce((sum, emp) => sum + emp.hours, 0);
-
-    // Enhanced budget data with realistic targets
-    const budgets = {
-      'FOH': { budget: 1200, target: 1000 },
-      'BOH': { budget: 1800, target: 1500 },
-      'Bar': { budget: 600, target: 500 },
-      'ALL': { budget: 3600, target: 3000 } // FOH + BOH + Bar (excluding Management)
-    };
-
-    return {
-      scheduled: Math.round(totalCost),
-      budget: budgets[department]?.budget || 0,
-      target: budgets[department]?.target || 0,
-      hours: Math.round(totalHours),
-      employeeCount: assignments.length
-    };
+  // Budget data (this should come from location settings eventually)
+  const budgets = {
+    'FOH': { budget: 1200, target: 1000 },
+    'BOH': { budget: 1800, target: 1500 },
+    'Bar': { budget: 600, target: 500 },
+    'ALL': { budget: 3600, target: 3000 }
   };
+
+  return {
+    scheduled: Math.round(totalCost),
+    budget: budgets[department]?.budget || 0,
+    target: budgets[department]?.target || 0,
+    hours: Math.round(totalHours),
+    employeeCount: assignments.length
+  };
+};
 
   // Enhanced color functions with professional gradients
   const getDepartmentColor = (department) => {
