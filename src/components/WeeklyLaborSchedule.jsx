@@ -1146,7 +1146,7 @@ const WeeklyLaborSchedule = () => {
                           return (
                             <div key={index} className={`text-center py-4 rounded-lg border-2 font-bold h-16 flex flex-col justify-center min-w-[220px] text-base ${isToday ? 'bg-blue-100 border-blue-400 text-blue-800' : 'bg-slate-100 border-slate-300 text-slate-800'}`}>
                               <div className="text-sm font-bold">
-                                {dayName} {isToday && '📅'}
+                                📅 {dayName} {isToday && '⭐'}
                               </div>
                               <div className="text-xs font-semibold opacity-75">
                                 {date}
