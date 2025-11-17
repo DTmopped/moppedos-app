@@ -650,22 +650,24 @@ export const LaborDataProvider = ({ children }) => {
       setLoading(true);
       const locationUuid = await getCurrentLocationUuid();
       
-      // Convert any standard time formats to military time for database storage
+            // Convert any standard time formats to military time for database storage
       const processedScheduleData = JSON.parse(JSON.stringify(scheduleData));
       
-      // Process each schedule entry to ensure times are in military format
+      // ✅ NEW: Process each schedule entry (now using single employee per cell)
       Object.keys(processedScheduleData).forEach(key => {
         const slot = processedScheduleData[key];
-        if (slot.employees) {
-          slot.employees = slot.employees.map(emp => ({
-            ...emp,
-            start: emp.start && (emp.start.includes('AM') || emp.start.includes('PM')) ? 
-              convertTimeToMilitary(emp.start) : emp.start,
-            end: emp.end && (emp.end.includes('AM') || emp.end.includes('PM')) ? 
-              convertTimeToMilitary(emp.end) : emp.end
-          }));
+        // ✅ NEW: Check for .employee (singular) instead of .employees (array)
+        if (slot.employee) {
+          slot.employee = {
+            ...slot.employee,
+            start: slot.employee.start && (slot.employee.start.includes('AM') || slot.employee.start.includes('PM')) ? 
+              convertTimeToMilitary(slot.employee.start) : slot.employee.start,
+            end: slot.employee.end && (slot.employee.end.includes('AM') || slot.employee.end.includes('PM')) ? 
+              convertTimeToMilitary(slot.employee.end) : slot.employee.end
+          };
         }
       });
+
       
       const scheduleEntry = {
         week_start_date: weekKey, // Use actual column name
