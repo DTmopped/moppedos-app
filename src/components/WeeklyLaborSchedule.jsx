@@ -558,7 +558,8 @@ const WeeklyLaborSchedule = () => {
               return;
             }
 
-            const scheduleKey = `${roleIndex}-${shiftIndex}-${dayIndex}`;
+                        const rowIndex = shift.row_index || 0;  // ✅ NEW: Get row_index from database
+            const scheduleKey = `${roleIndex}-${shiftIndex}-${dayIndex}-${rowIndex}`;  // ✅ 4-part key
             const employee = shift.employees || {};
 
             const formatTimeHelper = (timeStr) => {
@@ -583,11 +584,11 @@ const WeeklyLaborSchedule = () => {
               shift_id: shift.id
             };
 
-            if (!transformedSchedule[scheduleKey]) {
-              transformedSchedule[scheduleKey] = { employees: [] };
-            }
-            
-            transformedSchedule[scheduleKey].employees.push(employeeEntry);
+            // ✅ NEW: Store single employee per cell, not array
+            transformedSchedule[scheduleKey] = {
+              employee: employeeEntry
+            };
+
           });
 
           console.log('🔄 Transformed:', Object.keys(transformedSchedule).length, 'slots,', 
@@ -603,6 +604,69 @@ const WeeklyLaborSchedule = () => {
 
     loadWeeklyShifts();
   }, [currentWeek, contextData?.locationUuid, weekStart]);
+// ============================================================================
+// 🔥 NEW: ROW INDEX HELPER FUNCTIONS
+// ============================================================================
+
+// Find the next available row index for a role/shift/day
+const findNextRowIndex = (roleIndex, shiftIndex, dayIndex) => {
+  let rowIdx = 0;
+  while (scheduleData[`${roleIndex}-${shiftIndex}-${dayIndex}-${rowIdx}`]) {
+    rowIdx++;
+  }
+  return rowIdx;
+};
+
+// Find which row a specific employee is in
+const findEmployeeRow = (roleIndex, shiftIndex, dayIndex, employeeId) => {
+  for (let rowIdx = 0; rowIdx < 20; rowIdx++) {
+    const key = `${roleIndex}-${shiftIndex}-${dayIndex}-${rowIdx}`;
+    if (scheduleData[key]?.employee?.id === employeeId) {
+      return rowIdx;
+    }
+  }
+  return -1;
+};
+
+// Check if employee is already assigned to this role/shift/day
+const isEmployeeAssigned = (roleIndex, shiftIndex, dayIndex, employeeId) => {
+  return findEmployeeRow(roleIndex, shiftIndex, dayIndex, employeeId) !== -1;
+};
+
+// Get all employees for a role/shift/day (for calculations)
+const getAllEmployeesForSlot = (roleIndex, shiftIndex, dayIndex) => {
+  const employees = [];
+  for (let rowIdx = 0; rowIdx < 20; rowIdx++) {
+    const key = `${roleIndex}-${shiftIndex}-${dayIndex}-${rowIdx}`;
+    if (scheduleData[key]?.employee) {
+      employees.push(scheduleData[key].employee);
+    }
+  }
+  return employees;
+};
+
+// Get employee for specific cell
+const getEmployeeForCell = (roleIndex, shiftIndex, dayIndex, rowIndex) => {
+  const key = `${roleIndex}-${shiftIndex}-${dayIndex}-${rowIndex}`;
+  return scheduleData[key]?.employee || null;
+};
+
+// Get max rows needed for a role/shift
+const getMaxRowsForRole = (roleIndex, shiftIndex) => {
+  let maxRows = 1;
+  for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+    let rowCount = 0;
+    for (let rowIdx = 0; rowIdx < 20; rowIdx++) {
+      const key = `${roleIndex}-${shiftIndex}-${dayIndex}-${rowIdx}`;
+      if (scheduleData[key]?.employee) {
+        rowCount = rowIdx + 1;
+      }
+    }
+    maxRows = Math.max(maxRows, rowCount || 1);
+  }
+  return maxRows;
+};
+
 
   const filteredRoles = ROLES.filter(
     role => selectedDepartment === 'ALL' || role.department === selectedDepartment
@@ -621,12 +685,17 @@ const WeeklyLaborSchedule = () => {
 
   // Calculate department stats (excluding Management from totals)
   const getDepartmentStats = (department) => {
-    const assignments = Object.values(scheduleData).reduce((acc, day) => {
-      const deptEmployees = (day.employees || []).filter(emp => 
-        department === 'ALL' ? emp.department !== 'Management' : emp.department === department
-      );
-      return acc.concat(deptEmployees);
+        // ✅ NEW: Collect all employees from all cells (single employee per cell now)
+    const assignments = Object.values(scheduleData).reduce((acc, cell) => {
+      if (cell.employee) {  // Single employee per cell now
+        const emp = cell.employee;
+        if (department === 'ALL' ? emp.department !== 'Management' : emp.department === department) {
+          acc.push(emp);
+        }
+      }
+      return acc;
     }, []);
+
 
     const totalCost = assignments.reduce((sum, emp) => sum + (emp.hourly_rate * emp.hours), 0);
     const totalHours = assignments.reduce((sum, emp) => sum + emp.hours, 0);
@@ -701,84 +770,100 @@ const WeeklyLaborSchedule = () => {
       end: defaultShift.end
     };
 
-    const scheduleKey = `${actualRoleIndex}-${shiftIndex}-${dayIndex}`;
-    const currentAssignments = scheduleData[scheduleKey]?.employees || [];
+  // ✅ NEW: Check if already assigned
+  if (isEmployeeAssigned(actualRoleIndex, shiftIndex, dayIndex, employeeId)) {
+    console.warn('Employee already assigned to this slot');
+    return;
+  }
 
-    if (currentAssignments.find(emp => emp.id === employeeId)) return;
+  // ✅ NEW: Find next available row
+  const rowIndex = findNextRowIndex(actualRoleIndex, shiftIndex, dayIndex);
+  const scheduleKey = `${actualRoleIndex}-${shiftIndex}-${dayIndex}-${rowIndex}`;
 
-    const newEmployee = {
-      id: employee.id,
-      name: employee.name,
-      role: employee.role,
-      department: employee.department,
-      hourly_rate: employee.hourly_rate,
-      start: shiftTimes.start,
-      end: shiftTimes.end,
-      hours: calculateHours(shiftTimes.start, shiftTimes.end)
-    };
+  const newEmployee = {
+    id: employee.id,
+    name: employee.name,
+    role: employee.role,
+    department: employee.department,
+    hourly_rate: employee.hourly_rate,
+    start: shiftTimes.start,
+    end: shiftTimes.end,
+    hours: calculateHours(shiftTimes.start, shiftTimes.end)
+  };
 
-    setScheduleData(prev => ({
-      ...prev,
-      [scheduleKey]: {
-        ...prev[scheduleKey],
-        employees: [...currentAssignments, newEmployee]
-      }
-    }));
+  // ✅ NEW: Store single employee
+  setScheduleData(prev => ({
+    ...prev,
+    [scheduleKey]: {
+      employee: newEmployee
+    }
+  }));
 
-    setHasUnsavedChanges(true);
-    setShowDropdown(null);
+  setHasUnsavedChanges(true);
+  setShowDropdown(null);
+
   };
 
   const handleRemoveEmployee = (roleIndex, shiftIndex, dayIndex, employeeId) => {
-    const actualRole = filteredRoles[roleIndex];
-    const actualRoleIndex = ROLES.findIndex(role => role.name === actualRole.name);
-    const scheduleKey = `${actualRoleIndex}-${shiftIndex}-${dayIndex}`;
-    const currentAssignments = scheduleData[scheduleKey]?.employees || [];
-    
-    setScheduleData(prev => ({
-      ...prev,
-      [scheduleKey]: {
-        ...prev[scheduleKey],
-        employees: currentAssignments.filter(emp => emp.id !== employeeId)
-      }
-    }));
+  const actualRole = filteredRoles[roleIndex];
+  const actualRoleIndex = ROLES.findIndex(role => role.name === actualRole.name);
+  
+  // ✅ NEW: Find which row the employee is in
+  const rowIndex = findEmployeeRow(actualRoleIndex, shiftIndex, dayIndex, employeeId);
+  if (rowIndex === -1) return; // Employee not found
+  
+  // ✅ NEW: Use 4-part key with rowIndex
+  const scheduleKey = `${actualRoleIndex}-${shiftIndex}-${dayIndex}-${rowIndex}`;
+  
+  setScheduleData(prev => {
+    const newData = { ...prev };
+    delete newData[scheduleKey];  // Remove the cell
+    return newData;
+  });
 
-    setHasUnsavedChanges(true);
-  };
+  setHasUnsavedChanges(true);
+};
 
-  const handleUpdateEmployee = (roleIndex, shiftIndex, dayIndex, employeeId, field, value) => {
-    const actualRole = filteredRoles[roleIndex];
-    const actualRoleIndex = ROLES.findIndex(role => role.name === actualRole.name);
-    const scheduleKey = `${actualRoleIndex}-${shiftIndex}-${dayIndex}`;
-    const currentAssignments = scheduleData[scheduleKey]?.employees || [];
-    
-    const updatedEmployees = currentAssignments.map(emp => {
-      if (emp.id === employeeId) {
-        const updated = { ...emp, [field]: value };
-        // Recalculate hours if time changed
-        if (field === 'start' || field === 'end') {
-          const validation = validateTimeRange(updated.start, updated.end);
-          if (validation.valid) {
-            updated.hours = validation.hours;
-          } else {
-            console.warn(`Time validation error: ${validation.error}`);
-          }
-        }
-        return updated;
-      }
-      return emp;
-    });
 
-    setScheduleData(prev => ({
-      ...prev,
-      [scheduleKey]: {
-        ...prev[scheduleKey],
-        employees: updatedEmployees
-      }
-    }));
+ const handleUpdateEmployee = (roleIndex, shiftIndex, dayIndex, employeeId, field, value) => {
+  const actualRole = filteredRoles[roleIndex];
+  const actualRoleIndex = ROLES.findIndex(role => role.name === actualRole.name);
+  
+  // ✅ NEW: Find which row the employee is in
+  const rowIndex = findEmployeeRow(actualRoleIndex, shiftIndex, dayIndex, employeeId);
+  if (rowIndex === -1) return; // Employee not found
+  
+  // ✅ NEW: Use 4-part key
+  const scheduleKey = `${actualRoleIndex}-${shiftIndex}-${dayIndex}-${rowIndex}`;
+  
+  if (!scheduleData[scheduleKey]?.employee) return;
 
-    setHasUnsavedChanges(true);
-  };
+  const updatedEmployee = { ...scheduleData[scheduleKey].employee };
+
+  if (field === 'start' || field === 'end') {
+    const updated = { ...updatedEmployee, [field]: value };
+    const validation = validateTimeRange(updated.start, updated.end);
+    if (validation.valid) {
+      updatedEmployee[field] = value;
+      updatedEmployee.hours = validation.hours;
+    } else {
+      console.warn(`Time validation error: ${validation.error}`);
+      return;
+    }
+  } else {
+    updatedEmployee[field] = value;
+  }
+
+  setScheduleData(prev => ({
+    ...prev,
+    [scheduleKey]: {
+      employee: updatedEmployee
+    }
+  }));
+
+  setHasUnsavedChanges(true);
+};
+
 
   const handleSaveSchedule = async () => {
     try {
@@ -850,17 +935,19 @@ const WeeklyLaborSchedule = () => {
   };
 
   const getAssignedEmployees = (roleIndex, shiftIndex, dayIndex) => {
-    const actualRole = filteredRoles[roleIndex];
-    const actualRoleIndex = ROLES.findIndex(role => role.name === actualRole.name);
-    const scheduleKey = `${actualRoleIndex}-${shiftIndex}-${dayIndex}`;
-    return scheduleData[scheduleKey]?.employees || [];
-  };
+  const actualRole = filteredRoles[roleIndex];
+  const actualRoleIndex = ROLES.findIndex(role => role.name === actualRole.name);
+  
+  // ✅ NEW: Collect from all rows
+  return getAllEmployeesForSlot(actualRoleIndex, shiftIndex, dayIndex);
+};
 
-  const getTotalAssignments = () => {
-    return Object.values(scheduleData).reduce((total, day) => {
-      return total + (day.employees?.length || 0);
-    }, 0);
-  };
+ const getTotalAssignments = () => {
+  return Object.values(scheduleData).reduce((total, cell) => {
+    return total + (cell.employee ? 1 : 0);  // ✅ NEW: Single employee per cell
+  }, 0);
+};
+
 
   const handlePrint = () => {
     window.print();
