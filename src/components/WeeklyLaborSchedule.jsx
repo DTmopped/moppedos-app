@@ -514,7 +514,7 @@ const WeeklyLaborSchedule = () => {
   // ============================================================================
   // 🔥 NEW: FETCH SHIFTS FROM DATABASE WHEN WEEK CHANGES
   // ============================================================================
-  useEffect(() => {
+useEffect(() => {
     const loadWeeklyShifts = async () => {
       if (!contextData?.getWeeklyLaborData || !contextData?.locationUuid) {
         console.warn('⚠️ Context not ready yet');
@@ -549,17 +549,45 @@ const WeeklyLaborSchedule = () => {
             }
 
             const shiftIndex = 0; // ✅ SINGLE DINNER SHIFT
-            const shiftDate = new Date(shift.day);
-            const dayIndex = Math.floor((shiftDate - weekStart) / (1000 * 60 * 60 * 24));
             
-            // DEBUG: Log day calculations
+            // ============================================================================
+            // 🔥 FIXED: Enhanced date calculation with LOCAL timezone handling
+            // ============================================================================
+            
+            // Parse the date string (YYYY-MM-DD) directly without timezone conversion
+            const [year, month, day] = shift.day.split('-').map(Number);
+            const shiftDate = new Date(year, month - 1, day); // Month is 0-indexed
+            
+            // Normalize weekStart to start of day in local time
+            const weekStartLocal = new Date(
+              weekStart.getFullYear(),
+              weekStart.getMonth(),
+              weekStart.getDate()
+            );
+            
+            // Calculate day index (0 = Monday, 6 = Sunday)
+            const dayIndex = Math.round((shiftDate - weekStartLocal) / (1000 * 60 * 60 * 24));
+            
+            // ✅ ENHANCED DEBUG LOGGING
+            const dayName = shiftDate.toLocaleDateString('en-US', { weekday: 'short' });
+            console.log('📅 Date calc:', {
+              shiftDay: shift.day,
+              shiftDate: shiftDate.toISOString().split('T')[0],
+              weekStart: weekStartLocal.toISOString().split('T')[0],
+              dayIndex: dayIndex,
+              dayName: dayName,
+              role: shift.role,
+              employee: shift.employees?.name || 'Unknown'
+            });
+            
+            // ✅ FIXED: Accept 0-6 (Monday-Sunday)
             if (dayIndex < 0 || dayIndex > 6) {
-              console.warn(`⚠️ Rejected shift - dayIndex: ${dayIndex}, date: ${shift.day}, weekStart: ${weekStart.toISOString()}`);
+              console.warn(`⚠️ REJECTED: dayIndex ${dayIndex} for ${shift.day} (${dayName}) - outside Mon-Sun range`);
               return;
             }
 
-                        const rowIndex = shift.row_index || 0;  // ✅ NEW: Get row_index from database
-            const scheduleKey = `${roleIndex}-${shiftIndex}-${dayIndex}-${rowIndex}`;  // ✅ 4-part key
+            const rowIndex = shift.row_index || 0;
+            const scheduleKey = `${roleIndex}-${shiftIndex}-${dayIndex}-${rowIndex}`;
             const employee = shift.employees || {};
 
             const formatTimeHelper = (timeStr) => {
@@ -578,21 +606,27 @@ const WeeklyLaborSchedule = () => {
               role: shift.role || shift.position,
               department: shift.department || employee.department,
               hourly_rate: shift.rate || employee.hourly_rate || 15.00,
-              start: formatTimeHelper(shift.start_time) || '3:00 PM',
+              start: formatTimeHelper(shift.start_time) || '5:30 PM',
               end: formatTimeHelper(shift.end_time) || '11:00 PM',
               hours: shift.hours || calculateHours(formatTimeHelper(shift.start_time), formatTimeHelper(shift.end_time)),
               shift_id: shift.id
             };
 
-            // ✅ NEW: Store single employee per cell, not array
+            // ✅ Store single employee per cell
             transformedSchedule[scheduleKey] = {
               employee: employeeEntry
             };
-
           });
 
-          console.log('🔄 Transformed:', Object.keys(transformedSchedule).length, 'slots,', 
-            Object.values(transformedSchedule).reduce((sum, slot) => sum + (slot.employees?.length || 0), 0), 'employees');
+          console.log('🔄 Transformed:', Object.keys(transformedSchedule).length, 'cells');
+          
+          // ✅ DEBUG: Check what days we have
+          const daysPresent = new Set();
+          Object.keys(transformedSchedule).forEach(key => {
+            const dayIdx = parseInt(key.split('-')[2]);
+            daysPresent.add(dayIdx);
+          });
+          console.log('📊 Days with data:', Array.from(daysPresent).sort(), '(0=Mon, 6=Sun)');
           
           setScheduleData(transformedSchedule);
           setHasUnsavedChanges(false);
