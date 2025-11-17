@@ -1407,6 +1407,8 @@ const getMaxRowsForRole = (roleIndex, shiftIndex) => {
                       })}
                     </div>
               </div>
+                  </div>
+            </div>
             </CardContent>
           </Card>
 
