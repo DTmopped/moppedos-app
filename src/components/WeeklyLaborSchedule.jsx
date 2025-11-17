@@ -895,38 +895,42 @@ const getMaxRowsForRole = (roleIndex, shiftIndex) => {
   };
 
   const handlePasteShift = (targetDays) => {
-    if (!shiftToCopy) return;
+  if (!shiftToCopy) return;
 
-    const { roleIndex, shiftIndex, employee } = shiftToCopy;
-    const actualRole = filteredRoles[roleIndex];
-    const actualRoleIndex = ROLES.findIndex(role => role.name === actualRole.name);
+  const { roleIndex, shiftIndex, employee } = shiftToCopy;
+  const actualRole = filteredRoles[roleIndex];
+  const actualRoleIndex = ROLES.findIndex(role => role.name === actualRole.name);
 
-    targetDays.forEach(targetDayIndex => {
-      const scheduleKey = `${actualRoleIndex}-${shiftIndex}-${targetDayIndex}`;
-      const currentAssignments = scheduleData[scheduleKey]?.employees || [];
+  targetDays.forEach(targetDayIndex => {
+    // ✅ NEW: Check if employee is already assigned to this day
+    if (isEmployeeAssigned(actualRoleIndex, shiftIndex, targetDayIndex, employee.id)) {
+      console.warn('Employee already assigned to this day');
+      return;
+    }
 
-      if (currentAssignments.find(emp => emp.id === employee.id)) {
-        return;
+    // ✅ NEW: Find next available row for this day
+    const rowIndex = findNextRowIndex(actualRoleIndex, shiftIndex, targetDayIndex);
+    const scheduleKey = `${actualRoleIndex}-${shiftIndex}-${targetDayIndex}-${rowIndex}`;
+
+    const newEmployee = {
+      ...employee,
+      id: employee.id
+    };
+
+    // ✅ NEW: Store single employee per cell
+    setScheduleData(prev => ({
+      ...prev,
+      [scheduleKey]: {
+        employee: newEmployee  // ✅ SINGULAR!
       }
+    }));
+  });
 
-      const newEmployee = {
-        ...employee,
-        id: employee.id
-      };
+  setHasUnsavedChanges(true);
+  setCopyModalOpen(false);
+  setShiftToCopy(null);
+};
 
-      setScheduleData(prev => ({
-        ...prev,
-        [scheduleKey]: {
-          ...prev[scheduleKey],
-          employees: [...currentAssignments, newEmployee]
-        }
-      }));
-    });
-
-    setHasUnsavedChanges(true);
-    setCopyModalOpen(false);
-    setShiftToCopy(null);
-  };
 
   const navigateWeek = (direction) => {
     const newWeek = new Date(currentWeek);
@@ -1245,29 +1249,28 @@ const getMaxRowsForRole = (roleIndex, shiftIndex) => {
                     </div>
 
                     {/* ============================================================================ */}
-                    {/* 🔥 UPDATED: SINGLE SHIFT PER ROLE (DINNER ONLY) */}
-                    {/* ============================================================================ */}
-                                        {/* ============================================================================ */}
-                    {/* 🔥 MULTI-ROW SUPPORT: DINNER ONLY */}
+                    {/* 🔥 MULTI-ROW SUPPORT: DINNER ONLY - WITH FIXED ROLE COLUMN */}
                     {/* ============================================================================ */}
                     <div className="mt-6 space-y-4">
                       {filteredRoles.map((role, roleIndex) => {
                         const shiftIndex = 0; // ✅ SINGLE DINNER SHIFT
-                        const shift = 'DINNER'; // ✅ NO AM/PM
                         
-                        // ✅ NEW: Calculate max rows needed for this role
+                        // ✅ Calculate max rows needed for this role
                         const actualRole = filteredRoles[roleIndex];
                         const actualRoleIndex = ROLES.findIndex(r => r.name === actualRole.name);
                         const maxRows = getMaxRowsForRole(actualRoleIndex, shiftIndex);
                         const rowCount = maxRows > 0 ? maxRows : 1; // At least 1 row to show empty cells
                         
-                        // ✅ NEW: Create array of row indices to map over
+                        // ✅ Create array of row indices to map over
                         return Array.from({ length: rowCount }, (_, rowIndex) => {
                           return (
                             <div key={`${roleIndex}-${shiftIndex}-${rowIndex}`} className="flex">
-                              {/* Role Column - Only show on first row */}
+                              {/* ============================================================================ */}
+                              {/* 🔥 FIXED: Role Column - Shows on ALL rows now with lighter styling */}
+                              {/* ============================================================================ */}
                               <div className="w-48 flex-shrink-0 sticky left-0 bg-white z-10 pr-3">
                                 {rowIndex === 0 ? (
+                                  // First row: Bold styling
                                   <div className={`p-3 rounded-lg border-2 ${getDepartmentColor(role.department)} h-28 flex flex-col justify-center shadow-sm hover:shadow-md transition-shadow duration-200`}>
                                     <div className="text-center space-y-1">
                                       <div className="text-xl">{getDepartmentEmoji(role.department)}</div>
@@ -1282,7 +1285,20 @@ const getMaxRowsForRole = (roleIndex, shiftIndex) => {
                                     </div>
                                   </div>
                                 ) : (
-                                  <div className="h-28"></div>
+                                  // ✅ FIXED: Subsequent rows show same info with lighter styling
+                                  <div className={`p-3 rounded-lg border-2 ${getDepartmentColor(role.department)} h-28 flex flex-col justify-center shadow-sm opacity-60`}>
+                                    <div className="text-center space-y-1">
+                                      <div className="text-lg">{getDepartmentEmoji(role.department)}</div>
+                                      <div className="font-bold text-slate-800 text-xs">{role.name}</div>
+                                      <div className="text-slate-600 text-xs flex items-center justify-center space-x-1">
+                                        <span>🌙</span>
+                                        <span>DINNER</span>
+                                      </div>
+                                      <Badge variant={role.department.toLowerCase()} size="sm">
+                                        <span className="text-xs">{role.department}</span>
+                                      </Badge>
+                                    </div>
+                                  </div>
                                 )}
                               </div>
 
@@ -1411,6 +1427,7 @@ const getMaxRowsForRole = (roleIndex, shiftIndex) => {
             </div>
             </CardContent>
           </Card>
+
 
           {/* Enhanced Action Bar */}
           <Card className="border-slate-300 shadow-lg bg-white no-print">
