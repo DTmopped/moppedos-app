@@ -511,6 +511,95 @@ const WeeklyLaborSchedule = () => {
     return day;
   });
 
+  // ============================================================================
+  // 🔥 NEW: FETCH SHIFTS FROM DATABASE WHEN WEEK CHANGES
+  // ============================================================================
+  useEffect(() => {
+    const loadWeeklyShifts = async () => {
+      if (!contextData?.getWeeklyLaborData || !contextData?.locationUuid) {
+        console.warn('⚠️ Context not ready yet');
+        return;
+      }
+
+      try {
+        console.log('📅 Loading shifts for week:', weekStart.toISOString().split('T')[0]);
+        
+        const weekStartDate = weekStart.toISOString().split('T')[0];
+        const laborData = await contextData.getWeeklyLaborData(weekStartDate);
+        
+        console.log('✅ Loaded labor data:', {
+          shifts: laborData.shifts?.length || 0,
+          metrics: laborData.metrics
+        });
+
+        if (laborData.shifts && laborData.shifts.length > 0) {
+          const transformedSchedule = {};
+
+          laborData.shifts.forEach(shift => {
+            const roleIndex = ROLES.findIndex(r => 
+              r.name === shift.role || 
+              r.name === shift.position ||
+              r.name.toLowerCase().includes(shift.role?.toLowerCase()) ||
+              shift.role?.toLowerCase().includes(r.name.toLowerCase())
+            );
+            
+            if (roleIndex === -1) {
+              console.warn(`⚠️ Role not found: ${shift.role || shift.position}`);
+              return;
+            }
+
+            const shiftIndex = 0; // ✅ SINGLE DINNER SHIFT
+            const shiftDate = new Date(shift.day);
+            const dayIndex = Math.floor((shiftDate - weekStart) / (1000 * 60 * 60 * 24));
+            
+            if (dayIndex < 0 || dayIndex > 6) return;
+
+            const scheduleKey = `${roleIndex}-${shiftIndex}-${dayIndex}`;
+            const employee = shift.employees || {};
+
+            const formatTimeHelper = (timeStr) => {
+              if (!timeStr) return '';
+              if (timeStr.includes('AM') || timeStr.includes('PM')) return timeStr;
+              const [hours, minutes] = timeStr.split(':');
+              const hour = parseInt(hours);
+              const ampm = hour >= 12 ? 'PM' : 'AM';
+              const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+              return `${displayHour}:${minutes} ${ampm}`;
+            };
+
+            const employeeEntry = {
+              id: shift.employee_id,
+              name: employee.name || 'Unknown',
+              role: shift.role || shift.position,
+              department: shift.department || employee.department,
+              hourly_rate: shift.rate || employee.hourly_rate || 15.00,
+              start: formatTimeHelper(shift.start_time) || '3:00 PM',
+              end: formatTimeHelper(shift.end_time) || '11:00 PM',
+              hours: shift.hours || calculateHours(formatTimeHelper(shift.start_time), formatTimeHelper(shift.end_time)),
+              shift_id: shift.id
+            };
+
+            if (!transformedSchedule[scheduleKey]) {
+              transformedSchedule[scheduleKey] = { employees: [] };
+            }
+            
+            transformedSchedule[scheduleKey].employees.push(employeeEntry);
+          });
+
+          console.log('🔄 Transformed:', Object.keys(transformedSchedule).length, 'slots,', 
+            Object.values(transformedSchedule).reduce((sum, slot) => sum + (slot.employees?.length || 0), 0), 'employees');
+          
+          setScheduleData(transformedSchedule);
+          setHasUnsavedChanges(false);
+        }
+      } catch (error) {
+        console.error('❌ Error loading shifts:', error);
+      }
+    };
+
+    loadWeeklyShifts();
+  }, [currentWeek, contextData?.locationUuid, weekStart]);
+
   const filteredRoles = ROLES.filter(
     role => selectedDepartment === 'ALL' || role.department === selectedDepartment
   );
@@ -590,7 +679,9 @@ const WeeklyLaborSchedule = () => {
     }
   };
 
-  // Event handlers
+  // ============================================================================
+  // 🔥 UPDATED: handleAddEmployee - Use role config times
+  // ============================================================================
   const handleAddEmployee = (roleIndex, shiftIndex, dayIndex, employeeId) => {
     const employee = employees.find(emp => emp.id === employeeId);
     if (!employee) return;
@@ -598,16 +689,18 @@ const WeeklyLaborSchedule = () => {
     const actualRole = filteredRoles[roleIndex];
     const actualRoleIndex = ROLES.findIndex(role => role.name === actualRole.name);
     
-    const shift = shiftIndex === 0 ? 'AM' : 'PM';
-    const shiftTimes = SHIFT_TIMES[shift] || { start: '9:00 AM', end: '5:00 PM' };
+    // Get role's default shift times from config
+    const roleConfig = ROLES[actualRoleIndex];
+    const defaultShift = roleConfig.shifts[0];
+    const shiftTimes = {
+      start: defaultShift.start,
+      end: defaultShift.end
+    };
 
     const scheduleKey = `${actualRoleIndex}-${shiftIndex}-${dayIndex}`;
     const currentAssignments = scheduleData[scheduleKey]?.employees || [];
 
     if (currentAssignments.find(emp => emp.id === employeeId)) return;
-
-    const startTime = formatTime(shiftTimes.start);
-    const endTime = formatTime(shiftTimes.end);
 
     const newEmployee = {
       id: employee.id,
@@ -615,9 +708,9 @@ const WeeklyLaborSchedule = () => {
       role: employee.role,
       department: employee.department,
       hourly_rate: employee.hourly_rate,
-      start: startTime,
-      end: endTime,
-      hours: calculateHours(startTime, endTime)
+      start: shiftTimes.start,
+      end: shiftTimes.end,
+      hours: calculateHours(shiftTimes.start, shiftTimes.end)
     };
 
     setScheduleData(prev => ({
@@ -665,7 +758,6 @@ const WeeklyLaborSchedule = () => {
             updated.hours = validation.hours;
           } else {
             console.warn(`Time validation error: ${validation.error}`);
-            // Keep the old hours if validation fails
           }
         }
         return updated;
@@ -724,12 +816,10 @@ const WeeklyLaborSchedule = () => {
       const scheduleKey = `${actualRoleIndex}-${shiftIndex}-${targetDayIndex}`;
       const currentAssignments = scheduleData[scheduleKey]?.employees || [];
 
-      // Check if employee is already assigned to this slot
       if (currentAssignments.find(emp => emp.id === employee.id)) {
-        return; // Skip if already assigned
+        return;
       }
 
-      // Copy the employee with same times
       const newEmployee = {
         ...employee,
         id: employee.id
@@ -768,7 +858,6 @@ const WeeklyLaborSchedule = () => {
     }, 0);
   };
 
-  // Print function
   const handlePrint = () => {
     window.print();
   };
@@ -802,7 +891,6 @@ const WeeklyLaborSchedule = () => {
 
   return (
     <>
-      {/* Inject print styles */}
       <style dangerouslySetInnerHTML={{ __html: printStyles }} />
       
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
@@ -990,11 +1078,11 @@ const WeeklyLaborSchedule = () => {
             <p>Week of {formatDateHeader(weekStart).day}, {formatDateHeader(weekStart).date}</p>
           </div>
 
-          {/* FINAL OPTIMIZED Schedule Grid - Perfect Proportions & Single Page Print */}
+          {/* DINNER-ONLY Schedule Grid */}
           <Card className="border-slate-300 shadow-lg bg-white print-schedule">
             <CardContent className="p-6">
               <div className="space-y-4">
-                {/* Optimized Print Table (Hidden on screen) - SINGLE PAGE FIXED */}
+                {/* Print Table */}
                 <table className="print-table" style={{ display: 'none' }}>
                   <thead>
                     <tr>
@@ -1011,46 +1099,42 @@ const WeeklyLaborSchedule = () => {
                   </thead>
                   <tbody>
                     {filteredRoles.map((role, roleIndex) => {
-                      return [0, 1].map(shiftIndex => {
-                        const shift = shiftIndex === 0 ? 'AM' : 'PM';
-                        return (
-                          <tr key={`${roleIndex}-${shiftIndex}`}>
-                            <td className="print-role-cell">
-                              <div>{getDepartmentEmoji(role.department)} {role.name}</div>
-                              <div>{shift} Shift</div>
-                              <div>{role.department}</div>
-                            </td>
-                            {weekDays.map((day, dayIndex) => {
-                              const assignedEmployees = getAssignedEmployees(roleIndex, shiftIndex, dayIndex);
-                              return (
-                                <td key={dayIndex} className={`print-day-cell print-dept-${role.department.toLowerCase()}`}>
-                                  {assignedEmployees.map((emp, empIndex) => (
-                                    <div key={empIndex} className="print-employee">
-                                      <div className="print-employee-name">{emp.name}</div>
-                                      <div className="print-employee-time">{emp.start} - {emp.end} ({emp.hours}h)</div>
-                                    </div>
-                                  ))}
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        );
-                      });
+                      const shiftIndex = 0;
+                      return (
+                        <tr key={`${roleIndex}-${shiftIndex}`}>
+                          <td className="print-role-cell">
+                            <div>{getDepartmentEmoji(role.department)} {role.name}</div>
+                            <div>DINNER</div>
+                            <div>{role.department}</div>
+                          </td>
+                          {weekDays.map((day, dayIndex) => {
+                            const assignedEmployees = getAssignedEmployees(roleIndex, shiftIndex, dayIndex);
+                            return (
+                              <td key={dayIndex} className={`print-day-cell print-dept-${role.department.toLowerCase()}`}>
+                                {assignedEmployees.map((emp, empIndex) => (
+                                  <div key={empIndex} className="print-employee">
+                                    <div className="print-employee-name">{emp.name}</div>
+                                    <div className="print-employee-time">{emp.start} - {emp.end} ({emp.hours}h)</div>
+                                  </div>
+                                ))}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
                     })}
                   </tbody>
                 </table>
 
-                {/* Screen Display - OPTIMIZED PROPORTIONS */}
+                {/* Screen Display */}
                 <div className="w-full overflow-x-auto">
-                  <div className="min-w-[1800px]"> {/* Increased for wider day columns */}
+                  <div className="min-w-[1800px]">
                     <div className="flex">
-                      {/* SMALLER Role Header - Optimized Width */}
-                      <div className="w-48 flex-shrink-0 sticky left-0 bg-white z-10 pr-3"> {/* Reduced from w-72 to w-48 */}
+                      <div className="w-48 flex-shrink-0 sticky left-0 bg-white z-10 pr-3">
                         <div className="text-center font-bold text-slate-800 py-4 bg-slate-100 rounded-lg border-2 border-slate-300 h-16 flex items-center justify-center text-sm">
                           📋 Role / Shift
                         </div>
                       </div>
-                      {/* WIDER Date Headers - More Space */}
                       <div className="flex-1 grid grid-cols-7 gap-3">
                         {weekDays.map((day, index) => {
                           const { day: dayName, date } = formatDateHeader(day);
@@ -1069,128 +1153,121 @@ const WeeklyLaborSchedule = () => {
                       </div>
                     </div>
 
-                    {/* Excel-Style Schedule Rows - WIDER CELLS */}
+                    {/* ============================================================================ */}
+                    {/* 🔥 UPDATED: SINGLE SHIFT PER ROLE (DINNER ONLY) */}
+                    {/* ============================================================================ */}
                     <div className="mt-6 space-y-4">
                       {filteredRoles.map((role, roleIndex) => {
-                        return [0, 1].map(shiftIndex => {
-                          const shift = shiftIndex === 0 ? 'AM' : 'PM';
-                          
-                          return (
-                            <div key={`${roleIndex}-${shiftIndex}`} className="flex">
-                              {/* SMALLER Role Column - EXACT SAME WIDTH */}
-                              <div className="w-48 flex-shrink-0 sticky left-0 bg-white z-10 pr-3"> {/* Matches header exactly */}
-                                <div className={`p-3 rounded-lg border-2 ${getDepartmentColor(role.department)} h-28 flex flex-col justify-center shadow-sm hover:shadow-md transition-shadow duration-200`}>
-                                  <div className="text-center space-y-1">
-                                    <div className="text-xl">{getDepartmentEmoji(role.department)}</div>
-                                    <div className="font-bold text-slate-900 text-sm">{role.name}</div>
-                                    <div className="text-slate-800 text-xs font-bold flex items-center justify-center space-x-1">
-                                      <span>{shift === 'AM' ? '🌅' : '🌙'}</span>
-                                      <span>{shift} Shift</span>
-                                    </div>
-                                    {/* DEPARTMENT BADGE - Compact */}
-                                    <Badge variant={role.department.toLowerCase()} size="sm" emoji={getDepartmentEmoji(role.department)}>
-                                      <span className="font-bold text-xs">{role.department}</span>
-                                    </Badge>
+                        const shiftIndex = 0; // ✅ SINGLE DINNER SHIFT
+                        const shift = 'DINNER'; // ✅ NO AM/PM
+                        
+                        return (
+                          <div key={`${roleIndex}-${shiftIndex}`} className="flex">
+                            <div className="w-48 flex-shrink-0 sticky left-0 bg-white z-10 pr-3">
+                              <div className={`p-3 rounded-lg border-2 ${getDepartmentColor(role.department)} h-28 flex flex-col justify-center shadow-sm hover:shadow-md transition-shadow duration-200`}>
+                                <div className="text-center space-y-1">
+                                  <div className="text-xl">{getDepartmentEmoji(role.department)}</div>
+                                  <div className="font-bold text-slate-900 text-sm">{role.name}</div>
+                                  <div className="text-slate-800 text-xs font-bold flex items-center justify-center space-x-1">
+                                    <span>🌙</span>
+                                    <span>DINNER</span>
                                   </div>
+                                  <Badge variant={role.department.toLowerCase()} size="sm" emoji={getDepartmentEmoji(role.department)}>
+                                    <span className="font-bold text-xs">{role.department}</span>
+                                  </Badge>
                                 </div>
                               </div>
+                            </div>
 
-                              {/* WIDER Day Cells - MORE SPACE FOR TIME */}
-                              <div className="flex-1 grid grid-cols-7 gap-3">
-                                {weekDays.map((day, dayIndex) => {
-                                  const assignedEmployees = getAssignedEmployees(roleIndex, shiftIndex, dayIndex);
-                                  const dropdownKey = `${roleIndex}-${shiftIndex}-${dayIndex}`;
-                                  const isToday = day.toDateString() === new Date().toDateString();
-                                  
-                                  return (
-                                    <div key={dayIndex} className={`border-2 rounded-lg h-28 p-3 min-w-[220px] ${isToday ? 'bg-blue-50 border-blue-300' : 'bg-white border-slate-300'} hover:shadow-md transition-all duration-200 print-cell ${role.department === 'FOH' ? 'print-dept-foh' : role.department === 'BOH' ? 'print-dept-boh' : role.department === 'Bar' ? 'print-dept-bar' : 'print-dept-mgmt'}`}>
-                                      {assignedEmployees.length > 0 ? (
-                                        <div className="space-y-2 h-full overflow-y-auto">
-                                          {assignedEmployees.map((emp, empIndex) => {
-                                            const timeValidation = validateTimeRange(emp.start, emp.end);
-                                            return (
-                                              <div key={empIndex} className={`p-2 rounded-md border ${getDepartmentColor(emp.department)} group hover:shadow-sm transition-all duration-200 relative print-employee ${!timeValidation.valid ? 'border-red-300 bg-red-50' : ''}`}>
-                                                {/* Excel-Style Employee Cell: WIDER FOR TIME */}
-                                                <div className="space-y-1">
-                                                  {/* Employee Name - Editable & BOLD */}
-                                                  <div className="flex items-center justify-between">
-                                                    <input
-                                                      type="text"
-                                                      value={emp.name}
-                                                      onChange={(e) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, emp.id, 'name', e.target.value)}
-                                                      className="font-bold text-sm bg-transparent border-none outline-none w-full text-slate-900 pr-2"
-                                                      placeholder="Employee Name"
-                                                    />
-                                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 no-print">
-                                                      <Button
-                                                        size="sm"
-                                                        variant="ghost"
-                                                        onClick={() => handleCopyShift(roleIndex, shiftIndex, dayIndex, emp)}
-                                                        className="h-4 w-4 p-0 text-slate-400 hover:text-blue-500 transition-all duration-200 flex-shrink-0"
-                                                        title="Copy to other days"
-                                                      >
-                                                        <Copy className="h-3 w-3" />
-                                                      </Button>
-                                                      <Button
-                                                        size="sm"
-                                                        variant="ghost"
-                                                        onClick={() => handleRemoveEmployee(roleIndex, shiftIndex, dayIndex, emp.id)}
-                                                        className="h-4 w-4 p-0 text-slate-400 hover:text-red-500 transition-all duration-200 flex-shrink-0"
-                                                      >
-                                                        <X className="h-3 w-3" />
-                                                      </Button>
-                                                    </div>
+                            <div className="flex-1 grid grid-cols-7 gap-3">
+                              {weekDays.map((day, dayIndex) => {
+                                const assignedEmployees = getAssignedEmployees(roleIndex, shiftIndex, dayIndex);
+                                const dropdownKey = `${roleIndex}-${shiftIndex}-${dayIndex}`;
+                                const isToday = day.toDateString() === new Date().toDateString();
+                                
+                                return (
+                                  <div key={dayIndex} className={`border-2 rounded-lg h-28 p-3 min-w-[220px] ${isToday ? 'bg-blue-50 border-blue-300' : 'bg-white border-slate-300'} hover:shadow-md transition-all duration-200`}>
+                                    {assignedEmployees.length > 0 ? (
+                                      <div className="space-y-2 h-full overflow-y-auto">
+                                        {assignedEmployees.map((emp, empIndex) => {
+                                          const timeValidation = validateTimeRange(emp.start, emp.end);
+                                          return (
+                                            <div key={empIndex} className={`p-2 rounded-md border ${getDepartmentColor(emp.department)} group hover:shadow-sm transition-all duration-200 relative ${!timeValidation.valid ? 'border-red-300 bg-red-50' : ''}`}>
+                                              <div className="space-y-1">
+                                                <div className="flex items-center justify-between">
+                                                  <input
+                                                    type="text"
+                                                    value={emp.name}
+                                                    onChange={(e) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, emp.id, 'name', e.target.value)}
+                                                    className="font-bold text-sm bg-transparent border-none outline-none w-full text-slate-900 pr-2"
+                                                    placeholder="Employee Name"
+                                                  />
+                                                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 no-print">
+                                                    <Button
+                                                      size="sm"
+                                                      variant="ghost"
+                                                      onClick={() => handleCopyShift(roleIndex, shiftIndex, dayIndex, emp)}
+                                                      className="h-4 w-4 p-0 text-slate-400 hover:text-blue-500 transition-all duration-200 flex-shrink-0"
+                                                      title="Copy to other days"
+                                                    >
+                                                      <Copy className="h-3 w-3" />
+                                                    </Button>
+                                                    <Button
+                                                      size="sm"
+                                                      variant="ghost"
+                                                      onClick={() => handleRemoveEmployee(roleIndex, shiftIndex, dayIndex, emp.id)}
+                                                      className="h-4 w-4 p-0 text-slate-400 hover:text-red-500 transition-all duration-200 flex-shrink-0"
+                                                    >
+                                                      <X className="h-3 w-3" />
+                                                    </Button>
                                                   </div>
-                                                  
-                                                  {/* Time Range - WIDER SPACE & WRAPPING */}
-                                                  <div className="flex flex-wrap items-center gap-1 text-xs">
-                                                    <TimeSelector
-                                                      value={emp.start}
-                                                      onChange={(value) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, emp.id, 'start', value)}
-                                                    />
-                                                    <span className="font-bold text-slate-700">-</span>
-                                                    <TimeSelector
-                                                      value={emp.end}
-                                                      onChange={(value) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, emp.id, 'end', value)}
-                                                    />
-                                                    <span className={`font-bold whitespace-nowrap ${timeValidation.valid ? 'text-slate-900' : 'text-red-600'}`}>
-                                                      ({emp.hours}h)
-                                                    </span>
-                                                  </div>
-                                                  
-                                                  {/* Time Validation Error */}
-                                                  {!timeValidation.valid && (
-                                                    <div className="text-xs text-red-600 font-medium">
-                                                      ⚠️ {timeValidation.error}
-                                                    </div>
-                                                  )}
                                                 </div>
+                                                
+                                                <div className="flex flex-wrap items-center gap-1 text-xs">
+                                                  <TimeSelector
+                                                    value={emp.start}
+                                                    onChange={(value) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, emp.id, 'start', value)}
+                                                  />
+                                                  <span className="font-bold text-slate-700">-</span>
+                                                  <TimeSelector
+                                                    value={emp.end}
+                                                    onChange={(value) => handleUpdateEmployee(roleIndex, shiftIndex, dayIndex, emp.id, 'end', value)}
+                                                  />
+                                                  <span className={`font-bold whitespace-nowrap ${timeValidation.valid ? 'text-slate-900' : 'text-red-600'}`}>
+                                                    ({emp.hours}h)
+                                                  </span>
+                                                </div>
+                                                
+                                                {!timeValidation.valid && (
+                                                  <div className="text-xs text-red-600 font-medium">
+                                                    ⚠️ {timeValidation.error}
+                                                  </div>
+                                                )}
                                               </div>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    ) : (
+                                      <div className="h-full flex items-center justify-center no-print">
+                                        <div className="relative">
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => setShowDropdown(showDropdown === dropdownKey ? null : dropdownKey)}
+                                            className="text-slate-700 hover:bg-slate-50 border-dashed border-slate-400 text-xs px-3 py-2 flex items-center space-x-2 font-medium"
+                                          >
+                                            <Plus className="h-3 w-3" />
+                                            <span>Add Employee</span>
+                                          </Button>
+                                          
+                                          {showDropdown === dropdownKey && (() => {
+                                            const roleDepartmentFullName = DEPARTMENT_MAPPING[role.department] || role.department;
+                                            const roleEmployees = employees.filter(emp => 
+                                              emp.is_active !== false && 
+                                              emp.department === roleDepartmentFullName
                                             );
-                                          })}
-                                        </div>
-                                      ) : (
-                                        <div className="h-full flex items-center justify-center no-print">
-                                          <div className="relative">
-                                            <Button
-                                              size="sm"
-                                              variant="outline"
-                                              onClick={() => setShowDropdown(showDropdown === dropdownKey ? null : dropdownKey)}
-                                              className="text-slate-700 hover:bg-slate-50 border-dashed border-slate-400 text-xs px-3 py-2 flex items-center space-x-2 font-medium"
-                                            >
-                                              <Plus className="h-3 w-3" />
-                                              <span>Add Employee</span>
-                                            </Button>
-                                            
-                                            {showDropdown === dropdownKey && (() => {
-                                              // Filter employees by THIS role's department
-                                              // Convert role department abbreviation (e.g., 'BOH') to full name (e.g., 'Back of House')
-                                              const roleDepartmentFullName = DEPARTMENT_MAPPING[role.department] || role.department;
-                                              const roleEmployees = employees.filter(emp => 
-                                                emp.is_active !== false && 
-                                                emp.department === roleDepartmentFullName
-                                              );
-                                              return (
+                                            return (
                                               <div className="absolute top-full left-0 mt-2 w-80 bg-white border border-slate-300 rounded-lg shadow-xl z-20 max-h-60 overflow-y-auto">
                                                 {roleEmployees.length > 0 ? (
                                                   roleEmployees.map(employee => (
@@ -1218,18 +1295,17 @@ const WeeklyLaborSchedule = () => {
                                                   </div>
                                                 )}
                                               </div>
-                                              );
-                                            })()}
-                                          </div>
+                                            );
+                                          })()}
                                         </div>
-                                      )}
-                                    </div>
-                                  );
-                                })}
-                              </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
                             </div>
-                          );
-                        });
+                          </div>
+                        );
                       })}
                     </div>
                   </div>
@@ -1313,7 +1389,6 @@ const WeeklyLaborSchedule = () => {
             </div>
           )}
 
-          {/* Click outside to close dropdown */}
           {showDropdown && (
             <div 
               className="fixed inset-0 z-10" 
@@ -1327,3 +1402,4 @@ const WeeklyLaborSchedule = () => {
 };
 
 export default WeeklyLaborSchedule;
+
