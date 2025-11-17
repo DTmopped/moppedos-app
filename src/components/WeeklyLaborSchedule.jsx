@@ -1286,7 +1286,7 @@ const getMaxRowsForRole = (roleIndex, shiftIndex) => {
                                   </div>
                                 ) : (
                                   // ✅ FIXED: Subsequent rows show same info with lighter styling
-                                  <div className={`p-3 rounded-lg border-2 ${getDepartmentColor(role.department)} h-28 flex flex-col justify-center shadow-sm opacity-60`}>
+                                  <div className={`p-3 rounded-lg border-2 ${getDepartmentColor(role.department)} h-28 flex flex-col justify-center shadow-sm hover:shadow-md transition-shadow duration-200`}>
                                     <div className="text-center space-y-1">
                                       <div className="text-lg">{getDepartmentEmoji(role.department)}</div>
                                       <div className="font-bold text-slate-800 text-xs">{role.name}</div>
