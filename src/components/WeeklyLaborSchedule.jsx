@@ -1310,7 +1310,7 @@ const getMaxRowsForRole = (roleIndex, shiftIndex) => {
                                   const dropdownKey = `${roleIndex}-${shiftIndex}-${dayIndex}-${rowIndex}`;
                                   
                                   return (
-                                    <div key={dayIndex} className={`border-2 rounded-lg h-28 p-3 min-w-[220px] ${isToday ? 'bg-blue-50 border-blue-300' : 'bg-white border-slate-300'} hover:shadow-md transition-all duration-200`}>
+                                    <div key={dayIndex} className={`border-2 rounded-lg h-28 p-3 min-w-[220px] bg-white border-slate-300 hover:shadow-md transition-all duration-200`}>
                                       {employee ? (
                                         <div className={`p-2 rounded-md border ${getDepartmentColor(employee.department)} group hover:shadow-sm transition-all duration-200 relative h-full`}>
                                           <div className="space-y-1">
