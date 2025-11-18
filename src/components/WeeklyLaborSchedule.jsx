@@ -629,6 +629,48 @@ useEffect(() => {
           console.log('📊 Days with data:', Array.from(daysPresent).sort(), '(0=Mon, 6=Sun)');
           
           setScheduleData(transformedSchedule);
+          setScheduleData(transformedSchedule);
+
+// ============================================================================
+// 🔍 DEBUG: Analyze what's in scheduleData
+// ============================================================================
+console.log('📊 ===== SCHEDULE DATA ANALYSIS =====');
+console.log('Total cells with data:', Object.keys(transformedSchedule).length);
+
+const byDay = {};
+const byRole = {};
+let totalCost = 0;
+let totalHours = 0;
+let totalShifts = 0;
+
+Object.entries(transformedSchedule).forEach(([key, cell]) => {
+  if (cell?.employee) {
+    const [roleIdx, shiftIdx, dayIdx, rowIdx] = key.split('-').map(Number);
+    
+    // Count by day
+    byDay[dayIdx] = (byDay[dayIdx] || 0) + 1;
+    
+    // Count by role
+    const role = ROLES[roleIdx]?.name || 'Unknown';
+    byRole[role] = (byRole[role] || 0) + 1;
+    
+    // Calculate costs
+    totalCost += (cell.employee.hourly_rate || 15) * (cell.employee.hours || 0);
+    totalHours += cell.employee.hours || 0;
+    totalShifts++;
+  }
+});
+
+console.log('📅 Shifts by day (0=Mon, 6=Sun):', byDay);
+console.log('👥 Shifts by role:', byRole);
+console.log('💰 Total calculated cost: $' + totalCost.toFixed(2));
+console.log('⏰ Total hours:', totalHours.toFixed(2));
+console.log('📊 Total shifts:', totalShifts);
+console.log('🔍 Database reported: 245 shifts, $14,848');
+console.log('❌ Difference: $' + (totalCost - 14848).toFixed(2));
+console.log('=====================================');
+
+setHasUnsavedChanges(false);
           setHasUnsavedChanges(false);
         }
       } catch (error) {
