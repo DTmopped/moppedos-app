@@ -902,6 +902,7 @@ const fetchLaborAnalytics = async (limit = 12) => {
           )
         `)
         .eq('location_id', locationUuid)
+        .not('employee_id', 'is', null)  // ✅ ADD THIS LINE - Filter out unassigned shifts
         .gte('day', weekStartDate)
         .lte('day', weekEndDate)
         .order('day', { ascending: true })
