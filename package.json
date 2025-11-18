@@ -36,7 +36,8 @@
     "recharts": "^3.3.0",
     "tailwind-merge": "^1.14.0",
     "tailwindcss-animate": "^1.0.7",
-    "uuid": "^9.0.0"
+    "uuid": "^9.0.0",
+    "jspdf": "^2.5.1"
   },
   "devDependencies": {
     "@types/node": "^20.8.3",
