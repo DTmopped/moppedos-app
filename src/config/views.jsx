@@ -1,7 +1,7 @@
 import React from 'react';
 // ✅ Add Brain icon to the import (keep TestTube if you want to keep Order Guide Test)
 // ADD Package to the end:
-import { Home, FileText, Users, ShoppingBasket, BarChartBig, Calculator, ClipboardList, MailCheck, Brain, ChefHat, Package } from 'lucide-react';
+import { Home, FileText, Users, ShoppingBasket, BarChartBig, Calculator, ClipboardList, MailCheck, Brain, ChefHat, Package, TrendingUp } from 'lucide-react';
 
 
 
@@ -82,7 +82,14 @@ export const views = [
   icon: <ChefHat size={20} strokeWidth={2.5} />,
   showInNav: true,
 }
-
+{
+    id: 'PROFORMA_PLANNING',
+    path: '/proforma-planning',
+    label: 'Proforma Planning',
+    componentName: 'ProformaPlanning',
+    icon: <TrendingUp size={20} strokeWidth={2.5} />,
+    showInNav: true,
+  }
     
 
 ];
