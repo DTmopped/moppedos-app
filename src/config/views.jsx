@@ -81,7 +81,7 @@ export const views = [
   componentName: 'SmartPrepGuide',
   icon: <ChefHat size={20} strokeWidth={2.5} />,
   showInNav: true,
-}
+},
 {
     id: 'PROFORMA_PLANNING',
     path: '/proforma-planning',
