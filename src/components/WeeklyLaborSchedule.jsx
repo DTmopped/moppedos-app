@@ -669,6 +669,24 @@ console.log('📊 Total shifts:', totalShifts);
 console.log('🔍 Database reported: 245 shifts, $14,848');
 console.log('❌ Difference: $' + (totalCost - 14848).toFixed(2));
 console.log('=====================================');
+          console.log('=====================================');
+
+// Show sample employee data
+console.log('📋 Sample employee data (first 5):');
+let sampleCount = 0;
+Object.entries(transformedSchedule).forEach(([key, cell]) => {
+  if (cell?.employee && sampleCount < 5) {
+    console.log(`Employee ${sampleCount + 1}:`, {
+      name: cell.employee.name,
+      role: cell.employee.role,
+      hourly_rate: cell.employee.hourly_rate,
+      hours: cell.employee.hours,
+      cost: (cell.employee.hourly_rate * cell.employee.hours).toFixed(2)
+    });
+    sampleCount++;
+  }
+});
+console.log('=====================================');
 
 setHasUnsavedChanges(false);
           setHasUnsavedChanges(false);
