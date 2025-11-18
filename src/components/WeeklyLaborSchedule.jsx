@@ -605,7 +605,7 @@ useEffect(() => {
               name: employee.name || 'Unknown',
               role: shift.role || shift.position,
               department: shift.department || employee.department,
-              hourly_rate: shift.rate || employee.hourly_rate || 15.00,
+              hourly_rate: employee.hourly_rate || 15.00,
               start: formatTimeHelper(shift.start_time) || '5:30 PM',
               end: formatTimeHelper(shift.end_time) || '11:00 PM',
               hours: shift.hours || calculateHours(formatTimeHelper(shift.start_time), formatTimeHelper(shift.end_time)),
