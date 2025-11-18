@@ -5,7 +5,7 @@ import { Label } from './ui/label';
 import { Input } from './ui/input';
 import { exportExecutiveSummary, exportDetailedReport, exportRestaurantOnly, exportClubOnly, exportCombined } from '../utils/pdfExport';
 
-const RestaurantCalculator = () => {
+const ProformaTool = () => {
   // UI State
   const [showAdmin, setShowAdmin] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
