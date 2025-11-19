@@ -27,6 +27,7 @@ import EmployeeOnboardingSystem from '@/components/labor/EmployeeOnboardingSyste
 // 🔥 NEW: Import VenueConfiguration
 // ============================================================================
 import VenueConfiguration from '@/components/settings/VenueConfiguration';
+import RoleManagement from '@/components/settings/RoleManagement';
 
 // Enhanced color scheme functions (inline since import might be causing issues)
 const generateDepartmentColors = (deptKey) => {
@@ -154,6 +155,7 @@ const EnhancedNavigation = ({ activeView, onViewChange, pendingCount }) => {
     // 🔥 NEW: Add Venue Settings tab
     // ============================================================================
     { id: 'settings', label: 'Venue Settings', icon: Settings, description: 'Configure venues and time blocks', color: 'slate' }
+    { id: 'roleManagement', label: 'Manage Roles', icon: Users, description: 'Add/edit roles from 140+ catalog', color: 'indigo' }
   ];
 
   return (
@@ -451,10 +453,12 @@ const LaborManagementContent = () => {
         return <EmployeeOnboardingSystem />;
       case 'pto':
         return <PTOManagementSystem />;
-      case 'roles':
-        return <EnhancedRolesDisplay />;
       case 'settings':
-        return <VenueConfiguration locationId={locationUuid} />;
+  return <VenueConfiguration locationId={locationUuid} />;
+case 'roleManagement':
+  return <RoleManagement locationId={locationUuid} />;
+case 'roles':
+  return <EnhancedRolesDisplay />;
       default:
         return <EnhancedOverview onTabChange={setActiveView} />;
     }
