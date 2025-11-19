@@ -2,6 +2,7 @@ import React from 'react';
 // ✅ Add Brain icon to the import (keep TestTube if you want to keep Order Guide Test)
 // ADD Package to the end:
 import { Home, FileText, Users, ShoppingBasket, BarChartBig, Calculator, ClipboardList, MailCheck, Brain, ChefHat, Package, TrendingUp } from 'lucide-react';
+import TenantSettingsTest from '../components/settings/TenantSettingsTest';
 
 
 
