@@ -154,7 +154,7 @@ const EnhancedNavigation = ({ activeView, onViewChange, pendingCount }) => {
     // ============================================================================
     // 🔥 NEW: Add Venue Settings tab
     // ============================================================================
-    { id: 'settings', label: 'Venue Settings', icon: Settings, description: 'Configure venues and time blocks', color: 'slate' }
+    { id: 'settings', label: 'Venue Settings', icon: Settings, description: 'Configure venues and time blocks', color: 'slate' },
     { id: 'roleManagement', label: 'Manage Roles', icon: Users, description: 'Add/edit roles from 140+ catalog', color: 'indigo' }
   ];
 
