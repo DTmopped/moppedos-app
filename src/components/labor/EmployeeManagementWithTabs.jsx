@@ -24,51 +24,36 @@ const EmployeeManagementWithTabs = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header with Side-by-Side Buttons */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900">
-            {isEmployeesView ? 'Employee Management' : 'Role Management'}
-          </h2>
-          <p className="text-slate-600 mt-1">
-            {isEmployeesView 
-              ? 'Manage your restaurant staff and onboarding'
-              : 'Manage roles and rates for this location'}
-          </p>
+      {/* NO HEADER - Just buttons on the right when in employees view */}
+      {isEmployeesView && (
+        <div className="flex justify-end">
+          <div className="flex items-center space-x-3">
+            {/* Add Role Button (Light Green matching brand) */}
+            <button
+              onClick={() => setActiveView('roles')}
+              className="flex items-center space-x-2 px-6 py-3 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-bold rounded-lg transition-all shadow-md hover:shadow-lg border-2 border-emerald-200"
+              title="Add a new role type from your catalog"
+            >
+              <DollarSign className="h-5 w-5" />
+              <span>Add Role</span>
+            </button>
+          </div>
         </div>
+      )}
 
-        {/* Action Buttons - Side by Side */}
-        <div className="flex items-center space-x-3">
-          {isEmployeesView ? (
-            <>
-              {/* NOTE: Add Employee button is rendered by EmployeeOnboardingSystem itself */}
-              {/* We just show the Add Role button here */}
-              
-              {/* Add Role Button (Lighter Green) */}
-              <button
-                onClick={() => setActiveView('roles')}
-                className="flex items-center space-x-2 px-6 py-3 bg-emerald-400 hover:bg-emerald-500 text-black font-bold rounded-lg transition-all shadow-md hover:shadow-lg"
-                title="Add a new role type from your catalog"
-              >
-                <DollarSign className="h-5 w-5" />
-                <span>Add Role</span>
-              </button>
-            </>
-          ) : (
-            <>
-              {/* Back to Employees Button */}
-              <button
-                onClick={() => setActiveView('employees')}
-                className="flex items-center space-x-2 px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-all"
-                title="Return to employee management"
-              >
-                <ArrowLeft className="h-5 w-5" />
-                <span>Back to Employees</span>
-              </button>
-            </>
-          )}
+      {/* Back button when viewing roles */}
+      {isRolesView && (
+        <div className="flex justify-between items-center mb-6">
+          <button
+            onClick={() => setActiveView('employees')}
+            className="flex items-center space-x-2 px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-all"
+            title="Return to employee management"
+          >
+            <ArrowLeft className="h-5 w-5" />
+            <span>Back to Employees</span>
+          </button>
         </div>
-      </div>
+      )}
 
       {/* Content Area - Switches based on activeView */}
       <div>
