@@ -89,7 +89,15 @@ export const views = [
     componentName: 'ProformaPlanning',
     icon: <TrendingUp size={20} strokeWidth={2.5} />,
     showInNav: true,
-  }
+  },
+  {
+  id: 'test-settings',
+  path: '/test-settings',
+  label: 'Test Settings',
+  component: TenantSettingsTest, // Import it at the top
+  icon: '⚙️',
+  isDefault: false
+}
     
 
 ];
