@@ -95,7 +95,7 @@ export const views = [
   id: 'test-settings',
   path: '/test-settings',
   label: 'Test Settings',
-  component: TenantSettingsTest, // Import it at the top
+  componentName: 'TenantSettingsTest',  // ✅ RIGHT PROPERTY (string!)
   icon: '⚙️',
   isDefault: false
 }
