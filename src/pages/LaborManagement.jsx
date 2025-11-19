@@ -24,10 +24,10 @@ import SmartSchedulingEngine from '@/components/labor/SmartSchedulingEngine';
 import EmployeeOnboardingSystem from '@/components/labor/EmployeeOnboardingSystem';
 
 // ============================================================================
-// 🔥 NEW: Import VenueConfiguration
+// 🔥 NEW: Import VenueConfiguration and EmployeeManagementWithTabs
 // ============================================================================
 import VenueConfiguration from '@/components/settings/VenueConfiguration';
-import RoleManagement from '@/components/settings/RoleManagement';
+import EmployeeManagementWithTabs from '@/components/labor/EmployeeManagementWithTabs';
 
 // Enhanced color scheme functions (inline since import might be causing issues)
 const generateDepartmentColors = (deptKey) => {
@@ -141,7 +141,7 @@ const EnhancedNavigation = ({ activeView, onViewChange, pendingCount }) => {
     { id: 'schedule', label: 'Weekly Schedule', icon: Calendar, description: 'Current week scheduling', color: 'emerald' },
     { id: 'multiWeek', label: 'Multi-Week Planner', icon: CalendarDays, description: '4-week advance scheduling', color: 'purple' },
     { id: 'aiScheduling', label: 'Smart Scheduling Assistant', icon: Brain, description: 'Logic-based scheduling helper', color: 'indigo' },
-    { id: 'onboarding', label: 'Employee Management', icon: UserPlus, description: 'Staff onboarding and management', color: 'cyan' },
+    { id: 'onboarding', label: 'Employee Management', icon: UserPlus, description: 'Staff, roles, and rates management', color: 'cyan' },
     { 
       id: 'pto', 
       label: `PTO Management${pendingCount > 0 ? ` (${pendingCount})` : ''}`, 
@@ -150,12 +150,7 @@ const EnhancedNavigation = ({ activeView, onViewChange, pendingCount }) => {
       color: 'amber',
       hasPending: pendingCount > 0
     },
-    { id: 'roles', label: 'All 13 Roles', icon: Users, description: 'Complete role breakdown', color: 'rose' },
-    // ============================================================================
-    // 🔥 NEW: Add Venue Settings tab
-    // ============================================================================
-    { id: 'settings', label: 'Venue Settings', icon: Settings, description: 'Configure venues and time blocks', color: 'slate' },
-    { id: 'roleManagement', label: 'Manage Roles', icon: Users, description: 'Add/edit roles from 140+ catalog', color: 'indigo' }
+    { id: 'settings', label: 'Venue Settings', icon: Settings, description: 'Configure venues and time blocks', color: 'slate' }
   ];
 
   return (
@@ -437,7 +432,7 @@ const LaborManagementContent = () => {
   };
 
   // ============================================================================
-  // 🔥 UPDATED: Add 'settings' case to renderContent
+  // 🔥 UPDATED: Use EmployeeManagementWithTabs and remove 'roles' case
   // ============================================================================
   const renderContent = () => {
     switch (activeView) {
@@ -450,15 +445,11 @@ const LaborManagementContent = () => {
       case 'aiScheduling':
         return <SmartSchedulingEngine />;
       case 'onboarding':
-        return <EmployeeOnboardingSystem />;
+        return <EmployeeManagementWithTabs />;
       case 'pto':
         return <PTOManagementSystem />;
       case 'settings':
-  return <VenueConfiguration locationId={locationUuid} />;
-case 'roleManagement':
-  return <RoleManagement locationId={locationUuid} />;
-case 'roles':
-  return <EnhancedRolesDisplay />;
+        return <VenueConfiguration locationId={locationUuid} />;
       default:
         return <EnhancedOverview onTabChange={setActiveView} />;
     }
