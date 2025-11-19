@@ -14,8 +14,12 @@ const AppRouterComponent = () => {
           <Route index element={<Navigate to={defaultViewPath} replace />} />
           
           {views.map((view) => (
-            <Route key={view.id} path={view.path} element={null} />
-          ))}
+  <Route 
+    key={view.id} 
+    path={view.path} 
+    element={view.component ? <view.component /> : null} 
+  />
+))}
           
           {/* ADD YOUR ROUTE HERE - BEFORE THE WILDCARD */}
           <Route path="/test-settings" element={<TenantSettingsTest />} />
