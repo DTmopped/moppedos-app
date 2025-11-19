@@ -1,102 +1,79 @@
 import React, { useState } from 'react';
-import { Users, DollarSign, ArrowLeft } from 'lucide-react';
+import { Users, DollarSign, ArrowLeft, Plus } from 'lucide-react';
 import EmployeeOnboardingSystem from '@/components/labor/EmployeeOnboardingSystem';
 import RoleManagement from '@/components/settings/RoleManagement';
 import { useLaborData } from '@/contexts/LaborDataContext';
 
 /**
- * Enhanced Employee Management with Sub-tabs
+ * Simplified Employee Management - NO SUB-TABS!
+ * Just two action buttons side-by-side that switch views
+ * 
  * Features:
- * - Clean tab navigation with back button on Roles tab
- * - Side-by-side action buttons (blue + green)
- * - Hover tooltips for better UX
- * - Context-aware button display
+ * - [+ Add Employee] [+ Add Role] buttons side-by-side
+ * - Lighter green for Add Role (emerald-400)
+ * - "← Back to Employees" when viewing roles
+ * - Clean, simple interface
  */
 
 const EmployeeManagementWithTabs = () => {
-  const [activeSubTab, setActiveSubTab] = useState('employees');
+  const [activeView, setActiveView] = useState('employees'); // 'employees' or 'roles'
   const { locationUuid } = useLaborData();
 
-  const isEmployeesTab = activeSubTab === 'employees';
-  const isRolesTab = activeSubTab === 'roles';
+  const isEmployeesView = activeView === 'employees';
+  const isRolesView = activeView === 'roles';
 
   return (
-    <div className="space-y-4">
-      {/* Sub-tab Navigation with Action Buttons */}
-      <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-4">
-        <div className="flex items-center justify-between">
-          {/* Left: Tab Navigation */}
-          <div className="flex space-x-2">
-            {/* Employees Tab */}
-            <button
-              onClick={() => setActiveSubTab('employees')}
-              className={`flex items-center space-x-2 px-6 py-3 rounded-lg text-sm font-medium transition-all ${
-                isEmployeesTab
-                  ? 'bg-cyan-50 text-cyan-700 border-2 border-cyan-300 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 border-2 border-transparent'
-              }`}
-              title="View and manage your staff members"
-            >
-              {isRolesTab ? (
-                <>
-                  <ArrowLeft className="h-4 w-4" />
-                  <span>Back to Employees</span>
-                </>
-              ) : (
-                <>
-                  <Users className="h-4 w-4" />
-                  <span>Employees</span>
-                </>
-              )}
-            </button>
+    <div className="space-y-6">
+      {/* Header with Side-by-Side Buttons */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900">
+            {isEmployeesView ? 'Employee Management' : 'Role Management'}
+          </h2>
+          <p className="text-slate-600 mt-1">
+            {isEmployeesView 
+              ? 'Manage your restaurant staff and onboarding'
+              : 'Manage roles and rates for this location'}
+          </p>
+        </div>
 
-            {/* Roles & Rates Tab */}
-            <button
-              onClick={() => setActiveSubTab('roles')}
-              className={`flex items-center space-x-2 px-6 py-3 rounded-lg text-sm font-medium transition-all ${
-                isRolesTab
-                  ? 'bg-cyan-50 text-cyan-700 border-2 border-cyan-300 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 border-2 border-transparent'
-              }`}
-              title="Manage job roles, rates, and staffing rules"
-            >
-              <DollarSign className="h-4 w-4" />
-              <span>Roles & Rates</span>
-            </button>
-          </div>
-
-          {/* Right: Action Buttons - Only show on Employees tab */}
-          {isEmployeesTab && (
-            <div className="flex items-center space-x-3">
-              {/* Add Employee Button (Blue) */}
-              <button
-                onClick={() => {
-                  // This will be handled by EmployeeOnboardingSystem's existing button
-                  // We're just showing it here for visual consistency
-                }}
-                className="hidden" // Hide this one, let the component's own button show
-                title="Hire a new team member"
-              >
-              </button>
+        {/* Action Buttons - Side by Side */}
+        <div className="flex items-center space-x-3">
+          {isEmployeesView ? (
+            <>
+              {/* NOTE: Add Employee button is rendered by EmployeeOnboardingSystem itself */}
+              {/* We just show the Add Role button here */}
               
-              {/* Add Role Button (Green) - Shows on Employees tab */}
+              {/* Add Role Button (Lighter Green) */}
               <button
-                onClick={() => setActiveSubTab('roles')}
-                className="flex items-center space-x-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-black font-bold rounded-lg transition-all shadow-sm hover:shadow-md transform hover:scale-105"
-                title="Add a new role type from our 140+ catalog"
+                onClick={() => setActiveView('roles')}
+                className="flex items-center space-x-2 px-6 py-3 bg-emerald-400 hover:bg-emerald-500 text-black font-bold rounded-lg transition-all shadow-md hover:shadow-lg"
+                title="Add a new role type from your catalog"
               >
-                <DollarSign className="h-4 w-4" />
+                <DollarSign className="h-5 w-5" />
                 <span>Add Role</span>
               </button>
-            </div>
+            </>
+          ) : (
+            <>
+              {/* Back to Employees Button */}
+              <button
+                onClick={() => setActiveView('employees')}
+                className="flex items-center space-x-2 px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-all"
+                title="Return to employee management"
+              >
+                <ArrowLeft className="h-5 w-5" />
+                <span>Back to Employees</span>
+              </button>
+            </>
           )}
         </div>
       </div>
 
-      {/* Sub-tab Content */}
+      {/* Content Area - Switches based on activeView */}
       <div>
-        {activeSubTab === 'employees' && <EmployeeOnboardingSystem />}
-        {activeSubTab === 'roles' && <RoleManagement locationId={locationUuid} />}
+        {isEmployeesView && <EmployeeOnboardingSystem />}
+        {isRolesView && <RoleManagement locationId={locationUuid} />}
       </div>
     </div>
   );
