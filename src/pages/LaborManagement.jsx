@@ -23,6 +23,11 @@ import PTOManagementSystem from '@/components/labor/PTOManagementSystem';
 import SmartSchedulingEngine from '@/components/labor/SmartSchedulingEngine';
 import EmployeeOnboardingSystem from '@/components/labor/EmployeeOnboardingSystem';
 
+// ============================================================================
+// 🔥 NEW: Import VenueConfiguration
+// ============================================================================
+import VenueConfiguration from '@/components/settings/VenueConfiguration';
+
 // Enhanced color scheme functions (inline since import might be causing issues)
 const generateDepartmentColors = (deptKey) => {
   const colorMap = {
@@ -144,7 +149,11 @@ const EnhancedNavigation = ({ activeView, onViewChange, pendingCount }) => {
       color: 'amber',
       hasPending: pendingCount > 0
     },
-    { id: 'roles', label: 'All 13 Roles', icon: Users, description: 'Complete role breakdown', color: 'rose' }
+    { id: 'roles', label: 'All 13 Roles', icon: Users, description: 'Complete role breakdown', color: 'rose' },
+    // ============================================================================
+    // 🔥 NEW: Add Venue Settings tab
+    // ============================================================================
+    { id: 'settings', label: 'Venue Settings', icon: Settings, description: 'Configure venues and time blocks', color: 'slate' }
   ];
 
   return (
@@ -409,21 +418,25 @@ const EnhancedRolesDisplay = () => {
 // Main Labor Management Component
 const LaborManagementContent = () => {
   const [activeView, setActiveView] = useState('overview');
-  const [scheduleData, setScheduleData] = useState({});  // ADD THIS LINE
+  const [scheduleData, setScheduleData] = useState({});
   
   const { 
     isConnected, 
-    currentLocation, 
+    currentLocation,
+    locationUuid,
     getPendingRequestsCount 
   } = useLaborData();
 
   const pendingCount = getPendingRequestsCount ? getPendingRequestsCount() : 2;
 
-  const handleScheduleChange = (newScheduleData) => {  // ADD THESE LINES
-  setScheduleData(newScheduleData);
-  console.log('Schedule updated:', newScheduleData);
-};
+  const handleScheduleChange = (newScheduleData) => {
+    setScheduleData(newScheduleData);
+    console.log('Schedule updated:', newScheduleData);
+  };
 
+  // ============================================================================
+  // 🔥 UPDATED: Add 'settings' case to renderContent
+  // ============================================================================
   const renderContent = () => {
     switch (activeView) {
       case 'overview':
@@ -440,6 +453,8 @@ const LaborManagementContent = () => {
         return <PTOManagementSystem />;
       case 'roles':
         return <EnhancedRolesDisplay />;
+      case 'settings':
+        return <VenueConfiguration locationId={locationUuid} />;
       default:
         return <EnhancedOverview onTabChange={setActiveView} />;
     }
