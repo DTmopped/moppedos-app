@@ -736,6 +736,7 @@ export const LaborDataProvider = ({ children }) => {
         .gte('day', weekStartFormatted)
         .lte('day', weekEndDate)
         .eq('location_id', locationUuid)
+        .not('employee_id', 'is', null)  // ← ADD THIS NEW LINE
         .order('day', { ascending: true })
         .order('start_time', { ascending: true });
 
