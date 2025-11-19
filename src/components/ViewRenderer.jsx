@@ -25,6 +25,7 @@ const componentImportMap = {
  InventoryManagement: lazy(() => import('./OrderGuideTest.jsx')),
   AIOrderDashboard: lazy(() => import('./orderguide/AIOrderDashboard.jsx')),
     ProformaPlanning: lazy(() => import('../pages/ProformaPlanning.jsx')),
+   TenantSettingsTest: lazy(() => import('./settings/TenantSettingsTest.jsx')),
 
 };
 
