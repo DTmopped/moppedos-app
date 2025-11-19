@@ -697,7 +697,7 @@ setHasUnsavedChanges(false);
     };
 
     loadWeeklyShifts();
-  }, [currentWeek, contextData?.locationUuid, weekStart]);
+  }, [currentWeek, contextData?.locationUuid]);
 // ============================================================================
 // 🔥 NEW: ROW INDEX HELPER FUNCTIONS
 // ============================================================================
