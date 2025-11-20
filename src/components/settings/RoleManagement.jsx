@@ -129,14 +129,13 @@ const RoleManagement = ({ locationId, lightGreenButton = false }) => {
 
       const masterRole = masterRoles.find(r => r.id === masterRoleId);
       
-      // Insert without category and meal_periods for now - they may not exist in schema
+      // Insert minimal fields - category, is_tipped, meal_periods come from master_role
       const { error: insertError } = await supabase
         .from('location_roles')
         .insert({
           location_id: locationId,
           master_role_id: masterRoleId,
           role_name: masterRole.name,
-          is_tipped: isTipped,
           hourly_rate: 0, // Default to 0, set per employee
           is_active: true,
           display_order: 999 // Put at end, user can reorder
