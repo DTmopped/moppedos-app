@@ -490,6 +490,10 @@ const EmployeeCard = ({ employee, onView, onEdit, onDelete }) => {
 
 // Main Employee Onboarding System Component
 const EmployeeOnboardingSystem = () => {
+  showAddButton = true,  // NEW PROP
+  externalAddEmployeeModal = false,  // NEW PROP
+  setExternalAddEmployeeModal = null  // NEW PROP
+}) => {
   const { 
     employees, 
     addEmployee, 
@@ -497,8 +501,10 @@ const EmployeeOnboardingSystem = () => {
     deleteEmployee,
     loading 
   } = useLaborData();
-
-  const [showAddModal, setShowAddModal] = useState(false);
+// Use external modal state if provided, otherwise use internal
+  const [internalShowModal, setInternalShowModal] = useState(false);
+  const showAddModal = externalAddEmployeeModal !== false ? externalAddEmployeeModal : internalShowModal;
+  const setShowAddModal = setExternalAddEmployeeModal || setInternalShowModal;
   const [searchTerm, setSearchTerm] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -543,13 +549,15 @@ const EmployeeOnboardingSystem = () => {
           <h2 className="text-2xl font-bold text-slate-900">Employee Management</h2>
           <p className="text-slate-600">Manage your restaurant staff and onboarding</p>
         </div>
-        <Button
-          onClick={() => setShowAddModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Employee
-        </Button>
+        {showAddButton && (
+          <Button
+            onClick={() => setShowAddModal(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Employee
+          </Button>
+        )}
       </div>
 
       {/* Statistics */}
