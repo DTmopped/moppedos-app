@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import {
   Save, FileText, ChevronLeft, ChevronRight, Filter, Clock, AlertCircle, Plus, X, User, 
   Calendar, DollarSign, Target, Eye, EyeOff, TrendingUp, Users, ChevronDown, ChevronUp,
-  Loader2, BarChart3, PieChart, Activity, Edit3, Copy
+  Loader2, BarChart3, PieChart, Activity, Edit3, Copy, Briefcase, AlertTriangle
 } from 'lucide-react';
 import { useLaborData } from '@/contexts/LaborDataContext';
 import { ROLES, getRolesByDepartment, SHIFT_TIMES, DEPARTMENT_MAPPING } from '@/config/laborScheduleConfig';
