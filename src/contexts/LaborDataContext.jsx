@@ -1096,6 +1096,74 @@ const fetchLaborAnalytics = async (limit = 12) => {
   };
 
   /**
+   * Calculate role analytics
+   * Shows employee count, labor cost, and usage per role
+   */
+  const calculateRoleAnalytics = (roles, employees) => {
+    if (!roles || !employees) {
+      return {
+        totalRoles: 0,
+        totalEmployees: 0,
+        avgHourlyRate: 0,
+        totalLaborCost: 0,
+        roleBreakdown: []
+      };
+    }
+
+    const roleStats = {};
+    
+    // Initialize stats for each role
+    roles.forEach(role => {
+      roleStats[role.role_name] = {
+        id: role.id,
+        role_name: role.role_name,
+        category: role.category,
+        default_rate: role.hourly_rate || 0,
+        employee_count: 0,
+        total_cost: 0,
+        avg_rate: 0,
+        is_tipped: role.is_tipped
+      };
+    });
+
+    // Count employees and calculate costs per role
+    let totalEmployeeRate = 0;
+    let employeeCount = 0;
+
+    employees.forEach(emp => {
+      if (emp.role && roleStats[emp.role]) {
+        roleStats[emp.role].employee_count++;
+        const empRate = emp.hourly_rate || 15;
+        roleStats[emp.role].total_cost += empRate * 40; // Assume 40 hrs/week
+        totalEmployeeRate += empRate;
+        employeeCount++;
+      }
+    });
+
+    // Calculate averages
+    Object.values(roleStats).forEach(stat => {
+      if (stat.employee_count > 0) {
+        stat.avg_rate = stat.total_cost / (stat.employee_count * 40);
+      }
+    });
+
+    const roleBreakdown = Object.values(roleStats).sort((a, b) => 
+      b.employee_count - a.employee_count
+    );
+
+    const totalLaborCost = roleBreakdown.reduce((sum, role) => sum + role.total_cost, 0);
+
+    return {
+      totalRoles: roles.length,
+      totalEmployees: employees.length,
+      avgHourlyRate: employeeCount > 0 ? totalEmployeeRate / employeeCount : 0,
+      totalLaborCost,
+      roleBreakdown,
+      unusedRoles: roleBreakdown.filter(r => r.employee_count === 0).length
+    };
+  };
+
+  /**
    * Get weekly labor data (summary + shifts + metrics)
    * This is the main function to call from components
    */
@@ -1210,6 +1278,7 @@ const fetchLaborAnalytics = async (limit = 12) => {
    generateWeeklySchedule,
    calculateLaborMetrics,
    getWeeklyLaborData,
+   calculateRoleAnalytics, // ✅ NEW: Role analytics
 
     // Helper functions
     calculateShiftHours,
@@ -1227,5 +1296,3 @@ const fetchLaborAnalytics = async (limit = 12) => {
     </LaborDataContext.Provider>
   );
 };
-
-
