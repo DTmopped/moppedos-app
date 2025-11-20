@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useLaborData } from '@/contexts/LaborDataContext';
 import { ROLES, getRolesByDepartment, SHIFT_TIMES, DEPARTMENT_MAPPING } from '@/config/laborScheduleConfig';
+import EnhancedLiveBudgetSection from '@/components/labor/EnhancedLiveBudgetSection';
 
 // Optimized Print CSS for Single Page Landscape - FIXED
 const printStyles = `
@@ -659,7 +660,7 @@ Object.entries(transformedSchedule).forEach(([key, cell]) => {
     totalHours += cell.employee.hours || 0;
     totalShifts++;
   }
-});
+});  // ← ✅ CORRECT! Closing brace is in the right place now
 
 console.log('📅 Shifts by day (0=Mon, 6=Sun):', byDay);
 console.log('👥 Shifts by role:', byRole);
@@ -809,23 +810,17 @@ const getMaxRowsForRole = (roleIndex, shiftIndex) => {
   }
 
   const totalCost = assignments.reduce((sum, emp) => sum + (emp.hourly_rate * emp.hours), 0);
-  const totalHours = assignments.reduce((sum, emp) => sum + emp.hours, 0);
+const totalHours = assignments.reduce((sum, emp) => sum + emp.hours, 0);
 
-  // Budget data (this should come from location settings eventually)
-  const budgets = {
-    'FOH': { budget: 1200, target: 1000 },
-    'BOH': { budget: 1800, target: 1500 },
-    'Bar': { budget: 600, target: 500 },
-    'ALL': { budget: 3600, target: 3000 }
-  };
+// ❌ DELETE THIS:
+// const budgets = { ... };
 
-  return {
-    scheduled: Math.round(totalCost),
-    budget: budgets[department]?.budget || 0,
-    target: budgets[department]?.target || 0,
-    hours: Math.round(totalHours),
-    employeeCount: assignments.length
-  };
+return {
+  scheduled: Math.round(totalCost),
+  budget: 0,  // No longer used
+  target: 0,  // No longer used
+  hours: Math.round(totalHours),
+  employeeCount: assignments.length
 };
 
   // Enhanced color functions with professional gradients
@@ -1137,219 +1132,11 @@ const getMaxRowsForRole = (roleIndex, shiftIndex) => {
             </div>
           </div>
 
-          {/* Enhanced Quick Stats (Manager View Only) */}
-          {showManagerView && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 no-print">
-              <QuickStatsCard 
-                title="Total Labor Cost" 
-                value={`$${totalStats.scheduled.toLocaleString()}`}
-                subtitle={`Target: $${totalStats.target.toLocaleString()}`}
-                emoji="💰"
-                color="blue"
-                trend="+5.2% vs last week"
-              />
-              <QuickStatsCard 
-                title="Total Hours" 
-                value={totalStats.hours}
-                subtitle="Scheduled this week"
-                emoji="⏰"
-                color="emerald"
-                trend="Within target range"
-              />
-              <QuickStatsCard 
-                title="Staff Assigned" 
-                value={getTotalAssignments()}
-                subtitle={`${filteredEmployees.length} available`}
-                emoji="👥"
-                color="purple"
-                trend="Optimal coverage"
-              />
-              <QuickStatsCard 
-                title="Budget Status" 
-                value={`${((totalStats.scheduled / totalStats.budget) * 100).toFixed(0)}%`}
-                subtitle="of weekly budget"
-                emoji={totalStats.scheduled <= totalStats.target ? "✅" : "⚠️"}
-                color="amber"
-                trend={totalStats.scheduled <= totalStats.target ? "Under budget" : "Over budget"}
-              />
-            </div>
-          )}
-
-          {/* Enhanced Budget Section (Manager View Only) */}
-          {showManagerView && (
-            <Card className="border-slate-300 shadow-lg bg-white no-print">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-3">
-                    <DollarSign className="h-6 w-6 text-slate-600" />
-                    <h3 className="text-xl font-bold text-slate-800">💼 Labor Budget vs Actual</h3>
-                    <Badge variant="default" emoji="📊" size="sm">Live Tracking</Badge>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setBudgetCollapsed(!budgetCollapsed)}
-                    className="text-slate-600 hover:text-slate-800"
-                  >
-                    {budgetCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-                  </Button>
-                </div>
-                
-                {!budgetCollapsed && (
-                  <div className="space-y-3">
-                    <BudgetRow 
-                      title="FOH" 
-                      scheduled={fohStats.scheduled} 
-                      budget={fohStats.budget} 
-                      color="blue" 
-                      emoji="🍽️"
-                    />
-                    <BudgetRow 
-                      title="BOH" 
-                      scheduled={bohStats.scheduled} 
-                      budget={bohStats.budget} 
-                      color="emerald" 
-                      emoji="👨‍🍳"
-                    />
-                    <BudgetRow 
-                      title="Bar" 
-                      scheduled={barStats.scheduled} 
-                      budget={barStats.budget} 
-                      color="purple" 
-                      emoji="🍸"
-                    />
-                    <div className="border-t-2 border-slate-200 pt-3 mt-4">
-                      <BudgetRow 
-                        title="Total" 
-                        scheduled={totalStats.scheduled} 
-                        budget={totalStats.budget} 
-                        color="slate" 
-                        emoji="📈"
-                      />
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-          {/* ============================================================================ */}
-{/* 🆕 ROLE ANALYTICS SECTION (Manager View Only) */}
-{/* ============================================================================ */}
-{showManagerView && (() => {
-  // Calculate role analytics
-  const { calculateRoleAnalytics } = contextData;
-  const analytics = calculateRoleAnalytics ? calculateRoleAnalytics(
-    contextData.roles || [], 
-    employees
-  ) : null;
-
-  if (!analytics) return null;
-
-  return (
-    <Card className="border-slate-300 shadow-lg bg-white no-print">
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <Briefcase className="h-6 w-6 text-slate-600" />
-            <h3 className="text-xl font-bold text-slate-800">📊 Role Analytics</h3>
-            <Badge variant="default" emoji="🔍" size="sm">Live Data</Badge>
-          </div>
-        </div>
-
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          {/* Total Roles */}
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-blue-700">Total Roles</span>
-              <Briefcase className="h-5 w-5 text-blue-600" />
-            </div>
-            <div className="text-3xl font-bold text-blue-900">{analytics.totalRoles}</div>
-            <div className="text-xs text-blue-600 mt-1">
-              {analytics.totalRoles - analytics.unusedRoles} in active use
-            </div>
-          </div>
-
-          {/* Total Employees */}
-          <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-2 border-emerald-200 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-emerald-700">Total Staff</span>
-              <Users className="h-5 w-5 text-emerald-600" />
-            </div>
-            <div className="text-3xl font-bold text-emerald-900">{analytics.totalEmployees}</div>
-            <div className="text-xs text-emerald-600 mt-1">
-              Active team members
-            </div>
-          </div>
-
-          {/* Average Rate */}
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-200 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-purple-700">Avg Hourly Rate</span>
-              <DollarSign className="h-5 w-5 text-purple-600" />
-            </div>
-            <div className="text-3xl font-bold text-purple-900">
-              ${analytics.avgHourlyRate.toFixed(2)}
-            </div>
-            <div className="text-xs text-purple-600 mt-1">
-              Across all employees
-            </div>
-          </div>
-
-          {/* Unused Roles Alert */}
-          <div className="bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-200 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-orange-700">Unused Roles</span>
-              <AlertTriangle className="h-5 w-5 text-orange-600" />
-            </div>
-            <div className="text-3xl font-bold text-orange-900">{analytics.unusedRoles}</div>
-            <div className="text-xs text-orange-600 mt-1">
-              {analytics.unusedRoles > 0 ? 'Need attention' : 'All roles active'}
-            </div>
-          </div>
-        </div>
-
-        {/* Top Roles Breakdown */}
-        <div className="space-y-3">
-          <h4 className="font-bold text-slate-800 text-sm mb-3">Top Roles by Employee Count</h4>
-          {analytics.roleBreakdown.slice(0, 5).map((role, index) => (
-            <div key={index} className="flex items-center justify-between py-3 px-4 bg-slate-50 rounded-lg border border-slate-200">
-              <div className="flex items-center space-x-3">
-                <span className="text-2xl">
-                  {role.category === 'Bar' ? '🍸' : 
-                   role.category === 'FOH' ? '🍽️' : 
-                   role.category === 'BOH' ? '👨‍🍳' : '👔'}
-                </span>
-                <div>
-                  <div className="font-bold text-slate-900 text-sm">{role.role_name}</div>
-                  <div className="text-xs text-slate-600">{role.category}</div>
-                </div>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="text-right">
-                  <div className="font-bold text-slate-900">{role.employee_count} employees</div>
-                  <div className="text-xs text-slate-600">
-                    ${(role.total_cost / 1).toFixed(0)}/week
-                  </div>
-                </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                  role.employee_count === 0 
-                    ? 'bg-red-100 text-red-700' 
-                    : role.employee_count < 3
-                    ? 'bg-yellow-100 text-yellow-700'
-                    : 'bg-emerald-100 text-emerald-700'
-                }`}>
-                  {role.employee_count === 0 ? '🔴 Unused' : 
-                   role.employee_count < 3 ? '🟡 Low' : '🟢 Good'}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-})()}
+          <EnhancedLiveBudgetSection 
+  scheduleData={scheduleData}
+  location={contextData?.currentLocation}
+  showManagerView={showManagerView}
+/>
 
           {/* Enhanced Department Filter & Stats */}
           <Card className="border-slate-300 shadow-lg bg-white no-print">
