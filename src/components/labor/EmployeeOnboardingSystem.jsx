@@ -149,6 +149,8 @@ const DepartmentBreakdown = ({ employees }) => {
 
 // Add Employee Modal
 const AddEmployeeModal = ({ isOpen, onClose, onSubmit }) => {
+  const { roles: contextRoles } = useLaborData(); // ✅ Get roles from context
+  
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -162,11 +164,8 @@ const AddEmployeeModal = ({ isOpen, onClose, onSubmit }) => {
 
   const [errors, setErrors] = useState({});
 
-  const roles = [
-    'Server', 'Bartender', 'Host/Hostess', 'Busser', 'Food Runner',
-    'Meat Portioner', 'Prep Cook', 'Line Cook', 'Dishwasher', 'Expo',
-    'Kitchen Manager', 'Assistant Manager', 'General Manager'
-  ];
+  // ✅ Use context roles, map to role_name
+  const roles = contextRoles?.map(r => r.role_name) || [];
 
   const departments = [
     'Front of House', 'Back of House', 'Bar & Beverage', 'Management'
