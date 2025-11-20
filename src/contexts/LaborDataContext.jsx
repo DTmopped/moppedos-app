@@ -79,6 +79,7 @@ const getHolidayMultiplier = (date) => {
 export const LaborDataProvider = ({ children }) => {
   // Core state
   const [employees, setEmployees] = useState([]);
+  const [roles, setRoles] = useState([]); // ✅ NEW: Roles state
   const [schedules, setSchedules] = useState({});
   const [ptoRequests, setPtoRequests] = useState([]);
   const [scheduleRequests, setScheduleRequests] = useState([]);
@@ -204,7 +205,33 @@ export const LaborDataProvider = ({ children }) => {
     return location?.uuid;
   };
 
-  // Load all labor data - UPDATED TO USE UUID
+  // ✅ NEW: Load roles function
+  const loadRoles = async () => {
+    try {
+      const locationUuid = await getCurrentLocationUuid();
+      
+      console.log('Loading roles for location UUID:', locationUuid);
+
+      const { data: rolesData, error: rolesError } = await supabase
+        .from('v_location_roles_ordered')
+        .select('*')
+        .eq('location_id', locationUuid)
+        .eq('is_active', true)
+        .order('category')
+        .order('display_order');
+
+      if (rolesError) {
+        console.error('Error loading roles:', rolesError);
+      } else {
+        setRoles(rolesData || []);
+        console.log('Loaded roles:', rolesData?.length);
+      }
+    } catch (err) {
+      console.error('Error loading roles:', err);
+    }
+  };
+
+  // Load all labor data - UPDATED TO USE UUID AND LOAD ROLES
   const loadLaborData = async () => {
     try {
       setLoading(true);
@@ -240,6 +267,9 @@ export const LaborDataProvider = ({ children }) => {
         setIsConnected(true);
         console.log('Loaded employees:', enhancedEmployees.length);
       }
+
+      // ✅ NEW: Load roles
+      await loadRoles();
 
       // Load PTO requests - USE UUID
       const { data: ptoData, error: ptoError } = await supabase
@@ -1137,6 +1167,7 @@ const fetchLaborAnalytics = async (limit = 12) => {
   const value = {
     // Core state
     employees,
+    roles, // ✅ NEW: Export roles
     schedules,
     ptoRequests,
     scheduleRequests,
@@ -1154,6 +1185,7 @@ const fetchLaborAnalytics = async (limit = 12) => {
 
     // Core functions
     loadLaborData,
+    loadRoles, // ✅ NEW: Export loadRoles
     addEmployee,
 
     // Analytics and forecasting
@@ -1195,3 +1227,4 @@ const fetchLaborAnalytics = async (limit = 12) => {
     </LaborDataContext.Provider>
   );
 };
+
