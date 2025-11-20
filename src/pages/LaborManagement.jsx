@@ -277,49 +277,91 @@ const EnhancedOverview = ({ onTabChange }) => {
               </div>
             </div>
 
-            {/* Top Roles Breakdown */}
+            {/* Top Roles Breakdown - Grouped by Department */}
             <div className="space-y-3">
               <div className="flex items-center justify-between mb-3">
-                <h4 className="font-bold text-slate-800 text-base">Top Roles by Employee Count</h4>
+                <h4 className="font-bold text-slate-800 text-base">Roles by Department</h4>
                 {analytics.unusedRoles > 0 && (
                   <span className="text-sm text-orange-600 font-medium">
                     ⚠️ {analytics.unusedRoles} unused role{analytics.unusedRoles > 1 ? 's' : ''}
                   </span>
                 )}
               </div>
-              {analytics.roleBreakdown.slice(0, 8).map((role, index) => (
-                <div key={index} className="flex items-center justify-between py-3 px-4 bg-slate-50 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors">
-                  <div className="flex items-center space-x-3">
-                    <span className="text-2xl">
-                      {role.category === 'Bar' ? '🍸' : 
-                       role.category === 'FOH' ? '🍽️' : 
-                       role.category === 'BOH' ? '👨‍🍳' : '👔'}
-                    </span>
-                    <div>
-                      <div className="font-bold text-slate-900 text-sm">{role.role_name}</div>
-                      <div className="text-xs text-slate-600">{role.category}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <div className="text-right">
-                      <div className="font-bold text-slate-900">{role.employee_count} employees</div>
-                      <div className="text-xs text-slate-600">
-                        ${(role.total_cost).toFixed(0)}/week
+
+              {/* Group roles by department */}
+              {(() => {
+                const departments = {
+                  'FOH': { icon: '🍽️', color: 'blue', roles: [] },
+                  'BOH': { icon: '👨‍🍳', color: 'emerald', roles: [] },
+                  'Bar': { icon: '🍸', color: 'purple', roles: [] },
+                  'Management': { icon: '👔', color: 'slate', roles: [] }
+                };
+
+                // Group roles by category
+                analytics.roleBreakdown.forEach(role => {
+                  if (departments[role.category]) {
+                    departments[role.category].roles.push(role);
+                  }
+                });
+
+                return Object.entries(departments).map(([deptName, dept]) => {
+                  if (dept.roles.length === 0) return null;
+
+                  const totalEmployees = dept.roles.reduce((sum, r) => sum + r.employee_count, 0);
+                  const totalCost = dept.roles.reduce((sum, r) => sum + r.total_cost, 0);
+
+                  return (
+                    <details key={deptName} className="group" open>
+                      <summary className={`cursor-pointer p-4 bg-gradient-to-r from-${dept.color}-50 to-${dept.color}-100 rounded-lg border-2 border-${dept.color}-200 hover:shadow-md transition-all`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <span className="text-2xl">{dept.icon}</span>
+                            <div>
+                              <div className="font-bold text-slate-900">{deptName}</div>
+                              <div className="text-xs text-slate-600">
+                                {dept.roles.length} roles • {totalEmployees} employees • ${totalCost.toFixed(0)}/week
+                              </div>
+                            </div>
+                          </div>
+                          <svg className="w-5 h-5 text-slate-600 transform group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </summary>
+
+                      <div className="mt-2 space-y-2 pl-4">
+                        {dept.roles.map((role, index) => (
+                          <div key={index} className="flex items-center justify-between py-2 px-4 bg-white rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-1 h-8 bg-slate-300 rounded-full"></div>
+                              <div>
+                                <div className="font-semibold text-slate-900 text-sm">{role.role_name}</div>
+                                <div className="text-xs text-slate-500">{role.employee_count} employee{role.employee_count !== 1 ? 's' : ''}</div>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-3">
+                              <div className="text-right">
+                                <div className="text-sm font-bold text-slate-900">${role.total_cost.toFixed(0)}/week</div>
+                                <div className="text-xs text-slate-500">${role.avg_rate.toFixed(2)}/hr avg</div>
+                              </div>
+                              <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                                role.employee_count === 0 
+                                  ? 'bg-red-100 text-red-700' 
+                                  : role.employee_count < 3
+                                  ? 'bg-yellow-100 text-yellow-700'
+                                  : 'bg-emerald-100 text-emerald-700'
+                              }`}>
+                                {role.employee_count === 0 ? '🔴' : 
+                                 role.employee_count < 3 ? '🟡' : '🟢'}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                      role.employee_count === 0 
-                        ? 'bg-red-100 text-red-700' 
-                        : role.employee_count < 3
-                        ? 'bg-yellow-100 text-yellow-700'
-                        : 'bg-emerald-100 text-emerald-700'
-                    }`}>
-                      {role.employee_count === 0 ? '🔴 Unused' : 
-                       role.employee_count < 3 ? '🟡 Low' : '🟢 Good'}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                    </details>
+                  );
+                });
+              })()}
             </div>
           </CardContent>
         </Card>
