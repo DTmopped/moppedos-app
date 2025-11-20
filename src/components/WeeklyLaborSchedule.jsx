@@ -822,6 +822,7 @@ return {
   hours: Math.round(totalHours),
   employeeCount: assignments.length
 };
+ };  // ← ADD THIS CLOSING BRACE!
 
   // Enhanced color functions with professional gradients
   const getDepartmentColor = (department) => {
