@@ -88,10 +88,11 @@ export const LaborDataProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
 
-  // Location state - NOW USING UUID SYSTEM
-  const [locationId, setLocationId] = useState(null); // This will be the bigint ID
-  const [locationUuid, setLocationUuid] = useState(null); // This will be the UUID for database queries
-  const [locationName, setLocationName] = useState(null);
+  // Location state - UPDATED WITH FULL LOCATION OBJECT
+  const [locationId, setLocationId] = useState(null); // bigint ID
+  const [locationUuid, setLocationUuid] = useState(null); // UUID for queries
+  const [locationName, setLocationName] = useState(null); // Location name
+  const [currentLocation, setCurrentLocation] = useState(null); // ✅ NEW: Full location object with ALL data
   const [loadingLocation, setLoadingLocation] = useState(true);
   const [locationError, setLocationError] = useState(null);
 
@@ -151,18 +152,25 @@ export const LaborDataProvider = ({ children }) => {
             return;
           }
 
-          console.log("✅ Location details fetched:", location);
+          console.log("✅ Full location details fetched:", location);
 
-          // Set all location state - CRITICAL: Use UUID for database queries
+          // Set all location state
           setLocationId(location.id); // Keep the bigint ID for reference
           setLocationUuid(location.uuid); // Use UUID for all database queries
           setLocationName(location.name);
+          setCurrentLocation(location); // ✅ NEW: Store complete location object
           setLocationError(null);
           
-          console.log("🎯 Location state updated:", {
+          console.log("🎯 Location state updated with budget data:", {
             id: location.id,
             uuid: location.uuid,
-            name: location.name
+            name: location.name,
+            annual_revenue_target: location.annual_revenue_target,
+            target_labor_percent: location.target_labor_percent,
+            target_foh_percent: location.target_foh_percent,
+            target_boh_percent: location.target_boh_percent,
+            target_mgmt_percent: location.target_mgmt_percent,
+            labor_burden_multiplier: location.labor_burden_multiplier
           });
 
         } else {
