@@ -559,9 +559,9 @@ const EnhancedAddRoleModal = ({ masterRoles, existingRoles, categories, onAdd, o
             </button>
             <button
               onClick={handleSubmit}
-              disabled={!selectedRole || !category || mealPeriods.length === 0}
+              disabled={!selectedRole}
               className={`px-6 py-2 rounded-lg font-bold transition-all ${
-                selectedRole && category && mealPeriods.length > 0
+                selectedRole
                   ? 'bg-emerald-500 hover:bg-emerald-600 text-black shadow-lg hover:shadow-xl'
                   : 'bg-slate-300 text-slate-500 cursor-not-allowed'
               }`}
@@ -576,3 +576,4 @@ const EnhancedAddRoleModal = ({ masterRoles, existingRoles, categories, onAdd, o
 };
 
 export default RoleManagement;
+
