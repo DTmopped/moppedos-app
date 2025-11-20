@@ -84,4 +84,3 @@ const EmployeeManagementWithTabs = () => {
 };
 
 export default EmployeeManagementWithTabs;
-
