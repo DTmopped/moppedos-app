@@ -576,4 +576,3 @@ const EnhancedAddRoleModal = ({ masterRoles, existingRoles, categories, onAdd, o
 };
 
 export default RoleManagement;
-
