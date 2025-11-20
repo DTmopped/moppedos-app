@@ -1228,3 +1228,4 @@ const fetchLaborAnalytics = async (limit = 12) => {
   );
 };
 
+
