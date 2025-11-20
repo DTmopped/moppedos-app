@@ -291,10 +291,30 @@ const EnhancedOverview = ({ onTabChange }) => {
               {/* Group roles by department */}
               {(() => {
                 const departments = {
-                  'FOH': { icon: '🍽️', color: 'blue', roles: [] },
-                  'BOH': { icon: '👨‍🍳', color: 'emerald', roles: [] },
-                  'Bar': { icon: '🍸', color: 'purple', roles: [] },
-                  'Management': { icon: '👔', color: 'slate', roles: [] }
+                  'FOH': { 
+                    icon: '🍽️', 
+                    bgClass: 'bg-gradient-to-r from-blue-50 to-blue-100',
+                    borderClass: 'border-blue-200',
+                    roles: [] 
+                  },
+                  'BOH': { 
+                    icon: '👨‍🍳', 
+                    bgClass: 'bg-gradient-to-r from-emerald-50 to-emerald-100',
+                    borderClass: 'border-emerald-200',
+                    roles: [] 
+                  },
+                  'Bar': { 
+                    icon: '🍸', 
+                    bgClass: 'bg-gradient-to-r from-purple-50 to-purple-100',
+                    borderClass: 'border-purple-200',
+                    roles: [] 
+                  },
+                  'Management': { 
+                    icon: '👔', 
+                    bgClass: 'bg-gradient-to-r from-slate-50 to-slate-100',
+                    borderClass: 'border-slate-200',
+                    roles: [] 
+                  }
                 };
 
                 // Group roles by category
@@ -312,7 +332,7 @@ const EnhancedOverview = ({ onTabChange }) => {
 
                   return (
                     <details key={deptName} className="group" open>
-                      <summary className={`cursor-pointer p-4 bg-gradient-to-r from-${dept.color}-50 to-${dept.color}-100 rounded-lg border-2 border-${dept.color}-200 hover:shadow-md transition-all`}>
+                      <summary className={`cursor-pointer p-4 ${dept.bgClass} rounded-lg border-2 ${dept.borderClass} hover:shadow-md transition-all`}>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
                             <span className="text-2xl">{dept.icon}</span>
