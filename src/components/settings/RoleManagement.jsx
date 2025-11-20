@@ -15,7 +15,7 @@ import { Search, Plus, Save, X, Edit2, Trash2, Check, AlertCircle, DollarSign } 
  * - Tipped checkbox in add modal
  */
 
-const RoleManagement = ({ locationId }) => {
+const RoleManagement = ({ locationId, lightGreenButton = false }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -228,7 +228,11 @@ const RoleManagement = ({ locationId }) => {
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center space-x-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-black font-bold rounded-lg transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+          className={`flex items-center space-x-2 px-6 py-3 rounded-lg transition-all shadow-lg hover:shadow-xl transform hover:scale-105 ${
+            lightGreenButton
+              ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-bold border-2 border-emerald-200'
+              : 'bg-emerald-500 hover:bg-emerald-600 text-black font-bold'
+          }`}
           title="Add a new role type from your master catalog"
         >
           <Plus className="h-5 w-5" />
