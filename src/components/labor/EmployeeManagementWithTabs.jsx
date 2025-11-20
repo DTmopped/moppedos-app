@@ -5,18 +5,15 @@ import RoleManagement from '@/components/settings/RoleManagement';
 import { useLaborData } from '@/contexts/LaborDataContext';
 
 /**
- * Simplified Employee Management - NO SUB-TABS!
- * Just two action buttons side-by-side that switch views
- * 
- * Features:
- * - [+ Add Employee] [+ Add Role] buttons side-by-side
- * - Lighter green for Add Role (emerald-400)
- * - "← Back to Employees" when viewing roles
+ * FINAL Simplified Employee Management
+ * - BOTH buttons side-by-side in wrapper
+ * - Pass showAddButton={false} to child components
  * - Clean, simple interface
  */
 
 const EmployeeManagementWithTabs = () => {
   const [activeView, setActiveView] = useState('employees'); // 'employees' or 'roles'
+  const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
   const { locationUuid } = useLaborData();
 
   const isEmployeesView = activeView === 'employees';
@@ -24,26 +21,34 @@ const EmployeeManagementWithTabs = () => {
 
   return (
     <div className="space-y-6">
-      {/* NO HEADER - Just buttons on the right when in employees view */}
+      {/* Buttons - Side by Side when in employees view */}
       {isEmployeesView && (
-        <div className="flex justify-end">
-          <div className="flex items-center space-x-3">
-            {/* Add Role Button (Light Green matching brand) */}
-            <button
-              onClick={() => setActiveView('roles')}
-              className="flex items-center space-x-2 px-6 py-3 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-bold rounded-lg transition-all shadow-md hover:shadow-lg border-2 border-emerald-200"
-              title="Add a new role type from your catalog"
-            >
-              <DollarSign className="h-5 w-5" />
-              <span>Add Role</span>
-            </button>
-          </div>
+        <div className="flex justify-end items-center space-x-3">
+          {/* Add Employee Button (Blue) */}
+          <button
+            onClick={() => setShowAddEmployeeModal(true)}
+            className="flex items-center space-x-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all shadow-md hover:shadow-lg"
+            title="Hire a new team member"
+          >
+            <Plus className="h-5 w-5" />
+            <span>Add Employee</span>
+          </button>
+
+          {/* Add Role Button (Light Green) */}
+          <button
+            onClick={() => setActiveView('roles')}
+            className="flex items-center space-x-2 px-6 py-3 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-bold rounded-lg transition-all shadow-md hover:shadow-lg border-2 border-emerald-200"
+            title="Add a new role type from your catalog"
+          >
+            <DollarSign className="h-5 w-5" />
+            <span>Add Role</span>
+          </button>
         </div>
       )}
 
       {/* Back button when viewing roles */}
       {isRolesView && (
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-start">
           <button
             onClick={() => setActiveView('employees')}
             className="flex items-center space-x-2 px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-all"
@@ -55,10 +60,21 @@ const EmployeeManagementWithTabs = () => {
         </div>
       )}
 
-      {/* Content Area - Switches based on activeView */}
+      {/* Content Area */}
       <div>
-        {isEmployeesView && <EmployeeOnboardingSystem />}
-        {isRolesView && <RoleManagement locationId={locationUuid} />}
+        {isEmployeesView && (
+          <EmployeeOnboardingSystem 
+            showAddButton={false}
+            externalAddEmployeeModal={showAddEmployeeModal}
+            setExternalAddEmployeeModal={setShowAddEmployeeModal}
+          />
+        )}
+        {isRolesView && (
+          <RoleManagement 
+            locationId={locationUuid}
+            lightGreenButton={true}
+          />
+        )}
       </div>
     </div>
   );
