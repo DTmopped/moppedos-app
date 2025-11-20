@@ -436,13 +436,10 @@ const RoleManagement = ({ locationId, lightGreenButton = false }) => {
   );
 };
 
-// Enhanced Add Role Modal Component with Meal Periods
+// Enhanced Add Role Modal Component - Simplified for your schema
 const EnhancedAddRoleModal = ({ masterRoles, existingRoles, categories, onAdd, onClose }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState(null);
-  const [category, setCategory] = useState('FOH');
-  const [isTipped, setIsTipped] = useState(false);
-  const [mealPeriods, setMealPeriods] = useState([]);
 
   const existingRoleIds = new Set(existingRoles.map(r => r.master_role_id));
   
@@ -451,29 +448,13 @@ const EnhancedAddRoleModal = ({ masterRoles, existingRoles, categories, onAdd, o
     role.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const mealPeriodOptions = [
-    'Breakfast',
-    'Brunch',
-    'Lunch',
-    'Dinner',
-    'Late Night',
-    'All Day'
-  ];
-
-  const toggleMealPeriod = (period) => {
-    setMealPeriods(prev =>
-      prev.includes(period)
-        ? prev.filter(p => p !== period)
-        : [...prev, period]
-    );
-  };
-
   const handleSubmit = () => {
-    if (!selectedRole || !category || mealPeriods.length === 0) {
-      alert('Please select a role, category, and at least one meal period');
+    if (!selectedRole) {
+      alert('Please select a role');
       return;
     }
-    onAdd(selectedRole.id, category, isTipped, mealPeriods);
+    // Just pass the master role ID - all other info comes from master_roles table
+    onAdd(selectedRole.id, null, null, null);
   };
 
   return (
@@ -537,65 +518,12 @@ const EnhancedAddRoleModal = ({ masterRoles, existingRoles, categories, onAdd, o
           {/* Configuration - Show when role is selected */}
           {selectedRole && (
             <div className="space-y-6">
-              <div className="bg-emerald-50 border-2 border-emerald-200 rounded-lg p-4">
-                <div className="font-bold text-emerald-900 text-lg">{selectedRole.name}</div>
-                <div className="text-sm text-emerald-700">Configuring role type</div>
-              </div>
-
-              {/* Category */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Category *
-                </label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-4 py-2 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
-                >
-                  <option value="FOH">Front of House</option>
-                  <option value="BOH">Back of House</option>
-                  <option value="Bar">Bar & Beverage</option>
-                  <option value="Management">Management</option>
-                </select>
-              </div>
-
-              {/* Tipped Checkbox */}
-              <div>
-                <label className="flex items-center space-x-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={isTipped}
-                    onChange={(e) => setIsTipped(e.target.checked)}
-                    className="w-5 h-5 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500"
-                  />
-                  <span className="text-sm font-medium text-slate-700">Tipped Role</span>
-                </label>
-                <p className="text-xs text-slate-500 mt-1 ml-8">
-                  Check this if employees in this role receive tips
+              <div className="bg-emerald-50 border-2 border-emerald-200 rounded-lg p-6">
+                <div className="font-bold text-emerald-900 text-xl mb-2">{selectedRole.name}</div>
+                <p className="text-emerald-700">
+                  This role will be added to your location. Role properties (category, tipped status, etc.) 
+                  are inherited from the master role definition.
                 </p>
-              </div>
-
-              {/* Meal Periods */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-3">
-                  When does this role work? * (select all that apply)
-                </label>
-                <div className="space-y-2">
-                  {mealPeriodOptions.map(period => (
-                    <label key={period} className="flex items-center space-x-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={mealPeriods.includes(period)}
-                        onChange={() => toggleMealPeriod(period)}
-                        className="w-5 h-5 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500"
-                      />
-                      <span className="text-sm text-slate-700">{period}</span>
-                    </label>
-                  ))}
-                </div>
-                {mealPeriods.length === 0 && (
-                  <p className="text-xs text-amber-600 mt-2">⚠️ Please select at least one meal period</p>
-                )}
               </div>
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -615,7 +543,6 @@ const EnhancedAddRoleModal = ({ masterRoles, existingRoles, categories, onAdd, o
               onClick={() => {
                 setSelectedRole(null);
                 setSearchTerm('');
-                setMealPeriods([]);
               }}
               className="text-slate-600 hover:text-slate-800 font-medium"
             >
