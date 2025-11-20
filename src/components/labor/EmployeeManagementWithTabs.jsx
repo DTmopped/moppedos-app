@@ -14,7 +14,7 @@ import { useLaborData } from '@/contexts/LaborDataContext';
 const EmployeeManagementWithTabs = () => {
   const [activeView, setActiveView] = useState('employees'); // 'employees' or 'roles'
   const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
-  const { locationUuid } = useLaborData();
+  const { locationUuid, loadRoles } = useLaborData(); // ✅ NEW: Get loadRoles
 
   const isEmployeesView = activeView === 'employees';
   const isRolesView = activeView === 'roles';
@@ -50,7 +50,10 @@ const EmployeeManagementWithTabs = () => {
       {isRolesView && (
         <div className="flex justify-start">
           <button
-            onClick={() => setActiveView('employees')}
+            onClick={() => {
+              setActiveView('employees');
+              loadRoles(); // ✅ NEW: Refresh roles when returning to employees
+            }}
             className="flex items-center space-x-2 px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-all"
             title="Return to employee management"
           >
@@ -81,3 +84,4 @@ const EmployeeManagementWithTabs = () => {
 };
 
 export default EmployeeManagementWithTabs;
+
