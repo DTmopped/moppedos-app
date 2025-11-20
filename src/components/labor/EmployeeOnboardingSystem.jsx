@@ -489,7 +489,7 @@ const EmployeeCard = ({ employee, onView, onEdit, onDelete }) => {
 };
 
 // Main Employee Onboarding System Component
-const EmployeeOnboardingSystem = () => {
+const EmployeeOnboardingSystem = ({
   showAddButton = true,  // NEW PROP
   externalAddEmployeeModal = false,  // NEW PROP
   setExternalAddEmployeeModal = null  // NEW PROP
