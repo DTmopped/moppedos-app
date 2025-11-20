@@ -1231,6 +1231,88 @@ const fetchLaborAnalytics = async (limit = 12) => {
     }
   };
 
+  // ============================================================================
+  // 🎯 CONTEXT VALUE - EVERYTHING EXPORTED TO COMPONENTS
+  // ============================================================================
+  const value = {
+    // Core state
+    employees,
+    roles,
+    schedules,
+    ptoRequests,
+    scheduleRequests,
+    employeeAvailability,
+    loading,
+    error,
+    isConnected,
+
+    // Location state - ✅ NOW INCLUDES FULL LOCATION OBJECT
+    locationId,
+    locationUuid,
+    locationName,
+    currentLocation, // ✅ NEW: Full location object with budget data
+    loadingLocation,
+    locationError,
+
+    // Core functions
+    loadLaborData,
+    loadRoles,
+    addEmployee,
+
+    // Analytics and forecasting
+    getSmartForecast,
+    getWeatherImpact,
+    getLaborAnalytics,
+
+    // Schedule functions
+    saveSchedule,
+    fetchWeekSchedule,
+
+    // PTO functions
+    addPTORequest,
+    updatePTOStatus,
+    approvePTORequest,
+    denyPTORequest,
+
+    // System functions
+    getSystemStats,
+
+    // Labor Analytics & Schedule Generation
+    generateWeeklySchedule,
+    calculateLaborMetrics,
+    getWeeklyLaborData,
+    calculateRoleAnalytics,
+
+    // Helper functions
+    calculateShiftHours,
+    convertTimeToStandard,
+    convertTimeToMilitary,
+
+    // Mappings
+    DEPARTMENT_MAPPING,
+    REVERSE_DEPARTMENT_MAPPING
+  };
+
+  return (
+    <LaborDataContext.Provider value={value}>
+      {children}
+    </LaborDataContext.Provider>
+  );
+};name || locationName || 'Unknown Location',
+        employeeCount: employees.length,
+        activeSchedules: Object.keys(schedules).length,
+        pendingPTORequests: ptoRequests.filter(r => r.status === 'pending').length,
+        userEmail: session?.user?.email || 'Not logged in'
+      };
+    } catch (err) {
+      console.error('Error getting system stats:', err);
+      return {
+        databaseConnected: false,
+        locationName: 'Error Loading'
+      };
+    }
+  };
+
   // Context value with all functions and state
   const value = {
     // Core state
