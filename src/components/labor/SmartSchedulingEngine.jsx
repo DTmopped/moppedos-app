@@ -244,56 +244,85 @@ const ForecastingDashboard = () => {
         if (!locationUuid) return;
 
         const today = format(new Date(), 'yyyy-MM-dd');
-        const yesterday = format(addDays(new Date(), -1), 'yyyy-MM-dd');
-        
-        // Use calculate_labor_forecast RPC function
-        const { data: todayForecast, error: todayError } = await supabase
-          .rpc('calculate_labor_forecast', {
-            p_location_id: locationUuid,
-            p_date: today
-          });
-
-        const { data: yesterdayForecast, error: yesterdayError } = await supabase
-          .rpc('calculate_labor_forecast', {
-            p_location_id: locationUuid,
-            p_date: yesterday
-          });
-
-        if (todayError) console.error('Today forecast error:', todayError);
-        if (yesterdayError) console.error('Yesterday forecast error:', yesterdayError);
-
-        // Get weekly forecast data for guest count
         const weekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
-        const { data: weekForecast } = await supabase
+        
+        // Get weekly forecast data
+        const { data: weekForecast, error: weekError } = await supabase
           .from('weekly_forecast_data')
           .select('guest_count, expected_sales')
           .eq('location_id', locationUuid)
           .eq('week_start_date', weekStart)
-          .single();
+          .maybeSingle();
+
+        if (weekError) console.error('Week forecast error:', weekError);
+
+        // Get today's shifts to calculate labor hours/cost
+        const { data: todayShifts, error: shiftsError } = await supabase
+          .from('shifts')
+          .select(`
+            hours,
+            employees:employee_id (
+              hourly_rate
+            )
+          `)
+          .eq('location_id', locationUuid)
+          .eq('day', today);
+
+        if (shiftsError) console.error('Shifts error:', shiftsError);
+
+        // Calculate labor from today's shifts
+        const laborHours = todayShifts?.reduce((sum, shift) => sum + (shift.hours || 0), 0) || 133;
+        const laborCost = todayShifts?.reduce((sum, shift) => {
+          const rate = shift.employees?.hourly_rate || 18;
+          return sum + ((shift.hours || 0) * rate);
+        }, 0) || 2400;
+
+        // Get yesterday's data for trend
+        const yesterday = format(addDays(new Date(), -1), 'yyyy-MM-dd');
+        const { data: yesterdayShifts } = await supabase
+          .from('shifts')
+          .select(`
+            hours,
+            employees:employee_id (
+              hourly_rate
+            )
+          `)
+          .eq('location_id', locationUuid)
+          .eq('day', yesterday);
+
+        const yesterdayHours = yesterdayShifts?.reduce((sum, shift) => sum + (shift.hours || 0), 0) || laborHours;
+        const yesterdayCost = yesterdayShifts?.reduce((sum, shift) => {
+          const rate = shift.employees?.hourly_rate || 18;
+          return sum + ((shift.hours || 0) * rate);
+        }, 0) || laborCost;
 
         // Calculate trends
-        const guestTrend = weekForecast && yesterdayForecast 
-          ? Math.round(((weekForecast.guest_count - (yesterdayForecast.forecasted_guests || 150)) / (yesterdayForecast.forecasted_guests || 150)) * 100)
+        const hoursTrend = yesterdayHours > 0 
+          ? Math.round(((laborHours - yesterdayHours) / yesterdayHours) * 100)
+          : 0;
+        
+        const costTrend = yesterdayCost > 0
+          ? Math.round(((laborCost - yesterdayCost) / yesterdayCost) * 100)
           : 0;
 
         const realForecasts = {
           todayGuests: { 
             value: weekForecast?.guest_count || 150, 
-            trend: guestTrend, 
-            confidence: 85 
+            trend: 0, 
+            confidence: weekForecast ? 85 : 50
           },
           laborHours: { 
-            value: todayForecast?.forecasted_hours || 133,
-            trend: todayForecast && yesterdayForecast ? Math.round(((todayForecast.forecasted_hours - yesterdayForecast.forecasted_hours) / yesterdayForecast.forecasted_hours) * 100) : 0,
+            value: Math.round(laborHours),
+            trend: hoursTrend,
             confidence: 85 
           },
           laborCost: { 
-            value: todayForecast?.forecasted_labor_cost || 2400, 
-            trend: todayForecast && yesterdayForecast ? Math.round(((todayForecast.forecasted_labor_cost - yesterdayForecast.forecasted_labor_cost) / yesterdayForecast.forecasted_labor_cost) * 100) : 0,
+            value: Math.round(laborCost), 
+            trend: costTrend,
             confidence: 85 
           },
           efficiency: { 
-            value: 88, 
+            value: laborCost > 0 ? Math.min(Math.round((laborHours / laborCost) * 1000), 95) : 88, 
             trend: 2, 
             confidence: 80 
           }
