@@ -138,28 +138,29 @@ export const LaborDataProvider = ({ children }) => {
 
           console.log("✅ Found location_id in profile:", profile.location_id);
 
-          // Step 2: Get location details from locations table
-          const { data: location, error: locationError } = await supabase
-            .from('locations')
-            .select('id, uuid, name, timezone, organization_id')
-            .eq('id', profile.location_id)
-            .single();
+          // Step 2: Get FULL location details from locations table
+const { data: location, error: locationError } = await supabase
+  .from('locations')
+  .select('*')  // ✅ Get ALL columns including budget data
+  .eq('id', profile.location_id)
+  .single();
 
-          if (locationError) {
-            console.error("❌ Error fetching location details:", locationError);
-            setLocationError("Failed to fetch location details");
-            setLoadingLocation(false);
-            return;
-          }
+if (locationError) {
+  console.error("❌ Error fetching location details:", locationError);
+  setLocationError("Failed to fetch location details");
+  setLoadingLocation(false);
+  return;
+}
 
-          console.log("✅ Full location details fetched:", location);
+console.log("✅ Full location details fetched:", location);
 
-          // Set all location state
-          setLocationId(location.id); // Keep the bigint ID for reference
-          setLocationUuid(location.uuid); // Use UUID for all database queries
-          setLocationName(location.name);
-          setCurrentLocation(location); // ✅ NEW: Store complete location object
-          setLocationError(null);
+// Set all location state
+setLocationId(location.id);
+setLocationUuid(location.uuid);
+setLocationName(location.name);
+setCurrentLocation(location); // ✅ Now has ALL data including budgets
+setLocationError(null);
+
           
           console.log("🎯 Location state updated with budget data:", {
             id: location.id,
