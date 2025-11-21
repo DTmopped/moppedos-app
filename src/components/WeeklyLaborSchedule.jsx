@@ -1133,6 +1133,16 @@ return {
             </div>
           </div>
 
+          {/* 🔍 DEBUG */}
+{(() => {
+  console.log('🔍 Budget Component:', {
+    showManagerView,
+    location: contextData?.currentLocation,
+    scheduleSize: Object.keys(scheduleData).length
+  });
+  return null;
+})()}
+
           <EnhancedLiveBudgetSection 
             scheduleData={scheduleData}
             location={contextData?.currentLocation}
