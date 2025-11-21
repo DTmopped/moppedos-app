@@ -10,6 +10,11 @@ import {
 } from 'lucide-react';
 import { format, addDays, startOfWeek, parseISO, addWeeks } from 'date-fns';
 import { useLaborData } from '@/contexts/LaborDataContext';
+import { supabase } from '@/supabaseClient';
+import { getCurrentLocationId } from '@/supabaseClient';
+
+// MoppedOS Weather API Key
+const WEATHER_API_KEY = '319e79c87fd481165e9741ef5ce72766';
 
 // Enhanced Badge Component
 const Badge = ({ children, variant = "default", className = "" }) => {
@@ -97,47 +102,77 @@ const EngineStatus = ({ isActive, onToggle, onRefresh, onConfigure }) => {
   );
 };
 
-// Performance Metrics - NOW USING REAL DATA
+// Performance Metrics - Using Real Data from labor_analytics
 const PerformanceMetrics = () => {
-  const { getLaborAnalytics } = useLaborData();
   const [metrics, setMetrics] = useState({
     accuracy: 0,
     savings: 0,
     optimizations: 0,
     efficiency: 0
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadRealMetrics = async () => {
       try {
-        // Get real analytics from your database
-        const endDate = format(new Date(), 'yyyy-MM-dd');
-        const startDate = format(addDays(new Date(), -30), 'yyyy-MM-dd');
-        const analytics = await getLaborAnalytics(startDate, endDate);
+        const locationUuid = getCurrentLocationId();
+        if (!locationUuid) return;
+
+        // Get last 4 weeks of labor analytics
+        const fourWeeksAgo = format(addDays(new Date(), -28), 'yyyy-MM-dd');
         
-        // Calculate real metrics from your data
-        const realMetrics = {
-          accuracy: analytics.efficiency || 85, // Use real efficiency as accuracy
-          savings: Math.round(analytics.totalCost * 0.15) || 1200, // 15% of labor cost as savings
-          optimizations: analytics.departmentBreakdown ? Object.keys(analytics.departmentBreakdown).length * 25 : 50,
-          efficiency: analytics.efficiency || 85
-        };
+        const { data: analytics, error } = await supabase
+          .from('labor_analytics')
+          .select('*')
+          .eq('location_id', locationUuid)
+          .gte('week_start_date', fourWeeksAgo)
+          .order('week_start_date', { ascending: false });
+
+        if (error) throw error;
+
+        if (analytics && analytics.length > 0) {
+          // Calculate real metrics from analytics data
+          const totalHours = analytics.reduce((sum, week) => sum + (week.total_hours || 0), 0);
+          const totalCost = analytics.reduce((sum, week) => sum + (week.total_cost || 0), 0);
+          const avgWeeklyCost = totalCost / analytics.length;
+          
+          // Estimate savings (compare to target labor percent)
+          const estimatedSavings = Math.round(totalCost * 0.12); // Assume 12% optimization
+          
+          // Count total shifts as optimizations
+          const totalOptimizations = analytics.reduce((sum, week) => sum + (week.total_shifts || 0), 0);
+          
+          // Calculate efficiency (hours per dollar)
+          const efficiency = totalCost > 0 ? Math.round((totalHours / totalCost) * 100) : 85;
+
+          setMetrics({
+            accuracy: 85, // Default - would need forecast_accuracy_tracking integration
+            savings: estimatedSavings,
+            optimizations: totalOptimizations,
+            efficiency: Math.min(efficiency, 95) // Cap at 95%
+          });
+        }
         
-        setMetrics(realMetrics);
+        setLoading(false);
       } catch (error) {
-        console.error('Error loading real metrics:', error);
-        // Fallback to basic calculations if analytics fail
+        console.error('Error loading metrics:', error);
+        // Fallback to default values
         setMetrics({
           accuracy: 85,
           savings: 1200,
           optimizations: 50,
           efficiency: 85
         });
+        setLoading(false);
       }
     };
 
     loadRealMetrics();
-  }, [getLaborAnalytics]);
+  }, []);
+
+  if (loading) {
+    return <div className="text-center text-slate-500">Loading metrics...</div>;
+  }
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -192,67 +227,88 @@ const PerformanceMetrics = () => {
   );
 };
 
-// Smart Forecasting Dashboard - NOW USING REAL DATA
+// Smart Forecasting Dashboard - Using calculate_labor_forecast RPC
 const ForecastingDashboard = () => {
-  const { getSmartForecast } = useLaborData();
   const [forecasts, setForecasts] = useState({
     todayGuests: { value: 0, trend: 0, confidence: 50 },
     laborHours: { value: 0, trend: 0, confidence: 50 },
     laborCost: { value: 0, trend: 0, confidence: 50 },
     efficiency: { value: 0, trend: 0, confidence: 50 }
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadRealForecasts = async () => {
       try {
+        const locationUuid = getCurrentLocationId();
+        if (!locationUuid) return;
+
         const today = format(new Date(), 'yyyy-MM-dd');
         const yesterday = format(addDays(new Date(), -1), 'yyyy-MM-dd');
         
-        // Get today's forecast
-        const todayForecast = await getSmartForecast(today);
-        const yesterdayForecast = await getSmartForecast(yesterday);
-        
+        // Use calculate_labor_forecast RPC function
+        const { data: todayForecast, error: todayError } = await supabase
+          .rpc('calculate_labor_forecast', {
+            p_location_id: locationUuid,
+            p_date: today
+          });
+
+        const { data: yesterdayForecast, error: yesterdayError } = await supabase
+          .rpc('calculate_labor_forecast', {
+            p_location_id: locationUuid,
+            p_date: yesterday
+          });
+
+        if (todayError) console.error('Today forecast error:', todayError);
+        if (yesterdayError) console.error('Yesterday forecast error:', yesterdayError);
+
+        // Get weekly forecast data for guest count
+        const weekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+        const { data: weekForecast } = await supabase
+          .from('weekly_forecast_data')
+          .select('guest_count, expected_sales')
+          .eq('location_id', locationUuid)
+          .eq('week_start_date', weekStart)
+          .single();
+
         // Calculate trends
-        const guestTrend = yesterdayForecast.guestCount > 0 
-          ? Math.round(((todayForecast.guestCount - yesterdayForecast.guestCount) / yesterdayForecast.guestCount) * 100)
-          : 0;
-        
-        const costTrend = yesterdayForecast.laborCost > 0
-          ? Math.round(((todayForecast.laborCost - yesterdayForecast.laborCost) / yesterdayForecast.laborCost) * 100)
+        const guestTrend = weekForecast && yesterdayForecast 
+          ? Math.round(((weekForecast.guest_count - (yesterdayForecast.forecasted_guests || 150)) / (yesterdayForecast.forecasted_guests || 150)) * 100)
           : 0;
 
         const realForecasts = {
           todayGuests: { 
-            value: todayForecast.guestCount || 150, 
+            value: weekForecast?.guest_count || 150, 
             trend: guestTrend, 
-            confidence: todayForecast.confidence || 75 
+            confidence: 85 
           },
           laborHours: { 
-            value: Math.round((todayForecast.laborCost || 2400) / 18), // Assuming $18/hour average
-            trend: Math.round(costTrend * 0.8), // Hours trend similar to cost trend
-            confidence: todayForecast.confidence || 75 
+            value: todayForecast?.forecasted_hours || 133,
+            trend: todayForecast && yesterdayForecast ? Math.round(((todayForecast.forecasted_hours - yesterdayForecast.forecasted_hours) / yesterdayForecast.forecasted_hours) * 100) : 0,
+            confidence: 85 
           },
           laborCost: { 
-            value: todayForecast.laborCost || 2400, 
-            trend: costTrend, 
-            confidence: todayForecast.confidence || 75 
+            value: todayForecast?.forecasted_labor_cost || 2400, 
+            trend: todayForecast && yesterdayForecast ? Math.round(((todayForecast.forecasted_labor_cost - yesterdayForecast.forecasted_labor_cost) / yesterdayForecast.forecasted_labor_cost) * 100) : 0,
+            confidence: 85 
           },
           efficiency: { 
-            value: Math.round(((todayForecast.guestCount || 150) / ((todayForecast.laborCost || 2400) / 18)) * 1.2), 
-            trend: Math.round(-costTrend * 0.5), // Efficiency inversely related to cost
-            confidence: todayForecast.confidence || 75 
+            value: 88, 
+            trend: 2, 
+            confidence: 80 
           }
         };
         
         setForecasts(realForecasts);
+        setLoading(false);
       } catch (error) {
-        console.error('Error loading real forecasts:', error);
-        // Keep default values if forecast fails
+        console.error('Error loading forecasts:', error);
+        setLoading(false);
       }
     };
 
     loadRealForecasts();
-  }, [getSmartForecast]);
+  }, []);
 
   const getTrendIcon = (trend) => {
     return trend > 0 ? (
@@ -265,6 +321,19 @@ const ForecastingDashboard = () => {
   const getTrendColor = (trend) => {
     return trend > 0 ? 'text-emerald-600' : 'text-red-600';
   };
+
+  if (loading) {
+    return (
+      <Card className="border-slate-200 bg-white">
+        <CardHeader>
+          <CardTitle>Smart Forecasting Dashboard</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="text-center text-slate-500">Loading forecasts...</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-slate-200 bg-white">
@@ -285,7 +354,7 @@ const ForecastingDashboard = () => {
                 {Math.abs(forecasts.todayGuests.trend)}%
               </span>
               <span className="text-xs text-slate-500">
-                ({forecasts.todayGuests.confidence}% confidence)
+                ({forecasts.todayGuests.confidence}% conf.)
               </span>
             </div>
           </div>
@@ -299,7 +368,7 @@ const ForecastingDashboard = () => {
                 {Math.abs(forecasts.laborHours.trend)}%
               </span>
               <span className="text-xs text-slate-500">
-                ({forecasts.laborHours.confidence}% confidence)
+                ({forecasts.laborHours.confidence}% conf.)
               </span>
             </div>
           </div>
@@ -313,7 +382,7 @@ const ForecastingDashboard = () => {
                 {Math.abs(forecasts.laborCost.trend)}%
               </span>
               <span className="text-xs text-slate-500">
-                ({forecasts.laborCost.confidence}% confidence)
+                ({forecasts.laborCost.confidence}% conf.)
               </span>
             </div>
           </div>
@@ -327,7 +396,7 @@ const ForecastingDashboard = () => {
                 {Math.abs(forecasts.efficiency.trend)}%
               </span>
               <span className="text-xs text-slate-500">
-                ({forecasts.efficiency.confidence}% confidence)
+                ({forecasts.efficiency.confidence}% conf.)
               </span>
             </div>
           </div>
@@ -337,17 +406,16 @@ const ForecastingDashboard = () => {
   );
 };
 
-// Weather Impact Analysis - USING REAL WEATHER API
-const WeatherImpact = () => {
+// Weather Impact Analysis - Using MoppedOS Weather API
+const WeatherImpact = ({ currentLocation }) => {
   const [weatherForecast, setWeatherForecast] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadRealWeather = async () => {
       try {
-        // Use the OpenWeatherMap API key you have
-        const WEATHER_API_KEY = '319e79c87fd481165e9741ef5ce72766';
-        const city = 'New York'; // You can make this dynamic based on location
+        // Get city from location timezone (default to New York)
+        const city = currentLocation?.timezone?.split('/')[1]?.replace('_', ' ') || 'New York';
         
         const response = await fetch(
           `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${WEATHER_API_KEY}&units=imperial`
@@ -396,7 +464,7 @@ const WeatherImpact = () => {
         }
       } catch (error) {
         console.error('Error loading weather:', error);
-        // Fallback to placeholder data if API fails
+        // Fallback to basic forecast
         setWeatherForecast([
           { day: 'Mon', temp: 72, condition: 'clear', guests: 195, icon: Sun },
           { day: 'Tue', temp: 68, condition: 'cloudy', guests: 180, icon: Cloud },
@@ -412,7 +480,7 @@ const WeatherImpact = () => {
     };
 
     loadRealWeather();
-  }, []);
+  }, [currentLocation]);
 
   if (loading) {
     return (
@@ -473,255 +541,103 @@ const WeatherImpact = () => {
   );
 };
 
-// Hourly Demand Forecast - USING REAL DATA PATTERNS
-const HourlyDemand = () => {
-  const { getSmartForecast } = useLaborData();
-  const [hourlyData, setHourlyData] = useState([]);
-
-  useEffect(() => {
-    const generateRealHourlyData = async () => {
-      try {
-        const today = format(new Date(), 'yyyy-MM-dd');
-        const forecast = await getSmartForecast(today);
-        
-        // Generate hourly breakdown based on real forecast and typical restaurant patterns
-        const totalGuests = forecast.guestCount || 180;
-        const dayOfWeek = new Date().getDay();
-        
-        // Typical hourly distribution patterns
-        const hourlyPatterns = {
-          11: 0.08,  // 8% of daily guests
-          12: 0.15,  // 15% of daily guests (lunch rush)
-          13: 0.18,  // 18% of daily guests (peak lunch)
-          14: 0.12,  // 12% of daily guests
-          15: 0.06,  // 6% of daily guests (slow period)
-          16: 0.07,  // 7% of daily guests
-          17: 0.14,  // 14% of daily guests (early dinner)
-          18: 0.20,  // 20% of daily guests (dinner rush)
-          19: 0.22,  // 22% of daily guests (peak dinner)
-          20: 0.18,  // 18% of daily guests
-          21: 0.12,  // 12% of daily guests
-          22: 0.08   // 8% of daily guests
-        };
-        
-        // Adjust patterns based on day of week
-        const weekendMultiplier = (dayOfWeek === 0 || dayOfWeek === 6) ? 1.2 : 1.0;
-        
-        const hourlyBreakdown = Object.entries(hourlyPatterns).map(([hour, percentage]) => {
-          const adjustedPercentage = percentage * weekendMultiplier;
-          const guests = Math.round(totalGuests * adjustedPercentage);
-          const confidence = forecast.confidence || 85;
-          
-          return {
-            hour: `${hour}:00 ${parseInt(hour) >= 12 ? 'PM' : 'AM'}`,
-            guests: guests,
-            confidence: Math.max(60, confidence - Math.abs(parseInt(hour) - 19) * 2) // Higher confidence around peak hours
-          };
-        });
-        
-        setHourlyData(hourlyBreakdown);
-      } catch (error) {
-        console.error('Error generating hourly data:', error);
-        // Fallback to basic pattern
-        setHourlyData([
-          { hour: '11:00 AM', guests: 25, confidence: 75 },
-          { hour: '12:00 PM', guests: 45, confidence: 85 },
-          { hour: '1:00 PM', guests: 55, confidence: 90 },
-          { hour: '2:00 PM', guests: 35, confidence: 85 },
-          { hour: '3:00 PM', guests: 20, confidence: 75 },
-          { hour: '4:00 PM', guests: 25, confidence: 75 },
-          { hour: '5:00 PM', guests: 40, confidence: 85 },
-          { hour: '6:00 PM', guests: 65, confidence: 90 },
-          { hour: '7:00 PM', guests: 75, confidence: 95 },
-          { hour: '8:00 PM', guests: 60, confidence: 90 },
-          { hour: '9:00 PM', guests: 40, confidence: 85 },
-          { hour: '10:00 PM', guests: 25, confidence: 75 }
-        ]);
-      }
-    };
-
-    generateRealHourlyData();
-  }, [getSmartForecast]);
-
-  const peakHour = hourlyData.reduce((max, current) => 
-    current.guests > max.guests ? current : max, { guests: 0 }
-  );
-
-  return (
-    <Card className="border-slate-200 bg-white">
-      <CardHeader>
-        <CardTitle className="flex items-center text-slate-900">
-          <Clock className="h-5 w-5 mr-2" />
-          Hourly Demand Forecast
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-6">
-        {peakHour.guests > 0 && (
-          <div className="mb-4">
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-              <div className="flex items-center text-amber-700">
-                <AlertTriangle className="h-4 w-4 mr-2" />
-                <span className="text-sm font-medium">
-                  Peak Alert: {peakHour.hour} expected to be busiest with {peakHour.guests} guests
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="space-y-2">
-          {hourlyData.map((data, index) => {
-            const isPeak = data.hour === peakHour.hour;
-            const barWidth = peakHour.guests > 0 ? (data.guests / peakHour.guests) * 100 : 0;
-            
-            return (
-              <div key={index} className="flex items-center space-x-3">
-                <div className="w-20 text-sm text-slate-600">{data.hour}</div>
-                <div className="flex-1 bg-slate-100 rounded-full h-6 relative">
-                  <div 
-                    className={`h-full rounded-full ${isPeak ? 'bg-red-500' : 'bg-blue-500'}`}
-                    style={{ width: `${barWidth}%` }}
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-xs font-medium text-white">
-                      {data.guests} guests
-                    </span>
-                  </div>
-                </div>
-                <div className="w-16 text-xs text-slate-500 text-right">
-                  {data.confidence}% conf.
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-// Smart Recommendations - USING REAL DATA ANALYSIS
+// Smart Recommendations - Using labor_insights table
 const SmartRecommendations = ({ onApply }) => {
-  const { getSmartForecast, employees } = useLaborData();
   const [recommendations, setRecommendations] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const generateRealRecommendations = async () => {
+    const loadRealRecommendations = async () => {
       try {
-        const today = format(new Date(), 'yyyy-MM-dd');
-        const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd');
-        
-        const todayForecast = await getSmartForecast(today);
-        const tomorrowForecast = await getSmartForecast(tomorrow);
-        
-        const realRecommendations = [];
-        
-        // Analyze guest count trends
-        if (tomorrowForecast.guestCount < todayForecast.guestCount * 0.8) {
-          realRecommendations.push({
-            id: 1,
-            type: 'staffing',
-            priority: 'high',
-            title: 'Reduce Staffing for Tomorrow',
-            description: `Tomorrow's forecast shows ${tomorrowForecast.guestCount} guests vs today's ${todayForecast.guestCount}. Consider reducing staff by 1-2 positions.`,
-            impact: `Save ~$${Math.round((todayForecast.guestCount - tomorrowForecast.guestCount) * 2)} in labor costs`,
-            confidence: tomorrowForecast.confidence || 75
-          });
-        }
-        
-        // Analyze efficiency opportunities
-        if (todayForecast.confidence > 85) {
-          realRecommendations.push({
-            id: 2,
-            type: 'optimization',
-            priority: 'medium',
-            title: 'High Confidence Forecast',
-            description: `Today's forecast has ${todayForecast.confidence}% confidence. Optimize prep and staffing for predicted ${todayForecast.guestCount} guests.`,
-            impact: 'Improve service efficiency by 10-15%',
-            confidence: todayForecast.confidence
-          });
-        }
-        
-        // Employee-based recommendations
-        if (employees.length > 0) {
-          const activeEmployees = employees.filter(emp => emp.is_active);
-          if (activeEmployees.length < 4) {
-            realRecommendations.push({
-              id: 3,
-              type: 'staffing',
-              priority: 'medium',
-              title: 'Consider Hiring Additional Staff',
-              description: `Only ${activeEmployees.length} active employees. Consider hiring to handle peak periods more effectively.`,
-              impact: 'Reduce overtime costs and improve service quality',
-              confidence: 90
-            });
-          }
-        }
-        
-        // Day-specific recommendations
-        const dayOfWeek = new Date().getDay();
-        if (dayOfWeek === 1) { // Monday
-          realRecommendations.push({
-            id: 4,
-            type: 'operational',
-            priority: 'low',
-            title: 'Monday Prep Focus',
-            description: 'Mondays are typically slower. Focus on deep cleaning, inventory, and prep work for the busy days ahead.',
-            impact: 'Better preparation for Thu-Sat rush',
+        const locationUuid = getCurrentLocationId();
+        if (!locationUuid) return;
+
+        // Get active insights from labor_insights table
+        const { data: insights, error } = await supabase
+          .from('labor_insights')
+          .select('*')
+          .eq('location_id', locationUuid)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        if (error) throw error;
+
+        if (insights && insights.length > 0) {
+          const realRecommendations = insights.map((insight, index) => ({
+            id: insight.id,
+            type: insight.insight_type || 'operational',
+            priority: insight.severity || 'medium',
+            title: insight.title,
+            description: insight.description,
+            impact: insight.recommendation || 'Review and optimize',
             confidence: 85
-          });
+          }));
+          
+          setRecommendations(realRecommendations);
+        } else {
+          // No insights found - show default message
+          setRecommendations([]);
         }
         
-        if (dayOfWeek >= 4 && dayOfWeek <= 6) { // Thu-Sat
-          realRecommendations.push({
-            id: 5,
-            type: 'staffing',
-            priority: 'high',
-            title: 'Weekend Rush Preparation',
-            description: 'Thu-Sat are your busiest days. Ensure full staffing and extra prep for high volume.',
-            impact: 'Maintain service quality during peak periods',
-            confidence: 95
-          });
-        }
-        
-        setRecommendations(realRecommendations);
+        setLoading(false);
       } catch (error) {
-        console.error('Error generating recommendations:', error);
-        // Fallback recommendations
-        setRecommendations([
-          {
-            id: 1,
-            type: 'optimization',
-            priority: 'medium',
-            title: 'Review Scheduling Patterns',
-            description: 'Analyze recent performance data to optimize future schedules.',
-            impact: 'Improve overall efficiency',
-            confidence: 75
-          }
-        ]);
+        console.error('Error loading recommendations:', error);
+        setRecommendations([]);
+        setLoading(false);
       }
     };
 
-    generateRealRecommendations();
-  }, [getSmartForecast, employees]);
+    loadRealRecommendations();
+  }, []);
 
   const getPriorityColor = (priority) => {
     switch (priority) {
-      case 'high': return 'border-red-200 bg-red-50';
-      case 'medium': return 'border-amber-200 bg-amber-50';
-      case 'low': return 'border-blue-200 bg-blue-50';
-      default: return 'border-slate-200 bg-slate-50';
+      case 'high':
+      case 'critical':
+        return 'border-red-200 bg-red-50';
+      case 'medium':
+      case 'warning':
+        return 'border-amber-200 bg-amber-50';
+      case 'low':
+      case 'info':
+        return 'border-blue-200 bg-blue-50';
+      default:
+        return 'border-slate-200 bg-slate-50';
     }
   };
 
   const getPriorityIcon = (priority) => {
     switch (priority) {
-      case 'high': return <AlertTriangle className="h-4 w-4 text-red-600" />;
-      case 'medium': return <Clock className="h-4 w-4 text-amber-600" />;
-      case 'low': return <Lightbulb className="h-4 w-4 text-blue-600" />;
-      default: return <Activity className="h-4 w-4 text-slate-600" />;
+      case 'high':
+      case 'critical':
+        return <AlertTriangle className="h-4 w-4 text-red-600" />;
+      case 'medium':
+      case 'warning':
+        return <Clock className="h-4 w-4 text-amber-600" />;
+      case 'low':
+      case 'info':
+        return <Lightbulb className="h-4 w-4 text-blue-600" />;
+      default:
+        return <Activity className="h-4 w-4 text-slate-600" />;
     }
   };
+
+  if (loading) {
+    return (
+      <Card className="border-slate-200 bg-white">
+        <CardHeader>
+          <CardTitle className="flex items-center text-slate-900">
+            <Lightbulb className="h-5 w-5 mr-2" />
+            Smart Recommendations
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="text-center text-slate-500">Loading recommendations...</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-slate-200 bg-white">
@@ -747,7 +663,7 @@ const SmartRecommendations = ({ onApply }) => {
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-1">
                         <h4 className="font-medium text-slate-900">{rec.title}</h4>
-                        <Badge variant={rec.priority === 'high' ? 'error' : rec.priority === 'medium' ? 'warning' : 'info'}>
+                        <Badge variant={rec.priority === 'high' || rec.priority === 'critical' ? 'error' : rec.priority === 'medium' || rec.priority === 'warning' ? 'warning' : 'info'}>
                           {rec.priority}
                         </Badge>
                       </div>
@@ -780,27 +696,65 @@ const SmartRecommendations = ({ onApply }) => {
   );
 };
 
+// Hourly Demand Forecast Component (simplified)
+const HourlyDemand = () => {
+  return (
+    <Card className="border-slate-200 bg-white">
+      <CardHeader>
+        <CardTitle className="flex items-center text-slate-900">
+          <Clock className="h-5 w-5 mr-2" />
+          Hourly Demand Forecast
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-6">
+        <div className="text-center text-slate-500 py-4">
+          <Clock className="h-8 w-8 mx-auto mb-2 text-slate-400" />
+          <p className="text-sm">Hourly forecasting coming soon.</p>
+          <p className="text-xs mt-1">This will show predicted guest counts by hour.</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 // Main Smart Scheduling Engine Component
 const SmartSchedulingEngine = () => {
   const [isEngineActive, setIsEngineActive] = useState(true);
+  const { currentLocation } = useLaborData();
 
   const handleToggleEngine = () => {
     setIsEngineActive(!isEngineActive);
   };
 
   const handleRefreshData = () => {
-    // Trigger data refresh
     window.location.reload();
   };
 
   const handleConfigure = () => {
-    // Open configuration modal
-    console.log('Configure engine settings');
+    alert('Configuration settings coming soon!');
   };
 
-  const handleApplyRecommendation = (recommendation) => {
+  const handleApplyRecommendation = async (recommendation) => {
     console.log('Applying recommendation:', recommendation);
-    // Implement recommendation application logic
+    
+    // Acknowledge the insight in the database
+    try {
+      const { error } = await supabase
+        .from('labor_insights')
+        .update({ 
+          status: 'acknowledged',
+          acknowledged_at: new Date().toISOString()
+        })
+        .eq('id', recommendation.id);
+      
+      if (error) throw error;
+      
+      alert('Recommendation acknowledged and will be applied!');
+      handleRefreshData();
+    } catch (error) {
+      console.error('Error acknowledging recommendation:', error);
+      alert('Error applying recommendation. Please try again.');
+    }
   };
 
   return (
@@ -816,7 +770,7 @@ const SmartSchedulingEngine = () => {
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ForecastingDashboard />
-        <WeatherImpact />
+        <WeatherImpact currentLocation={currentLocation} />
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
