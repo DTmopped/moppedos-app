@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { format, parseISO, differenceInDays, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { useLaborData } from '@/contexts/LaborDataContext';
+import PTOCalendar from './PTOCalendar';
 
 // Enhanced Badge Component
 const Badge = ({ children, variant = "default", className = "" }) => {
@@ -559,24 +560,8 @@ const PTOManagementSystem = () => {
         </Card>
       )}
 
-      {/* PTO Calendar Placeholder */}
-      <Card className="border-slate-200 bg-white">
-        <CardHeader>
-          <CardTitle className="flex items-center text-slate-900">
-            <Calendar className="h-5 w-5 mr-2" />
-            PTO Calendar
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="text-center py-8">
-            <Calendar className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-slate-900 mb-2">PTO Calendar View</h3>
-            <p className="text-slate-600">
-              Visual calendar showing approved PTO requests and schedule conflicts coming soon.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* PTO Calendar */}
+<PTOCalendar />
 
       {/* PTO Request Modal */}
       <PTORequestModal
