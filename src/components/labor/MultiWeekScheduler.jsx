@@ -36,9 +36,9 @@ const Badge = ({ children, variant = "default", className = "" }) => {
 // Multi-Week Analytics Summary
 const AnalyticsSummary = ({ weeks }) => {
   const totalWeeks = weeks.length;
-  const totalHours = weeks.reduce((sum, week) => sum + week.totalHours, 0);
-  const totalCost = weeks.reduce((sum, week) => sum + week.estimatedCost, 0);
-  const avgWeeklyCost = totalCost / totalWeeks;
+  const totalHours = weeks.reduce((sum, week) => sum + (week.totalHours || 0), 0);
+  const totalCost = weeks.reduce((sum, week) => sum + (week.estimatedCost || 0), 0);
+  const avgWeeklyCost = totalWeeks > 0 ? totalCost / totalWeeks : 0;
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -61,7 +61,7 @@ const AnalyticsSummary = ({ weeks }) => {
               <Clock className="h-4 w-4 text-white" />
             </div>
           </div>
-          <div className="text-2xl font-bold text-emerald-900">{totalHours.toLocaleString()}</div>
+          <div className="text-2xl font-bold text-emerald-900">{Math.round(totalHours).toLocaleString()}</div>
           <div className="text-sm text-emerald-700">Total Hours</div>
         </CardContent>
       </Card>
@@ -73,7 +73,7 @@ const AnalyticsSummary = ({ weeks }) => {
               <DollarSign className="h-4 w-4 text-white" />
             </div>
           </div>
-          <div className="text-2xl font-bold text-purple-900">${totalCost.toLocaleString()}</div>
+          <div className="text-2xl font-bold text-purple-900">${Math.round(totalCost).toLocaleString()}</div>
           <div className="text-sm text-purple-700">Total Cost</div>
         </CardContent>
       </Card>
@@ -104,7 +104,7 @@ const WeekCard = ({ week, isCurrentWeek, onCopyPrevious, onEditWeek }) => {
       case 'not_set':
         return <Badge variant="notset">Not Set</Badge>;
       default:
-        return <Badge variant="secondary">Unknown</Badge>;
+        return <Badge variant="secondary">Partial</Badge>;
     }
   };
 
@@ -117,7 +117,7 @@ const WeekCard = ({ week, isCurrentWeek, onCopyPrevious, onEditWeek }) => {
       case 'not_set':
         return <XCircle className="h-4 w-4 text-slate-400" />;
       default:
-        return <Clock className="h-4 w-4 text-slate-400" />;
+        return <Clock className="h-4 w-4 text-blue-600" />;
     }
   };
 
@@ -146,15 +146,17 @@ const WeekCard = ({ week, isCurrentWeek, onCopyPrevious, onEditWeek }) => {
         <div className="space-y-2 mb-4">
           <div className="flex items-center justify-between text-sm">
             <span className="text-slate-600">Shifts:</span>
-            <span className="font-medium text-slate-900">{week.totalShifts}</span>
+            <span className="font-medium text-slate-900">{week.totalShifts || 0}</span>
           </div>
           <div className="flex items-center justify-between text-sm">
             <span className="text-slate-600">Hours:</span>
-            <span className="font-medium text-slate-900">{week.totalHours}</span>
+            <span className="font-medium text-slate-900">{week.totalHours ? Math.round(week.totalHours) : 0}</span>
           </div>
           <div className="flex items-center justify-between text-sm">
             <span className="text-slate-600">Est. Labor Cost:</span>
-            <span className="font-medium text-slate-900">${week.estimatedCost.toLocaleString()}</span>
+            <span className="font-medium text-slate-900">
+              ${week.estimatedCost ? Math.round(week.estimatedCost).toLocaleString() : 0}
+            </span>
           </div>
         </div>
 
@@ -170,7 +172,7 @@ const WeekCard = ({ week, isCurrentWeek, onCopyPrevious, onEditWeek }) => {
           </Button>
           <Button
             size="sm"
-            onClick={() => onEditWeek(week.id)}
+            onClick={() => onEditWeek(week.startDate)}
             className="bg-blue-600 hover:bg-blue-700 text-white flex-1"
           >
             <Edit className="h-4 w-4 mr-1" />
@@ -240,7 +242,7 @@ const QuickActions = ({ onAutoPopulate, onOptimizeAll, onGenerateReport, isGener
 
 // Department Breakdown
 const DepartmentBreakdown = ({ weeks }) => {
-  // Calculate department totals across all weeks
+  // Calculate department totals from real data
   const departmentTotals = {
     'Front of House': { hours: 0, cost: 0 },
     'Back of House': { hours: 0, cost: 0 },
@@ -248,19 +250,16 @@ const DepartmentBreakdown = ({ weeks }) => {
     'Management': { hours: 0, cost: 0 }
   };
 
-  // Simulate department breakdown (in real app, this would come from actual schedule data)
+  // Aggregate from actual week data
   weeks.forEach(week => {
-    departmentTotals['Front of House'].hours += Math.round(week.totalHours * 0.4);
-    departmentTotals['Front of House'].cost += Math.round(week.estimatedCost * 0.4);
-    
-    departmentTotals['Back of House'].hours += Math.round(week.totalHours * 0.35);
-    departmentTotals['Back of House'].cost += Math.round(week.estimatedCost * 0.35);
-    
-    departmentTotals['Bar & Beverage'].hours += Math.round(week.totalHours * 0.15);
-    departmentTotals['Bar & Beverage'].cost += Math.round(week.estimatedCost * 0.15);
-    
-    departmentTotals['Management'].hours += Math.round(week.totalHours * 0.1);
-    departmentTotals['Management'].cost += Math.round(week.estimatedCost * 0.1);
+    if (week.department_breakdown) {
+      Object.entries(week.department_breakdown).forEach(([dept, data]) => {
+        if (departmentTotals[dept]) {
+          departmentTotals[dept].hours += data.hours || 0;
+          departmentTotals[dept].cost += data.cost || 0;
+        }
+      });
+    }
   });
 
   const departmentColors = {
@@ -287,8 +286,8 @@ const DepartmentBreakdown = ({ weeks }) => {
               </div>
               <h4 className="font-medium text-slate-900 text-sm mb-1">{dept}</h4>
               <div className="text-xs text-slate-600">
-                <div>{data.hours} hours</div>
-                <div>${data.cost.toLocaleString()}</div>
+                <div>{Math.round(data.hours)} hours</div>
+                <div>${Math.round(data.cost).toLocaleString()}</div>
               </div>
             </div>
           ))}
@@ -300,44 +299,107 @@ const DepartmentBreakdown = ({ weeks }) => {
 
 // Main Multi-Week Scheduler Component
 const MultiWeekScheduler = () => {
-  const [currentPeriodStart, setCurrentPeriodStart] = useState(() => startOfWeek(new Date()));
+  const [currentPeriodStart, setCurrentPeriodStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [isGenerating, setIsGenerating] = useState(false);
-  const { getWeekSchedule, employees } = useLaborData();
+  const [weeks, setWeeks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { currentLocation } = useLaborData();
 
-  // Generate 5 weeks of data starting from current period
-  const generateWeeksData = (startDate) => {
-    const weeks = [];
-    for (let i = 0; i < 5; i++) {
-      const weekStart = addWeeks(startDate, i);
-      const weekEnd = endOfWeek(weekStart);
-      const isCurrentWeek = i === 0;
+  // Load real week data from labor_analytics table
+  const loadWeekData = async () => {
+    try {
+      setLoading(true);
+      const locationUuid = getCurrentLocationId();
       
-      // Simulate different staffing levels and costs
-      const staffingLevels = ['full', 'full', 'minimal', 'full', 'not_set'];
-      const shifts = [45, 42, 28, 53, 0];
-      const hours = [338, 315, 210, 398, 0];
-      const costs = [6075, 5670, 3780, 7155, 0];
-      
-      weeks.push({
-        id: `week-${i}`,
-        startDate: weekStart,
-        endDate: weekEnd,
-        status: staffingLevels[i],
-        totalShifts: shifts[i],
-        totalHours: hours[i],
-        estimatedCost: costs[i],
-        isCurrentWeek
+      if (!locationUuid) {
+        console.error('No location ID found');
+        setLoading(false);
+        return;
+      }
+
+      // Generate array of 5 week start dates
+      const weekDates = Array.from({ length: 5 }, (_, i) => {
+        const weekStart = addWeeks(currentPeriodStart, i);
+        return format(weekStart, 'yyyy-MM-dd');
       });
+
+      // Query labor_analytics for these weeks
+      const { data: analyticsData, error: analyticsError } = await supabase
+        .from('labor_analytics')
+        .select('*')
+        .eq('location_id', locationUuid)
+        .in('week_start_date', weekDates);
+
+      if (analyticsError) {
+        console.error('Error fetching labor analytics:', analyticsError);
+      }
+
+      // Query shifts to get actual shift counts per week
+      const endDate = format(addDays(addWeeks(currentPeriodStart, 5), -1), 'yyyy-MM-dd');
+      const { data: shiftsData, error: shiftsError } = await supabase
+        .from('shifts')
+        .select('day, hours, employee_id, employees!inner(hourly_rate)')
+        .eq('location_id', locationUuid)
+        .gte('day', format(currentPeriodStart, 'yyyy-MM-dd'))
+        .lte('day', endDate);
+
+      if (shiftsError) {
+        console.error('Error fetching shifts:', shiftsError);
+      }
+
+      // Build weeks array with real data
+      const weeksData = weekDates.map((weekStartDate, index) => {
+        const weekStart = new Date(weekStartDate);
+        const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
+        const isCurrentWeek = index === 0;
+
+        // Find analytics data for this week
+        const analytics = analyticsData?.find(a => a.week_start_date === weekStartDate);
+
+        // Count shifts for this week
+        const weekShifts = shiftsData?.filter(shift => {
+          const shiftDate = new Date(shift.day);
+          return shiftDate >= weekStart && shiftDate <= weekEnd;
+        }) || [];
+
+        const totalShifts = weekShifts.length;
+        const totalHours = analytics?.total_hours || weekShifts.reduce((sum, s) => sum + (s.hours || 0), 0);
+        const totalCost = analytics?.total_cost || weekShifts.reduce((sum, s) => {
+          const rate = s.employees?.hourly_rate || 0;
+          return sum + ((s.hours || 0) * rate);
+        }, 0);
+
+        // Determine status
+        let status = 'not_set';
+        if (totalShifts >= 40) status = 'full';
+        else if (totalShifts >= 20) status = 'minimal';
+
+        return {
+          id: `week-${index}`,
+          startDate: weekStart,
+          endDate: weekEnd,
+          week_start_date: weekStartDate,
+          status,
+          totalShifts,
+          totalHours,
+          estimatedCost: totalCost,
+          isCurrentWeek,
+          department_breakdown: analytics?.department_breakdown || {}
+        };
+      });
+
+      setWeeks(weeksData);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error loading week data:', error);
+      setLoading(false);
     }
-    return weeks;
   };
 
-  const [weeks, setWeeks] = useState(() => generateWeeksData(currentPeriodStart));
-
-  // Update weeks when period changes
+  // Load data when period changes
   useEffect(() => {
-    setWeeks(generateWeeksData(currentPeriodStart));
-  }, [currentPeriodStart]);
+    loadWeekData();
+  }, [currentPeriodStart, currentLocation]);
 
   const handlePreviousPeriod = () => {
     setCurrentPeriodStart(prev => addWeeks(prev, -5));
@@ -348,24 +410,25 @@ const MultiWeekScheduler = () => {
   };
 
   const handleCurrentPeriod = () => {
-    setCurrentPeriodStart(startOfWeek(new Date()));
+    setCurrentPeriodStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
   };
 
-  const handleCopyPrevious = (weekId) => {
+  const handleCopyPrevious = async (weekId) => {
     console.log('Copy previous week for:', weekId);
-    // Implement copy previous week logic
+    // TODO: Implement copy previous week logic
+    alert('Copy previous week functionality coming soon!');
   };
 
-  const handleEditWeek = (weekId) => {
-    console.log('Edit week:', weekId);
+  const handleEditWeek = (weekStartDate) => {
     // Navigate to weekly schedule view for specific week
+    const dateStr = format(weekStartDate, 'yyyy-MM-dd');
+    window.location.href = `/labor-schedule?week=${dateStr}`;
   };
 
   const handleAutoPopulate = async () => {
     console.log('🚀 Auto-populate all weeks starting...');
     
     try {
-      // Get current location UUID
       const locationUuid = getCurrentLocationId();
       
       if (!locationUuid) {
@@ -373,19 +436,16 @@ const MultiWeekScheduler = () => {
         return;
       }
       
-      // Show loading state
       setIsGenerating(true);
-      
       const results = [];
       
       // Generate schedule for each week
       for (const week of weeks) {
-        const weekStartDate = week.startDate.toISOString().split('T')[0];
+        const weekStartDate = week.week_start_date;
         
         console.log(`📅 Generating schedule for week starting ${weekStartDate}...`);
         
         try {
-          // Call the Supabase RPC function
           const { data, error } = await supabase.rpc('generate_schedule_with_breaks', {
             p_location_id: locationUuid,
             p_week_start_date: weekStartDate
@@ -395,7 +455,7 @@ const MultiWeekScheduler = () => {
             console.error(`❌ Error generating schedule for ${weekStartDate}:`, error);
             results.push({ week: weekStartDate, status: 'error', error: error.message });
           } else {
-            console.log(`✅ Schedule generated for ${weekStartDate}:`, data);
+            console.log(`✅ Schedule generated for ${weekStartDate}`);
             results.push({ week: weekStartDate, status: 'success', data });
           }
         } catch (err) {
@@ -404,17 +464,16 @@ const MultiWeekScheduler = () => {
         }
       }
       
-      // Show success message
       const successCount = results.filter(r => r.status === 'success').length;
       const errorCount = results.filter(r => r.status === 'error').length;
       
       alert(`✅ Schedule Generation Complete!\n\n` +
             `✅ ${successCount} weeks generated successfully\n` +
             `❌ ${errorCount} weeks failed\n\n` +
-            `Refresh the page to see the new schedules.`);
+            `Refreshing data...`);
       
-      // Reload the page to show new schedules
-      window.location.reload();
+      // Reload the week data
+      await loadWeekData();
       
     } catch (error) {
       console.error('❌ Fatal error in handleAutoPopulate:', error);
@@ -426,13 +485,22 @@ const MultiWeekScheduler = () => {
 
   const handleOptimizeAll = () => {
     console.log('Optimize all weeks');
-    // Implement optimization logic
+    alert('Optimization functionality coming soon!');
   };
 
   const handleGenerateReport = () => {
     console.log('Generate multi-week report');
-    // Implement report generation
+    alert('Report generation coming soon!');
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <span className="ml-2 text-slate-600">Loading schedule data...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
