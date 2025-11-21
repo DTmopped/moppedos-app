@@ -1133,53 +1133,11 @@ return {
             </div>
           </div>
 
-          {/* 🔍 TEMPORARY DEBUG - DELETE AFTER */}
-          {showManagerView && (
-            <Card className="border-red-500 bg-red-50 no-print">
-              <CardContent className="p-4">
-                <div className="text-sm font-mono space-y-2">
-                  <p className="font-bold text-red-900">🔍 DEBUG INFO:</p>
-                  <hr className="my-2" />
-                  
-                  <p><strong>showManagerView:</strong> {String(showManagerView)}</p>
-                  <p><strong>contextData exists:</strong> {String(!!contextData)}</p>
-                  <p><strong>currentLocation exists:</strong> {String(!!contextData?.currentLocation)}</p>
-                  
-                  <hr className="my-2" />
-                  
-                  {contextData?.currentLocation ? (
-                    <>
-                      <p className="font-bold text-green-900">✅ Location Data Found:</p>
-                      <p><strong>Name:</strong> {contextData.currentLocation.name}</p>
-                      <p><strong>annual_revenue_target:</strong> {contextData.currentLocation.annual_revenue_target || 'MISSING'}</p>
-                      <p><strong>target_foh_percent:</strong> {contextData.currentLocation.target_foh_percent || 'MISSING'}</p>
-                      <p><strong>target_boh_percent:</strong> {contextData.currentLocation.target_boh_percent || 'MISSING'}</p>
-                      <p><strong>target_mgmt_percent:</strong> {contextData.currentLocation.target_mgmt_percent || 'MISSING'}</p>
-                    </>
-                  ) : (
-                    <p className="font-bold text-red-900">❌ No currentLocation data!</p>
-                  )}
-                  
-                  <hr className="my-2" />
-                  
-                  <p><strong>scheduleData cells:</strong> {Object.keys(scheduleData).length}</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-          {/* 🔍 END DEBUG */}
-
           <EnhancedLiveBudgetSection 
             scheduleData={scheduleData}
             location={contextData?.currentLocation}
             showManagerView={showManagerView}
           />
-
-          <EnhancedLiveBudgetSection 
-  scheduleData={scheduleData}
-  location={contextData?.currentLocation}
-  showManagerView={showManagerView}
-/>
 
           {/* Enhanced Department Filter & Stats */}
           <Card className="border-slate-300 shadow-lg bg-white no-print">
