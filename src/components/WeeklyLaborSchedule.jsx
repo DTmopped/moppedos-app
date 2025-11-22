@@ -7,7 +7,7 @@ import {
   Loader2, BarChart3, PieChart, Activity, Edit3, Copy, Briefcase, AlertTriangle
 } from 'lucide-react';
 import { useLaborData } from '@/contexts/LaborDataContext';
-import { ROLES, getRolesByDepartment, SHIFT_TIMES, DEPARTMENT_MAPPING } from '@/config/laborScheduleConfig';
+import { SHIFT_TIMES, DEPARTMENT_MAPPING } from '@/config/laborScheduleConfig';
 import EnhancedLiveBudgetSection from '@/components/labor/EnhancedLiveBudgetSection';
 import { supabase } from '@/supabaseClient';
 
@@ -494,24 +494,91 @@ const WeeklyLaborSchedule = () => {
   const [showDropdown, setShowDropdown] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showManagerView, setShowManagerView] = useState(true);
+  const [roles, setRoles] = useState([]);
+  const [rolesLoading, setRolesLoading] = useState(true);
   const [budgetCollapsed, setBudgetCollapsed] = useState(false);
   const [editingCell, setEditingCell] = useState(null);
   const [copyModalOpen, setCopyModalOpen] = useState(false);
   const [shiftToCopy, setShiftToCopy] = useState(null);
-
+  
   const contextData = useLaborData();
   const employees = contextData?.employees || [];
   const loading = contextData?.loading || false;
   const error = contextData?.error || null;
   const saveSchedule = contextData?.saveSchedule;
   const convertTimeToStandard = contextData?.convertTimeToStandard;
-
+  
   const weekStart = getStartOfWeek(currentWeek);
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const day = new Date(weekStart);
     day.setDate(weekStart.getDate() + i);
     return day;
   });
+
+  // Helper to filter roles by department
+  const getRolesByDept = (department) => {
+    if (department === 'ALL') return roles;
+    return roles.filter(r => r.department === department);
+  };
+
+  // Load roles from database
+  useEffect(() => {
+    const loadRoles = async () => {
+      const locationUuid = contextData?.currentLocation?.uuid;
+      if (!locationUuid) return;
+      
+      setRolesLoading(true);
+      console.log('📋 Loading roles from database for location:', locationUuid);
+      
+      const { data, error } = await supabase
+        .from('location_roles')
+        .select(`
+          id,
+          custom_name,
+          hourly_rate,
+          display_order,
+          master_roles (
+            id,
+            name,
+            category,
+            suggested_hourly_rate,
+            is_tipped
+          )
+        `)
+        .eq('location_id', locationUuid)
+        .eq('is_active', true)
+        .order('display_order');
+      
+      if (error) {
+        console.error('❌ Error loading roles:', error);
+        setRolesLoading(false);
+        return;
+      }
+      
+      console.log('✅ Loaded roles from database:', data);
+      
+      // Transform to match current ROLES format
+      const transformedRoles = data.map(lr => ({
+        name: lr.custom_name || lr.master_roles.name,
+        department: lr.master_roles.category,
+        hourly_rate: lr.hourly_rate || lr.master_roles.suggested_hourly_rate,
+        shifts: [{ 
+          name: 'DINNER', 
+          start: '3:00 PM', 
+          end: '11:00 PM' 
+        }]
+      }));
+      
+      console.log('✅ Transformed roles:', transformedRoles);
+      setRoles(transformedRoles);
+      setRolesLoading(false);
+    };
+    
+    loadRoles();
+  }, [contextData?.currentLocation?.uuid]);
+
+  // ... rest of your code continues here
+
 
   // ============================================================================
   // 🔥 NEW: FETCH SHIFTS FROM DATABASE WHEN WEEK CHANGES
@@ -1167,7 +1234,7 @@ if (existingSchedule) {
     window.print();
   };
 
-  if (loading) {
+  if (loading || rolesLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-slate-50">
         <div className="text-center">
@@ -1263,12 +1330,12 @@ if (existingSchedule) {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {[
-                      { id: 'ALL', label: `All (${ROLES.length})`, emoji: '👥' },
-                      { id: 'FOH', label: `FOH (${getRolesByDepartment('FOH').length})`, emoji: '🍽️' },
-                      { id: 'BOH', label: `BOH (${getRolesByDepartment('BOH').length})`, emoji: '👨‍🍳' },
-                      { id: 'Bar', label: `Bar (${getRolesByDepartment('Bar').length})`, emoji: '🍸' },
-                      { id: 'Management', label: `Mgmt (${getRolesByDepartment('Management').length})`, emoji: '👔' }
-                    ].map(dept => (
+  { id: 'ALL', label: `All (${roles.length})`, emoji: '👥' },
+  { id: 'FOH', label: `FOH (${roles.filter(r => r.department === 'FOH').length})`, emoji: '🍽️' },
+  { id: 'BOH', label: `BOH (${roles.filter(r => r.department === 'BOH').length})`, emoji: '👨‍🍳' },
+  { id: 'Bar', label: `Bar (${roles.filter(r => r.department === 'Bar').length})`, emoji: '🍸' },
+  { id: 'Management', label: `Mgmt (${roles.filter(r => r.department === 'Management').length})`, emoji: '👔' }
+].map(dept => (
                       <Button
                         key={dept.id}
                         size="sm"
