@@ -9,6 +9,7 @@ import {
 import { useLaborData } from '@/contexts/LaborDataContext';
 import { ROLES, getRolesByDepartment, SHIFT_TIMES, DEPARTMENT_MAPPING } from '@/config/laborScheduleConfig';
 import EnhancedLiveBudgetSection from '@/components/labor/EnhancedLiveBudgetSection';
+import { supabase } from '@/supabaseClient';
 
 // Optimized Print CSS for Single Page Landscape - FIXED
 const printStyles = `
@@ -984,7 +985,7 @@ return {
     console.log('📅 Saving schedule for week:', weekStartDate);
 
     // 🎯 STEP 1: Get or create the schedule for this week
-    const { data: scheduleId, error: scheduleError } = await contextData.supabase
+    const { data: scheduleId, error: scheduleError } = await supabase
       .rpc('get_or_create_schedule', {
         p_location_id: locationUuid,
         p_week_start_date: weekStartDate
@@ -1046,7 +1047,7 @@ return {
     console.log('💾 Saving', shiftsToSave.length, 'shifts...');
 
     // 🎯 STEP 3: Upsert shifts
-    const { data: savedShifts, error: shiftsError } = await contextData.supabase
+    const { data: savedShifts, error: shiftsError } = await supabase
       .from('shifts')
       .upsert(shiftsToSave, {
         onConflict: 'id'
