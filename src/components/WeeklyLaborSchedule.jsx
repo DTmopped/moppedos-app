@@ -984,20 +984,40 @@ return {
     const weekStartDate = weekStart.toISOString().split('T')[0];
     console.log('📅 Saving schedule for week:', weekStartDate);
 
-    // 🎯 STEP 1: Get or create the schedule for this week
-    const { data: scheduleId, error: scheduleError } = await supabase
-      .rpc('get_or_create_schedule', {
-        p_location_id: locationUuid,
-        p_week_start_date: weekStartDate
-      });
+    // 🎯 STEP 1: Get or create the schedule for this week (DIRECT METHOD)
+// First, try to find existing schedule
+let scheduleId;
+const { data: existingSchedule } = await supabase
+  .from('schedules')
+  .select('id')
+  .eq('location_id', locationUuid)
+  .eq('week_start_date', weekStartDate)
+  .single();
 
-    if (scheduleError) {
-      console.error('❌ Error creating schedule:', scheduleError);
-      alert('Failed to create schedule: ' + scheduleError.message);
-      return;
-    }
+if (existingSchedule) {
+  scheduleId = existingSchedule.id;
+  console.log('✅ Found existing schedule:', scheduleId);
+} else {
+  // Create new schedule
+  const { data: newSchedule, error: scheduleError } = await supabase
+    .from('schedules')
+    .insert({
+      location_id: locationUuid,
+      week_start_date: weekStartDate,
+      status: 'draft'
+    })
+    .select('id')
+    .single();
 
-    console.log('✅ Schedule ID:', scheduleId);
+  if (scheduleError) {
+    console.error('❌ Error creating schedule:', scheduleError);
+    alert('Failed to create schedule: ' + scheduleError.message);
+    return;
+  }
+
+  scheduleId = newSchedule.id;
+  console.log('✅ Created new schedule:', scheduleId);
+}
 
     // 🎯 STEP 2: Prepare shifts array with schedule_id
     const shiftsToSave = [];
