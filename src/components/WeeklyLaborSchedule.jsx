@@ -973,23 +973,101 @@ return {
 
 
   const handleSaveSchedule = async () => {
-    try {
-      const weekKey = weekStart.toISOString().split('T')[0];
-      
-      if (saveSchedule) {
-        await saveSchedule(weekKey, scheduleData);
-        setHasUnsavedChanges(false);
-        alert('✅ Schedule saved successfully!');
-      } else {
-        localStorage.setItem('weeklyLaborSchedule', JSON.stringify(scheduleData));
-        setHasUnsavedChanges(false);
-        alert('💾 Schedule saved to local storage!');
-      }
-    } catch (error) {
-      console.error('Error saving schedule:', error);
-      alert('❌ Error saving schedule. Please try again.');
+  try {
+    const locationUuid = contextData?.locationUuid;
+    if (!locationUuid) {
+      alert('❌ Error: No location ID found');
+      return;
     }
-  };
+
+    const weekStartDate = weekStart.toISOString().split('T')[0];
+    console.log('📅 Saving schedule for week:', weekStartDate);
+
+    // 🎯 STEP 1: Get or create the schedule for this week
+    const { data: scheduleId, error: scheduleError } = await contextData.supabase
+      .rpc('get_or_create_schedule', {
+        p_location_id: locationUuid,
+        p_week_start_date: weekStartDate
+      });
+
+    if (scheduleError) {
+      console.error('❌ Error creating schedule:', scheduleError);
+      alert('Failed to create schedule: ' + scheduleError.message);
+      return;
+    }
+
+    console.log('✅ Schedule ID:', scheduleId);
+
+    // 🎯 STEP 2: Prepare shifts array with schedule_id
+    const shiftsToSave = [];
+    
+    Object.entries(scheduleData).forEach(([key, cell]) => {
+      if (!cell?.employee) return;
+      
+      const [roleIndex, shiftIndex, dayIndex, rowIndex] = key.split('-').map(Number);
+      const dayDate = new Date(weekStart);
+      dayDate.setDate(weekStart.getDate() + dayIndex);
+      const dayDateString = dayDate.toISOString().split('T')[0];
+      
+      // Convert 12-hour time to 24-hour format
+      const convert12to24 = (time12) => {
+        if (!time12) return null;
+        const [time, period] = time12.split(' ');
+        let [hours, minutes] = time.split(':');
+        hours = parseInt(hours);
+        
+        if (period === 'PM' && hours !== 12) hours += 12;
+        else if (period === 'AM' && hours === 12) hours = 0;
+        
+        return `${hours.toString().padStart(2, '0')}:${minutes}:00`;
+      };
+      
+      const shiftData = {
+        schedule_id: scheduleId,
+        location_id: locationUuid,
+        employee_id: cell.employee.id,
+        day: dayDateString,
+        shift_type: 'Dinner',
+        role: cell.employee.role,
+        department: cell.employee.department,
+        start_time: convert12to24(cell.employee.start),
+        end_time: convert12to24(cell.employee.end),
+        hours: parseFloat(cell.employee.hours),
+        row_index: rowIndex
+      };
+      
+      if (cell.employee.shift_id) {
+        shiftData.id = cell.employee.shift_id;
+      }
+      
+      shiftsToSave.push(shiftData);
+    });
+
+    console.log('💾 Saving', shiftsToSave.length, 'shifts...');
+
+    // 🎯 STEP 3: Upsert shifts
+    const { data: savedShifts, error: shiftsError } = await contextData.supabase
+      .from('shifts')
+      .upsert(shiftsToSave, {
+        onConflict: 'id'
+      });
+
+    if (shiftsError) {
+      console.error('❌ Error saving shifts:', shiftsError);
+      alert('Failed to save shifts: ' + shiftsError.message);
+      return;
+    }
+
+    console.log('✅ Shifts saved successfully!');
+    
+    setHasUnsavedChanges(false);
+    alert('✅ Schedule saved successfully!');
+    
+  } catch (error) {
+    console.error('❌ Fatal error saving schedule:', error);
+    alert('❌ Error: ' + error.message);
+  }
+};
 
   const handleCopyShift = (roleIndex, shiftIndex, dayIndex, employee) => {
     setShiftToCopy({
