@@ -605,7 +605,7 @@ useEffect(() => {
           const transformedSchedule = {};
 
           laborData.shifts.forEach(shift => {
-            const roleIndex = ROLES.findIndex(r => 
+            const roleIndex = roles.findIndex(r => 
               r.name === shift.role || 
               r.name === shift.position ||
               r.name.toLowerCase().includes(shift.role?.toLowerCase()) ||
@@ -720,7 +720,7 @@ Object.entries(transformedSchedule).forEach(([key, cell]) => {
     byDay[dayIdx] = (byDay[dayIdx] || 0) + 1;
     
     // Count by role
-    const role = ROLES[roleIdx]?.name || 'Unknown';
+    const role = roles[roleIdx]?.name || 'Unknown';
     byRole[role] = (byRole[role] || 0) + 1;
     
     // Calculate costs
@@ -831,7 +831,7 @@ const getMaxRowsForRole = (roleIndex, shiftIndex) => {
 };
 
 
-  const filteredRoles = ROLES.filter(
+  const filteredRoles = roles.filter(
     role => selectedDepartment === 'ALL' || role.department === selectedDepartment
   );
 
@@ -854,7 +854,7 @@ const getMaxRowsForRole = (roleIndex, shiftIndex) => {
   // Loop through only the 7 days being displayed (0-6)
   for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
     // Loop through all roles
-    ROLES.forEach((role, roleIndex) => {
+    roles.forEach((role, roleIndex) => {
       const shiftIndex = 0; // DINNER only
       
       // Check all possible rows for this role/shift/day
@@ -935,10 +935,10 @@ return {
     if (!employee) return;
 
     const actualRole = filteredRoles[roleIndex];
-    const actualRoleIndex = ROLES.findIndex(role => role.name === actualRole.name);
+    const actualRoleIndex = roles.findIndex(role => role.name === actualRole.name);
     
     // Get role's default shift times from config
-    const roleConfig = ROLES[actualRoleIndex];
+    const roleConfig = roles[actualRoleIndex];
     const defaultShift = roleConfig.shifts[0];
     const shiftTimes = {
       start: defaultShift.start,
@@ -981,7 +981,7 @@ return {
 
   const handleRemoveEmployee = (roleIndex, shiftIndex, dayIndex, employeeId) => {
   const actualRole = filteredRoles[roleIndex];
-  const actualRoleIndex = ROLES.findIndex(role => role.name === actualRole.name);
+  const actualRoleIndex = roles.findIndex(role => role.name === actualRole.name);
   
   // ✅ NEW: Find which row the employee is in
   const rowIndex = findEmployeeRow(actualRoleIndex, shiftIndex, dayIndex, employeeId);
@@ -1002,7 +1002,7 @@ return {
 
  const handleUpdateEmployee = (roleIndex, shiftIndex, dayIndex, employeeId, field, value) => {
   const actualRole = filteredRoles[roleIndex];
-  const actualRoleIndex = ROLES.findIndex(role => role.name === actualRole.name);
+  const actualRoleIndex = roles.findIndex(role => role.name === actualRole.name);
   
   // ✅ NEW: Find which row the employee is in
   const rowIndex = findEmployeeRow(actualRoleIndex, shiftIndex, dayIndex, employeeId);
@@ -1176,7 +1176,7 @@ if (existingSchedule) {
 
   const { roleIndex, shiftIndex, employee } = shiftToCopy;
   const actualRole = filteredRoles[roleIndex];
-  const actualRoleIndex = ROLES.findIndex(role => role.name === actualRole.name);
+  const actualRoleIndex = roles.findIndex(role => role.name === actualRole.name);
 
   targetDays.forEach(targetDayIndex => {
     // ✅ NEW: Check if employee is already assigned to this day
@@ -1217,7 +1217,7 @@ if (existingSchedule) {
 
   const getAssignedEmployees = (roleIndex, shiftIndex, dayIndex) => {
   const actualRole = filteredRoles[roleIndex];
-  const actualRoleIndex = ROLES.findIndex(role => role.name === actualRole.name);
+  const actualRoleIndex = roles.findIndex(role => role.name === actualRole.name);
   
   // ✅ NEW: Collect from all rows
   return getAllEmployeesForSlot(actualRoleIndex, shiftIndex, dayIndex);
@@ -1454,7 +1454,7 @@ if (existingSchedule) {
                         
                         // ✅ Calculate max rows needed for this role
                         const actualRole = filteredRoles[roleIndex];
-                        const actualRoleIndex = ROLES.findIndex(r => r.name === actualRole.name);
+                        const actualRoleIndex = roles.findIndex(r => r.name === actualRole.name);
                         const maxRows = getMaxRowsForRole(actualRoleIndex, shiftIndex);
                         const rowCount = maxRows > 0 ? maxRows : 1; // At least 1 row to show empty cells
                         
