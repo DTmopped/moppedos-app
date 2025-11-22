@@ -1023,19 +1023,23 @@ return {
         return `${hours.toString().padStart(2, '0')}:${minutes}:00`;
       };
       
-      const shiftData = {
-        schedule_id: scheduleId,
-        location_id: locationUuid,
-        employee_id: cell.employee.id,
-        day: dayDateString,
-        shift_type: 'Dinner',
-        role: cell.employee.role,
-        department: cell.employee.department,
-        start_time: convert12to24(cell.employee.start),
-        end_time: convert12to24(cell.employee.end),
-        hours: parseFloat(cell.employee.hours),
-        row_index: rowIndex
-      };
+     const shiftData = {
+  schedule_id: scheduleId,
+  location_id: locationUuid,
+  employee_id: cell.employee.id,
+  day: dayDateString,
+  shift_type: 'Dinner',
+  role: cell.employee.role,
+  department: cell.employee.department === 'Front of House' ? 'FOH' 
+            : cell.employee.department === 'Back of House' ? 'BOH'
+            : cell.employee.department === 'Bar & Beverage' ? 'Bar'
+            : cell.employee.department === 'Management' ? 'Management'
+            : cell.employee.department,  // ✅ Maps UI labels to DB values
+  start_time: convert12to24(cell.employee.start),
+  end_time: convert12to24(cell.employee.end),
+  hours: parseFloat(cell.employee.hours),
+  row_index: rowIndex
+};
       
       if (cell.employee.shift_id) {
         shiftData.id = cell.employee.shift_id;
